@@ -46,6 +46,8 @@ type
 function toHex(const buf: TBytes): string; overload;
 function toHex(const str: string): string; overload;
 
+function fromHex(hex: string): TBytes;
+
 procedure sha3(client: TWeb3; const hex: string; callback: TASyncString);
 
 function fromWei(wei: BigInteger; &unit: TEthUnit): string; overload;
@@ -74,6 +76,18 @@ end;
 function toHex(const str: string): string;
 begin
   Result := toHex(TEncoding.UTF8.GetBytes(str));
+end;
+
+function fromHex(hex: string): TBytes;
+var
+  I: Integer;
+begin
+  hex := Trim(hex);
+  while Copy(hex, Low(hex), 2) = '0x' do
+    Delete(hex, Low(hex), 2);
+  SetLength(Result, Length(hex) div 2);
+  for I := Low(hex) to Length(hex) div 2 do
+    Result[I - 1] := StrToInt('$' + Copy(hex, (I - 1) * 2 + 1, 2));
 end;
 
 procedure sha3(client: TWeb3; const hex: string; callback: TASyncString);

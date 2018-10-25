@@ -57,6 +57,8 @@ begin
           Result := Result + '0x' + IntToHex(arg.VInteger, 0);
         vtString:
           Result := Result + QuoteString(UnicodeString(PShortString(arg.VAnsiString)^), '"');
+        vtObject:
+          Result := Result + web3.json.Marshal(arg.VObject as TJsonObject);
         vtWideString:
           Result := Result + QuoteString(WideString(arg.VWideString^), '"');
         vtInt64:
@@ -87,13 +89,18 @@ begin
     Result := THttpClient.Create.BeginPost(procedure(const aSyncResult: IASyncResult)
     begin
       resp := web3.json.Unmarshal(THttpClient.EndAsyncHTTP(aSyncResult).ContentAsString(TEncoding.UTF8));
-      // did we receive an error? then translate that into an exception
-      err := web3.json.GetPropAsObj(resp, 'error');
-      if Assigned(err) then
-        callback(resp, EJsonRpc.Create(web3.json.GetPropAsInt(err, 'code'), web3.json.GetPropAsStr(err, 'message')))
-      else
-        // if we reached this far, then we have a valid response object
-        callback(resp, nil);
+      if Assigned(resp) then
+      try
+        // did we receive an error? then translate that into an exception
+        err := web3.json.GetPropAsObj(resp, 'error');
+        if Assigned(err) then
+          callback(resp, EJsonRpc.Create(web3.json.GetPropAsInt(err, 'code'), web3.json.GetPropAsStr(err, 'message')))
+        else
+          // if we reached this far, then we have a valid response object
+          callback(resp, nil);
+      finally
+        resp.Free;
+      end;
     end, URL, TStringStream.Create(GetPayload(method, args)), nil, [TNetHeader.Create('Content-Type', 'application/json')]);
   except
     on E: Exception do
