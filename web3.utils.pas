@@ -44,7 +44,10 @@ type
   TASyncString = reference to procedure(const str: string; err: Exception);
 
 function toHex(const buf: TBytes): string; overload;
+function toHex(const buf: TBytes; offset, len: Integer): string; overload;
+
 function toHex(const str: string): string; overload;
+function toHex(const str: string; offset, len: Integer): string; overload;
 
 function fromHex(hex: string): TBytes;
 
@@ -56,17 +59,22 @@ function fromWei(wei: BigInteger; &unit: TEthUnit; const aFormatSettings: TForma
 implementation
 
 function toHex(const buf: TBytes): string;
+begin
+  Result := toHex(buf, 0, Length(buf));
+end;
+
+function toHex(const buf: TBytes; offset, len: Integer): string;
 const
   Digits = '0123456789ABCDEF';
 var
   I: Integer;
 begin
-  SetLength(Result, Length(buf) * 2);
+  Result := StringOfChar('0', len * 2);
   try
     for I := 0 to Length(buf) - 1 do
     begin
-      Result[2 * I + 1] := Digits[(buf[I] shr 4)  + 1];
-      Result[2 * I + 2] := Digits[(buf[I] and $F) + 1];
+      Result[2 * (I + offset) + 1] := Digits[(buf[I] shr 4)  + 1];
+      Result[2 * (I + offset) + 2] := Digits[(buf[I] and $F) + 1];
     end;
   finally
     Result := '0x' + Result;
@@ -76,6 +84,11 @@ end;
 function toHex(const str: string): string;
 begin
   Result := toHex(TEncoding.UTF8.GetBytes(str));
+end;
+
+function toHex(const str: string; offset, len: Integer): string;
+begin
+  Result := toHex(TEncoding.UTF8.GetBytes(str), offset, len);
 end;
 
 function fromHex(hex: string): TBytes;
