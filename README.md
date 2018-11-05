@@ -17,3 +17,9 @@ A smart contract is a computation that takes place on a blockchain or distribute
 ## What is a dApp?
 
 A dApp is an application whose backend runs on a decentralised network with trustless protocols. dApps aren’t owned by anyone, cannot be shut down, and have zero downtime.
+
+## How do I get started?
+
+1. [Connecting Delphi to a local (in-memory blockchain)](https://medium.com/@svanas/connecting-delphi-to-a-local-in-memory-blockchain-9a1512d6c5b0)
+2. [Connecting Delphi to the Ethereum main net](https://medium.com/@svanas/connecting-delphi-to-the-ethereum-main-net-5faf1feffd83)
+3. [Connecting Delphi to Smart Contracts](https://medium.com/@svanas/connecting-delphi-to-smart-contracts-3146b12803a1)
