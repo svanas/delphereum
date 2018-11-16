@@ -140,10 +140,15 @@ begin
       // step #4: execute a message call (without creating a transaction on the blockchain)
       web3.json.rpc.Send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: Exception)
       begin
-        if Assigned(err) then
-          callback('', err)
-        else
-          callback(web3.json.GetPropAsStr(resp, 'result'), nil);
+        try
+          if Assigned(err) then
+            callback('', err)
+          else
+            callback(web3.json.GetPropAsStr(resp, 'result'), nil);
+        finally
+          // cleanup object
+          obj.Free;
+        end;
       end);
     end;
   end);
