@@ -82,26 +82,38 @@ end;
 
 function Send(const URL, method: string; args: array of const; callback: TASyncResponse): IASyncResult;
 var
+  client: THttpClient;
+  content: TStream;
   resp: TJsonObject;
   err : TJsonObject;
 begin
   try
-    Result := THttpClient.Create.BeginPost(procedure(const aSyncResult: IASyncResult)
+    // Create object with refs to cleanup later!
+    client := THttpClient.Create;
+    content := TStringStream.Create(GetPayload(method, args));
+
+    Result := client.BeginPost(procedure(const aSyncResult: IASyncResult)
     begin
-      resp := web3.json.Unmarshal(THttpClient.EndAsyncHTTP(aSyncResult).ContentAsString(TEncoding.UTF8));
-      if Assigned(resp) then
       try
-        // did we receive an error? then translate that into an exception
-        err := web3.json.GetPropAsObj(resp, 'error');
-        if Assigned(err) then
-          callback(resp, EJsonRpc.Create(web3.json.GetPropAsInt(err, 'code'), web3.json.GetPropAsStr(err, 'message')))
-        else
-          // if we reached this far, then we have a valid response object
-          callback(resp, nil);
+        resp := web3.json.Unmarshal(THttpClient.EndAsyncHTTP(aSyncResult).ContentAsString(TEncoding.UTF8));
+        if Assigned(resp) then
+        try
+          // did we receive an error? then translate that into an exception
+          err := web3.json.GetPropAsObj(resp, 'error');
+          if Assigned(err) then
+            callback(resp, EJsonRpc.Create(web3.json.GetPropAsInt(err, 'code'), web3.json.GetPropAsStr(err, 'message')))
+          else
+            // if we reached this far, then we have a valid response object
+            callback(resp, nil);
+        finally
+          resp.Free;
+        end;
       finally
-        resp.Free;
+         // Cleanup objects
+        content.Free;
+        client.Free;
       end;
-    end, URL, TStringStream.Create(GetPayload(method, args)), nil, [TNetHeader.Create('Content-Type', 'application/json')]);
+    end, URL, content, nil, [TNetHeader.Create('Content-Type', 'application/json')]);
   except
     on E: Exception do
       callback(nil, E);
