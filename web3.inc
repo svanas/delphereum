@@ -1,0 +1,1 @@
+{$DEFINE HashLib4Pascal}

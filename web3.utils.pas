@@ -1,5 +1,7 @@
 unit web3.utils;
 
+{$I web3.inc}
+
 interface
 
 uses
@@ -8,6 +10,9 @@ uses
   System.JSON,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
+{$IFDEF HashLib4Pascal}
+  HlpSHA3,
+{$ENDIF}
   // Web3
   web3,
   web3.json,
@@ -104,6 +109,17 @@ begin
 end;
 
 procedure sha3(client: TWeb3; const hex: string; callback: TASyncString);
+{$IFDEF HashLib4Pascal}
+var
+  keccak256: TKeccak_256;
+begin
+  keccak256 := TKeccak_256.Create;
+  try
+    callback(toHex(keccak256.ComputeBytes(fromHex(hex)).GetBytes), nil);
+  finally
+    keccak256.Free;
+  end;
+{$ELSE}
 begin
   web3.json.rpc.Send(client.URL, 'web3_sha3', [hex], procedure(resp: TJsonObject; err: Exception)
   begin
@@ -112,6 +128,7 @@ begin
     else
       callback(web3.json.GetPropAsStr(resp, 'result'), nil);
   end);
+{$ENDIF}
 end;
 
 const

@@ -137,19 +137,18 @@ begin
           web3.json.QuoteString(web3.utils.toHex(data), '"')
         ]
       ));
-      // step #4: execute a message call (without creating a transaction on the blockchain)
-      web3.json.rpc.Send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: Exception)
-      begin
-        try
+      try
+        // step #4: execute a message call (without creating a transaction on the blockchain)
+        web3.json.rpc.Send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: Exception)
+        begin
           if Assigned(err) then
             callback('', err)
           else
             callback(web3.json.GetPropAsStr(resp, 'result'), nil);
-        finally
-          // cleanup object
-          obj.Free;
-        end;
-      end);
+        end);
+      finally
+        obj.Free;
+      end;
     end;
   end);
 end;

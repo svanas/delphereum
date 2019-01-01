@@ -83,15 +83,13 @@ end;
 function Send(const URL, method: string; args: array of const; callback: TASyncResponse): IASyncResult;
 var
   client: THttpClient;
-  content: TStream;
-  resp: TJsonObject;
-  err : TJsonObject;
+  source: TStream;
+  resp  : TJsonObject;
+  err   : TJsonObject;
 begin
   try
-    // Create object with refs to cleanup later!
     client := THttpClient.Create;
-    content := TStringStream.Create(GetPayload(method, args));
-
+    source := TStringStream.Create(GetPayload(method, args));
     Result := client.BeginPost(procedure(const aSyncResult: IASyncResult)
     begin
       try
@@ -109,11 +107,10 @@ begin
           resp.Free;
         end;
       finally
-         // Cleanup objects
-        content.Free;
+        source.Free;
         client.Free;
       end;
-    end, URL, content, nil, [TNetHeader.Create('Content-Type', 'application/json')]);
+    end, URL, source, nil, [TNetHeader.Create('Content-Type', 'application/json')]);
   except
     on E: Exception do
       callback(nil, E);
