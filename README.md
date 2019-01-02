@@ -18,7 +18,16 @@ A smart contract is a computation that takes place on a blockchain or distribute
 
 A dApp is an application whose backend runs on a decentralised network with trustless protocols. dApps aren’t owned by anyone, cannot be shut down, and have zero downtime.
 
-## How do I get started?
+## Dependencies
+
+Before you can compile this project, you will need to clone the following repositories, and then add them to your Delphi Library path:
+```
+git clone https://github.com/rvelthuis/DelphiBigNumbers
+git clone https://github.com/Xor-el/SimpleBaseLib4Pascal
+git clone https://github.com/Xor-el/HashLib4Pascal
+git clone https://github.com/Xor-el/CryptoLib4Pascal
+```
+## Tutorials
 
 1. [Connecting Delphi to a local (in-memory) blockchain](https://medium.com/@svanas/connecting-delphi-to-a-local-in-memory-blockchain-9a1512d6c5b0)
 2. [Connecting Delphi to the Ethereum main net](https://medium.com/@svanas/connecting-delphi-to-the-ethereum-main-net-5faf1feffd83)
