@@ -1,5 +1,7 @@
 unit web3.json;
 
+{$I web3.inc}
+
 interface
 
 uses

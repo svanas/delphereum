@@ -6,44 +6,14 @@ interface
 
 uses
   // Delphi
-  System.SysUtils,
   System.JSON,
-  // Velthuis' BigNumbers
-  Velthuis.BigIntegers,
-{$IFDEF HashLib4Pascal}
+  System.SysUtils,
+  // HashLib4Pascal
   HlpSHA3,
-{$ENDIF}
   // Web3
   web3,
   web3.json,
   web3.json.rpc;
-
-type
-  TEthUnit = (
-    noether,
-    wei,
-    kwei,
-    babbage,
-    femtoether,
-    mwei,
-    lovelace,
-    picoether,
-    gwei,
-    shannon,
-    nanoether,
-    nano,
-    szabo,
-    microether,
-    micro,
-    finney,
-    milliether,
-    milli,
-    ether,
-    kether,
-    grand,
-    mether,
-    gether,
-    tether);
 
 type
   TASyncString = reference to procedure(const str: string; err: Exception);
@@ -56,10 +26,9 @@ function toHex(const str: string; offset, len: Integer): string; overload;
 
 function fromHex(hex: string): TBytes;
 
-procedure sha3(client: TWeb3; const hex: string; callback: TASyncString);
-
-function fromWei(wei: BigInteger; &unit: TEthUnit): string; overload;
-function fromWei(wei: BigInteger; &unit: TEthUnit; const aFormatSettings: TFormatSettings): string; overload;
+function  sha3(const hex: string): TBytes; overload;
+function  sha3(const buf: TBytes): TBytes; overload;
+procedure sha3(client: TWeb3; const hex: string; callback: TASyncString); overload;
 
 implementation
 
@@ -108,18 +77,24 @@ begin
     Result[I - 1] := StrToInt('$' + Copy(hex, (I - 1) * 2 + 1, 2));
 end;
 
-procedure sha3(client: TWeb3; const hex: string; callback: TASyncString);
-{$IFDEF HashLib4Pascal}
+function sha3(const hex: string): TBytes;
+begin
+  Result := sha3(fromHex(hex));
+end;
+
+function sha3(const buf: TBytes): TBytes;
 var
   keccak256: TKeccak_256;
 begin
   keccak256 := TKeccak_256.Create;
   try
-    callback(toHex(keccak256.ComputeBytes(fromHex(hex)).GetBytes), nil);
+    Result := keccak256.ComputeBytes(buf).GetBytes;
   finally
     keccak256.Free;
   end;
-{$ELSE}
+end;
+
+procedure sha3(client: TWeb3; const hex: string; callback: TASyncString);
 begin
   web3.json.rpc.Send(client.URL, 'web3_sha3', [hex], procedure(resp: TJsonObject; err: Exception)
   begin
@@ -128,52 +103,6 @@ begin
     else
       callback(web3.json.GetPropAsStr(resp, 'result'), nil);
   end);
-{$ENDIF}
-end;
-
-const
-  UnitToWei: array[TEthUnit] of string = (
-    '0',
-    '1',
-    '1000',
-    '1000',
-    '1000',
-    '1000000',
-    '1000000',
-    '1000000',
-    '1000000000',
-    '1000000000',
-    '1000000000',
-    '1000000000',
-    '1000000000000',
-    '1000000000000',
-    '1000000000000',
-    '1000000000000000',
-    '1000000000000000',
-    '1000000000000000',
-    '1000000000000000000',
-    '1000000000000000000000',
-    '1000000000000000000000',
-    '1000000000000000000000000',
-    '1000000000000000000000000000',
-    '1000000000000000000000000000000');
-
-function fromWei(wei: BigInteger; &unit: TEthUnit): string;
-begin
-  Result := fromWei(wei, &unit, System.SysUtils.FormatSettings);
-end;
-
-function fromWei(wei: BigInteger; &unit: TEthUnit; const aFormatSettings: TFormatSettings): string;
-var
-  base : BigInteger;
-  whole: BigInteger;
-  frac : BigInteger;
-begin
-  base := UnitToWei[&unit];
-  BigInteger.DivMod(wei, base, whole, frac);
-  Result := whole.ToString;
-  if frac > 0 then
-    Result := Result + aFormatSettings.DecimalSeparator + frac.ToString;
 end;
 
 end.

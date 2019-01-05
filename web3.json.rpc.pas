@@ -1,5 +1,7 @@
 unit web3.json.rpc;
 
+{$I web3.inc}
+
 interface
 
 uses

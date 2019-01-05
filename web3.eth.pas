@@ -1,5 +1,7 @@
 unit web3.eth;
 
+{$I web3.inc}
+
 interface
 
 uses
@@ -116,41 +118,35 @@ procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; ar
   end;
 
 var
+  hash: TBytes;
   data: TBytes;
   obj : TJsonObject;
 begin
   // step #1: encode the args into a byte array
   data := encodeArgs(args);
   // step #2: the first four bytes specify the function to be called
-  web3.utils.sha3(client, web3.utils.toHex(func), procedure(const str: string; err: Exception)
-  begin
-    if Assigned(err) then
-      callback('', err)
-    else
+  hash := web3.utils.sha3(web3.utils.toHex(func));
+  data := Copy(hash, 0, 4) + data;
+  // step #3: construct the transaction call object
+  obj := web3.json.Unmarshal(Format(
+    '{"from": %s, "to": %s, "data": %s}', [
+      web3.json.QuoteString(string(from), '"'),
+      web3.json.QuoteString(string(&to), '"'),
+      web3.json.QuoteString(web3.utils.toHex(data), '"')
+    ]
+  ));
+  try
+    // step #4: execute a message call (without creating a transaction on the blockchain)
+    web3.json.rpc.Send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: Exception)
     begin
-      data := Copy(web3.utils.fromHex(str), 0, 4) + data;
-      // step #3: construct the transaction call object
-      obj := web3.json.Unmarshal(Format(
-        '{"from": %s, "to": %s, "data": %s}', [
-          web3.json.QuoteString(string(from), '"'),
-          web3.json.QuoteString(string(&to), '"'),
-          web3.json.QuoteString(web3.utils.toHex(data), '"')
-        ]
-      ));
-      try
-        // step #4: execute a message call (without creating a transaction on the blockchain)
-        web3.json.rpc.Send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: Exception)
-        begin
-          if Assigned(err) then
-            callback('', err)
-          else
-            callback(web3.json.GetPropAsStr(resp, 'result'), nil);
-        end);
-      finally
-        obj.Free;
-      end;
-    end;
-  end);
+      if Assigned(err) then
+        callback('', err)
+      else
+        callback(web3.json.GetPropAsStr(resp, 'result'), nil);
+    end);
+  finally
+    obj.Free;
+  end;
 end;
 
 procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TASyncTuple);

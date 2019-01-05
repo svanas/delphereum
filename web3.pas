@@ -1,5 +1,7 @@
 unit web3;
 
+{$I web3.inc}
+
 interface
 
 type
