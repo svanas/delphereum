@@ -205,23 +205,22 @@ end;
 function sign(privateKey: TPrivateKey; const msg: string; chain: TEthChain): string;
 var
   Params   : IECPrivateKeyParameters;
-  Random   : ISecureRandom;
-  Param    : IParametersWithRandom;
   Signer   : TECDsaSignerEx;
   Signature: TECDsaSignature;
   V        : TBigInteger;
 begin
   Params := web3.eth.crypto.PrivateKeyFromByteArray(fromHex(string(privateKey)));
-  Random := TSecureRandom.Create;
-  Param  := TParametersWithRandom.Create(Params, Random);
   Signer := TECDsaSignerEx.Create(THMacDsaKCalculator.Create(TDigestUtilities.GetDigest('SHA-256')));
   try
-    Signer.Init(True, Param);
+    Signer.Init(True, Params);
     Signature := Signer.GenerateSignature(sha3(TEncoding.UTF8.GetBytes(
       #25 + 'Ethereum Signed Message:' + #10 + IntToStr(Length(msg)) + msg)));
-    if chainId[chain] > 0 then
-      V := Signature.rec.Add(TBigInteger.ValueOf(chainId[chain] * 2 + 35))
-    else
+      // taking into consideration that we can calculate "V" without the chainID as described here
+      // https://github.com/Nethereum/Nethereum/blob/master/src/Nethereum.Signer/EthECKey.cs#L217
+      // we can delete the lines commented out below and everything will work fine.
+//    if chainId[chain] > 0 then
+//      V := Signature.rec.Add(TBigInteger.ValueOf(chainId[chain] * 2 + 35))
+//    else
       V := Signature.rec.Add(TBigInteger.ValueOf(27));
     Result := toHex(Signature.r.ToByteArrayUnsigned + Signature.s.ToByteArrayUnsigned + V.ToByteArrayUnsigned);
   finally
