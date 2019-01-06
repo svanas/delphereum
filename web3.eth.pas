@@ -219,9 +219,12 @@ begin
     Signer.Init(True, Param);
     Signature := Signer.GenerateSignature(sha3(TEncoding.UTF8.GetBytes(
       #25 + 'Ethereum Signed Message:' + #10 + IntToStr(Length(msg)) + msg)));
-    if chainId[chain] > 0 then
-      V := Signature.rec.Add(TBigInteger.ValueOf(chainId[chain] * 2 + 35))
-    else
+      // taking into consideration that we can calculate "V" without the chainID as described here 
+      // https://github.com/Nethereum/Nethereum/blob/master/src/Nethereum.Signer/EthECKey.cs#L217
+      // we can delete the lines commented out below and everything will work fine.
+//    if chainId[chain] > 0 then
+//      V := Signature.rec.Add(TBigInteger.ValueOf(chainId[chain] * 2 + 35))
+//    else
       V := Signature.rec.Add(TBigInteger.ValueOf(27));
     Result := toHex(Signature.r.ToByteArrayUnsigned + Signature.s.ToByteArrayUnsigned + V.ToByteArrayUnsigned);
   finally
