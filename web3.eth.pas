@@ -10,8 +10,20 @@ uses
   System.JSON,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
+  // CryptoLib4Pascal
+  ClpBigInteger,
+  ClpDigestUtilities,
+  ClpHMacDsaKCalculator,
+  ClpIECPrivateKeyParameters,
+  ClpIParametersWithRandom,
+  ClpISecureRandom,
+  ClpParametersWithRandom,
+  ClpSecureRandom,
   // Web3
   web3,
+  web3.crypto,
+  web3.eth.crypto,
+  web3.eth.utils,
   web3.json,
   web3.json.rpc,
   web3.utils;
@@ -22,9 +34,10 @@ const
   BLOCK_PENDING  = 'pending';
 
 type
-  TAddress = string[42];
-  TArg     = array[0..31] of Byte;
-  TTuple   = TArray<TArg>;
+  TAddress    = string[42];
+  TPrivateKey = string[64];
+  TArg        = array[0..31] of Byte;
+  TTuple      = TArray<TArg>;
 
 const
   ADDRESS_NULL: TAddress = '0x0000000000000000000000000000000000000000';
@@ -45,6 +58,8 @@ procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of 
 procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncTuple); overload;
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncTuple); overload;
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TASyncTuple); overload;
+
+function sign(privateKey: TPrivateKey; const msg: string; chain: TEthChain): string;
 
 implementation
 
@@ -185,6 +200,33 @@ begin
       callback(tup, nil);
     end;
   end);
+end;
+
+function sign(privateKey: TPrivateKey; const msg: string; chain: TEthChain): string;
+var
+  Params   : IECPrivateKeyParameters;
+  Random   : ISecureRandom;
+  Param    : IParametersWithRandom;
+  Signer   : TECDsaSignerEx;
+  Signature: TECDsaSignature;
+  V        : TBigInteger;
+begin
+  Params := web3.eth.crypto.PrivateKeyFromByteArray(fromHex(string(privateKey)));
+  Random := TSecureRandom.Create;
+  Param  := TParametersWithRandom.Create(Params, Random);
+  Signer := TECDsaSignerEx.Create(THMacDsaKCalculator.Create(TDigestUtilities.GetDigest('SHA-256')));
+  try
+    Signer.Init(True, Param);
+    Signature := Signer.GenerateSignature(sha3(TEncoding.UTF8.GetBytes(
+      #25 + 'Ethereum Signed Message:' + #10 + IntToStr(Length(msg)) + msg)));
+    if chainId[chain] > 0 then
+      V := Signature.rec.Add(TBigInteger.ValueOf(chainId[chain] * 2 + 35))
+    else
+      V := Signature.rec.Add(TBigInteger.ValueOf(27));
+    Result := toHex(Signature.r.ToByteArrayUnsigned + Signature.s.ToByteArrayUnsigned + V.ToByteArrayUnsigned);
+  finally
+    Signer.Free;
+  end;
 end;
 
 end.
