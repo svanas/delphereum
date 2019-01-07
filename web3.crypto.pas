@@ -12,7 +12,7 @@ uses
   ClpBigInteger,
   ClpCryptoLibTypes,
   ClpCustomNamedCurves,
-  ClpIECInterface,
+  ClpIECC,
   ClpECDomainParameters,
   ClpECDsaSigner,
   ClpECKeyPairGenerator,
