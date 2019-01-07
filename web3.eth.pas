@@ -59,7 +59,8 @@ procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: arr
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncTuple); overload;
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TASyncTuple); overload;
 
-function sign(privateKey: TPrivateKey; const msg: string; chain: TEthChain): string;
+function sign(privateKey: TPrivateKey; const msg: string): string; overload;
+function sign(privateKey: TBytes; const msg: string): string; overload;
 
 implementation
 
@@ -202,27 +203,26 @@ begin
   end);
 end;
 
-function sign(privateKey: TPrivateKey; const msg: string; chain: TEthChain): string;
+function sign(privateKey: TPrivateKey; const msg: string): string;
+begin
+  Result := sign(fromHex(string(privateKey)), msg);
+end;
+
+function sign(privateKey: TBytes; const msg: string): string;
 var
   Params   : IECPrivateKeyParameters;
   Signer   : TECDsaSignerEx;
   Signature: TECDsaSignature;
-  V        : TBigInteger;
+  v        : TBigInteger;
 begin
-  Params := web3.eth.crypto.PrivateKeyFromByteArray(fromHex(string(privateKey)));
+  Params := web3.eth.crypto.PrivateKeyFromByteArray(privateKey);
   Signer := TECDsaSignerEx.Create(THMacDsaKCalculator.Create(TDigestUtilities.GetDigest('SHA-256')));
   try
     Signer.Init(True, Params);
     Signature := Signer.GenerateSignature(sha3(TEncoding.UTF8.GetBytes(
       #25 + 'Ethereum Signed Message:' + #10 + IntToStr(Length(msg)) + msg)));
-      // taking into consideration that we can calculate "V" without the chainID as described here
-      // https://github.com/Nethereum/Nethereum/blob/master/src/Nethereum.Signer/EthECKey.cs#L217
-      // we can delete the lines commented out below and everything will work fine.
-//    if chainId[chain] > 0 then
-//      V := Signature.rec.Add(TBigInteger.ValueOf(chainId[chain] * 2 + 35))
-//    else
-      V := Signature.rec.Add(TBigInteger.ValueOf(27));
-    Result := toHex(Signature.r.ToByteArrayUnsigned + Signature.s.ToByteArrayUnsigned + V.ToByteArrayUnsigned);
+    v := Signature.rec.Add(TBigInteger.ValueOf(27));
+    Result := toHex(Signature.r.ToByteArrayUnsigned + Signature.s.ToByteArrayUnsigned + v.ToByteArrayUnsigned);
   finally
     Signer.Free;
   end;

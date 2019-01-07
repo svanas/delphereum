@@ -20,7 +20,8 @@ uses
   ClpIECDomainParameters,
   ClpIECPrivateKeyParameters,
   ClpIECPublicKeyParameters,
-  ClpIX9ECParameters;
+  ClpIX9ECParameters,
+  ClpIX9ECParametersHolder;
 
 type
   TKeyType = (SECP256K1, SECP384R1, SECP521R1, SECT283K1);
