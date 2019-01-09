@@ -11,6 +11,22 @@ uses
   Velthuis.BigIntegers;
 
 type
+  TEthChain = (
+    Mainnet,
+    Ropsten,
+    Rinkeby,
+    Kovan
+  );
+
+const
+  chainId: array[TEthChain] of Integer = (
+    1, // Mainnet
+    3, // Ropsten
+    4, // Rinkeby
+    42 // Kovan
+  );
+
+type
   TEthUnit = (
     noether,
     wei,
@@ -35,7 +51,8 @@ type
     grand,
     mether,
     gether,
-    tether);
+    tether
+  );
 
 function fromWei(wei: BigInteger; &unit: TEthUnit): string; overload;
 function fromWei(wei: BigInteger; &unit: TEthUnit; const aFormatSettings: TFormatSettings): string; overload;
