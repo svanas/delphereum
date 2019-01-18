@@ -60,6 +60,9 @@ type
 procedure getBalance(client: TWeb3; address: TAddress; callback: TASyncQuantity); overload;
 procedure getBalance(client: TWeb3; address: TAddress; const block: string; callback: TASyncQuantity); overload;
 
+procedure getTransactionCount(client: TWeb3; address: TAddress; callback: TASyncQuantity); overload;
+procedure getTransactionCount(client: TWeb3; address: TAddress; const block: string; callback: TASyncQuantity); overload;
+
 procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TASyncString); overload;
 procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncString); overload;
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncString); overload;
@@ -83,6 +86,23 @@ end;
 procedure getBalance(client: TWeb3; address: TAddress; const block: string; callback: TASyncQuantity);
 begin
   web3.json.rpc.Send(client.URL, 'eth_getBalance', [address, block], procedure(resp: TJsonObject; err: Exception)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      callback(web3.json.GetPropAsStr(resp, 'result'), nil);
+  end);
+end;
+
+procedure getTransactionCount(client: TWeb3; address: TAddress; callback: TASyncQuantity);
+begin
+  getTransactionCount(client, address, BLOCK_LATEST, callback);
+end;
+
+// returns the number of transations *sent* from an address
+procedure getTransactionCount(client: TWeb3; address: TAddress; const block: string; callback: TASyncQuantity);
+begin
+  web3.json.rpc.Send(client.URL, 'eth_getTransactionCount', [address, block], procedure(resp: TJsonObject; err: Exception)
   begin
     if Assigned(err) then
       callback(0, err)
