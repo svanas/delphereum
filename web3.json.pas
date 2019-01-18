@@ -1,3 +1,14 @@
+{******************************************************************************}
+{                                                                              }
+{                                  Delphereum                                  }
+{                                                                              }
+{             Copyright(c) 2018 Stefan van As <svanas@runbox.com>              }
+{           Github Repository <https://github.com/svanas/delphereum>           }
+{                                                                              }
+{   Distributed under Creative Commons NonCommercial (aka CC BY-NC) license.   }
+{                                                                              }
+{******************************************************************************}
+
 unit web3.json;
 
 {$I web3.inc}

@@ -1,8 +1,26 @@
+{******************************************************************************}
+{                                                                              }
+{                                  Delphereum                                  }
+{                                                                              }
+{             Copyright(c) 2018 Stefan van As <svanas@runbox.com>              }
+{           Github Repository <https://github.com/svanas/delphereum>           }
+{                                                                              }
+{   Distributed under Creative Commons NonCommercial (aka CC BY-NC) license.   }
+{                                                                              }
+{******************************************************************************}
+
 unit web3;
 
 {$I web3.inc}
 
 interface
+
+uses
+  // Delphi
+  System.SysUtils;
+
+type
+  EWeb3 = class(Exception);
 
 type
   TWeb3 = record
