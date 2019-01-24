@@ -19,6 +19,8 @@ uses
   // Delphi
   System.JSON,
   System.SysUtils,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // HashLib4Pascal
   HlpSHA3,
   // Web3
@@ -35,6 +37,10 @@ function toHex(const buf: TBytes; offset, len: Integer): string; overload;
 function toHex(const str: string): string; overload;
 function toHex(const str: string; offset, len: Integer): string; overload;
 
+function toHex(val: TVarRec): string; overload;
+function toHex(int: BigInteger): string; overload;
+
+function isHex(const str: string): Boolean;
 function fromHex(hex: string): TBytes;
 
 function  sha3(const hex: string): TBytes; overload;
@@ -68,12 +74,59 @@ end;
 
 function toHex(const str: string): string;
 begin
-  Result := toHex(TEncoding.UTF8.GetBytes(str));
+  if isHex(str) then
+    Result := str
+  else
+    Result := toHex(TEncoding.UTF8.GetBytes(str));
 end;
 
 function toHex(const str: string; offset, len: Integer): string;
 begin
   Result := toHex(TEncoding.UTF8.GetBytes(str), offset, len);
+end;
+
+function toHex(val: TVarRec): string;
+
+  // if the length of the string is not even, then pad with a leading zero.
+  function pad(const str: string): string;
+  begin
+    if str.Length mod 2 = 0 then
+      Result := str
+    else
+      Result := '0' + str;
+  end;
+
+begin
+  case val.VType of
+    vtInteger:
+      Result := '0x' + pad(IntToHex(val.VInteger, 0));
+    vtString:
+      Result := toHex(UnicodeString(PShortString(val.VAnsiString)^));
+    vtWideString:
+      Result := toHex(WideString(val.VWideString^));
+    vtInt64:
+      Result := '0x' + pad(IntToHex(val.VInt64^, 0));
+    vtUnicodeString:
+      Result := toHex(string(val.VUnicodeString));
+  end;
+end;
+
+function toHex(int: BigInteger): string;
+begin
+  if int.IsZero then
+    Result := ''
+  else
+  begin
+    Result := int.ToHexString;
+    if Result.Length mod 2 > 0 then
+      Result := '0' + Result; // pad to even
+  end;
+  Result := '0x' + Result;
+end;
+
+function isHex(const str: string): Boolean;
+begin
+  Result := Copy(str, Low(str), 2) = '0x';
 end;
 
 function fromHex(hex: string): TBytes;
