@@ -50,8 +50,8 @@ type
     function GenerateSignature(const msg: TCryptoLibByteArray): TECDsaSignature; reintroduce;
   end;
 
-function PrivateKeyFromByteArray(aKeyType: TKeyType; const aPrivateKey: TBytes): IECPrivateKeyParameters;
-function PublicKeyFromPrivateKey(aPrivateKey: IECPrivateKeyParameters): TBytes;
+function PrivateKeyFromByteArray(aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
+function PublicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
 
 implementation
 
@@ -63,7 +63,7 @@ begin
   Result    := TCustomNamedCurves.GetByName(CurveName);
 end;
 
-function PrivateKeyFromByteArray(aKeyType: TKeyType; const aPrivateKey: TBytes): IECPrivateKeyParameters;
+function PrivateKeyFromByteArray(aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
 var
   domain: IECDomainParameters;
   LCurve: IX9ECParameters;
@@ -71,15 +71,15 @@ var
 begin
   LCurve := GetCurveFromKeyType(aKeyType);
   domain := TECDomainParameters.Create(LCurve.Curve, LCurve.G, LCurve.N, LCurve.H, LCurve.GetSeed);
-  PrivD  := TBigInteger.Create(1, aPrivateKey);
+  PrivD  := TBigInteger.Create(1, aPrivKey);
   Result := TECPrivateKeyParameters.Create('ECDSA', PrivD, domain);
 end;
 
-function PublicKeyFromPrivateKey(aPrivateKey: IECPrivateKeyParameters): TBytes;
+function PublicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
 var
   Params: IECPublicKeyParameters;
 begin
-  Params := TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivateKey);
+  Params := TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
   Result := Params.Q.AffineXCoord.ToBigInteger.ToByteArrayUnsigned
           + Params.Q.AffineYCoord.ToBigInteger.ToByteArrayUnsigned;
 end;
