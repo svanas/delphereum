@@ -101,35 +101,46 @@ const
 
 function fromWei(wei: BigInteger; &unit: TEthUnit): string;
 var
-  ngtv : Boolean;
-  base : BigInteger;
-  whole: BigInteger;
-  frac : BigInteger;
+  negative: Boolean;
+  base    : BigInteger;
+  baseLen : Integer;
+  whole   : BigInteger;
+  fraction: BigInteger;
 begin
-  ngtv := wei.Negative;
+  negative := wei.Negative;
   base := UnitToWei[&unit];
-  if ngtv then
+  baseLen := UnitToWei[&unit].Length;
+  if negative then
     wei := wei.Abs;
-  BigInteger.DivMod(wei, base, whole, frac);
-  Result := whole.ToString;
-  if frac > 0 then
-    Result := Result + '.' + frac.ToString;
-  if ngtv then
+  BigInteger.DivMod(wei, base, whole, fraction);
+  if not fraction.IsZero then
+  begin
+    Result := fraction.ToString;
+    while Result.Length < baseLen - 1 do
+      Result := '0' + Result;
+    while (Result.Length > 1) and (Result[High(Result)] = '0') do
+      Delete(Result, High(Result), 1);
+    Result := '.' + Result;
+  end;
+  Result := whole.ToString + Result;
+  if negative then
     Result := '-' + Result;
 end;
 
 function toWei(input: string; &unit: TEthUnit): BigInteger;
 var
-  ngtv : Boolean;
-  base : BigInteger;
-  comps: TArray<string>;
-  whole: BigInteger;
-  frac : BigInteger;
+  negative: Boolean;
+  base    : BigInteger;
+  baseLen : Integer;
+  comps   : TArray<string>;
+  whole   : BigInteger;
+  fraction: BigInteger;
 begin
   base := UnitToWei[&unit];
+  baseLen := UnitToWei[&unit].Length;
   // is it negative?
-  ngtv := (input.Length > 0) and (input[Low(input)] = '-');
-  if ngtv then
+  negative := (input.Length > 0) and (input[Low(input)] = '-');
+  if negative then
     Delete(input, Low(input), 1);
   if (input = '') or (input = '.') then
     raise EWeb3.CreateFmt('Error while converting %s to wei. Invalid value.', [input]);
@@ -139,11 +150,15 @@ begin
     raise EWeb3.CreateFmt('Error while converting %s to wei. Too many decimal points.', [input]);
   whole := comps[0];
   if Length(comps) > 1 then
-    frac := comps[1];
+    fraction := comps[1];
   Result := BigInteger.Multiply(whole, base);
-  if frac > 0 then
-    Result := BigInteger.Add(Result, frac);
-  if ngtv then
+  if not fraction.IsZero then
+  begin
+    while fraction.ToString.Length < baseLen - 1 do
+      fraction := BigInteger.Multiply(fraction, 10);
+    Result := BigInteger.Add(Result, fraction);
+  end;
+  if negative then
     Result := BigInteger.Negate(Result);
 end;
 
