@@ -73,9 +73,14 @@ var
   item: TVarRec;
 begin
   Result := [];
-  for item in items do
-    Result := Result + encodeItem(web3.utils.fromHex(web3.utils.toHex(item)));
-  Result := encodeLength(Length(Result), $c0) + Result;
+  if Length(items) = 1 then
+    Result := encodeItem(web3.utils.fromHex(web3.utils.toHex(items[0])))
+  else
+  begin
+    for item in items do
+      Result := Result + encodeItem(web3.utils.fromHex(web3.utils.toHex(item)));
+    Result := encodeLength(Length(Result), $c0) + Result;
+  end;
 end;
 
 end.
