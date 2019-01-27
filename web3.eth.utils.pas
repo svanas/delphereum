@@ -21,23 +21,8 @@ uses
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
-  web3;
-
-type
-  TEthChain = (
-    Mainnet,
-    Ropsten,
-    Rinkeby,
-    Kovan
-  );
-
-const
-  chainId: array[TEthChain] of Integer = (
-    1, // Mainnet
-    3, // Ropsten
-    4, // Rinkeby
-    42 // Kovan
-  );
+  web3,
+  web3.eth.types;
 
 type
   TEthUnit = (
@@ -67,8 +52,8 @@ type
     tether
   );
 
-function fromWei(wei: BigInteger; &unit: TEthUnit): string;
-function toWei(input: string; &unit: TEthUnit): BigInteger;
+function fromWei(wei: TWei; &unit: TEthUnit): string;
+function toWei(input: string; &unit: TEthUnit): TWei;
 
 implementation
 
@@ -99,7 +84,7 @@ const
     '1000000000000000000000000000',
     '1000000000000000000000000000000');
 
-function fromWei(wei: BigInteger; &unit: TEthUnit): string;
+function fromWei(wei: TWei; &unit: TEthUnit): string;
 var
   negative: Boolean;
   base    : BigInteger;
@@ -107,6 +92,7 @@ var
   whole   : BigInteger;
   fraction: BigInteger;
 begin
+  Result := '';
   negative := wei.Negative;
   base := UnitToWei[&unit];
   baseLen := UnitToWei[&unit].Length;
@@ -127,14 +113,14 @@ begin
     Result := '-' + Result;
 end;
 
-function toWei(input: string; &unit: TEthUnit): BigInteger;
+function toWei(input: string; &unit: TEthUnit): TWei;
 var
   negative: Boolean;
   base    : BigInteger;
   baseLen : Integer;
   comps   : TArray<string>;
-  whole   : BigInteger;
-  fraction: BigInteger;
+  whole   : string;
+  fraction: string;
 begin
   base := UnitToWei[&unit];
   baseLen := UnitToWei[&unit].Length;
@@ -152,10 +138,10 @@ begin
   if Length(comps) > 1 then
     fraction := comps[1];
   Result := BigInteger.Multiply(whole, base);
-  if not fraction.IsZero then
+  if fraction.Length > 0 then
   begin
-    while fraction.ToString.Length < baseLen - 1 do
-      fraction := BigInteger.Multiply(fraction, 10);
+    while fraction.Length < baseLen - 1 do
+      fraction := fraction + '0';
     Result := BigInteger.Add(Result, fraction);
   end;
   if negative then

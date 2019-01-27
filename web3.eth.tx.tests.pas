@@ -9,7 +9,7 @@
 {                                                                              }
 {******************************************************************************}
 
-unit web3;
+unit web3.eth.tx.tests;
 
 {$I web3.inc}
 
@@ -17,49 +17,28 @@ interface
 
 uses
   // Delphi
-  System.SysUtils;
+  System.SysUtils,
+  // web3
+  web3,
+  web3.eth.tx,
+  web3.utils;
 
-type
-  TChain = (
-    Mainnet,
-    Ropsten,
-    Rinkeby,
-    Kovan,
-    Ganache
-  );
-
-const
-  chainId: array[TChain] of Integer = (
-    1,   // Mainnet
-    3,   // Ropsten
-    4,   // Rinkeby
-    42,  // Kovan
-    5777 // Ganache
-  );
-
-type
-  EWeb3 = class(Exception);
-
-type
-  TWeb3 = record
-    var
-      URL  : string;
-      Chain: TChain;
-    class function New(const aURL: string): TWeb3; overload; static;
-    class function New(const aURL: string; aChain: TChain): TWeb3; overload; static;
-  end;
+function testCase1: Boolean;
 
 implementation
 
-class function TWeb3.New(const aURL: string): TWeb3;
+function testCase1: Boolean;
 begin
-  Result := New(aURL, Mainnet);
-end;
-
-class function TWeb3.New(const aURL: string; aChain: TChain): TWeb3;
-begin
-  Result.URL   := aURL;
-  Result.Chain := aChain;
+  Result :=
+    web3.eth.tx.signTransaction(
+      Mainnet,
+      9,
+      '4646464646464646464646464646464646464646464646464646464646464646',
+      '0x3535353535353535353535353535353535353535',
+      1000000000000000000,
+      20000000000,
+      21000
+    ).ToLower = '0xf86c098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a76400008025a028ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa636276a067cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83';
 end;
 
 end.

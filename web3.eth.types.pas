@@ -9,7 +9,7 @@
 {                                                                              }
 {******************************************************************************}
 
-unit web3;
+unit web3.eth.types;
 
 {$I web3.inc}
 
@@ -17,49 +17,23 @@ interface
 
 uses
   // Delphi
-  System.SysUtils;
+  System.SysUtils,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers;
 
 type
-  TChain = (
-    Mainnet,
-    Ropsten,
-    Rinkeby,
-    Kovan,
-    Ganache
-  );
-
-const
-  chainId: array[TChain] of Integer = (
-    1,   // Mainnet
-    3,   // Ropsten
-    4,   // Rinkeby
-    42,  // Kovan
-    5777 // Ganache
-  );
+  TAddress    = string[42];
+  TPrivateKey = string[64];
+  TArg        = array[0..31] of Byte;
+  TTuple      = TArray<TArg>;
+  TSignature  = string[132];
+  TWei        = BigInteger;
+  TTxHash     = string[66];
 
 type
-  EWeb3 = class(Exception);
-
-type
-  TWeb3 = record
-    var
-      URL  : string;
-      Chain: TChain;
-    class function New(const aURL: string): TWeb3; overload; static;
-    class function New(const aURL: string; aChain: TChain): TWeb3; overload; static;
-  end;
+  TASyncTuple  = reference to procedure(tup: TTuple; err: Exception);
+  TASyncTxHash = reference to procedure(tx: TTxHash; err: Exception);
 
 implementation
-
-class function TWeb3.New(const aURL: string): TWeb3;
-begin
-  Result := New(aURL, Mainnet);
-end;
-
-class function TWeb3.New(const aURL: string; aChain: TChain): TWeb3;
-begin
-  Result.URL   := aURL;
-  Result.Chain := aChain;
-end;
 
 end.

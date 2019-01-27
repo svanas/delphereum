@@ -22,25 +22,28 @@ uses
   ClpIECPrivateKeyParameters,
   // web3
   web3.crypto,
+  web3.eth.types,
   web3.utils;
 
-function PrivateKeyFromByteArray(const aPrivateKey: TBytes): IECPrivateKeyParameters;
-function AddressFromPrivateKey(aPrivateKey: IECPrivateKeyParameters): TBytes;
+function PrivateKeyFromHex(aPrivKey: TPrivateKey): IECPrivateKeyParameters;
+function AddressFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TAddress;
 
 implementation
 
-function PrivateKeyFromByteArray(const aPrivateKey: TBytes): IECPrivateKeyParameters;
+function PrivateKeyFromHex(aPrivKey: TPrivateKey): IECPrivateKeyParameters;
 begin
-  Result := web3.crypto.PrivateKeyFromByteArray(SECP256K1, aPrivateKey);
+  Result := web3.crypto.PrivateKeyFromByteArray(SECP256K1, fromHex(string(aPrivKey)));
 end;
 
-function AddressFromPrivateKey(aPrivateKey: IECPrivateKeyParameters): TBytes;
+function AddressFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TAddress;
 var
   PubKey: TBytes;
+  Buffer: TBytes;
 begin
-  PubKey := web3.crypto.PublicKeyFromPrivateKey(aPrivateKey);
-  Result := web3.utils.sha3(PubKey);
-  Delete(Result, 0, 12);
+  PubKey := web3.crypto.PublicKeyFromPrivateKey(aPrivKey);
+  Buffer := web3.utils.sha3(PubKey);
+  Delete(Buffer, 0, 12);
+  Result := TAddress(toHex(Buffer));
 end;
 
 end.

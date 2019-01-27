@@ -26,10 +26,8 @@ uses
   // Web3
   web3,
   web3.json,
-  web3.json.rpc;
-
-type
-  TASyncString = reference to procedure(const str: string; err: Exception);
+  web3.json.rpc,
+  web3.types;
 
 function toHex(const buf: TBytes): string; overload;
 function toHex(const buf: TBytes; offset, len: Integer): string; overload;
