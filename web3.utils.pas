@@ -90,10 +90,13 @@ function toHex(val: TVarRec): string;
   // if the length of the string is not even, then pad with a leading zero.
   function pad(const str: string): string;
   begin
-    if str.Length mod 2 = 0 then
-      Result := str
+    if str = '0' then
+      Result := ''
     else
-      Result := '0' + str;
+      if str.Length mod 2 = 0 then
+        Result := str
+      else
+        Result := '0' + str;
   end;
 
 begin
