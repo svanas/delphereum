@@ -87,6 +87,29 @@ end;
 { TECDsaSignerEx }
 
 function TECDsaSignerEx.GenerateSignature(const msg: TCryptoLibByteArray): TECDsaSignature;
+
+  function CurveOrder(): TBigInteger;
+  begin
+    Result := GetCurveFromKeyType(TKeyType.SECP256K1).Curve.Order;
+  end;
+
+  function IsLowS(const ASSig: TBigInteger): Boolean;
+  var
+    LHalfCurveOrder: TBigInteger;
+  begin
+    LHalfCurveOrder := CurveOrder().ShiftRight(1);
+    Result := ASSig.CompareTo(LHalfCurveOrder) <= 0;
+  end;
+
+  procedure MakeCanonical(var AECDsaSignature: TECDsaSignature);
+  begin
+    if (not IsLowS(AECDsaSignature.S)) then
+    begin
+      AECDsaSignature.S := CurveOrder.Subtract(AECDsaSignature.S);
+      Exit;
+    end;
+  end;
+
 var
   ec: IECDomainParameters;
   base: IECMultiplier;
@@ -111,12 +134,15 @@ begin
       p := base.Multiply(ec.G, k).Normalize;
       Result.r := p.AffineXCoord.ToBigInteger.&Mod(n);
     until not(Result.r.SignValue = 0);
-    Result.s := k.ModInverse(n).Multiply(e.Add(d.Multiply(Result.r))).&Mod(n);
-  until not(Result.s.SignValue = 0);
+    Result.S := k.ModInverse(n).Multiply(e.Add(d.Multiply(Result.r))).&Mod(n);
+  until not(Result.S.SignValue = 0);
+
+  // Enforce LowS on the signature
+  MakeCanonical(Result);
 
   // https://ethereum.stackexchange.com/questions/42455/during-ecdsa-signing-how-do-i-generate-the-recovery-id
   Result.rec := p.AffineYCoord.ToBigInteger.&And(TBigInteger.One);
-  if Result.s.CompareTo(n.Divide(TBigInteger.Two)) = 1 then
+  if Result.S.CompareTo(n.Divide(TBigInteger.Two)) = 1 then
     Result.rec := Result.rec.&Xor(TBigInteger.One);
 end;
 
