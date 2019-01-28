@@ -23,9 +23,6 @@ uses
   Velthuis.BigIntegers,
   // CryptoLib4Pascal
   ClpBigInteger,
-  ClpDigestUtilities,
-  ClpHMacDsaKCalculator,
-  ClpIECPrivateKeyParameters,
   // web3
   web3,
   web3.crypto,
@@ -74,15 +71,15 @@ function signTransaction(
   gasPrice: TWei;
   gasLimit: TWei): string;
 var
-  ECDSA    : TECDsaSignerEx;
+  Signer   : TEthereumSigner;
   Signature: TECDsaSignature;
   r, s, v  : TBigInteger;
 begin
-  ECDSA := TECDsaSignerEx.Create(THMacDsaKCalculator.Create(TDigestUtilities.GetDigest('SHA-256')));
+  Signer := TEthereumSigner.Create;
   try
-    ECDSA.Init(True, web3.eth.crypto.PrivateKeyFromHex(from));
+    Signer.Init(True, web3.eth.crypto.PrivateKeyFromHex(from));
 
-    Signature := ECDSA.GenerateSignature(
+    Signature := Signer.GenerateSignature(
       sha3(
         web3.rlp.encode([
           web3.utils.toHex(nonce),    // nonce
@@ -117,7 +114,7 @@ begin
         ])
       );
   finally
-    ECDSA.Free;
+    Signer.Free;
   end;
 end;
 

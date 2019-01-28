@@ -19,11 +19,21 @@ uses
   // Delphi
   System.SysUtils,
   // CryptoLib4Pascal
+  ClpCryptoLibTypes,
+  ClpDigestUtilities,
+  ClpHMacDsaKCalculator,
   ClpIECPrivateKeyParameters,
   // web3
   web3.crypto,
   web3.eth.types,
   web3.utils;
+
+type
+  TEthereumSigner = class(TECDsaSignerEx)
+  public
+    constructor Create;
+    function GenerateSignature(const msg: TCryptoLibByteArray): TECDsaSignature; reintroduce;
+  end;
 
 function PrivateKeyFromHex(aPrivKey: TPrivateKey): IECPrivateKeyParameters;
 function AddressFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TAddress;
@@ -44,6 +54,18 @@ begin
   Buffer := web3.utils.sha3(PubKey);
   Delete(Buffer, 0, 12);
   Result := TAddress(toHex(Buffer));
+end;
+
+{ TEthereumSigner }
+
+constructor TEthereumSigner.Create;
+begin
+  inherited Create(THMacDsaKCalculator.Create(TDigestUtilities.GetDigest('SHA-256')));
+end;
+
+function TEthereumSigner.GenerateSignature(const msg: TCryptoLibByteArray): TECDsaSignature;
+begin
+  Result := inherited GenerateSignature(SECP256K1, msg);
 end;
 
 end.

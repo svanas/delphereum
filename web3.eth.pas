@@ -19,17 +19,9 @@ uses
   // Delphi
   System.JSON,
   System.SysUtils,
-  // Velthuis' BigNumbers
-  Velthuis.BigIntegers,
   // CryptoLib4Pascal
   ClpBigInteger,
-  ClpDigestUtilities,
-  ClpHMacDsaKCalculator,
   ClpIECPrivateKeyParameters,
-  ClpIParametersWithRandom,
-  ClpISecureRandom,
-  ClpParametersWithRandom,
-  ClpSecureRandom,
   // Web3
   web3,
   web3.crypto,
@@ -227,18 +219,29 @@ end;
 function sign(privateKey: TPrivateKey; const msg: string): TSignature;
 var
   Params   : IECPrivateKeyParameters;
-  Signer   : TECDsaSignerEx;
+  Signer   : TEthereumSigner;
   Signature: TECDsaSignature;
   v        : TBigInteger;
 begin
   Params := web3.eth.crypto.PrivateKeyFromHex(privateKey);
-  Signer := TECDsaSignerEx.Create(THMacDsaKCalculator.Create(TDigestUtilities.GetDigest('SHA-256')));
+  Signer := TEthereumSigner.Create;
   try
     Signer.Init(True, Params);
-    Signature := Signer.GenerateSignature(sha3(TEncoding.UTF8.GetBytes(
-      #25 + 'Ethereum Signed Message:' + #10 + IntToStr(Length(msg)) + msg)));
+    Signature := Signer.GenerateSignature(
+      sha3(
+        TEncoding.UTF8.GetBytes(
+          #25 + 'Ethereum Signed Message:' + #10 + IntToStr(Length(msg)) + msg
+        )
+      )
+    );
     v := Signature.rec.Add(TBigInteger.ValueOf(27));
-    Result := TSignature(toHex(Signature.r.ToByteArrayUnsigned + Signature.s.ToByteArrayUnsigned + v.ToByteArrayUnsigned));
+    Result := TSignature(
+      toHex(
+        Signature.r.ToByteArrayUnsigned +
+        Signature.s.ToByteArrayUnsigned +
+        v.ToByteArrayUnsigned
+      )
+    );
   finally
     Signer.Free;
   end;
