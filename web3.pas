@@ -34,7 +34,7 @@ const
     3,   // Ropsten
     4,   // Rinkeby
     42,  // Kovan
-    5777 // Ganache
+    1    // Ganache
   );
 
 type
