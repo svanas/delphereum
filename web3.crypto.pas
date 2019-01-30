@@ -139,7 +139,7 @@ begin
   if Result.s.CompareTo(n.Divide(TBigInteger.Two)) = 1 then
     Result.rec := Result.rec.&Xor(TBigInteger.One);
 
-  // enforce LowS on the signature
+  // https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki#Low_S_values_in_signatures
   MakeCanonical(Result);
 end;
 

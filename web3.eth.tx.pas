@@ -28,6 +28,7 @@ uses
   web3.crypto,
   web3.eth,
   web3.eth.crypto,
+  web3.eth.gas,
   web3.eth.types,
   web3.eth.utils,
   web3.json,
@@ -136,7 +137,13 @@ procedure sendTransaction(
   value   : TWei;
   callback: TASyncTxHash);
 begin
-  sendTransaction(client, from, &to, value, web3.eth.utils.toWei('5.1', gwei), 21000, callback);
+  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: Exception)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      sendTransaction(client, from, &to, value, gasPrice, 21000, callback);
+  end);
 end;
 
 procedure sendTransaction(
