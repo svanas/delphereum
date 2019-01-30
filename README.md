@@ -36,4 +36,4 @@ git clone https://github.com/Xor-el/CryptoLib4Pascal
 
 ## Case study
 
-The world's 1st mobile insulin calculator for type 1 diabetics that stores blood glucose data on the blockchain. Made with Delphi (coming soon). 
+The world's 1st mobile insulin calculator for type 1 diabetics that stores blood glucose data on the blockchain. Made with Delphi. (coming soon) 
