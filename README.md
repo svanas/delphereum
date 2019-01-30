@@ -1,6 +1,6 @@
 ## What is Delphereum?
 
-Delphereum is a Delphi interface to the Ethereum blockchain that allows for development of native dApps (aka _decentralised apps_).
+Delphereum is a Delphi interface to the Ethereum blockchain that allows for development of native dApps (aka _decentralised_ apps).
 
 ## What is Delphi?
 
@@ -33,3 +33,7 @@ git clone https://github.com/Xor-el/CryptoLib4Pascal
 2. [Connecting Delphi to the Ethereum main net](https://medium.com/@svanas/connecting-delphi-to-the-ethereum-main-net-5faf1feffd83)
 3. [Connecting Delphi to Smart Contracts](https://medium.com/@svanas/connecting-delphi-to-smart-contracts-3146b12803a1)
 4. [Generating an Ethereum-signed message signature in Delphi](https://medium.com/@svanas/generating-an-ethereum-signed-message-signature-in-delphi-75661ce5031b)
+
+## Case study
+
+The world's 1st mobile insulin calculator for type 1 diabetics that stores blood glucose data on the blockchain. Made with Delphi (coming soon). 
