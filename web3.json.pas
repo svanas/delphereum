@@ -18,8 +18,7 @@ interface
 uses
   // Delphi
   System.JSON,
-  System.SysUtils,
-  WinAPI.Windows;
+  System.SysUtils;
 
 function Marshal  (const obj: TJsonValue): string;
 function Unmarshal(const val: string)    : TJsonObject;
@@ -43,22 +42,17 @@ begin
     EXIT;
 
   I := obj.EstimatedByteSize;
-
   if I <= 0 then
     EXIT;
-
   SetLength(B, I);
 
   I := obj.ToBytes(B, 0);
-  try
-    if I <= 0 then
-      SetLength(B, 0)
-    else
-      SetLength(B, I);
-    Result := TEncoding.UTF8.GetString(B);
-  finally
-    ZeroMemory(Pointer(B), System.Length(B) * SizeOf(Byte));
-  end;
+  if I <= 0 then
+    SetLength(B, 0)
+  else
+    SetLength(B, I);
+
+  Result := TEncoding.UTF8.GetString(B);
 end;
 
 function Unmarshal(const val: string): TJsonObject;
