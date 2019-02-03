@@ -36,10 +36,10 @@ Please note there are NO runtime dependencies. Delphereum is lightweight and sel
 3. [Connecting Delphi to Smart Contracts](https://medium.com/@svanas/connecting-delphi-to-smart-contracts-3146b12803a1)
 4. [Generating an Ethereum-signed message signature in Delphi](https://medium.com/@svanas/generating-an-ethereum-signed-message-signature-in-delphi-75661ce5031b)
 
+## License
+
+Distributed under the [Creative Commons NonCommercial](https://github.com/svanas/delphereum/blob/master/LICENSE.md) (aka CC BY-NC) license.
+
 ## Commercial support and training
 
 Commercial support and training is available from [Stefan van As](https://www.linkedin.com/in/svanas/).
-
-## Case study
-
-The world's 1st mobile insulin calculator for type 1 diabetics that stores blood glucose data on the blockchain. Made with Delphi. (coming soon) 
