@@ -45,23 +45,23 @@ type
 type
   TWeb3 = record
     var
-      URL  : string;
       Chain: TChain;
+      URL  : string;
     class function New(const aURL: string): TWeb3; overload; static;
-    class function New(const aURL: string; aChain: TChain): TWeb3; overload; static;
+    class function New(aChain: TChain; const aURL: string): TWeb3; overload; static;
   end;
 
 implementation
 
 class function TWeb3.New(const aURL: string): TWeb3;
 begin
-  Result := New(aURL, Mainnet);
+  Result := New(Mainnet, aURL);
 end;
 
-class function TWeb3.New(const aURL: string; aChain: TChain): TWeb3;
+class function TWeb3.New(aChain: TChain; const aURL: string): TWeb3;
 begin
-  Result.URL   := aURL;
   Result.Chain := aChain;
+  Result.URL   := aURL;
 end;
 
 end.
