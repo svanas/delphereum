@@ -23,7 +23,10 @@ uses
   web3,
   web3.utils;
 
-function encode(items: array of const): TBytes;
+function encode(item: Integer): TBytes; overload;
+function encode(const item: string): TBytes; overload;
+function encode(item: TVarRec): TBytes; overload;
+function encode(items: array of const): TBytes; overload;
 
 implementation
 
@@ -68,19 +71,37 @@ begin
     Result := encodeLength(len, $80) + item;
 end;
 
+function encode(item: Integer): TBytes;
+var
+  arg: TVarRec;
+begin
+  arg.VType := vtInteger;
+  arg.VInteger := item;
+  Result := encode(arg);
+end;
+
+function encode(const item: string): TBytes;
+var
+  arg: TVarRec;
+begin
+  arg.VType := vtUnicodeString;
+  arg.VUnicodeString := Pointer(item);
+  Result := encode(arg);
+end;
+
+function encode(item: TVarRec): TBytes;
+begin
+  Result := encodeItem(web3.utils.fromHex(web3.utils.toHex(item)));
+end;
+
 function encode(items: array of const): TBytes;
 var
   item: TVarRec;
 begin
   Result := [];
-  if Length(items) = 1 then
-    Result := encodeItem(web3.utils.fromHex(web3.utils.toHex(items[0])))
-  else
-  begin
-    for item in items do
-      Result := Result + encodeItem(web3.utils.fromHex(web3.utils.toHex(item)));
-    Result := encodeLength(Length(Result), $c0) + Result;
-  end;
+  for item in items do
+    Result := Result + encode(item);
+  Result := encodeLength(Length(Result), $c0) + Result;
 end;
 
 end.
