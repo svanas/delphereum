@@ -40,6 +40,13 @@ type
     procedure BalanceOf  (owner: TAddress; callback: TASyncQuantity);
     procedure Allowance  (owner, spender: TAddress; callback: TASyncQuantity);
 
+    //------- write contract ---------------------------------------------------
+    procedure Transfer(
+      from    : TPrivateKey;
+      &to     : TAddress;
+      value   : UInt64;
+      callback: TASyncTxHash);
+
     property Client  : TWeb3    read FClient;
     property Contract: TAddress read FContract;
   end;
@@ -95,6 +102,15 @@ end;
 procedure TERC20.Allowance(owner, spender: TAddress; callback: TASyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'allowance(address,address)', [owner, spender], callback);
+end;
+
+procedure TERC20.Transfer(
+  from    : TPrivateKey;
+  &to     : TAddress;
+  value   : UInt64;
+  callback: TASyncTxHash);
+begin
+  web3.eth.write(Client, from, Contract, 'transfer(address,uint256)', [&to, value], callback);
 end;
 
 end.

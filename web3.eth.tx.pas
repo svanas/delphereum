@@ -37,13 +37,19 @@ uses
   web3.utils;
 
 function signTransaction(
-  chain   : TChain;
-  nonce   : BigInteger;
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : TWei;
-  gasPrice: TWei;
-  gasLimit: TWei): string;
+  chain     : TChain;
+  nonce     : BigInteger;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const data: string;
+  gasPrice  : TWei;
+  gasLimit  : TWei): string;
+
+procedure sendTransaction(
+  client   : TWeb3;
+  const raw: string;
+  callback : TASyncTxHash); overload;
 
 procedure sendTransaction(
   client  : TWeb3;
@@ -64,13 +70,14 @@ procedure sendTransaction(
 implementation
 
 function signTransaction(
-  chain   : TChain;
-  nonce   : BigInteger;
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : TWei;
-  gasPrice: TWei;
-  gasLimit: TWei): string;
+  chain     : TChain;
+  nonce     : BigInteger;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const data: string;
+  gasPrice  : TWei;
+  gasLimit  : TWei): string;
 var
   Signer   : TEthereumSigner;
   Signature: TECDsaSignature;
@@ -88,7 +95,7 @@ begin
           web3.utils.toHex(gasLimit), // gas(Limit)
           &to,                        // to
           web3.utils.toHex(value),    // value
-          '',                         // data
+          data,                       // data
           chainId[chain],             // v
           0,                          // r
           0                           // s
@@ -108,7 +115,7 @@ begin
           web3.utils.toHex(gasLimit),              // gas(Limit)
           &to,                                     // to
           web3.utils.toHex(value),                 // value
-          '',                                      // data
+          data,                                    // data
           web3.utils.toHex(v.ToByteArrayUnsigned), // v
           web3.utils.toHex(r.ToByteArrayUnsigned), // r
           web3.utils.toHex(s.ToByteArrayUnsigned)  // s
@@ -119,7 +126,7 @@ begin
   end;
 end;
 
-procedure sendRawTransaction(client: TWeb3; const raw: string; callback: TASyncTxHash);
+procedure sendTransaction(client: TWeb3; const raw: string; callback: TASyncTxHash);
 begin
   web3.json.rpc.Send(client.URL, 'eth_sendRawTransaction', [raw], procedure(resp: TJsonObject; err: Exception)
   begin
@@ -163,7 +170,7 @@ begin
       if Assigned(err) then
         callback('', err)
       else
-        sendRawTransaction(client, signTransaction(client.Chain, qty, from, &to, value, gasPrice, gasLimit), callback);
+        sendTransaction(client, signTransaction(client.Chain, qty, from, &to, value, '', gasPrice, gasLimit), callback);
     end
   );
 end;
