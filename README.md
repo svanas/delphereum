@@ -36,6 +36,7 @@ Please note there are NO runtime dependencies. Delphereum is lightweight and sel
 3. [Connecting Delphi to Smart Contracts](https://medium.com/@svanas/connecting-delphi-to-smart-contracts-3146b12803a1)
 4. [Generating an Ethereum-signed message signature in Delphi](https://medium.com/@svanas/generating-an-ethereum-signed-message-signature-in-delphi-75661ce5031b)
 5. [Transferring Ether with Delphi](https://medium.com/@svanas/transferring-ether-with-delphi-b5f24b1a98a4)
+6. [Transferring ERC-20 tokens with Delphi](https://medium.com/@svanas/transferring-erc-20-tokens-with-delphi-bb44c05b295d)
 
 ## License
 
