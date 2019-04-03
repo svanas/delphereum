@@ -30,16 +30,19 @@ function encode(const func: string; args: array of const): string;
   // https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI#argument-encoding
   function encodeArgs(args: array of const): TBytes;
 
-    function toHex32(const str: string): string;
+    function toHexLen(const str: string; len: Integer): string;
     var
       buf: TBytes;
     begin
       if Copy(str, Low(str), 2) <> '0x' then
-        Result := web3.utils.toHex(str, 32 - Length(str), 32)
+        Result := web3.utils.toHex(str, len - Length(str), len)
       else
       begin
         buf := web3.utils.fromHex(str);
-        Result := web3.utils.toHex(buf, 32 - Length(buf), 32);
+        if Length(buf) = len then
+          Result := str
+        else
+          Result := web3.utils.toHex(buf, len - Length(buf), len);
       end;
     end;
 
@@ -52,13 +55,13 @@ function encode(const func: string; args: array of const): string;
         vtInteger:
           Result := Result + web3.utils.fromHex('0x' + IntToHex(arg.VInteger, 64));
         vtString:
-          Result := Result + web3.utils.fromHex(toHex32(UnicodeString(PShortString(arg.VAnsiString)^)));
+          Result := Result + web3.utils.fromHex(toHexLen(UnicodeString(PShortString(arg.VAnsiString)^), 32));
         vtWideString:
-          Result := Result + web3.utils.fromHex(toHex32(WideString(arg.VWideString^)));
+          Result := Result + web3.utils.fromHex(toHexLen(WideString(arg.VWideString^), 32));
         vtInt64:
           Result := Result + web3.utils.fromHex('0x' + IntToHex(arg.VInt64^, 64));
         vtUnicodeString:
-          Result := Result + web3.utils.fromHex(toHex32(string(arg.VUnicodeString)));
+          Result := Result + web3.utils.fromHex(toHexLen(string(arg.VUnicodeString), 32));
       end;
     end;
   end;
