@@ -31,7 +31,7 @@ implementation
 
 procedure getGasPrice(client: TWeb3; callback: TASyncQuantity);
 begin
-  web3.json.rpc.Send(client.URL, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: Exception)
   begin
     if Assigned(err) then
       callback(0, err)

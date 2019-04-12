@@ -17,6 +17,7 @@ interface
 
 uses
   // Delphi
+  System.JSON,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
@@ -28,18 +29,22 @@ type
   TAddress    = string[42];
   TPrivateKey = string[64];
   TArg        = array[0..31] of Byte;
+  PArg        = ^TArg;
   TTuple      = TArray<TArg>;
   TSignature  = string[132];
   TWei        = BigInteger;
   TTxHash     = string[66];
+  TTopics     = array[0..3] of TArg;
 
 type
-  TASyncAddress = reference to procedure(addr: TAddress; err: Exception);
-  TASyncTuple   = reference to procedure(tup : TTuple;   err: Exception);
-  TASyncTxHash  = reference to procedure(tx  : TTxHash;  err: Exception);
+  TASyncAddress = reference to procedure(addr: TAddress;    err: Exception);
+  TASyncTuple   = reference to procedure(tup : TTuple;      err: Exception);
+  TASyncTxHash  = reference to procedure(tx  : TTxHash;     err: Exception);
+  TASyncReceipt = reference to procedure(rcpt: TJsonObject; err: Exception);
 
 type
   TAddressHelper = record helper for TAddress
+    class function  New(arg: TArg): TAddress; overload; static;
     class function  New(const hex: string): TAddress; overload; static;
     class procedure New(client: TWeb3; const name: string; callback: TASyncAddress); overload; static;
     procedure ToString(client: TWeb3; callback: TASyncString);
@@ -47,8 +52,13 @@ type
 
 type
   TTupleHelper = record helper for TTuple
+    function Add     : PArg;
+    function Last    : PArg;
     function ToString: string;
   end;
+
+function toHex(arg: TArg; const prefix: string): string;
+function toInt(arg: TArg): UInt64;
 
 implementation
 
@@ -57,7 +67,37 @@ uses
   web3.eth.ens,
   web3.utils;
 
+{ TArg }
+
+function toHex(arg: TArg; const prefix: string): string;
+const
+  Digits = '0123456789ABCDEF';
+var
+  I: Integer;
+begin
+  Result := StringOfChar('0', Length(Arg) * 2);
+  try
+    for I := 0 to Length(arg) - 1 do
+    begin
+      Result[2 * I + 1] := Digits[(arg[I] shr 4)  + 1];
+      Result[2 * I + 2] := Digits[(arg[I] and $F) + 1];
+    end;
+  finally
+    Result := prefix + Result;
+  end;
+end;
+
+function ToInt(arg: TArg): UInt64;
+begin
+  Result := StrToInt64(toHex(arg, '$'));
+end;
+
 { TAddressHelper }
+
+class function TAddressHelper.New(arg: TArg): TAddress;
+begin
+  Result := New(toHex(arg, '0x'));
+end;
 
 class function TAddressHelper.New(const hex: string): TAddress;
 var
@@ -109,26 +149,20 @@ end;
 
 { TTupleHelper }
 
+function TTupleHelper.Add: PArg;
+begin
+  SetLength(Self, Length(Self) + 1);
+  Result := Last;
+end;
+
+function TTupleHelper.Last: PArg;
+begin
+  Result := nil;
+  if Length(Self) > 0 then
+    Result := @Self[High(Self)];
+end;
+
 function TTupleHelper.ToString: string;
-
-  function toHex(const arg: TArg): string;
-  const
-    Digits = '0123456789ABCDEF';
-  var
-    I: Integer;
-  begin
-    Result := StringOfChar('0', Length(Arg) * 2);
-    try
-      for I := 0 to Length(arg) - 1 do
-      begin
-        Result[2 * I + 1] := Digits[(arg[I] shr 4)  + 1];
-        Result[2 * I + 2] := Digits[(arg[I] and $F) + 1];
-      end;
-    finally
-      Result := '$' + Result;
-    end;
-  end;
-
 var
   Arg: TArg;
   Len: Integer;
@@ -137,7 +171,7 @@ begin
   if Length(Self) < 2 then
     EXIT;
   Arg := Self[Length(Self) - 2];
-  Len := StrToInt(toHex(Arg));
+  Len := toInt(Arg);
   if Len = 0 then
     EXIT;
   Arg := Self[Length(Self) - 1];

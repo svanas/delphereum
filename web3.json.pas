@@ -20,18 +20,19 @@ uses
   System.JSON,
   System.SysUtils;
 
-function Marshal  (const obj: TJsonValue): string;
-function Unmarshal(const val: string)    : TJsonObject;
+function marshal  (const obj: TJsonValue): string;
+function unmarshal(const val: string)    : TJsonObject;
 
 function GetPropAsStr(obj: TJsonValue; const name: string; const def: string = ''): string;
 function GetPropAsInt(obj: TJsonValue; const name: string; def: Integer = 0): Integer;
 function GetPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
+function GetPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
 
 function QuoteString(const S: string; Quote: Char = '"'): string;
 
 implementation
 
-function Marshal(const obj: TJsonValue): string;
+function marshal(const obj: TJsonValue): string;
 var
   B: TBytes;
   I: Integer;
@@ -55,7 +56,7 @@ begin
   Result := TEncoding.UTF8.GetString(B);
 end;
 
-function Unmarshal(const val: string): TJsonObject;
+function unmarshal(const val: string): TJsonObject;
 var
   S: string;
   V: TJsonValue;
@@ -135,6 +136,22 @@ begin
     if Assigned(P.JsonValue) then
       if P.JsonValue is TJsonObject then
         Result := TJsonObject(P.JsonValue);
+end;
+
+function GetPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
+var
+  P: TJsonPair;
+begin
+  Result := nil;
+  if not Assigned(obj) then
+    EXIT;
+  if not(obj is TJsonObject) then
+    EXIT;
+  P := TJsonObject(obj).Get(name);
+  if Assigned(P) then
+    if Assigned(P.JsonValue) then
+      if P.JsonValue is TJsonArray then
+        Result := TJsonArray(P.JsonValue);
 end;
 
 function QuoteString(const S: string; Quote: Char): string;

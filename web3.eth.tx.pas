@@ -67,6 +67,11 @@ procedure sendTransaction(
   gasLimit: TWei;
   callback: TASyncTxHash); overload;
 
+procedure getTransactionReceipt(
+  client  : TWeb3;
+  tx      : TTxHash;
+  callback: TASyncReceipt);
+
 implementation
 
 function signTransaction(
@@ -128,7 +133,7 @@ end;
 
 procedure sendTransaction(client: TWeb3; const raw: string; callback: TASyncTxHash);
 begin
-  web3.json.rpc.Send(client.URL, 'eth_sendRawTransaction', [raw], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_sendRawTransaction', [raw], procedure(resp: TJsonObject; err: Exception)
   begin
     if Assigned(err) then
       callback('', err)
@@ -173,6 +178,17 @@ begin
         sendTransaction(client, signTransaction(client.Chain, qty, from, &to, value, '', gasPrice, gasLimit), callback);
     end
   );
+end;
+
+procedure getTransactionReceipt(client: TWeb3; tx: TTxHash; callback: TASyncReceipt);
+begin
+  web3.json.rpc.send(client.URL, 'eth_getTransactionReceipt', [tx], procedure(resp: TJsonObject; err: Exception)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      callback(web3.json.GetPropAsObj(resp, 'result'), nil);
+  end);
 end;
 
 end.

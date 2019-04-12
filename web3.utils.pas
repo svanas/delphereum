@@ -161,7 +161,7 @@ end;
 
 procedure sha3(client: TWeb3; const hex: string; callback: TASyncString);
 begin
-  web3.json.rpc.Send(client.URL, 'web3_sha3', [hex], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'web3_sha3', [hex], procedure(resp: TJsonObject; err: Exception)
   begin
     if Assigned(err) then
       callback('', err)

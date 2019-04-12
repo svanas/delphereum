@@ -18,19 +18,42 @@ interface
 uses
   // Delphi
   System.SysUtils,
+  System.Threading,
   // web3
   web3,
   web3.eth,
+  web3.eth.logs,
   web3.eth.types,
   web3.types;
 
 type
+  TERC20 = class;
+
+  TOnTransfer = reference to procedure(
+    Sender: TERC20;
+    From  : TAddress;
+    &To   : TAddress;
+    Value : UInt64);
+  TOnApproval = reference to procedure(
+    Sender : TERC20;
+    Owner  : TAddress;
+    Spender: TAddress;
+    Value  : UInt64);
+
   TERC20 = class
-  private
-    FClient  : TWeb3;
-    FContract: TAddress;
+  strict private
+    FTask      : ITask;
+    FClient    : TWeb3;
+    FContract  : TAddress;
+    FOnTransfer: TOnTransfer;
+    FOnApproval: TOnApproval;
+    procedure SetOnTransfer(Value: TOnTransfer);
+    procedure SetOnApproval(Value: TOnApproval);
+  protected
+    procedure WatchOrStop; virtual;
   public
     constructor Create(aClient: TWeb3; aContract: TAddress); virtual;
+    destructor  Destroy; override;
 
     //------- read contract ----------------------------------------------------
     procedure Name       (callback: TASyncString);
@@ -54,6 +77,10 @@ type
 
     property Client  : TWeb3    read FClient;
     property Contract: TAddress read FContract;
+
+    //------- events -----------------------------------------------------------
+    property OnTransfer: TOnTransfer read FOnTransfer write SetOnTransfer;
+    property OnApproval: TOnApproval read FOnApproval write SetOnApproval;
   end;
 
 implementation
@@ -63,8 +90,58 @@ implementation
 constructor TERC20.Create(aClient: TWeb3; aContract: TAddress);
 begin
   inherited Create;
+
   FClient   := aClient;
   FContract := aContract;
+
+  FTask := web3.eth.logs.get(aClient, aContract,
+    procedure(log: TLog)
+    begin
+      if Assigned(FOnTransfer) then
+        if log.isEvent('Transfer(address,address,uint256)') then
+          FOnTransfer(Self,
+                      TAddress.New(log.Topic[1]),
+                      TAddress.New(log.Topic[2]),
+                      toInt(log.Data[0]));
+      if Assigned(FOnApproval) then
+        if log.isEvent('Approval(address,address,uint256)') then
+          FOnApproval(Self,
+                      TAddress.New(log.Topic[1]),
+                      TAddress.New(log.Topic[2]),
+                      toInt(log.Data[0]));
+    end);
+end;
+
+destructor TERC20.Destroy;
+begin
+  if FTask.Status = TTaskStatus.Running then
+    FTask.Cancel;
+  inherited Destroy;
+end;
+
+procedure TERC20.SetOnTransfer(Value: TOnTransfer);
+begin
+  FOnTransfer := Value;
+  WatchOrStop;
+end;
+
+procedure TERC20.SetOnApproval(Value: TOnApproval);
+begin
+  FOnApproval := Value;
+  WatchOrStop;
+end;
+
+procedure TERC20.WatchOrStop;
+begin
+  if Assigned(FOnTransfer)
+  or Assigned(FOnApproval) then
+  begin
+    if FTask.Status <> TTaskStatus.Running then
+      FTask.Start;
+    EXIT;
+  end;
+  if FTask.Status = TTaskStatus.Running then
+    FTask.Cancel;
 end;
 
 procedure TERC20.Name(callback: TASyncString);

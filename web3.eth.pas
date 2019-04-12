@@ -107,7 +107,7 @@ end;
 
 procedure getBalance(client: TWeb3; address: TAddress; const block: string; callback: TASyncQuantity);
 begin
-  web3.json.rpc.Send(client.URL, 'eth_getBalance', [address, block], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_getBalance', [address, block], procedure(resp: TJsonObject; err: Exception)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -124,7 +124,7 @@ end;
 // returns the number of transations *sent* from an address
 procedure getTransactionCount(client: TWeb3; address: TAddress; const block: string; callback: TASyncQuantity);
 begin
-  web3.json.rpc.Send(client.URL, 'eth_getTransactionCount', [address, block], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_getTransactionCount', [address, block], procedure(resp: TJsonObject; err: Exception)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -156,7 +156,7 @@ begin
   // step #1: encode the function abi
   abi := web3.eth.abi.encode(func, args);
   // step #2: construct the transaction call object
-  obj := web3.json.Unmarshal(Format(
+  obj := web3.json.unmarshal(Format(
     '{"from": %s, "to": %s, "data": %s}', [
       web3.json.QuoteString(string(from), '"'),
       web3.json.QuoteString(string(&to), '"'),
@@ -165,7 +165,7 @@ begin
   ));
   try
     // step #3: execute a message call (without creating a transaction on the blockchain)
-    web3.json.rpc.Send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: Exception)
+    web3.json.rpc.send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: Exception)
     begin
       if Assigned(err) then
         callback('', err)
