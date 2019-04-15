@@ -4,11 +4,11 @@ Delphereum is a Delphi interface to the Ethereum blockchain that allows for deve
 
 ## What is Delphi?
 
-Delphi is a development environment that compiles into native apps for Windows, macOS, iOS, and Android.
+[Delphi](https://www.embarcadero.com/products/delphi) is a development environment that compiles into native apps for Windows, macOS, iOS, and Android.
 
 ## What is Ethereum?
 
-Ethereum is a blockchain-based distributed computing platform and operating system featuring smart contracts.
+[Ethereum](https://www.ethereum.org/) is a blockchain-based distributed computing platform and operating system featuring smart contracts.
 
 ## What is a smart contract?
 
@@ -45,4 +45,4 @@ Distributed under the [Creative Commons NonCommercial](https://github.com/svanas
 
 ## Commercial support and training
 
-Commercial support and training is available from [Stefan van As](https://www.linkedin.com/in/svanas/).
+Commercial support and training is available from [Stefan van As](https://stackoverflow.com/story/svanas).
