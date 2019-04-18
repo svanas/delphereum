@@ -1,6 +1,6 @@
 ## What is Delphereum?
 
-Delphereum is a Delphi interface to the Ethereum blockchain that allows for development of native dApps (aka _decentralised_ apps).
+Delphereum is a Delphi interface to the Ethereum blockchain that allows for development of native dApps (aka _decentralized_ applications).
 
 ## What is Delphi?
 
