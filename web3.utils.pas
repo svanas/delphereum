@@ -126,8 +126,21 @@ begin
 end;
 
 function isHex(const str: string): Boolean;
+var
+  i: Integer;
 begin
-  Result := Copy(str, Low(str), 2) = '0x';
+  Result := str.Length > 1;
+  if Result then
+  begin
+    Result := Copy(str, Low(str), 2) = '0x';
+    if Result then
+      for i := Low(str) + 2 to High(str) do
+      begin
+        Result := CharInSet(str[i], ['0'..'9', 'a'..'f', 'A'..'F']);
+        if not Result then
+          EXIT;
+      end;
+  end;
 end;
 
 function fromHex(hex: string): TBytes;
