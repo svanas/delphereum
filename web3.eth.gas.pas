@@ -50,7 +50,7 @@ end;
 
 procedure estimateGas(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TASyncQuantity);
 begin
-  estimateGas(client, ADDRESS_NULL, &to, func, args, callback);
+  estimateGas(client, ADDRESS_ZERO, &to, func, args, callback);
 end;
 
 procedure estimateGas(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncQuantity);

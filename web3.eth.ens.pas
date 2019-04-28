@@ -82,7 +82,7 @@ var
 begin
   registry := deployments[client.Chain];
   if (registry = '')
-  or (registry = ADDRESS_NULL) then
+  or (registry = ADDRESS_ZERO) then
     raise ENS.CreateFmt('ENS is not supported on %s.', [GetEnumName(TypeInfo(TChain), Ord(client.Chain))]);
   web3.eth.call(client, registry, 'resolver(bytes32)', [namehash(name)], procedure(const hex: string; err: Exception)
   begin

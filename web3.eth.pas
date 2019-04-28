@@ -27,7 +27,7 @@ const
   BLOCK_PENDING  = 'pending';
 
 const
-  ADDRESS_NULL: TAddress = '0x0000000000000000000000000000000000000000';
+  ADDRESS_ZERO: TAddress = '0x0000000000000000000000000000000000000000';
 
 procedure getBalance(client: TWeb3; address: TAddress; callback: TASyncQuantity); overload;
 procedure getBalance(client: TWeb3; address: TAddress; const block: string; callback: TASyncQuantity); overload;
@@ -135,7 +135,7 @@ end;
 
 procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TASyncString);
 begin
-  call(client, ADDRESS_NULL, &to, func, args, callback);
+  call(client, ADDRESS_ZERO, &to, func, args, callback);
 end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncString);
@@ -145,7 +145,7 @@ end;
 
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncString);
 begin
-  call(client, ADDRESS_NULL, &to, func, block, args, callback);
+  call(client, ADDRESS_ZERO, &to, func, block, args, callback);
 end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TASyncString);
@@ -179,7 +179,7 @@ end;
 
 procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TASyncQuantity);
 begin
-  call(client, ADDRESS_NULL, &to, func, args, callback);
+  call(client, ADDRESS_ZERO, &to, func, args, callback);
 end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncQuantity);
@@ -189,7 +189,7 @@ end;
 
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncQuantity);
 begin
-  call(client, ADDRESS_NULL, &to, func, block, args, callback);
+  call(client, ADDRESS_ZERO, &to, func, block, args, callback);
 end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TASyncQuantity);
@@ -205,7 +205,7 @@ end;
 
 procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TASyncTuple);
 begin
-  call(client, ADDRESS_NULL, &to, func, args, callback);
+  call(client, ADDRESS_ZERO, &to, func, args, callback);
 end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncTuple);
@@ -215,7 +215,7 @@ end;
 
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncTuple);
 begin
-  call(client, ADDRESS_NULL, &to, func, block, args, callback);
+  call(client, ADDRESS_ZERO, &to, func, block, args, callback);
 end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TASyncTuple);
