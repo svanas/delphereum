@@ -22,6 +22,7 @@ uses
   // web3
   web3,
   web3.eth,
+  web3.eth.contract,
   web3.eth.logs,
   web3.eth.types,
   web3.types;
@@ -40,11 +41,9 @@ type
     Spender: TAddress;
     Value  : UInt64);
 
-  TERC20 = class
+  TERC20 = class(TCustomContract)
   strict private
     FTask      : ITask;
-    FClient    : TWeb3;
-    FContract  : TAddress;
     FOnTransfer: TOnTransfer;
     FOnApproval: TOnApproval;
     procedure SetOnTransfer(Value: TOnTransfer);
@@ -52,7 +51,7 @@ type
   protected
     procedure WatchOrStop; virtual;
   public
-    constructor Create(aClient: TWeb3; aContract: TAddress); virtual;
+    constructor Create(aClient: TWeb3; aContract: TAddress); override;
     destructor  Destroy; override;
 
     //------- read contract ----------------------------------------------------
@@ -75,9 +74,6 @@ type
       value   : UInt64;
       callback: TASyncTxHash);
 
-    property Client  : TWeb3    read FClient;
-    property Contract: TAddress read FContract;
-
     //------- events -----------------------------------------------------------
     property OnTransfer: TOnTransfer read FOnTransfer write SetOnTransfer;
     property OnApproval: TOnApproval read FOnApproval write SetOnApproval;
@@ -89,10 +85,7 @@ implementation
 
 constructor TERC20.Create(aClient: TWeb3; aContract: TAddress);
 begin
-  inherited Create;
-
-  FClient   := aClient;
-  FContract := aContract;
+  inherited Create(aClient, aContract);
 
   FTask := web3.eth.logs.get(aClient, aContract,
     procedure(log: TLog)
