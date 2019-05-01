@@ -12,7 +12,11 @@ Delphereum is a Delphi interface to the Ethereum blockchain that allows for deve
 
 ## What is a Smart Contract?
 
-A Smart Contract is a computation that takes place on a blockchain or distributed ledger. You can think of a Smart Contract as a microservice that runs trustless on the backend of your application. Once added to the blockchain, a Smart Contract becomes public and cannot be modified or removed. This assures your users that the rules are transparent and will never change.
+A Smart Contract is a computation that takes place on a blockchain or distributed ledger. You can think of a Smart Contract as a microservice that runs trustless on the backend of your application.
+
+Smart Contracts can have many applications, ranging from sports betting to online voting. But the true power of Smart Contracts is in managing assets that have value and are scarce.
+
+Once added to the blockchain, a Smart Contract becomes public and cannot be modified or removed. This assures your users that the rules are transparent and will never change.
 
 ## What is a dApp?
 
