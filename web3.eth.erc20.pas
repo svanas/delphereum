@@ -28,15 +28,13 @@ uses
   web3.types;
 
 type
-  TERC20 = class;
-
   TOnTransfer = reference to procedure(
-    Sender: TERC20;
+    Sender: TObject;
     From  : TAddress;
     &To   : TAddress;
     Value : UInt64);
   TOnApproval = reference to procedure(
-    Sender : TERC20;
+    Sender : TObject;
     Owner  : TAddress;
     Spender: TAddress;
     Value  : UInt64);
@@ -56,7 +54,7 @@ type
 
     //------- read contract ----------------------------------------------------
     procedure Name       (callback: TASyncString);
-    procedure Symbol     (callback: TAsyncString);
+    procedure Symbol     (callback: TASyncString);
     procedure Decimals   (callback: TASyncQuantity);
     procedure TotalSupply(callback: TASyncQuantity);
     procedure BalanceOf  (owner: TAddress; callback: TASyncQuantity);

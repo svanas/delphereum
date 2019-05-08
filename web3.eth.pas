@@ -45,6 +45,11 @@ procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: arr
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncQuantity); overload;
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TASyncQuantity); overload;
 
+procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TASyncBoolean); overload;
+procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncBoolean); overload;
+procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncBoolean); overload;
+procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TASyncBoolean); overload;
+
 procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TASyncTuple); overload;
 procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncTuple); overload;
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncTuple); overload;
@@ -140,7 +145,7 @@ end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncString);
 begin
-   call(client, from, &to, func, BLOCK_LATEST, args, callback);
+  call(client, from, &to, func, BLOCK_LATEST, args, callback);
 end;
 
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncString);
@@ -184,7 +189,7 @@ end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncQuantity);
 begin
-   call(client, from, &to, func, BLOCK_LATEST, args, callback);
+  call(client, from, &to, func, BLOCK_LATEST, args, callback);
 end;
 
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncQuantity);
@@ -199,7 +204,41 @@ begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(hex, nil);
+      if (hex = '') or (hex = '0x') then
+        callback(0, nil)
+      else
+        callback(hex, nil);
+  end);
+end;
+
+procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TASyncBoolean);
+begin
+  call(client, ADDRESS_ZERO, &to, func, args, callback);
+end;
+
+procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncBoolean);
+begin
+  call(client, from, &to, func, BLOCK_LATEST, args, callback);
+end;
+
+procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TASyncBoolean);
+begin
+  call(client, ADDRESS_ZERO, &to, func, block, args, callback);
+end;
+
+procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TASyncBoolean);
+begin
+  call(client, from, &to, func, block, args, procedure(const hex: string; err: Exception)
+  var
+    buf: TBytes;
+  begin
+    if Assigned(err) then
+      callback(False, err)
+    else
+    begin
+      buf := fromHex(hex);
+      callback((Length(buf) > 0) and (buf[High(buf)] <> 0), nil);
+    end;
   end);
 end;
 

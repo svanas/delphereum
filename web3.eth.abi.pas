@@ -52,6 +52,8 @@ function encode(const func: string; args: array of const): string;
     for arg in args do
     begin
       case arg.VType of
+        vtBoolean:
+          Result := Result + web3.utils.fromHex('0x' + IntToHex(Ord(arg.VBoolean), 64));
         vtInteger:
           Result := Result + web3.utils.fromHex('0x' + IntToHex(arg.VInteger, 64));
         vtString:

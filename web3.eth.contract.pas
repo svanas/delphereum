@@ -21,7 +21,7 @@ uses
   web3.eth.types;
 
 type
-  TCustomContract = class abstract
+  TCustomContract = class abstract(TInterfacedObject)
   strict private
     FClient  : TWeb3;
     FContract: TAddress;

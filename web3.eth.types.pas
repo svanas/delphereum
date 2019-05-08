@@ -59,6 +59,7 @@ type
 
 function toHex(arg: TArg; const prefix: string): string;
 function toInt(arg: TArg): UInt64;
+function toBool(arg: TArg): Boolean;
 
 implementation
 
@@ -92,6 +93,11 @@ begin
   Result := StrToInt64(toHex(arg, '$'));
 end;
 
+function ToBool(arg: TArg): Boolean;
+begin
+  Result := ToInt(arg) <> 0;
+end;
+
 { TAddressHelper }
 
 class function TAddressHelper.New(arg: TArg): TAddress;
@@ -103,7 +109,7 @@ class function TAddressHelper.New(const hex: string): TAddress;
 var
   buf: TBytes;
 begin
-  if web3.utils.isHex(hex) and (hex.IndexOf('.') = -1) then
+  if web3.utils.isHex(hex) then
     // we're good
   else
     raise EWeb3.CreateFmt('%s is not a valid address.', [hex]);
@@ -124,7 +130,7 @@ end;
 
 class procedure TAddressHelper.New(client: TWeb3; const name: string; callback: TASyncAddress);
 begin
-  if web3.utils.isHex(name) and (name.IndexOf('.') = -1) then
+  if web3.utils.isHex(name) then
     callback(New(name), nil)
   else
     web3.eth.ens.addr(client, name, callback);
@@ -166,16 +172,17 @@ function TTupleHelper.ToString: string;
 var
   Arg: TArg;
   Len: Integer;
+  Idx: Integer;
 begin
   Result := '';
-  if Length(Self) < 2 then
+  if Length(Self) < 3 then
     EXIT;
-  Arg := Self[Length(Self) - 2];
+  Arg := Self[1];
   Len := toInt(Arg);
   if Len = 0 then
     EXIT;
-  Arg := Self[Length(Self) - 1];
-  Result := TEncoding.UTF8.GetString(Arg);
+  for Idx := 2 to High(Self) do
+    Result := Result + TEncoding.UTF8.GetString(Self[Idx]);
   SetLength(Result, Len);
 end;
 
