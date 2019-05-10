@@ -136,19 +136,6 @@ end;
 
 { private functions }
 
-function blockNumber(client: TWeb3): BigInteger;
-var
-  obj: TJsonObject;
-begin
-  obj := web3.json.rpc.send(client.URL, 'eth_blockNumber', []);
-  if Assigned(obj) then
-  try
-    Result := web3.json.GetPropAsStr(obj, 'result');
-  finally
-    obj.Free;
-  end;
-end;
-
 function getAsArr(client: TWeb3; fromBlock: BigInteger; address: TAddress): TJsonArray;
 var
   &in : TJsonObject;
@@ -208,7 +195,7 @@ begin
     log : TLog;
     logs: TLogs;
   begin
-    bn := blockNumber(client);
+    bn := web3.eth.blockNumber(client);
     while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
     begin
       logs := web3.eth.logs.getAsLog(client, bn, address);

@@ -16,6 +16,8 @@ unit web3.eth;
 interface
 
 uses
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // Web3
   web3,
   web3.eth.types,
@@ -28,6 +30,9 @@ const
 
 const
   ADDRESS_ZERO: TAddress = '0x0000000000000000000000000000000000000000';
+
+function  blockNumber(client: TWeb3): BigInteger; overload;
+procedure blockNumber(client: TWeb3; callback: TASyncQuantity); overload;
 
 procedure getBalance(client: TWeb3; address: TAddress; callback: TASyncQuantity); overload;
 procedure getBalance(client: TWeb3; address: TAddress; const block: string; callback: TASyncQuantity); overload;
@@ -90,8 +95,6 @@ uses
   // Delphi
   System.JSON,
   System.SysUtils,
-  // Velthuis' BigNumbers
-  Velthuis.BigIntegers,
   // CryptoLib4Pascal
   ClpBigInteger,
   ClpIECPrivateKeyParameters,
@@ -104,6 +107,30 @@ uses
   web3.json,
   web3.json.rpc,
   web3.utils;
+
+function blockNumber(client: TWeb3): BigInteger;
+var
+  obj: TJsonObject;
+begin
+  obj := web3.json.rpc.send(client.URL, 'eth_blockNumber', []);
+  if Assigned(obj) then
+  try
+    Result := web3.json.GetPropAsStr(obj, 'result');
+  finally
+    obj.Free;
+  end;
+end;
+
+procedure blockNumber(client: TWeb3; callback: TASyncQuantity);
+begin
+  web3.json.rpc.send(client.URL, 'eth_blockNumber', [], procedure(resp: TJsonObject; err: Exception)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      callback(web3.json.GetPropAsStr(resp, 'result'), nil);
+  end);
+end;
 
 procedure getBalance(client: TWeb3; address: TAddress; callback: TASyncQuantity);
 begin
