@@ -17,14 +17,18 @@ interface
 
 uses
   // Delphi
+  System.JSON,
+  System.Net.HttpClient,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers;
 
 type
-  TASyncString   = reference to procedure(const str: string; err: Exception);
-  TASyncQuantity = reference to procedure(qty: BigInteger; err: Exception);
-  TASyncBoolean  = reference to procedure(bool: Boolean; err: Exception);
+  TASyncString     = reference to procedure(const str: string; err: Exception);
+  TASyncQuantity   = reference to procedure(qty: BigInteger; err: Exception);
+  TASyncBoolean    = reference to procedure(bool: Boolean; err: Exception);
+  TASyncResponse   = reference to procedure(resp: IHttpResponse; err: Exception);
+  TASyncJsonObject = reference to procedure(obj: TJsonObject; err: Exception);
 
 implementation
 
