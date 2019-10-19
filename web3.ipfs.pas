@@ -29,54 +29,63 @@ uses
   web3.types;
 
 type
-  TIpfsFile = record
+  TGateway = (
+    ProtocolLabs,
+    Infura,
+    Cloudflare);
+
+type
+  TFile = record
     Name: string;
     Hash: string;
     Size: UInt64;
-    function Endpoint: string;
+    function Endpoint(Gateway: TGateway): string;
   end;
-  PIpfsFile = ^TIpfsFile;
+  PFile = ^TFile;
 
 type
-  TASyncIpfsFile = reference to procedure(&file: PIpfsFile; err: Exception);
+  TASyncFile = reference to procedure(&file: PFile; err: Exception);
 
 function add(const fileName: string; callback: TASyncJsonObject): IASyncResult; overload;
-function add(const fileName: string; callback: TASyncIpfsFile): IASyncResult; overload;
+function add(const fileName: string; callback: TASyncFile): IASyncResult; overload;
 
-function add(const apiBase, fileName: string; callback: TASyncJsonObject): IASyncResult; overload;
-function add(const apiBase, fileName: string; callback: TASyncIpfsFile): IASyncResult; overload;
+function add(const apiHost, fileName: string; callback: TASyncJsonObject): IASyncResult; overload;
+function add(const apiHost, fileName: string; callback: TASyncFile): IASyncResult; overload;
 
 function pin(const hash: string; callback: TASyncJsonObject): IASyncResult; overload;
-function pin(const apiBase, hash: string; callback: TASyncJsonObject): IASyncResult; overload;
+function pin(const apiHost, hash: string; callback: TASyncJsonObject): IASyncResult; overload;
 
 function cat(const hash: string; callback: TASyncResponse): IASyncResult; overload;
-function cat(const apiBase, hash: string; callback: TASyncResponse): IASyncResult; overload;
+function cat(const apiHost, hash: string; callback: TASyncResponse): IASyncResult; overload;
 
 implementation
 
 const
-  IPFS_INFURA_BASE = 'https://ipfs.infura.io:5001';
+  IPFS_HOST: array[TGateway] of string = (
+    'https://gateway.ipfs.io',
+    'https://ipfs.infura.io',
+    'https://cloudflare-ipfs.com');
 
-{ TIpfsFile }
+{ TFile }
 
-function TIpfsFile.Endpoint: string;
+function TFile.Endpoint(Gateway: TGateway): string;
 begin
-  Result := 'https://gateway.ipfs.io/ipfs/' + TNetEncoding.URL.Encode(Hash);
+  Result := IPFS_HOST[Gateway] + '/ipfs/' + TNetEncoding.URL.Encode(Hash);
 end;
 
 { global functions }
 
 function add(const fileName: string; callback: TASyncJsonObject): IASyncResult;
 begin
-  Result := add(IPFS_INFURA_BASE, fileName, callback);
+  Result := add('https://ipfs.infura.io:5001', fileName, callback);
 end;
 
-function add(const fileName: string; callback: TASyncIpfsFile): IASyncResult;
+function add(const fileName: string; callback: TASyncFile): IASyncResult;
 begin
-  Result := add(IPFS_INFURA_BASE, fileName, callback);
+  Result := add('https://ipfs.infura.io:5001', fileName, callback);
 end;
 
-function add(const apiBase, fileName: string; callback: TASyncJsonObject): IASyncResult;
+function add(const apiHost, fileName: string; callback: TASyncJsonObject): IASyncResult;
 var
   client: THttpClient;
   source: TMultipartFormData;
@@ -107,18 +116,18 @@ begin
         source.Free;
         client.Free;
       end;
-    end, apiBase + '/api/v0/add', source, nil, [TNetHeader.Create('Content-Type', source.MimeTypeHeader)]);
+    end, apiHost + '/api/v0/add', source, nil, [TNetHeader.Create('Content-Type', source.MimeTypeHeader)]);
   except
     on E: Exception do
       callback(nil, E);
   end;
 end;
 
-function add(const apiBase, fileName: string; callback: TASyncIpfsFile): IASyncResult;
+function add(const apiHost, fileName: string; callback: TASyncFile): IASyncResult;
 var
-  &file: TIpfsFile;
+  &file: TFile;
 begin
-  Result := add(apiBase, fileName, procedure(obj: TJsonObject; err: Exception)
+  Result := add(apiHost, fileName, procedure(obj: TJsonObject; err: Exception)
   begin
     if Assigned(err) then
     begin
@@ -134,10 +143,10 @@ end;
 
 function pin(const hash: string; callback: TASyncJsonObject): IASyncResult;
 begin
-  Result := pin(IPFS_INFURA_BASE, hash, callback);
+  Result := pin('https://ipfs.infura.io:5001', hash, callback);
 end;
 
-function pin(const apiBase, hash: string; callback: TASyncJsonObject): IASyncResult;
+function pin(const apiHost, hash: string; callback: TASyncJsonObject): IASyncResult;
 var
   client: THttpClient;
   resp  : IHttpResponse;
@@ -164,7 +173,7 @@ begin
       finally
         client.Free;
       end;
-    end, apiBase + '/api/v0/pin/add?arg=' + TNetEncoding.URL.Encode(hash));
+    end, apiHost + '/api/v0/pin/add?arg=' + TNetEncoding.URL.Encode(hash));
   except
     on E: Exception do
       callback(nil, E);
@@ -173,10 +182,10 @@ end;
 
 function cat(const hash: string; callback: TASyncResponse): IASyncResult;
 begin
-  Result := cat(IPFS_INFURA_BASE, hash, callback);
+  Result := cat('https://ipfs.infura.io:5001', hash, callback);
 end;
 
-function cat(const apiBase, hash: string; callback: TASyncResponse): IASyncResult;
+function cat(const apiHost, hash: string; callback: TASyncResponse): IASyncResult;
 var
   client: THttpClient;
   resp  : IHttpResponse;
@@ -194,7 +203,7 @@ begin
       finally
         client.Free;
       end;
-    end, apiBase + '/api/v0/cat?arg=' + TNetEncoding.URL.Encode(hash));
+    end, apiHost + '/api/v0/cat?arg=' + TNetEncoding.URL.Encode(hash));
   except
     on E: Exception do
       callback(nil, E);
