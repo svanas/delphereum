@@ -65,12 +65,12 @@ type
       from    : TPrivateKey;
       &to     : TAddress;
       value   : UInt64;
-      callback: TASyncTxHash);
+      callback: TASyncReceipt);
     procedure Approve(
       owner   : TPrivateKey;
       spender : TAddress;
       value   : UInt64;
-      callback: TASyncTxHash);
+      callback: TASyncReceipt);
 
     //------- events -----------------------------------------------------------
     property OnTransfer: TOnTransfer read FOnTransfer write SetOnTransfer;
@@ -181,7 +181,7 @@ procedure TERC20.Transfer(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : UInt64;
-  callback: TASyncTxHash);
+  callback: TASyncReceipt);
 begin
   web3.eth.write(Client, from, Contract, 'transfer(address,uint256)', [&to, value], callback);
 end;
@@ -190,7 +190,7 @@ procedure TERC20.Approve(
   owner   : TPrivateKey;
   spender : TAddress;
   value   : UInt64;
-  callback: TASyncTxHash);
+  callback: TASyncReceipt);
 begin
   web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, value], callback);
 end;

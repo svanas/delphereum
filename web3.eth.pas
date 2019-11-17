@@ -68,7 +68,7 @@ procedure write(
   &to       : TAddress;
   const func: string;
   args      : array of const;
-  callback  : TASyncTxHash); overload;
+  callback  : TASyncReceipt); overload;
 
 procedure write(
   client    : TWeb3;
@@ -78,7 +78,7 @@ procedure write(
   args      : array of const;
   gasPrice  : TWei;
   gasLimit  : TWei;
-  callback  : TASyncTxHash); overload;
+  callback  : TASyncReceipt); overload;
 
 procedure write(
   client    : TWeb3;
@@ -87,7 +87,7 @@ procedure write(
   const data: string;
   gasPrice  : TWei;
   gasLimit  : TWei;
-  callback  : TASyncTxHash); overload;
+  callback  : TASyncReceipt); overload;
 
 implementation
 
@@ -344,7 +344,7 @@ procedure write(
   &to       : TAddress;
   const func: string;
   args      : array of const;
-  callback  : TASyncTxHash);
+  callback  : TASyncReceipt);
 var
   data: string;
 begin
@@ -352,7 +352,7 @@ begin
   web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: Exception)
   begin
     if Assigned(err) then
-      callback('', err)
+      callback(nil, err)
     else
       write(client, from, &to, data, gasPrice, 200000, callback);
   end);
@@ -366,7 +366,7 @@ procedure write(
   args      : array of const;
   gasPrice  : TWei;
   gasLimit  : TWei;
-  callback  : TASyncTxHash);
+  callback  : TASyncReceipt);
 begin
   write(client, from, &to, web3.eth.abi.encode(func, args), gasPrice, gasLimit, callback);
 end;
@@ -378,7 +378,7 @@ procedure write(
   const data: string;
   gasPrice  : TWei;
   gasLimit  : TWei;
-  callback  : TASyncTxHash);
+  callback  : TASyncReceipt);
 begin
   web3.eth.getTransactionCount(
     client,
@@ -386,9 +386,9 @@ begin
     procedure(qty: BigInteger; err: Exception)
     begin
       if Assigned(err) then
-        callback('', err)
+        callback(nil, err)
       else
-        sendTransaction(
+        sendTransactionEx(
           client,
           signTransaction(
             client.Chain,

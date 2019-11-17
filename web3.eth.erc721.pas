@@ -49,7 +49,7 @@ type
       from     : TPrivateKey;     // The current owner of the NFT
       &to      : TAddress;        // The new owner
       tokenId  : UInt64;          // The NFT to transfer
-      callback : TASyncTxHash);
+      callback : TASyncReceipt);
     // Transfers the ownership of an NFT from one address to another address
     // THE CALLER IS RESPONSIBLE TO CONFIRM THAT `to` IS CAPABLE OF RECEIVING
     // NFTs OR ELSE THEY MAY BE PERMANENTLY LOST
@@ -57,19 +57,19 @@ type
       from     : TPrivateKey;     // The current owner of the NFT
       &to      : TAddress;        // The new owner
       tokenId  : UInt64;          // The NFT to transfer
-      callback : TASyncTxHash);
+      callback : TASyncReceipt);
     // Change or reaffirm the approved address for an NFT
     procedure Approve(
       owner    : TPrivateKey;     // The current owner of the NFT
       spender  : TAddress;        // The new approved NFT controller
       tokenId  : UInt64;          // The NFT to approve
-      callback : TASyncTxHash);
+      callback : TASyncReceipt);
     // Change or reaffirm the approved address for an NFT
     procedure SetApprovalForAll(
       owner    : TPrivateKey;     // The current owner of the NFT
       &operator: TAddress;        // Address to add to the set of authorized operators
       approved : Boolean;         // True if the operator is approved, false to revoke approval
-      callback : TASyncTxHash);
+      callback : TASyncReceipt);
     // Get the approved address for a single NFT
     procedure GetApproved(
       tokenId  : UInt64;          // The NFT to find the approved address for
@@ -153,22 +153,22 @@ type
       from     : TPrivateKey;
       &to      : TAddress;
       tokenId  : UInt64;
-      callback : TASyncTxHash);
+      callback : TASyncReceipt);
     procedure TransferFrom(
       from     : TPrivateKey;
       &to      : TAddress;
       tokenId  : UInt64;
-      callback : TASyncTxHash);
+      callback : TASyncReceipt);
     procedure Approve(
       owner    : TPrivateKey;
       spender  : TAddress;
       tokenId  : UInt64;
-      callback : TASyncTxHash);
+      callback : TASyncReceipt);
     procedure SetApprovalForAll(
       owner    : TPrivateKey;
       &operator: TAddress;
       approved : Boolean;
-      callback : TASyncTxHash);
+      callback : TASyncReceipt);
     procedure GetApproved(
       tokenId  : UInt64;
       callback : TASyncAddress);
@@ -278,7 +278,7 @@ procedure TERC721.SafeTransferFrom(
   from    : TPrivateKey;
   &to     : TAddress;
   tokenId : UInt64;
-  callback: TASyncTxHash);
+  callback: TASyncReceipt);
 begin
   web3.eth.write(Client, from, Contract,
     'safeTransferFrom(address,address,uint256)',
@@ -289,7 +289,7 @@ procedure TERC721.TransferFrom(
   from    : TPrivateKey;
   &to     : TAddress;
   tokenId : UInt64;
-  callback: TASyncTxHash);
+  callback: TASyncReceipt);
 begin
   web3.eth.write(Client, from, Contract,
     'transferFrom(address,address,uint256)',
@@ -300,7 +300,7 @@ procedure TERC721.Approve(
   owner   : TPrivateKey;
   spender : TAddress;
   tokenId : UInt64;
-  callback: TASyncTxHash);
+  callback: TASyncReceipt);
 begin
   web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, tokenId], callback);
 end;
@@ -309,7 +309,7 @@ procedure TERC721.SetApprovalForAll(
   owner    : TPrivateKey;
   &operator: TAddress;
   approved : Boolean;
-  callback : TASyncTxHash);
+  callback : TASyncReceipt);
 begin
   web3.eth.write(Client, owner, Contract, 'setApprovalForAll(address,bool)', [&operator, approved], callback);
 end;

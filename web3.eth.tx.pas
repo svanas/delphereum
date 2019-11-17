@@ -47,11 +47,22 @@ function signTransaction(
   gasPrice  : TWei;
   gasLimit  : TWei): string;
 
+// send raw (aka signed) transaction.
 procedure sendTransaction(
   client   : TWeb3;
   const raw: string;
   callback : TASyncTxHash); overload;
 
+// send raw transaction, get the receipt, and get the reason if the transaction failed.
+procedure sendTransactionEx(
+  client: TWeb3;
+  const raw: string;
+  callback: TASyncReceipt); overload;
+
+// 1. calculate the current gas price, then
+// 2. calculate the nonce, then
+// 3. sign the transaction, then
+// 4. send the raw transaction.
 procedure sendTransaction(
   client  : TWeb3;
   from    : TPrivateKey;
@@ -59,6 +70,20 @@ procedure sendTransaction(
   value   : TWei;
   callback: TASyncTxHash); overload;
 
+// 1. calculate the nonce, then
+// 2. calculate the current gas price, then
+// 3. sign the transaction, then
+// 4. send the raw transaction, then
+// 5. get the transaction receipt, then
+// 6. get the reason if the transaction failed.
+procedure sendTransactionEx(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  &to     : TAddress;
+  value   : TWei;
+  callback: TASyncReceipt); overload;
+
+// calculate the nonce, then sign the transaction, then send the transaction.
 procedure sendTransaction(
   client  : TWeb3;
   from    : TPrivateKey;
@@ -67,6 +92,20 @@ procedure sendTransaction(
   gasPrice: TWei;
   gasLimit: TWei;
   callback: TASyncTxHash); overload;
+
+// 1. calculate the nonce, then
+// 2. sign the transaction, then
+// 3. send the raw transaction, then
+// 4. get the transaction receipt, then
+// 5. get the reason if the transaction failed.
+procedure sendTransactionEx(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  &to     : TAddress;
+  value   : TWei;
+  gasPrice: TWei;
+  gasLimit: TWei;
+  callback: TASyncReceipt); overload;
 
 // returns the information about a transaction requested by transaction hash.
 procedure getTransaction(
@@ -145,6 +184,7 @@ begin
   end;
 end;
 
+// send raw (aka signed) transaction.
 procedure sendTransaction(client: TWeb3; const raw: string; callback: TASyncTxHash);
 begin
   web3.json.rpc.send(client.URL, 'eth_sendRawTransaction', [raw], procedure(resp: TJsonObject; err: Exception)
@@ -156,6 +196,44 @@ begin
   end);
 end;
 
+// send raw transaction, get the receipt, and get the reason if the transaction failed.
+procedure sendTransactionEx(client: TWeb3; const raw: string; callback: TASyncReceipt);
+begin
+  // step #1: send the raw transaction
+  sendTransaction(client, raw, procedure(hash: TTxHash; err: Exception)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    // step #2: get the transaction receipt
+    getTransactionReceipt(client, hash, procedure(rcpt: ITxReceipt; err: Exception)
+    begin
+      if Assigned(err) then
+      begin
+        callback(nil, err);
+        EXIT;
+      end;
+      // step #3: did the transaction fail? then get the reason for that
+      if not rcpt.status then
+        getTransactionRevertReason(client, rcpt, procedure(const reason: string; err: Exception)
+        begin
+          if Assigned(err) then
+            callback(nil, err)
+          else
+            callback(nil, EWeb3.Create(reason));
+          EXIT;
+        end);
+      callback(rcpt, nil);
+    end);
+  end);
+end;
+
+// 1. calculate the current gas price, then
+// 2. calculate the nonce, then
+// 3. sign the transaction, then
+// 4. send the raw transaction.
 procedure sendTransaction(
   client  : TWeb3;
   from    : TPrivateKey;
@@ -172,6 +250,29 @@ begin
   end);
 end;
 
+// 1. calculate the nonce, then
+// 2. calculate the current gas price, then
+// 3. sign the transaction, then
+// 4. send the raw transaction, then
+// 5. get the transaction receipt, then
+// 6. get the reason if the transaction failed.
+procedure sendTransactionEx(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  &to     : TAddress;
+  value   : TWei;
+  callback: TASyncReceipt);
+begin
+  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: Exception)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      sendTransactionEx(client, from, &to, value, gasPrice, 21000, callback);
+  end);
+end;
+
+// calculate the nonce, then sign the transaction, then send the transaction.
 procedure sendTransaction(
   client  : TWeb3;
   from    : TPrivateKey;
@@ -190,6 +291,33 @@ begin
         callback('', err)
       else
         sendTransaction(client, signTransaction(client.Chain, qty, from, &to, value, '', gasPrice, gasLimit), callback);
+    end
+  );
+end;
+
+// 1. calculate the nonce, then
+// 2. sign the transaction, then
+// 3. send the raw transaction, then
+// 4. get the transaction receipt, then
+// 5. get the reason if the transaction failed.
+procedure sendTransactionEx(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  &to     : TAddress;
+  value   : TWei;
+  gasPrice: TWei;
+  gasLimit: TWei;
+  callback: TASyncReceipt);
+begin
+  web3.eth.getTransactionCount(
+    client,
+    web3.eth.crypto.AddressFromPrivateKey(web3.eth.crypto.PrivateKeyFromHex(from)),
+    procedure(qty: BigInteger; err: Exception)
+    begin
+      if Assigned(err) then
+        callback(nil, err)
+      else
+        sendTransactionEx(client, signTransaction(client.Chain, qty, from, &to, value, '', gasPrice, gasLimit), callback);
     end
   );
 end;
