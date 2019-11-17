@@ -37,10 +37,33 @@ type
   TTopics     = array[0..3] of TArg;
 
 type
-  TASyncAddress = reference to procedure(addr: TAddress;    err: Exception);
-  TASyncTuple   = reference to procedure(tup : TTuple;      err: Exception);
-  TASyncTxHash  = reference to procedure(tx  : TTxHash;     err: Exception);
-  TASyncReceipt = reference to procedure(rcpt: TJsonObject; err: Exception);
+  ITxn = interface
+    function ToString: string;
+    function blockNumber: BigInteger; // block number where this transaction was in. null when its pending.
+    function from: TAddress;          // address of the sender.
+    function gasLimit: TWei;          // gas provided by the sender.
+    function gasPrice: TWei;          // gas price provided by the sender in Wei.
+    function input: string;           // the data send along with the transaction.
+    function &to: TAddress;           // address of the receiver. null when its a contract creation transaction.
+    function value: TWei;             // value transferred in Wei.
+  end;
+
+type
+  ITxReceipt = interface
+    function ToString: string;
+    function txHash: TTxHash; // hash of the transaction.
+    function from: TAddress;  // address of the sender.
+    function &to: TAddress;   // address of the receiver. null when it's a contract creation transaction.
+    function gasUsed: TWei;   // the amount of gas used by this specific transaction.
+    function status: Boolean; // success or failure.
+  end;
+
+type
+  TASyncAddress = reference to procedure(addr: TAddress;   err: Exception);
+  TASyncTuple   = reference to procedure(tup : TTuple;     err: Exception);
+  TASyncTxHash  = reference to procedure(hash: TTxHash;    err: Exception);
+  TASyncTxn     = reference to procedure(txn : ITxn;       err: Exception);
+  TASyncReceipt = reference to procedure(rcpt: ITxReceipt; err: Exception);
 
 type
   TAddressHelper = record helper for TAddress

@@ -36,7 +36,7 @@ function toHex(const str: string): string; overload;
 function toHex(const str: string; offset, len: Integer): string; overload;
 
 function toHex(val: TVarRec): string; overload;
-function toHex(int: BigInteger): string; overload;
+function toHex(int: BigInteger; pad: Boolean = False): string; overload;
 
 function isHex(const str: string): Boolean;
 function fromHex(hex: string): TBytes;
@@ -112,15 +112,16 @@ begin
   end;
 end;
 
-function toHex(int: BigInteger): string;
+function toHex(int: BigInteger; pad: Boolean): string;
 begin
   if int.IsZero then
     Result := ''
   else
   begin
     Result := int.ToHexString;
-    if Result.Length mod 2 > 0 then
-      Result := '0' + Result; // pad to even
+    if pad then
+      if Result.Length mod 2 > 0 then
+        Result := '0' + Result; // pad to even
   end;
   Result := '0x' + Result;
 end;
