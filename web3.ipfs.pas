@@ -134,9 +134,9 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    &file.Name := GetPropAsStr(obj, 'Name');
-    &file.Hash := GetPropAsStr(obj, 'Hash');
-    &file.Size := GetPropAsInt(obj, 'Size');
+    &file.Name := getPropAsStr(obj, 'Name');
+    &file.Hash := getPropAsStr(obj, 'Hash');
+    &file.Size := getPropAsInt(obj, 'Size');
     callback(@&file, nil);
   end);
 end;

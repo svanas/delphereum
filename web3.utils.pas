@@ -180,7 +180,7 @@ begin
     if Assigned(err) then
       callback('', err)
     else
-      callback(web3.json.GetPropAsStr(resp, 'result'), nil);
+      callback(web3.json.getPropAsStr(resp, 'result'), nil);
   end);
 end;
 

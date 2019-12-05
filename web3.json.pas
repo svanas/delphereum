@@ -23,12 +23,12 @@ uses
 function marshal  (const obj: TJsonValue): string;
 function unmarshal(const val: string)    : TJsonObject;
 
-function GetPropAsStr(obj: TJsonValue; const name: string; const def: string = ''): string;
-function GetPropAsInt(obj: TJsonValue; const name: string; def: Integer = 0): Integer;
-function GetPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
-function GetPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
+function getPropAsStr(obj: TJsonValue; const name: string; const def: string = ''): string;
+function getPropAsInt(obj: TJsonValue; const name: string; def: Integer = 0): Integer;
+function getPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
+function getPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
 
-function QuoteString(const S: string; Quote: Char = '"'): string;
+function quoteString(const S: string; Quote: Char = '"'): string;
 
 implementation
 
@@ -79,7 +79,7 @@ begin
       V.Free;
 end;
 
-function GetPropAsStr(obj: TJsonValue; const name: string; const def: string): string;
+function getPropAsStr(obj: TJsonValue; const name: string; const def: string): string;
 var
   P: TJsonPair;
 begin
@@ -101,7 +101,7 @@ begin
     end;
 end;
 
-function GetPropAsInt(obj: TJsonValue; const name: string; def: Integer): Integer;
+function getPropAsInt(obj: TJsonValue; const name: string; def: Integer): Integer;
 var
   P: TJsonPair;
 begin
@@ -122,7 +122,7 @@ begin
           Result := def;
 end;
 
-function GetPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
+function getPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
 var
   P: TJsonPair;
 begin
@@ -138,7 +138,7 @@ begin
         Result := TJsonObject(P.JsonValue);
 end;
 
-function GetPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
+function getPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
 var
   P: TJsonPair;
 begin
@@ -154,7 +154,7 @@ begin
         Result := TJsonArray(P.JsonValue);
 end;
 
-function QuoteString(const S: string; Quote: Char): string;
+function quoteString(const S: string; Quote: Char): string;
 var
   I: Integer;
 begin

@@ -57,7 +57,7 @@ end;
 
 { global functions }
 
-function FormatArgs(args: array of const): string;
+function formatArgs(args: array of const): string;
 var
   arg: TVarRec;
 begin
@@ -71,15 +71,15 @@ begin
         vtInteger:
           Result := Result + '0x' + IntToHex(arg.VInteger, 0);
         vtString:
-          Result := Result + QuoteString(UnicodeString(PShortString(arg.VAnsiString)^), '"');
+          Result := Result + quoteString(UnicodeString(PShortString(arg.VAnsiString)^), '"');
         vtObject:
           Result := Result + web3.json.marshal(arg.VObject as TJsonObject);
         vtWideString:
-          Result := Result + QuoteString(WideString(arg.VWideString^), '"');
+          Result := Result + quoteString(WideString(arg.VWideString^), '"');
         vtInt64:
           Result := Result + '0x' + IntToHex(arg.VInt64^, 0);
         vtUnicodeString:
-          Result := Result + QuoteString(string(arg.VUnicodeString), '"');
+          Result := Result + quoteString(string(arg.VUnicodeString), '"');
       end;
     end;
   finally
@@ -87,12 +87,12 @@ begin
   end;
 end;
 
-function GetPayload(const method: string; args: array of const): string;
+function getPayload(const method: string; args: array of const): string;
 begin
   Inc(id);
   Result := Format(
     '{"jsonrpc": "2.0", "method": %s, "params": %s, "id": %d}'
-    , [web3.json.QuoteString(method, '"'), FormatArgs(args), id]);
+    , [web3.json.quoteString(method, '"'), formatArgs(args), id]);
 end;
 
 function send(const URL, method: string; args: array of const; callback: TASyncResponse): IASyncResult;
@@ -104,7 +104,7 @@ var
 begin
   try
     client := THttpClient.Create;
-    source := TStringStream.Create(GetPayload(method, args));
+    source := TStringStream.Create(getPayload(method, args));
     Result := client.BeginPost(procedure(const aSyncResult: IASyncResult)
     begin
       try
@@ -112,9 +112,9 @@ begin
         if Assigned(resp) then
         try
           // did we receive an error? then translate that into an exception
-          err := web3.json.GetPropAsObj(resp, 'error');
+          err := web3.json.getPropAsObj(resp, 'error');
           if Assigned(err) then
-            callback(resp, EJsonRpc.Create(web3.json.GetPropAsInt(err, 'code'), web3.json.GetPropAsStr(err, 'message')))
+            callback(resp, EJsonRpc.Create(web3.json.getPropAsInt(err, 'code'), web3.json.getPropAsStr(err, 'message')))
           else
             // if we reached this far, then we have a valid response object
             callback(resp, nil);
@@ -139,7 +139,7 @@ var
   err   : TJsonObject;
 begin
   client := THttpClient.Create;
-  source := TStringStream.Create(GetPayload(method, args));
+  source := TStringStream.Create(getPayload(method, args));
   try
     Result := web3.json.unmarshal(
       client.Post(URL, source, nil, [TNetHeader.Create('Content-Type', 'application/json')]).ContentAsString(TEncoding.UTF8)
@@ -147,9 +147,9 @@ begin
     if Assigned(Result) then
     begin
       // did we receive an error? then translate that into an exception
-      err := web3.json.GetPropAsObj(Result, 'error');
+      err := web3.json.getPropAsObj(Result, 'error');
       if Assigned(err) then
-        raise EJsonRpc.Create(web3.json.GetPropAsInt(err, 'code'), web3.json.GetPropAsStr(err, 'message'));
+        raise EJsonRpc.Create(web3.json.getPropAsInt(err, 'code'), web3.json.getPropAsStr(err, 'message'));
     end;
   finally
     source.Free;

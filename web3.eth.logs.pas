@@ -75,9 +75,9 @@ var
   arg : TArg;
   last: PArg;
 begin
-  FBlockNumber := web3.json.GetPropAsStr(tx, 'blockNumber');
+  FBlockNumber := web3.json.getPropAsStr(tx, 'blockNumber');
   // load the "topics"
-  tpcs := web3.json.GetPropAsArr(tx, 'topics');
+  tpcs := web3.json.getPropAsArr(tx, 'topics');
   if Assigned(tpcs) then
     for tpc := 0 to Pred(tpcs.Count) do
     begin
@@ -89,7 +89,7 @@ begin
       end;
     end;
   // load the "data"
-  buf := web3.utils.fromHex(web3.json.GetPropAsStr(tx, 'data'));
+  buf := web3.utils.fromHex(web3.json.getPropAsStr(tx, 'data'));
   while Length(buf) >= SizeOf(TArg) do
   begin
     last := Data.Add;
@@ -146,15 +146,15 @@ begin
   &in := web3.json.unmarshal(Format(
     '{"fromBlock": "%s", "toBlock": %s, "address": %s}', [
       web3.utils.toHex(fromBlock),
-      web3.json.QuoteString(BLOCK_LATEST, '"'),
-      web3.json.QuoteString(string(address), '"')
+      web3.json.quoteString(BLOCK_LATEST, '"'),
+      web3.json.quoteString(string(address), '"')
     ]
   ));
   try
     &out := web3.json.rpc.send(client.URL, 'eth_getLogs', [&in]);
     if Assigned(&out) then
     try
-      arr := web3.json.GetPropAsArr(&out, 'result');
+      arr := web3.json.getPropAsArr(&out, 'result');
       if Assigned(arr) then
         Result := arr.Clone as TJsonArray;
     finally

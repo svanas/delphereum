@@ -192,7 +192,7 @@ begin
     if Assigned(err) then
       callback('', err)
     else
-      callback(TTxHash(web3.json.GetPropAsStr(resp, 'result')), nil);
+      callback(TTxHash(web3.json.getPropAsStr(resp, 'result')), nil);
   end);
 end;
 
@@ -215,7 +215,7 @@ begin
         callback(nil, err);
         EXIT;
       end;
-      // step #3: did the transaction fail? then get the reason for that
+      // step #3: did the transaction fail? then get the reason why it failed
       if not rcpt.status then
         getTransactionRevertReason(client, rcpt, procedure(const reason: string; err: Exception)
         begin
@@ -361,43 +361,43 @@ end;
 // block number where this transaction was in. null when its pending.
 function TTxn.blockNumber: BigInteger;
 begin
-  Result := GetPropAsStr(FJsonObject, 'blockNumber', '0x0');
+  Result := getPropAsStr(FJsonObject, 'blockNumber', '0x0');
 end;
 
 // address of the sender.
 function TTxn.from: TAddress;
 begin
-  Result := TAddress(GetPropAsStr(FJsonObject, 'from', string(ADDRESS_ZERO)));
+  Result := TAddress(getPropAsStr(FJsonObject, 'from', string(ADDRESS_ZERO)));
 end;
 
 // gas provided by the sender.
 function TTxn.gasLimit: TWei;
 begin
-  Result := GetPropAsStr(FJsonObject, 'gas', '0x5208');
+  Result := getPropAsStr(FJsonObject, 'gas', '0x5208');
 end;
 
 // gas price provided by the sender in Wei.
 function TTxn.gasPrice: TWei;
 begin
-  Result := GetPropAsStr(FJsonObject, 'gasPrice', '0x0');
+  Result := getPropAsStr(FJsonObject, 'gasPrice', '0x0');
 end;
 
 // the data send along with the transaction.
 function TTxn.input: string;
 begin
-  Result := web3.json.GetPropAsStr(FJsonObject, 'input');
+  Result := web3.json.getPropAsStr(FJsonObject, 'input');
 end;
 
 // address of the receiver. null when its a contract creation transaction.
 function TTxn.&to: TAddress;
 begin
-  Result := TAddress(GetPropAsStr(FJsonObject, 'to', string(ADDRESS_ZERO)));
+  Result := TAddress(getPropAsStr(FJsonObject, 'to', string(ADDRESS_ZERO)));
 end;
 
 // value transferred in Wei.
 function TTxn.value: TWei;
 begin
-  Result := GetPropAsStr(FJsonObject, 'value', '0x0');
+  Result := getPropAsStr(FJsonObject, 'value', '0x0');
 end;
 
 // returns the information about a transaction requested by transaction hash.
@@ -408,7 +408,7 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      callback(TTxn.Create(web3.json.GetPropAsObj(resp, 'result')), nil);
+      callback(TTxn.Create(web3.json.getPropAsObj(resp, 'result')), nil);
   end);
 end;
 
@@ -449,31 +449,31 @@ end;
 // hash of the transaction.
 function TTxReceipt.txHash: TTxHash;
 begin
-  Result := TTxHash(GetPropAsStr(FJsonObject, 'transactionHash', ''));
+  Result := TTxHash(getPropAsStr(FJsonObject, 'transactionHash', ''));
 end;
 
 // address of the sender.
 function TTxReceipt.from: TAddress;
 begin
-  Result := TAddress(GetPropAsStr(FJsonObject, 'from', string(ADDRESS_ZERO)));
+  Result := TAddress(getPropAsStr(FJsonObject, 'from', string(ADDRESS_ZERO)));
 end;
 
 // address of the receiver. null when it's a contract creation transaction.
 function TTxReceipt.&to: TAddress;
 begin
-  Result := TAddress(GetPropAsStr(FJsonObject, 'to', string(ADDRESS_ZERO)));
+  Result := TAddress(getPropAsStr(FJsonObject, 'to', string(ADDRESS_ZERO)));
 end;
 
 // the amount of gas used by this specific transaction.
 function TTxReceipt.gasUsed: TWei;
 begin
-  Result := GetPropAsStr(FJsonObject, 'gasUsed', '0x0');
+  Result := getPropAsStr(FJsonObject, 'gasUsed', '0x0');
 end;
 
 // success or failure.
 function TTxReceipt.status: Boolean;
 begin
-  Result := GetPropAsStr(FJsonObject, 'status', '0x1') = '0x1';
+  Result := getPropAsStr(FJsonObject, 'status', '0x1') = '0x1';
 end;
 
 // returns the receipt of a transaction by transaction hash.
@@ -484,7 +484,7 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      callback(TTxReceipt.Create(web3.json.GetPropAsObj(resp, 'result')), nil);
+      callback(TTxReceipt.Create(web3.json.getPropAsObj(resp, 'result')), nil);
   end);
 end;
 
@@ -523,12 +523,12 @@ begin
     // eth_call the failed transaction *with the block number from the receipt*
     obj := web3.json.unmarshal(Format(
       '{"to": %s, "data": %s, "from": %s, "value": %s, "gas": %s, "gasPrice": %s}', [
-        web3.json.QuoteString(string(txn.&to), '"'),
-        web3.json.QuoteString(txn.input, '"'),
-        web3.json.QuoteString(string(txn.from), '"'),
-        web3.json.QuoteString(toHex(txn.value), '"'),
-        web3.json.QuoteString(toHex(txn.gasLimit), '"'),
-        web3.json.QuoteString(toHex(txn.gasPrice), '"')
+        web3.json.quoteString(string(txn.&to), '"'),
+        web3.json.quoteString(txn.input, '"'),
+        web3.json.quoteString(string(txn.from), '"'),
+        web3.json.quoteString(toHex(txn.value), '"'),
+        web3.json.quoteString(toHex(txn.gasLimit), '"'),
+        web3.json.quoteString(toHex(txn.gasPrice), '"')
       ]
     ));
     try
@@ -541,7 +541,7 @@ begin
         end;
 
         // parse the reason from the response
-        encoded := web3.json.GetPropAsStr(resp, 'result');
+        encoded := web3.json.getPropAsStr(resp, 'result');
         // trim the 0x prefix
         Delete(encoded, Low(encoded), 2);
         // get the length of the revert reason

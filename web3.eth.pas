@@ -115,7 +115,7 @@ begin
   obj := web3.json.rpc.send(client.URL, 'eth_blockNumber', []);
   if Assigned(obj) then
   try
-    Result := web3.json.GetPropAsStr(obj, 'result');
+    Result := web3.json.getPropAsStr(obj, 'result');
   finally
     obj.Free;
   end;
@@ -128,7 +128,7 @@ begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(web3.json.GetPropAsStr(resp, 'result'), nil);
+      callback(web3.json.getPropAsStr(resp, 'result'), nil);
   end);
 end;
 
@@ -144,7 +144,7 @@ begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(web3.json.GetPropAsStr(resp, 'result'), nil);
+      callback(web3.json.getPropAsStr(resp, 'result'), nil);
   end);
 end;
 
@@ -161,7 +161,7 @@ begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(web3.json.GetPropAsStr(resp, 'result'), nil);
+      callback(web3.json.getPropAsStr(resp, 'result'), nil);
   end);
 end;
 
@@ -190,9 +190,9 @@ begin
   // step #2: construct the transaction call object
   obj := web3.json.unmarshal(Format(
     '{"from": %s, "to": %s, "data": %s}', [
-      web3.json.QuoteString(string(from), '"'),
-      web3.json.QuoteString(string(&to), '"'),
-      web3.json.QuoteString(abi, '"')
+      web3.json.quoteString(string(from), '"'),
+      web3.json.quoteString(string(&to), '"'),
+      web3.json.quoteString(abi, '"')
     ]
   ));
   try
@@ -202,7 +202,7 @@ begin
       if Assigned(err) then
         callback('', err)
       else
-        callback(web3.json.GetPropAsStr(resp, 'result'), nil);
+        callback(web3.json.getPropAsStr(resp, 'result'), nil);
     end);
   finally
     obj.Free;

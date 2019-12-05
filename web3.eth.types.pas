@@ -111,14 +111,14 @@ begin
   end;
 end;
 
-function ToInt(arg: TArg): UInt64;
+function toInt(arg: TArg): UInt64;
 begin
   Result := StrToInt64(toHex(arg, '$'));
 end;
 
-function ToBool(arg: TArg): Boolean;
+function toBool(arg: TArg): Boolean;
 begin
-  Result := ToInt(arg) <> 0;
+  Result := toInt(arg) <> 0;
 end;
 
 { TAddressHelper }
