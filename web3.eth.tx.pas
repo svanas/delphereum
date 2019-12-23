@@ -148,15 +148,15 @@ begin
     Signature := Signer.GenerateSignature(
       sha3(
         web3.rlp.encode([
-          web3.utils.toHex(nonce),    // nonce
-          web3.utils.toHex(gasPrice), // gasPrice
-          web3.utils.toHex(gasLimit), // gas(Limit)
-          &to,                        // to
-          web3.utils.toHex(value),    // value
-          data,                       // data
-          chainId[chain],             // v
-          0,                          // r
-          0                           // s
+          web3.utils.toHex(nonce, True),    // nonce
+          web3.utils.toHex(gasPrice, True), // gasPrice
+          web3.utils.toHex(gasLimit, True), // gas(Limit)
+          &to,                              // to
+          web3.utils.toHex(value, True),    // value
+          data,                             // data
+          chainId[chain],                   // v
+          0,                                // r
+          0                                 // s
         ])
       )
     );
@@ -168,11 +168,11 @@ begin
     Result :=
       web3.utils.toHex(
         web3.rlp.encode([
-          web3.utils.toHex(nonce),                 // nonce
-          web3.utils.toHex(gasPrice),              // gasPrice
-          web3.utils.toHex(gasLimit),              // gas(Limit)
+          web3.utils.toHex(nonce, True),           // nonce
+          web3.utils.toHex(gasPrice, True),        // gasPrice
+          web3.utils.toHex(gasLimit, True),        // gas(Limit)
           &to,                                     // to
-          web3.utils.toHex(value),                 // value
+          web3.utils.toHex(value, True),           // value
           data,                                    // data
           web3.utils.toHex(v.ToByteArrayUnsigned), // v
           web3.utils.toHex(r.ToByteArrayUnsigned), // r
@@ -199,34 +199,41 @@ end;
 // send raw transaction, get the receipt, and get the reason if the transaction failed.
 procedure sendTransactionEx(client: TWeb3; const raw: string; callback: TASyncReceipt);
 begin
-  // step #1: send the raw transaction
+  // send the raw transaction
   sendTransaction(client, raw, procedure(hash: TTxHash; err: Exception)
+  var
+    onReceiptReceived: TASyncReceipt;
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    // step #2: get the transaction receipt
-    getTransactionReceipt(client, hash, procedure(rcpt: ITxReceipt; err: Exception)
+    // get the transaction receipt
+    onReceiptReceived := procedure(rcpt: ITxReceipt; err: Exception)
     begin
       if Assigned(err) then
       begin
         callback(nil, err);
         EXIT;
       end;
-      // step #3: did the transaction fail? then get the reason why it failed
+      // has the transaction been mined, or is it still pending?
+      if not Assigned(rcpt) then
+      begin
+        getTransactionReceipt(client, hash, onReceiptReceived);
+        EXIT;
+      end;
+      // did the transaction fail? then get the reason why it failed
       if not rcpt.status then
         getTransactionRevertReason(client, rcpt, procedure(const reason: string; err: Exception)
         begin
-          if Assigned(err) then
-            callback(nil, err)
-          else
-            callback(nil, EWeb3.Create(reason));
+          if not Assigned(err) then
+            callback(rcpt, EWeb3.Create(reason));
           EXIT;
         end);
       callback(rcpt, nil);
-    end);
+    end;
+    getTransactionReceipt(client, hash, onReceiptReceived);
   end);
 end;
 
@@ -480,11 +487,19 @@ end;
 procedure getTransactionReceipt(client: TWeb3; hash: TTxHash; callback: TASyncReceipt);
 begin
   web3.json.rpc.send(client.URL, 'eth_getTransactionReceipt', [hash], procedure(resp: TJsonObject; err: Exception)
+  var
+    rcpt: TJsonObject;
   begin
     if Assigned(err) then
-      callback(nil, err)
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    rcpt := web3.json.getPropAsObj(resp, 'result');
+    if Assigned(rcpt) then
+      callback(TTxReceipt.Create(rcpt), nil)
     else
-      callback(TTxReceipt.Create(web3.json.getPropAsObj(resp, 'result')), nil);
+      callback(nil, nil); // transaction is pending
   end);
 end;
 
