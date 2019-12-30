@@ -349,7 +349,7 @@ var
   data: string;
 begin
   data := web3.eth.abi.encode(func, args);
-  web3.eth.gas.estimateGas(client, &to, func, args, procedure(gasPrice: BigInteger; err: Exception)
+  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: Exception)
   begin
     if Assigned(err) then
       callback(nil, err)
