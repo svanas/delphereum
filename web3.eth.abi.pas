@@ -30,42 +30,91 @@ function encode(const func: string; args: array of const): string;
   // https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI#argument-encoding
   function encodeArgs(args: array of const): TBytes;
 
-    function toHexLen(const str: string; len: Integer): string;
+    function encodeArg(int: Integer): TBytes; overload;
+    begin
+      Result := web3.utils.fromHex('0x' + IntToHex(int, 64));
+    end;
+
+    function encodeArg(const str: string): TBytes; overload;
     var
       buf: TBytes;
+      hex: string;
     begin
       if Copy(str, Low(str), 2) <> '0x' then
-        Result := web3.utils.toHex(str, len - Length(str), len)
+      begin
+        buf := TEncoding.UTF8.GetBytes(str);
+        hex := web3.utils.toHex('', buf);
+        while Length(hex) mod 64 <> 0 do hex := hex + '0';
+        hex := '0x' + IntToHex(Length(buf), 64) + hex;
+      end
       else
       begin
         buf := web3.utils.fromHex(str);
-        if Length(buf) = len then
-          Result := str
+        if Length(buf) = 32 then
+          hex := str
         else
-          Result := web3.utils.toHex(buf, len - Length(buf), len);
+          hex := web3.utils.toHex(buf, 32 - Length(buf), 32);
+      end;
+      Result := web3.utils.fromHex(hex);
+    end;
+
+    function encodeArg(arg: TVarRec): TBytes; overload;
+    begin
+      case arg.VType of
+        vtBoolean:
+          Result := web3.utils.fromHex('0x' + IntToHex(Ord(arg.VBoolean), 64));
+        vtInteger:
+          Result := encodeArg(arg.VInteger);
+        vtString:
+          Result := encodeArg(UnicodeString(PShortString(arg.VAnsiString)^));
+        vtWideString:
+          Result := encodeArg(WideString(arg.VWideString^));
+        vtInt64:
+          Result := web3.utils.fromHex('0x' + IntToHex(arg.VInt64^, 64));
+        vtUnicodeString:
+          Result := encodeArg(string(arg.VUnicodeString));
+      end;
+    end;
+
+    function isDynamic(arg: TVarRec): Boolean;
+    var
+      S: string;
+    begin
+      Result := False;
+      if arg.VType in [vtString, vtWideString, vtUnicodeString] then
+      begin
+        case arg.VType of
+          vtString:
+            S := UnicodeString(PShortString(arg.VAnsiString)^);
+          vtWideString:
+            S := WideString(arg.VWideString^);
+          vtUnicodeString:
+            S := string(arg.VUnicodeString);
+        end;
+        Result := Copy(S, Low(S), 2) <> '0x';
       end;
     end;
 
   var
-    arg: TVarRec;
+    arg   : TVarRec;
+    curr  : TBytes;
+    data  : TBytes;
+    offset: Integer;
   begin
+    offset := Length(args) * 32;
     for arg in args do
     begin
-      case arg.VType of
-        vtBoolean:
-          Result := Result + web3.utils.fromHex('0x' + IntToHex(Ord(arg.VBoolean), 64));
-        vtInteger:
-          Result := Result + web3.utils.fromHex('0x' + IntToHex(arg.VInteger, 64));
-        vtString:
-          Result := Result + web3.utils.fromHex(toHexLen(UnicodeString(PShortString(arg.VAnsiString)^), 32));
-        vtWideString:
-          Result := Result + web3.utils.fromHex(toHexLen(WideString(arg.VWideString^), 32));
-        vtInt64:
-          Result := Result + web3.utils.fromHex('0x' + IntToHex(arg.VInt64^, 64));
-        vtUnicodeString:
-          Result := Result + web3.utils.fromHex(toHexLen(string(arg.VUnicodeString), 32));
-      end;
+      curr := encodeArg(arg);
+      if isDynamic(arg) then
+      begin
+        Result := Result + encodeArg(offset);
+        data   := data + curr;
+        offset := offset + Length(curr);
+      end
+      else
+        Result := Result + curr;
     end;
+    Result := Result + data;
   end;
 
 var
@@ -78,7 +127,7 @@ begin
   hash := web3.utils.sha3(web3.utils.toHex(func));
   data := Copy(hash, 0, 4) + data;
   // step #3: hex-encode the data
-  Result := web3.utils.toHex(data)
+  Result := web3.utils.toHex(data);
 end;
 
 end.

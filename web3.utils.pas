@@ -30,15 +30,20 @@ uses
   web3.types;
 
 function toHex(const buf: TBytes): string; overload;
+function toHex(const prefix: string; const buf: TBytes): string; overload;
 function toHex(const buf: TBytes; offset, len: Integer): string; overload;
+function toHex(const prefix: string; const buf: TBytes; offset, len: Integer): string; overload;
 
 function toHex(const str: string): string; overload;
+function toHex(const prefix, str: string): string; overload;
 function toHex(const str: string; offset, len: Integer): string; overload;
+function toHex(const prefix, str: string; offset, len: Integer): string; overload;
 
 function toHex(val: TVarRec): string; overload;
 function toHex(int: BigInteger; pad: Boolean = False): string; overload;
 
-function isHex(const str: string): Boolean;
+function isHex(const str: string): Boolean; overload;
+function isHex(const prefix, str: string): Boolean; overload;
 function fromHex(hex: string): TBytes;
 
 function  sha3(const hex: string): TBytes; overload;
@@ -49,10 +54,20 @@ implementation
 
 function toHex(const buf: TBytes): string;
 begin
-  Result := toHex(buf, 0, Length(buf));
+  Result := toHex('0x', buf);
+end;
+
+function toHex(const prefix: string; const buf: TBytes): string;
+begin
+  Result := toHex(prefix, buf, 0, Length(buf));
 end;
 
 function toHex(const buf: TBytes; offset, len: Integer): string;
+begin
+  Result := toHex('0x', buf, offset, len);
+end;
+
+function toHex(const prefix: string; const buf: TBytes; offset, len: Integer): string;
 const
   Digits = '0123456789ABCDEF';
 var
@@ -66,19 +81,29 @@ begin
       Result[2 * (I + offset) + 2] := Digits[(buf[I] and $F) + 1];
     end;
   finally
-    Result := '0x' + Result;
+    Result := prefix + Result;
   end;
 end;
 
 function toHex(const str: string): string;
 begin
-  if isHex(str) then
+  Result := toHex('0x', str);
+end;
+
+function toHex(const prefix, str: string): string;
+begin
+  if isHex(prefix, str) then
     Result := str
   else
-    Result := toHex(TEncoding.UTF8.GetBytes(str));
+    Result := toHex(prefix, TEncoding.UTF8.GetBytes(str));
 end;
 
 function toHex(const str: string; offset, len: Integer): string;
+begin
+  Result := toHex('0x', str, offset, len);
+end;
+
+function toHex(const prefix, str: string; offset, len: Integer): string;
 begin
   Result := toHex(TEncoding.UTF8.GetBytes(str), offset, len);
 end;
@@ -127,13 +152,18 @@ begin
 end;
 
 function isHex(const str: string): Boolean;
+begin
+  Result := isHex('0x', str);
+end;
+
+function isHex(const prefix, str: string): Boolean;
 var
   i: Integer;
 begin
   Result := str.Length > 1;
   if Result then
   begin
-    Result := Copy(str, Low(str), 2) = '0x';
+    Result := Copy(str, Low(str), 2) = prefix;
     if Result then
       for i := Low(str) + 2 to High(str) do
       begin

@@ -80,7 +80,7 @@ type
     function ToString: string;
   end;
 
-function toHex(arg: TArg; const prefix: string): string;
+function toHex(const prefix: string; arg: TArg): string;
 function toInt(arg: TArg): UInt64;
 function toBool(arg: TArg): Boolean;
 
@@ -93,7 +93,7 @@ uses
 
 { TArg }
 
-function toHex(arg: TArg; const prefix: string): string;
+function toHex(const prefix: string; arg: TArg): string;
 const
   Digits = '0123456789ABCDEF';
 var
@@ -113,7 +113,7 @@ end;
 
 function toInt(arg: TArg): UInt64;
 begin
-  Result := StrToInt64(toHex(arg, '$'));
+  Result := StrToInt64(toHex('$', arg));
 end;
 
 function toBool(arg: TArg): Boolean;
@@ -125,7 +125,7 @@ end;
 
 class function TAddressHelper.New(arg: TArg): TAddress;
 begin
-  Result := New(toHex(arg, '0x'));
+  Result := New(toHex('0x', arg));
 end;
 
 class function TAddressHelper.New(const hex: string): TAddress;
