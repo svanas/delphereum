@@ -21,9 +21,6 @@ uses
   web3.eth.types,
   web3.types;
 
-type
-  ENS = class(EWeb3);
-
 function  namehash(const name: string): string;
 procedure resolver(client: TWeb3; const name: string; callback: TASyncAddress);
 procedure addr    (client: TWeb3; const name: string; callback: TASyncAddress);
@@ -41,14 +38,7 @@ uses
   web3.utils;
 
 const
-  deployments: array[TChain] of TAddress = (
-    '0x314159265dD8dbb310642f98f50C066173C1259b', // Mainnet
-    '0x112234455C3a32FD11230C42E7Bccd4A84e02010', // Ropsten
-    '0xe7410170f87102DF0055eB195163A03B7F2Bff4A', // Rinkeby
-    '0x112234455C3a32FD11230C42E7Bccd4A84e02010', // Goerli
-    '',                                           // Kovan
-    ''                                            // Ganache
-  );
+  ENS_REGISTRY: TAddress = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e';
 
 function namehash(const name: string): string;
 var
@@ -77,14 +67,8 @@ begin
 end;
 
 procedure resolver(client: TWeb3; const name: string; callback: TASyncAddress);
-var
-  registry: TAddress;
 begin
-  registry := deployments[client.Chain];
-  if (registry = '')
-  or (registry = ADDRESS_ZERO) then
-    raise ENS.CreateFmt('ENS is not supported on %s.', [GetEnumName(TypeInfo(TChain), Ord(client.Chain))]);
-  web3.eth.call(client, registry, 'resolver(bytes32)', [namehash(name)], procedure(const hex: string; err: Exception)
+  web3.eth.call(client, ENS_REGISTRY, 'resolver(bytes32)', [namehash(name)], procedure(const hex: string; err: Exception)
   begin
     if Assigned(err) then
       callback('', err)
