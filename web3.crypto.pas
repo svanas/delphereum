@@ -23,16 +23,22 @@ uses
   ClpBigInteger,
   ClpCryptoLibTypes,
   ClpCustomNamedCurves,
-  ClpIECC,
   ClpECDomainParameters,
   ClpECDsaSigner,
+  ClpECKeyGenerationParameters,
   ClpECKeyPairGenerator,
   ClpECPrivateKeyParameters,
+  ClpIAsymmetricCipherKeyPair,
+  ClpIECC,
   ClpIECDomainParameters,
+  ClpIECKeyGenerationParameters,
+  ClpIECKeyPairGenerator,
   ClpIECPrivateKeyParameters,
   ClpIECPublicKeyParameters,
+  ClpISecureRandom,
   ClpIX9ECParameters,
-  ClpIX9ECParametersHolder;
+  ClpIX9ECParametersHolder,
+  ClpSecureRandom;
 
 type
   TKeyType = (SECP256K1, SECP384R1, SECP521R1, SECT283K1);
@@ -50,38 +56,61 @@ type
     function GenerateSignature(aKeyType: TKeyType; const msg: TCryptoLibByteArray): TECDsaSignature; reintroduce;
   end;
 
-function privateKeyFromByteArray(aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
+function privateKeyFromByteArray(const algorithm: string; aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
 function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
+function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;
 
 implementation
 
 function getCurveFromKeyType(aKeyType: TKeyType): IX9ECParameters;
 var
-  CurveName: string;
+  curveName: string;
 begin
-  CurveName := GetEnumName(TypeInfo(TKeyType), Ord(aKeyType));
-  Result    := TCustomNamedCurves.GetByName(CurveName);
+  curveName := GetEnumName(TypeInfo(TKeyType), Ord(aKeyType));
+  Result    := TCustomNamedCurves.GetByName(curveName);
 end;
 
-function privateKeyFromByteArray(aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
+function privateKeyFromByteArray(const algorithm: string; aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
 var
   domain: IECDomainParameters;
-  LCurve: IX9ECParameters;
-  PrivD : TBigInteger;
+  curve : IX9ECParameters;
+  privD : TBigInteger;
 begin
-  LCurve := getCurveFromKeyType(aKeyType);
-  domain := TECDomainParameters.Create(LCurve.Curve, LCurve.G, LCurve.N, LCurve.H, LCurve.GetSeed);
-  PrivD  := TBigInteger.Create(1, aPrivKey);
-  Result := TECPrivateKeyParameters.Create('ECDSA', PrivD, domain);
+  curve  := getCurveFromKeyType(aKeyType);
+  domain := TECDomainParameters.Create(curve.Curve, curve.G, curve.N, curve.H, curve.GetSeed);
+  privD  := TBigInteger.Create(1, aPrivKey);
+  Result := TECPrivateKeyParameters.Create(algorithm, privD, domain);
 end;
 
 function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
 var
-  Params: IECPublicKeyParameters;
+  params: IECPublicKeyParameters;
 begin
-  Params := TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
-  Result := Params.Q.AffineXCoord.ToBigInteger.ToByteArrayUnsigned
-          + Params.Q.AffineYCoord.ToBigInteger.ToByteArrayUnsigned;
+  params := TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
+  Result := params.Q.AffineXCoord.ToBigInteger.ToByteArrayUnsigned
+          + params.Q.AffineYCoord.ToBigInteger.ToByteArrayUnsigned;
+end;
+
+function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;
+var
+  secureRandom    : ISecureRandom;
+  customCurve     : IX9ECParameters;
+  domainParams    : IECDomainParameters;
+  keyPairGenerator: IECKeyPairGenerator;
+  keyGenParams    : IECKeyGenerationParameters;
+  keyPair         : IAsymmetricCipherKeyPair;
+begin
+  secureRandom := TSecureRandom.Create;
+
+  customCurve := getCurveFromKeyType(aKeyType);
+  domainParams := TECDomainParameters.Create(customCurve.Curve,
+    customCurve.G, customCurve.N, customCurve.H, customCurve.GetSeed);
+  keyPairGenerator := TECKeyPairGenerator.Create(algorithm);
+  keyGenParams := TECKeyGenerationParameters.Create(domainParams, secureRandom);
+  keyPairGenerator.Init(keyGenParams);
+
+  keyPair := keyPairGenerator.GenerateKeyPair;
+  Result := keyPair.Private as IECPrivateKeyParameters;
 end;
 
 { TECDsaSignerEx }
@@ -95,10 +124,10 @@ function TECDsaSignerEx.GenerateSignature(aKeyType: TKeyType; const msg: TCrypto
 
   function isLowS(const s: TBigInteger): Boolean;
   var
-    LHalfCurveOrder: TBigInteger;
+    halfCurveOrder: TBigInteger;
   begin
-    LHalfCurveOrder := curveOrder.ShiftRight(1);
-    Result := s.CompareTo(LHalfCurveOrder) <= 0;
+    halfCurveOrder := curveOrder.ShiftRight(1);
+    Result := s.CompareTo(halfCurveOrder) <= 0;
   end;
 
   procedure makeCanonical(var aSignature: TECDsaSignature);

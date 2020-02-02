@@ -76,6 +76,8 @@ type
 
 type
   TPrivateKeyHelper = record helper for TPrivateKey
+    class function Generate: TPrivateKey; static;
+    class function New(params: IECPrivateKeyParameters): TPrivateKey; static;
     function Parameters: IECPrivateKeyParameters;
     function Address: TAddress;
   end;
@@ -186,9 +188,19 @@ end;
 
 { TPrivateKeyHelper }
 
+class function TPrivateKeyHelper.Generate: TPrivateKey;
+begin
+  Result := New(web3.crypto.generatePrivateKey('ECDSA', SECP256K1));
+end;
+
+class function TPrivateKeyHelper.New(params: IECPrivateKeyParameters): TPrivateKey;
+begin
+  Result := TPrivateKey(web3.utils.toHex('', params.D.ToByteArrayUnsigned));
+end;
+
 function TPrivateKeyHelper.Parameters: IECPrivateKeyParameters;
 begin
-  Result := web3.crypto.privateKeyFromByteArray(SECP256K1, fromHex(string(Self)));
+  Result := web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, fromHex(string(Self)));
 end;
 
 function TPrivateKeyHelper.Address: TAddress;
@@ -219,20 +231,20 @@ end;
 
 function TTupleHelper.ToString: string;
 var
-  Arg: TArg;
-  Len: Integer;
-  Idx: Integer;
+  arg: TArg;
+  len: Integer;
+  idx: Integer;
 begin
   Result := '';
   if Length(Self) < 3 then
     EXIT;
-  Arg := Self[1];
-  Len := toInt(Arg);
-  if Len = 0 then
+  arg := Self[1];
+  len := toInt(arg);
+  if len = 0 then
     EXIT;
-  for Idx := 2 to High(Self) do
-    Result := Result + TEncoding.UTF8.GetString(Self[Idx]);
-  SetLength(Result, Len);
+  for idx := 2 to High(Self) do
+    Result := Result + TEncoding.UTF8.GetString(Self[idx]);
+  SetLength(Result, len);
 end;
 
 end.
