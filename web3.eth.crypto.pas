@@ -16,17 +16,12 @@ unit web3.eth.crypto;
 interface
 
 uses
-  // Delphi
-  System.SysUtils,
   // CryptoLib4Pascal
   ClpCryptoLibTypes,
   ClpDigestUtilities,
   ClpHMacDsaKCalculator,
-  ClpIECPrivateKeyParameters,
   // web3
-  web3.crypto,
-  web3.eth.types,
-  web3.utils;
+  web3.crypto;
 
 type
   TEthereumSigner = class(TECDsaSignerEx)
@@ -35,26 +30,7 @@ type
     function GenerateSignature(const msg: TCryptoLibByteArray): TECDsaSignature; reintroduce;
   end;
 
-function PrivateKeyFromHex(aPrivKey: TPrivateKey): IECPrivateKeyParameters;
-function AddressFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TAddress;
-
 implementation
-
-function PrivateKeyFromHex(aPrivKey: TPrivateKey): IECPrivateKeyParameters;
-begin
-  Result := web3.crypto.PrivateKeyFromByteArray(SECP256K1, fromHex(string(aPrivKey)));
-end;
-
-function AddressFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TAddress;
-var
-  PubKey: TBytes;
-  Buffer: TBytes;
-begin
-  PubKey := web3.crypto.PublicKeyFromPrivateKey(aPrivKey);
-  Buffer := web3.utils.sha3(PubKey);
-  Delete(Buffer, 0, 12);
-  Result := TAddress(toHex(Buffer));
-end;
 
 { TEthereumSigner }
 

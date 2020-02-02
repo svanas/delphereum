@@ -17,10 +17,11 @@ interface
 
 uses
   // Delphi
-  System.JSON,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
+  // CryptoLib4Pascal
+  ClpIECPrivateKeyParameters,
   // web3
   web3,
   web3.types;
@@ -74,6 +75,12 @@ type
   end;
 
 type
+  TPrivateKeyHelper = record helper for TPrivateKey
+    function Parameters: IECPrivateKeyParameters;
+    function Address: TAddress;
+  end;
+
+type
   TTupleHelper = record helper for TTuple
     function Add     : PArg;
     function Last    : PArg;
@@ -88,6 +95,7 @@ implementation
 
 uses
   // web3
+  web3.crypto,
   web3.eth.ens,
   web3.utils;
 
@@ -174,6 +182,24 @@ begin
       else
         callback(string(addr), nil);
   end);
+end;
+
+{ TPrivateKeyHelper }
+
+function TPrivateKeyHelper.Parameters: IECPrivateKeyParameters;
+begin
+  Result := web3.crypto.privateKeyFromByteArray(SECP256K1, fromHex(string(Self)));
+end;
+
+function TPrivateKeyHelper.Address: TAddress;
+var
+  pubKey: TBytes;
+  buffer: TBytes;
+begin
+  pubKey := web3.crypto.publicKeyFromPrivateKey(Self.Parameters);
+  buffer := web3.utils.sha3(pubKey);
+  Delete(buffer, 0, 12);
+  Result := TAddress(web3.utils.toHex(buffer));
 end;
 
 { TTupleHelper }

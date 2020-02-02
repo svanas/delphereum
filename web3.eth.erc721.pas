@@ -282,7 +282,7 @@ procedure TERC721.SafeTransferFrom(
 begin
   web3.eth.write(Client, from, Contract,
     'safeTransferFrom(address,address,uint256)',
-    [AddressFromPrivateKey(PrivateKeyFromHex(from)), &to, tokenId], callback);
+    [from.Address, &to, tokenId], callback);
 end;
 
 procedure TERC721.TransferFrom(
@@ -293,7 +293,7 @@ procedure TERC721.TransferFrom(
 begin
   web3.eth.write(Client, from, Contract,
     'transferFrom(address,address,uint256)',
-    [AddressFromPrivateKey(PrivateKeyFromHex(from)), &to, tokenId], callback);
+    [from.Address, &to, tokenId], callback);
 end;
 
 procedure TERC721.Approve(

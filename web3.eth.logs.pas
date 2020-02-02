@@ -53,6 +53,7 @@ implementation
 uses
   // Delphi
   System.Classes,
+  System.Generics.Collections,
   System.SysUtils,
   // web3
   web3.eth,

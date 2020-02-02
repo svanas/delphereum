@@ -50,12 +50,12 @@ type
     function GenerateSignature(aKeyType: TKeyType; const msg: TCryptoLibByteArray): TECDsaSignature; reintroduce;
   end;
 
-function PrivateKeyFromByteArray(aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
-function PublicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
+function privateKeyFromByteArray(aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
+function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
 
 implementation
 
-function GetCurveFromKeyType(aKeyType: TKeyType): IX9ECParameters;
+function getCurveFromKeyType(aKeyType: TKeyType): IX9ECParameters;
 var
   CurveName: string;
 begin
@@ -63,19 +63,19 @@ begin
   Result    := TCustomNamedCurves.GetByName(CurveName);
 end;
 
-function PrivateKeyFromByteArray(aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
+function privateKeyFromByteArray(aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
 var
   domain: IECDomainParameters;
   LCurve: IX9ECParameters;
   PrivD : TBigInteger;
 begin
-  LCurve := GetCurveFromKeyType(aKeyType);
+  LCurve := getCurveFromKeyType(aKeyType);
   domain := TECDomainParameters.Create(LCurve.Curve, LCurve.G, LCurve.N, LCurve.H, LCurve.GetSeed);
   PrivD  := TBigInteger.Create(1, aPrivKey);
   Result := TECPrivateKeyParameters.Create('ECDSA', PrivD, domain);
 end;
 
-function PublicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
+function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
 var
   Params: IECPublicKeyParameters;
 begin
@@ -88,23 +88,23 @@ end;
 
 function TECDsaSignerEx.GenerateSignature(aKeyType: TKeyType; const msg: TCryptoLibByteArray): TECDsaSignature;
 
-  function CurveOrder: TBigInteger;
+  function curveOrder: TBigInteger;
   begin
-    Result := GetCurveFromKeyType(aKeyType).Curve.Order;
+    Result := getCurveFromKeyType(aKeyType).Curve.Order;
   end;
 
-  function IsLowS(const s: TBigInteger): Boolean;
+  function isLowS(const s: TBigInteger): Boolean;
   var
     LHalfCurveOrder: TBigInteger;
   begin
-    LHalfCurveOrder := CurveOrder.ShiftRight(1);
+    LHalfCurveOrder := curveOrder.ShiftRight(1);
     Result := s.CompareTo(LHalfCurveOrder) <= 0;
   end;
 
-  procedure MakeCanonical(var aSignature: TECDsaSignature);
+  procedure makeCanonical(var aSignature: TECDsaSignature);
   begin
-    if not IsLowS(aSignature.s) then
-      aSignature.s := CurveOrder.Subtract(aSignature.s);
+    if not isLowS(aSignature.s) then
+      aSignature.s := curveOrder.Subtract(aSignature.s);
   end;
 
 var
@@ -140,7 +140,7 @@ begin
     Result.rec := Result.rec.&Xor(TBigInteger.One);
 
   // https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki#Low_S_values_in_signatures
-  MakeCanonical(Result);
+  makeCanonical(Result);
 end;
 
 end.

@@ -309,15 +309,13 @@ end;
 
 function sign(privateKey: TPrivateKey; const msg: string): TSignature;
 var
-  Params   : IECPrivateKeyParameters;
   Signer   : TEthereumSigner;
   Signature: TECDsaSignature;
   v        : TBigInteger;
 begin
-  Params := web3.eth.crypto.PrivateKeyFromHex(privateKey);
   Signer := TEthereumSigner.Create;
   try
-    Signer.Init(True, Params);
+    Signer.Init(True, privateKey.Parameters);
     Signature := Signer.GenerateSignature(
       sha3(
         TEncoding.UTF8.GetBytes(
@@ -382,7 +380,7 @@ procedure write(
 begin
   web3.eth.getTransactionCount(
     client,
-    web3.eth.crypto.AddressFromPrivateKey(web3.eth.crypto.PrivateKeyFromHex(from)),
+    from.Address,
     procedure(qty: BigInteger; err: Exception)
     begin
       if Assigned(err) then

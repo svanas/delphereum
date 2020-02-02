@@ -143,7 +143,7 @@ var
 begin
   Signer := TEthereumSigner.Create;
   try
-    Signer.Init(True, web3.eth.crypto.PrivateKeyFromHex(from));
+    Signer.Init(True, from.Parameters);
 
     Signature := Signer.GenerateSignature(
       sha3(
@@ -291,7 +291,7 @@ procedure sendTransaction(
 begin
   web3.eth.getTransactionCount(
     client,
-    web3.eth.crypto.AddressFromPrivateKey(web3.eth.crypto.PrivateKeyFromHex(from)),
+    from.Address,
     procedure(qty: BigInteger; err: Exception)
     begin
       if Assigned(err) then
@@ -318,7 +318,7 @@ procedure sendTransactionEx(
 begin
   web3.eth.getTransactionCount(
     client,
-    web3.eth.crypto.AddressFromPrivateKey(web3.eth.crypto.PrivateKeyFromHex(from)),
+    from.Address,
     procedure(qty: BigInteger; err: Exception)
     begin
       if Assigned(err) then
