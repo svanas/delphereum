@@ -44,6 +44,7 @@ Please note there are NO runtime dependencies. Delphereum is lightweight and sel
 7. [Delphi and Ethereum Name Service (ENS)](https://medium.com/@svanas/delphi-and-ethereum-name-service-ens-4443cd278af7)
 8. [A 3-minute Smart Contract and Delphi - Part 1](https://medium.com/@svanas/a-3-minute-smart-contract-and-delphi-61d998571d)
 9. [A 3-minute Smart Contract and Delphi - Part 2](https://medium.com/@svanas/a-3-minute-smart-contract-and-delphi-part-2-446925faa47b)
+10. [QuikNode, Ethereum and Delphi](https://medium.com/@svanas/quiknode-ethereum-and-delphi-f7bfc9671c23)
 
 ## License
 
