@@ -18,13 +18,12 @@ interface
 uses
   // web3
   web3,
-  web3.eth.types,
-  web3.types;
+  web3.eth.types;
 
 function  namehash(const name: string): string;
-procedure resolver(client: TWeb3; const name: string; callback: TASyncAddress);
-procedure addr    (client: TWeb3; const name: string; callback: TASyncAddress);
-procedure reverse (client: TWeb3; addr: TAddress; callback: TASyncString);
+procedure resolver(client: TWeb3; const name: string; callback: TAsyncAddress);
+procedure addr    (client: TWeb3; const name: string; callback: TAsyncAddress);
+procedure reverse (client: TWeb3; addr: TAddress; callback: TAsyncString);
 
 implementation
 
@@ -66,7 +65,7 @@ begin
   Result := web3.utils.toHex(node);
 end;
 
-procedure resolver(client: TWeb3; const name: string; callback: TASyncAddress);
+procedure resolver(client: TWeb3; const name: string; callback: TAsyncAddress);
 begin
   web3.eth.call(client, ENS_REGISTRY, 'resolver(bytes32)', [namehash(name)], procedure(const hex: string; err: Exception)
   begin
@@ -77,7 +76,7 @@ begin
   end);
 end;
 
-procedure addr(client: TWeb3; const name: string; callback: TASyncAddress);
+procedure addr(client: TWeb3; const name: string; callback: TAsyncAddress);
 begin
   resolver(client, name, procedure(resolver: TAddress; err: Exception)
   begin
@@ -94,7 +93,7 @@ begin
   end);
 end;
 
-procedure reverse(client: TWeb3; addr: TAddress; callback: TASyncString);
+procedure reverse(client: TWeb3; addr: TAddress; callback: TAsyncString);
 var
   name: string;
 begin

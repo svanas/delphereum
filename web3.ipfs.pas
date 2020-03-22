@@ -25,8 +25,8 @@ uses
   System.SysUtils,
   System.Types,
   // Web3
-  web3.json,
-  web3.types;
+  web3.eth.types,
+  web3.json;
 
 type
   TGateway = (
@@ -44,19 +44,19 @@ type
   PFile = ^TFile;
 
 type
-  TASyncFile = reference to procedure(&file: PFile; err: Exception);
+  TAsyncFile = reference to procedure(&file: PFile; err: Exception);
 
-function add(const fileName: string; callback: TASyncJsonObject): IASyncResult; overload;
-function add(const fileName: string; callback: TASyncFile): IASyncResult; overload;
+function add(const fileName: string; callback: TAsyncJsonObject): IAsyncResult; overload;
+function add(const fileName: string; callback: TAsyncFile): IAsyncResult; overload;
 
-function add(const apiHost, fileName: string; callback: TASyncJsonObject): IASyncResult; overload;
-function add(const apiHost, fileName: string; callback: TASyncFile): IASyncResult; overload;
+function add(const apiHost, fileName: string; callback: TAsyncJsonObject): IAsyncResult; overload;
+function add(const apiHost, fileName: string; callback: TAsyncFile): IAsyncResult; overload;
 
-function pin(const hash: string; callback: TASyncJsonObject): IASyncResult; overload;
-function pin(const apiHost, hash: string; callback: TASyncJsonObject): IASyncResult; overload;
+function pin(const hash: string; callback: TAsyncJsonObject): IAsyncResult; overload;
+function pin(const apiHost, hash: string; callback: TAsyncJsonObject): IAsyncResult; overload;
 
-function cat(const hash: string; callback: TASyncResponse): IASyncResult; overload;
-function cat(const apiHost, hash: string; callback: TASyncResponse): IASyncResult; overload;
+function cat(const hash: string; callback: TAsyncResponse): IAsyncResult; overload;
+function cat(const apiHost, hash: string; callback: TAsyncResponse): IAsyncResult; overload;
 
 implementation
 
@@ -75,17 +75,17 @@ end;
 
 { global functions }
 
-function add(const fileName: string; callback: TASyncJsonObject): IASyncResult;
+function add(const fileName: string; callback: TAsyncJsonObject): IAsyncResult;
 begin
   Result := add('https://ipfs.infura.io:5001', fileName, callback);
 end;
 
-function add(const fileName: string; callback: TASyncFile): IASyncResult;
+function add(const fileName: string; callback: TAsyncFile): IAsyncResult;
 begin
   Result := add('https://ipfs.infura.io:5001', fileName, callback);
 end;
 
-function add(const apiHost, fileName: string; callback: TASyncJsonObject): IASyncResult;
+function add(const apiHost, fileName: string; callback: TAsyncJsonObject): IAsyncResult;
 var
   client: THttpClient;
   source: TMultipartFormData;
@@ -96,10 +96,10 @@ begin
     client := THttpClient.Create;
     source := TMultipartFormData.Create;
     source.AddFile('file', fileName);
-    Result := client.BeginPost(procedure(const aSyncResult: IASyncResult)
+    Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
     begin
       try
-        resp := THttpClient.EndASyncHttp(aSyncResult);
+        resp := THttpClient.EndAsyncHttp(aSyncResult);
         if resp.StatusCode <> 200 then
           callback(nil, ENetHttpResponseException.Create(resp.ContentAsString(TEncoding.UTF8)))
         else
@@ -123,7 +123,7 @@ begin
   end;
 end;
 
-function add(const apiHost, fileName: string; callback: TASyncFile): IASyncResult;
+function add(const apiHost, fileName: string; callback: TAsyncFile): IAsyncResult;
 var
   &file: TFile;
 begin
@@ -141,12 +141,12 @@ begin
   end);
 end;
 
-function pin(const hash: string; callback: TASyncJsonObject): IASyncResult;
+function pin(const hash: string; callback: TAsyncJsonObject): IAsyncResult;
 begin
   Result := pin('https://ipfs.infura.io:5001', hash, callback);
 end;
 
-function pin(const apiHost, hash: string; callback: TASyncJsonObject): IASyncResult;
+function pin(const apiHost, hash: string; callback: TAsyncJsonObject): IAsyncResult;
 var
   client: THttpClient;
   resp  : IHttpResponse;
@@ -154,10 +154,10 @@ var
 begin
   try
     client := THttpClient.Create;
-    Result := client.BeginGet(procedure(const aSyncResult: IASyncResult)
+    Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
     begin
       try
-        resp := THttpClient.EndASyncHttp(aSyncResult);
+        resp := THttpClient.EndAsyncHttp(aSyncResult);
         if resp.StatusCode <> 200 then
           callback(nil, ENetHttpResponseException.Create(resp.ContentAsString(TEncoding.UTF8)))
         else
@@ -180,22 +180,22 @@ begin
   end;
 end;
 
-function cat(const hash: string; callback: TASyncResponse): IASyncResult;
+function cat(const hash: string; callback: TAsyncResponse): IAsyncResult;
 begin
   Result := cat('https://ipfs.infura.io:5001', hash, callback);
 end;
 
-function cat(const apiHost, hash: string; callback: TASyncResponse): IASyncResult;
+function cat(const apiHost, hash: string; callback: TAsyncResponse): IAsyncResult;
 var
   client: THttpClient;
   resp  : IHttpResponse;
 begin
   try
     client := THttpClient.Create;
-    Result := client.BeginGet(procedure(const aSyncResult: IASyncResult)
+    Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
     begin
       try
-        resp := THttpClient.EndASyncHttp(aSyncResult);
+        resp := THttpClient.EndAsyncHttp(aSyncResult);
         if resp.StatusCode <> 200 then
           callback(nil, ENetHttpResponseException.Create(resp.ContentAsString(TEncoding.UTF8)))
         else

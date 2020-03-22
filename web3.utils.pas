@@ -25,9 +25,9 @@ uses
   HlpSHA3,
   // Web3
   web3,
+  web3.eth.types,
   web3.json,
-  web3.json.rpc,
-  web3.types;
+  web3.json.rpc;
 
 function toHex(const buf: TBytes): string; overload;
 function toHex(const prefix: string; const buf: TBytes): string; overload;
@@ -48,7 +48,7 @@ function fromHex(hex: string): TBytes;
 
 function  sha3(const hex: string): TBytes; overload;
 function  sha3(const buf: TBytes): TBytes; overload;
-procedure sha3(client: TWeb3; const hex: string; callback: TASyncString); overload;
+procedure sha3(client: TWeb3; const hex: string; callback: TAsyncString); overload;
 
 implementation
 
@@ -203,7 +203,7 @@ begin
   end;
 end;
 
-procedure sha3(client: TWeb3; const hex: string; callback: TASyncString);
+procedure sha3(client: TWeb3; const hex: string; callback: TAsyncString);
 begin
   web3.json.rpc.send(client.URL, 'web3_sha3', [hex], procedure(resp: TJsonObject; err: Exception)
   begin

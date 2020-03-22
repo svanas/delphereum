@@ -25,8 +25,7 @@ uses
   web3.eth.contract,
   web3.eth.crypto,
   web3.eth.logs,
-  web3.eth.types,
-  web3.types;
+  web3.eth.types;
 
 type
   // https://eips.ethereum.org/EIPS/eip-721
@@ -34,11 +33,11 @@ type
     // Count all NFTs assigned to an owner
     procedure BalanceOf(
       owner    : TAddress;        // An address for whom to query the balance
-      callback : TASyncQuantity); // The number of NFTs owned by `owner`, possibly zero
+      callback : TAsyncQuantity); // The number of NFTs owned by `owner`, possibly zero
     // Find the owner of an NFT
     procedure OwnerOf(
       tokenId  : UInt64;          // The identifier for an NFT
-      callback : TASyncAddress);  // The address of the owner of the NFT
+      callback : TAsyncAddress);  // The address of the owner of the NFT
     // Transfers the ownership of an NFT from one address to another address
     // Throws...
     // 1) if `from` is not the current owner, or
@@ -49,7 +48,7 @@ type
       from     : TPrivateKey;     // The current owner of the NFT
       &to      : TAddress;        // The new owner
       tokenId  : UInt64;          // The NFT to transfer
-      callback : TASyncReceipt);
+      callback : TAsyncReceipt);
     // Transfers the ownership of an NFT from one address to another address
     // THE CALLER IS RESPONSIBLE TO CONFIRM THAT `to` IS CAPABLE OF RECEIVING
     // NFTs OR ELSE THEY MAY BE PERMANENTLY LOST
@@ -57,52 +56,52 @@ type
       from     : TPrivateKey;     // The current owner of the NFT
       &to      : TAddress;        // The new owner
       tokenId  : UInt64;          // The NFT to transfer
-      callback : TASyncReceipt);
+      callback : TAsyncReceipt);
     // Change or reaffirm the approved address for an NFT
     procedure Approve(
       owner    : TPrivateKey;     // The current owner of the NFT
       spender  : TAddress;        // The new approved NFT controller
       tokenId  : UInt64;          // The NFT to approve
-      callback : TASyncReceipt);
+      callback : TAsyncReceipt);
     // Change or reaffirm the approved address for an NFT
     procedure SetApprovalForAll(
       owner    : TPrivateKey;     // The current owner of the NFT
       &operator: TAddress;        // Address to add to the set of authorized operators
       approved : Boolean;         // True if the operator is approved, false to revoke approval
-      callback : TASyncReceipt);
+      callback : TAsyncReceipt);
     // Get the approved address for a single NFT
     procedure GetApproved(
       tokenId  : UInt64;          // The NFT to find the approved address for
-      callback : TASyncAddress);  // The approved address for this NFT, or the zero address if there is none
+      callback : TAsyncAddress);  // The approved address for this NFT, or the zero address if there is none
     // Query if an address is an authorized operator for another address
     procedure IsApprovedForAll(
       owner    : TAddress;        // The address that owns the NFTs
       &operator: TAddress;        // The address that acts on behalf of the owner
-      callback : TASyncBoolean);  // True if `operator` is an approved operator for `owner`, false otherwise
+      callback : TAsyncBoolean);  // True if `operator` is an approved operator for `owner`, false otherwise
   end;
 
   IERC721Metadata = interface
     // A descriptive name for a collection of NFTs in this contract
-    procedure Name(callback: TASyncString);
+    procedure Name(callback: TAsyncString);
     // An abbreviated name for NFTs in this contract
-    procedure Symbol(callback: TASyncString);
+    procedure Symbol(callback: TAsyncString);
     // A distinct Uniform Resource Identifier (URI) for a given asset.
     // The URI may point to a JSON file that conforms to the "ERC721 Metadata JSON Schema".
-    procedure TokenURI(tokenId: UInt64; callback: TASyncString);
+    procedure TokenURI(tokenId: UInt64; callback: TAsyncString);
   end;
 
   IERC721Enumerable = interface
     // Count NFTs tracked by this contract
-    procedure TotalSupply(callback: TASyncQuantity);
+    procedure TotalSupply(callback: TAsyncQuantity);
     // Enumerate valid NFTs
     procedure TokenByIndex(
       index   : UInt64;          // A counter less than `totalSupply()`
-      callback: TASyncQuantity); // The token identifier for the `index`th NFT
+      callback: TAsyncQuantity); // The token identifier for the `index`th NFT
     // Enumerate NFTs assigned to an owner
     procedure TokenOfOwnerByIndex(
       owner   : TAddress;        // An address where we are interested in NFTs owned by them
       index   : UInt64;          // A counter less than `balanceOf(_owner)`
-      callback: TASyncQuantity); // The token identifier for the `index`th NFT assigned to `owner`
+      callback: TAsyncQuantity); // The token identifier for the `index`th NFT assigned to `owner`
   end;
 
   // This emits when ownership of any NFT changes by any mechanism.
@@ -145,45 +144,45 @@ type
     // IERC721
     procedure BalanceOf(
       owner    : TAddress;
-      callback : TASyncQuantity);
+      callback : TAsyncQuantity);
     procedure OwnerOf(
       tokenId  : UInt64;
-      callback : TASyncAddress);
+      callback : TAsyncAddress);
     procedure SafeTransferFrom(
       from     : TPrivateKey;
       &to      : TAddress;
       tokenId  : UInt64;
-      callback : TASyncReceipt);
+      callback : TAsyncReceipt);
     procedure TransferFrom(
       from     : TPrivateKey;
       &to      : TAddress;
       tokenId  : UInt64;
-      callback : TASyncReceipt);
+      callback : TAsyncReceipt);
     procedure Approve(
       owner    : TPrivateKey;
       spender  : TAddress;
       tokenId  : UInt64;
-      callback : TASyncReceipt);
+      callback : TAsyncReceipt);
     procedure SetApprovalForAll(
       owner    : TPrivateKey;
       &operator: TAddress;
       approved : Boolean;
-      callback : TASyncReceipt);
+      callback : TAsyncReceipt);
     procedure GetApproved(
       tokenId  : UInt64;
-      callback : TASyncAddress);
+      callback : TAsyncAddress);
     procedure IsApprovedForAll(
       owner    : TAddress;
       &operator: TAddress;
-      callback : TASyncBoolean);
+      callback : TAsyncBoolean);
     // IERC721Metadata
-    procedure Name(callback: TASyncString);
-    procedure Symbol(callback: TASyncString);
-    procedure TokenURI(tokenId: UInt64; callback: TASyncString);
+    procedure Name(callback: TAsyncString);
+    procedure Symbol(callback: TAsyncString);
+    procedure TokenURI(tokenId: UInt64; callback: TAsyncString);
     // IERC721Enumerable
-    procedure TotalSupply(callback: TASyncQuantity);
-    procedure TokenByIndex(index: UInt64; callback: TASyncQuantity);
-    procedure TokenOfOwnerByIndex(owner: TAddress; index: UInt64; callback: TASyncQuantity);
+    procedure TotalSupply(callback: TAsyncQuantity);
+    procedure TokenByIndex(index: UInt64; callback: TAsyncQuantity);
+    procedure TokenOfOwnerByIndex(owner: TAddress; index: UInt64; callback: TAsyncQuantity);
     // events
     property OnTransfer: TOnTransfer read FOnTransfer write SetOnTransfer;
     property OnApproval: TOnApproval read FOnApproval write SetOnApproval;
@@ -258,12 +257,12 @@ begin
     FTask.Cancel;
 end;
 
-procedure TERC721.BalanceOf(owner: TAddress; callback: TASyncQuantity);
+procedure TERC721.BalanceOf(owner: TAddress; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
 end;
 
-procedure TERC721.OwnerOf(tokenId: UInt64; callback: TASyncAddress);
+procedure TERC721.OwnerOf(tokenId: UInt64; callback: TAsyncAddress);
 begin
   web3.eth.call(Client, Contract, 'ownerOf(uint256)', [tokenId], procedure(const hex: string; err: Exception)
   begin
@@ -278,7 +277,7 @@ procedure TERC721.SafeTransferFrom(
   from    : TPrivateKey;
   &to     : TAddress;
   tokenId : UInt64;
-  callback: TASyncReceipt);
+  callback: TAsyncReceipt);
 begin
   web3.eth.write(Client, from, Contract,
     'safeTransferFrom(address,address,uint256)',
@@ -289,7 +288,7 @@ procedure TERC721.TransferFrom(
   from    : TPrivateKey;
   &to     : TAddress;
   tokenId : UInt64;
-  callback: TASyncReceipt);
+  callback: TAsyncReceipt);
 begin
   web3.eth.write(Client, from, Contract,
     'transferFrom(address,address,uint256)',
@@ -300,7 +299,7 @@ procedure TERC721.Approve(
   owner   : TPrivateKey;
   spender : TAddress;
   tokenId : UInt64;
-  callback: TASyncReceipt);
+  callback: TAsyncReceipt);
 begin
   web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, tokenId], callback);
 end;
@@ -309,12 +308,12 @@ procedure TERC721.SetApprovalForAll(
   owner    : TPrivateKey;
   &operator: TAddress;
   approved : Boolean;
-  callback : TASyncReceipt);
+  callback : TAsyncReceipt);
 begin
   web3.eth.write(Client, owner, Contract, 'setApprovalForAll(address,bool)', [&operator, approved], callback);
 end;
 
-procedure TERC721.GetApproved(tokenId: UInt64; callback: TASyncAddress);
+procedure TERC721.GetApproved(tokenId: UInt64; callback: TAsyncAddress);
 begin
   web3.eth.call(Client, Contract, 'getApproved(uint256)', [tokenId], procedure(const hex: string; err: Exception)
   begin
@@ -328,12 +327,12 @@ end;
 procedure TERC721.IsApprovedForAll(
   owner    : TAddress;
   &operator: TAddress;
-  callback : TASyncBoolean);
+  callback : TAsyncBoolean);
 begin
   web3.eth.call(Client, Contract, 'isApprovedForAll(address,address)', [owner, &operator], callback);
 end;
 
-procedure TERC721.Name(callback: TASyncString);
+procedure TERC721.Name(callback: TAsyncString);
 begin
   web3.eth.call(Client, Contract, 'name()', [], procedure(tup: TTuple; err: Exception)
   begin
@@ -344,7 +343,7 @@ begin
   end);
 end;
 
-procedure TERC721.Symbol(callback: TASyncString);
+procedure TERC721.Symbol(callback: TAsyncString);
 begin
   web3.eth.call(Client, Contract, 'symbol()', [], procedure(tup: TTuple; err: Exception)
   begin
@@ -355,7 +354,7 @@ begin
   end);
 end;
 
-procedure TERC721.TokenURI(tokenId: UInt64; callback: TASyncString);
+procedure TERC721.TokenURI(tokenId: UInt64; callback: TAsyncString);
 begin
   web3.eth.call(Client, Contract, 'tokenURI(uint256)', [tokenId], procedure(tup: TTuple; err: Exception)
   begin
@@ -366,17 +365,17 @@ begin
   end);
 end;
 
-procedure TERC721.TotalSupply(callback: TASyncQuantity);
+procedure TERC721.TotalSupply(callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'totalSupply()', [], callback);
 end;
 
-procedure TERC721.TokenByIndex(index: UInt64; callback: TASyncQuantity);
+procedure TERC721.TokenByIndex(index: UInt64; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'tokenByIndex(uint256)', [index], callback);
 end;
 
-procedure TERC721.TokenOfOwnerByIndex(owner: TAddress; index: UInt64; callback: TASyncQuantity);
+procedure TERC721.TokenOfOwnerByIndex(owner: TAddress; index: UInt64; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'tokenOfOwnerByIndex(address,uint256)', [owner, index], callback);
 end;

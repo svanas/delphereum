@@ -37,9 +37,9 @@ type
   end;
 
 type
-  TASyncResponse = reference to procedure(resp: TJsonObject; err: Exception);
+  TAsyncResponse = reference to procedure(resp: TJsonObject; err: Exception);
 
-function send(const URL, method: string; args: array of const; callback: TASyncResponse): IASyncResult; overload;
+function send(const URL, method: string; args: array of const; callback: TAsyncResponse): IAsyncResult; overload;
 function send(const URL, method: string; args: array of const): TJsonObject; overload;
 
 implementation
@@ -95,7 +95,7 @@ begin
     , [web3.json.quoteString(method, '"'), formatArgs(args), id]);
 end;
 
-function send(const URL, method: string; args: array of const; callback: TASyncResponse): IASyncResult;
+function send(const URL, method: string; args: array of const; callback: TAsyncResponse): IAsyncResult;
 var
   client: THttpClient;
   source: TStream;
@@ -105,7 +105,7 @@ begin
   try
     client := THttpClient.Create;
     source := TStringStream.Create(getPayload(method, args));
-    Result := client.BeginPost(procedure(const aSyncResult: IASyncResult)
+    Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
     begin
       try
         resp := web3.json.unmarshal(THttpClient.EndAsyncHTTP(aSyncResult).ContentAsString(TEncoding.UTF8));

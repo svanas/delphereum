@@ -44,9 +44,9 @@ type
   PLog = ^TLog;
 
 type
-  TASyncLog = reference to procedure(log: TLog);
+  TAsyncLog = reference to procedure(log: TLog);
 
-function get(client: TWeb3; address: TAddress; callback: TASyncLog): ITask;
+function get(client: TWeb3; address: TAddress; callback: TAsyncLog): ITask;
 
 implementation
 
@@ -188,7 +188,7 @@ end;
 
 { public functions }
 
-function get(client: TWeb3; address: TAddress; callback: TASyncLog): ITask;
+function get(client: TWeb3; address: TAddress; callback: TAsyncLog): ITask;
 begin
   Result := TTask.Create(procedure
   var

@@ -17,14 +17,15 @@ interface
 
 uses
   // Delphi
+  System.JSON,
+  System.Net.HttpClient,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // CryptoLib4Pascal
   ClpIECPrivateKeyParameters,
   // web3
-  web3,
-  web3.types;
+  web3;
 
 type
   TAddress    = string[42];
@@ -60,18 +61,23 @@ type
   end;
 
 type
-  TASyncAddress = reference to procedure(addr: TAddress;   err: Exception);
-  TASyncTuple   = reference to procedure(tup : TTuple;     err: Exception);
-  TASyncTxHash  = reference to procedure(hash: TTxHash;    err: Exception);
-  TASyncTxn     = reference to procedure(txn : ITxn;       err: Exception);
-  TASyncReceipt = reference to procedure(rcpt: ITxReceipt; err: Exception);
+  TAsyncString     = reference to procedure(const str: string;   err: Exception);
+  TAsyncQuantity   = reference to procedure(qty : BigInteger;    err: Exception);
+  TAsyncBoolean    = reference to procedure(bool: Boolean;       err: Exception);
+  TAsyncResponse   = reference to procedure(resp: IHttpResponse; err: Exception);
+  TAsyncJsonObject = reference to procedure(obj : TJsonObject;   err: Exception);
+  TAsyncAddress    = reference to procedure(addr: TAddress;      err: Exception);
+  TAsyncTuple      = reference to procedure(tup : TTuple;        err: Exception);
+  TAsyncTxHash     = reference to procedure(hash: TTxHash;       err: Exception);
+  TAsyncTxn        = reference to procedure(txn : ITxn;          err: Exception);
+  TAsyncReceipt    = reference to procedure(rcpt: ITxReceipt;    err: Exception);
 
 type
   TAddressHelper = record helper for TAddress
     class function  New(arg: TArg): TAddress; overload; static;
     class function  New(const hex: string): TAddress; overload; static;
-    class procedure New(client: TWeb3; const name: string; callback: TASyncAddress); overload; static;
-    procedure ToString(client: TWeb3; callback: TASyncString);
+    class procedure New(client: TWeb3; const name: string; callback: TAsyncAddress); overload; static;
+    procedure ToString(client: TWeb3; callback: TAsyncString);
   end;
 
 type
@@ -161,7 +167,7 @@ begin
       Result := TAddress(web3.utils.toHex(Copy(buf, Length(buf) - 20, 20)));
 end;
 
-class procedure TAddressHelper.New(client: TWeb3; const name: string; callback: TASyncAddress);
+class procedure TAddressHelper.New(client: TWeb3; const name: string; callback: TAsyncAddress);
 begin
   if web3.utils.isHex(name) then
     callback(New(name), nil)
@@ -169,7 +175,7 @@ begin
     web3.eth.ens.addr(client, name, callback);
 end;
 
-procedure TAddressHelper.ToString(client: TWeb3; callback: TASyncString);
+procedure TAddressHelper.ToString(client: TWeb3; callback: TAsyncString);
 var
   addr: TAddress;
 begin

@@ -34,7 +34,6 @@ uses
   web3.json,
   web3.json.rpc,
   web3.rlp,
-  web3.types,
   web3.utils;
 
 function signTransaction(
@@ -51,13 +50,13 @@ function signTransaction(
 procedure sendTransaction(
   client   : TWeb3;
   const raw: string;
-  callback : TASyncTxHash); overload;
+  callback : TAsyncTxHash); overload;
 
 // send raw transaction, get the receipt, and get the reason if the transaction failed.
 procedure sendTransactionEx(
-  client: TWeb3;
+  client   : TWeb3;
   const raw: string;
-  callback: TASyncReceipt); overload;
+  callback : TAsyncReceipt); overload;
 
 // 1. calculate the current gas price, then
 // 2. calculate the nonce, then
@@ -68,7 +67,7 @@ procedure sendTransaction(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : TWei;
-  callback: TASyncTxHash); overload;
+  callback: TAsyncTxHash); overload;
 
 // 1. calculate the nonce, then
 // 2. calculate the current gas price, then
@@ -81,7 +80,7 @@ procedure sendTransactionEx(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : TWei;
-  callback: TASyncReceipt); overload;
+  callback: TAsyncReceipt); overload;
 
 // calculate the nonce, then sign the transaction, then send the transaction.
 procedure sendTransaction(
@@ -91,7 +90,7 @@ procedure sendTransaction(
   value   : TWei;
   gasPrice: TWei;
   gasLimit: TWei;
-  callback: TASyncTxHash); overload;
+  callback: TAsyncTxHash); overload;
 
 // 1. calculate the nonce, then
 // 2. sign the transaction, then
@@ -105,25 +104,25 @@ procedure sendTransactionEx(
   value   : TWei;
   gasPrice: TWei;
   gasLimit: TWei;
-  callback: TASyncReceipt); overload;
+  callback: TAsyncReceipt); overload;
 
 // returns the information about a transaction requested by transaction hash.
 procedure getTransaction(
   client  : TWeb3;
   hash    : TTxHash;
-  callback: TASyncTxn);
+  callback: TAsyncTxn);
 
 // returns the receipt of a transaction by transaction hash.
 procedure getTransactionReceipt(
   client  : TWeb3;
   hash    : TTxHash;
-  callback: TASyncReceipt);
+  callback: TAsyncReceipt);
 
 // get the revert reason for a failed transaction.
 procedure getTransactionRevertReason(
   client  : TWeb3;
   rcpt    : ITxReceipt;
-  callback: TASyncString);
+  callback: TAsyncString);
 
 implementation
 
@@ -185,7 +184,7 @@ begin
 end;
 
 // send raw (aka signed) transaction.
-procedure sendTransaction(client: TWeb3; const raw: string; callback: TASyncTxHash);
+procedure sendTransaction(client: TWeb3; const raw: string; callback: TAsyncTxHash);
 begin
   web3.json.rpc.send(client.URL, 'eth_sendRawTransaction', [raw], procedure(resp: TJsonObject; err: Exception)
   begin
@@ -197,12 +196,12 @@ begin
 end;
 
 // send raw transaction, get the receipt, and get the reason if the transaction failed.
-procedure sendTransactionEx(client: TWeb3; const raw: string; callback: TASyncReceipt);
+procedure sendTransactionEx(client: TWeb3; const raw: string; callback: TAsyncReceipt);
 begin
   // send the raw transaction
   sendTransaction(client, raw, procedure(hash: TTxHash; err: Exception)
   var
-    onReceiptReceived: TASyncReceipt;
+    onReceiptReceived: TAsyncReceipt;
   begin
     if Assigned(err) then
     begin
@@ -246,7 +245,7 @@ procedure sendTransaction(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : TWei;
-  callback: TASyncTxHash);
+  callback: TAsyncTxHash);
 begin
   web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: Exception)
   begin
@@ -268,7 +267,7 @@ procedure sendTransactionEx(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : TWei;
-  callback: TASyncReceipt);
+  callback: TAsyncReceipt);
 begin
   web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: Exception)
   begin
@@ -287,7 +286,7 @@ procedure sendTransaction(
   value   : TWei;
   gasPrice: TWei;
   gasLimit: TWei;
-  callback: TASyncTxHash);
+  callback: TAsyncTxHash);
 begin
   web3.eth.getTransactionCount(
     client,
@@ -314,7 +313,7 @@ procedure sendTransactionEx(
   value   : TWei;
   gasPrice: TWei;
   gasLimit: TWei;
-  callback: TASyncReceipt);
+  callback: TAsyncReceipt);
 begin
   web3.eth.getTransactionCount(
     client,
@@ -408,7 +407,7 @@ begin
 end;
 
 // returns the information about a transaction requested by transaction hash.
-procedure getTransaction(client: TWeb3; hash: TTxHash; callback: TASyncTxn);
+procedure getTransaction(client: TWeb3; hash: TTxHash; callback: TAsyncTxn);
 begin
   web3.json.rpc.send(client.URL, 'eth_getTransactionByHash', [hash], procedure(resp: TJsonObject; err: Exception)
   begin
@@ -484,7 +483,7 @@ begin
 end;
 
 // returns the receipt of a transaction by transaction hash.
-procedure getTransactionReceipt(client: TWeb3; hash: TTxHash; callback: TASyncReceipt);
+procedure getTransactionReceipt(client: TWeb3; hash: TTxHash; callback: TAsyncReceipt);
 begin
   web3.json.rpc.send(client.URL, 'eth_getTransactionReceipt', [hash], procedure(resp: TJsonObject; err: Exception)
   var
@@ -508,7 +507,7 @@ resourcestring
   TX_OUT_OF_GAS   = 'Transaction ran out of gas';
 
 // get the revert reason for a failed transaction.
-procedure getTransactionRevertReason(client: TWeb3; rcpt: ITxReceipt; callback: TASyncString);
+procedure getTransactionRevertReason(client: TWeb3; rcpt: ITxReceipt; callback: TAsyncString);
 var
   decoded,
   encoded: string;

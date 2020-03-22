@@ -25,19 +25,18 @@ uses
   web3.eth.abi,
   web3.eth.types,
   web3.json,
-  web3.json.rpc,
-  web3.types;
+  web3.json.rpc;
 
-procedure getGasPrice(client: TWeb3; callback: TASyncQuantity);
+procedure getGasPrice(client: TWeb3; callback: TAsyncQuantity);
 
 procedure estimateGas(client: TWeb3; &to: TAddress;
-  const func: string; args: array of const; callback: TASyncQuantity); overload;
+  const func: string; args: array of const; callback: TAsyncQuantity); overload;
 procedure estimateGas(client: TWeb3; from, &to: TAddress;
-  const func: string; args: array of const; callback: TASyncQuantity); overload;
+  const func: string; args: array of const; callback: TAsyncQuantity); overload;
 
 implementation
 
-procedure getGasPrice(client: TWeb3; callback: TASyncQuantity);
+procedure getGasPrice(client: TWeb3; callback: TAsyncQuantity);
 begin
   web3.json.rpc.send(client.URL, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: Exception)
   begin
@@ -48,12 +47,12 @@ begin
   end);
 end;
 
-procedure estimateGas(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TASyncQuantity);
+procedure estimateGas(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
 begin
   estimateGas(client, ADDRESS_ZERO, &to, func, args, callback);
 end;
 
-procedure estimateGas(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TASyncQuantity);
+procedure estimateGas(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
 var
   abi: string;
   obj: TJsonObject;

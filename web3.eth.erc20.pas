@@ -24,8 +24,7 @@ uses
   web3.eth,
   web3.eth.contract,
   web3.eth.logs,
-  web3.eth.types,
-  web3.types;
+  web3.eth.types;
 
 type
   TOnTransfer = reference to procedure(
@@ -53,24 +52,24 @@ type
     destructor  Destroy; override;
 
     //------- read contract ----------------------------------------------------
-    procedure Name       (callback: TASyncString);
-    procedure Symbol     (callback: TASyncString);
-    procedure Decimals   (callback: TASyncQuantity);
-    procedure TotalSupply(callback: TASyncQuantity);
-    procedure BalanceOf  (owner: TAddress; callback: TASyncQuantity);
-    procedure Allowance  (owner, spender: TAddress; callback: TASyncQuantity);
+    procedure Name       (callback: TAsyncString);
+    procedure Symbol     (callback: TAsyncString);
+    procedure Decimals   (callback: TAsyncQuantity);
+    procedure TotalSupply(callback: TAsyncQuantity);
+    procedure BalanceOf  (owner: TAddress; callback: TAsyncQuantity);
+    procedure Allowance  (owner, spender: TAddress; callback: TAsyncQuantity);
 
     //------- write contract ---------------------------------------------------
     procedure Transfer(
       from    : TPrivateKey;
       &to     : TAddress;
       value   : UInt64;
-      callback: TASyncReceipt);
+      callback: TAsyncReceipt);
     procedure Approve(
       owner   : TPrivateKey;
       spender : TAddress;
       value   : UInt64;
-      callback: TASyncReceipt);
+      callback: TAsyncReceipt);
 
     //------- events -----------------------------------------------------------
     property OnTransfer: TOnTransfer read FOnTransfer write SetOnTransfer;
@@ -135,7 +134,7 @@ begin
     FTask.Cancel;
 end;
 
-procedure TERC20.Name(callback: TASyncString);
+procedure TERC20.Name(callback: TAsyncString);
 begin
   web3.eth.call(Client, Contract, 'name()', [], procedure(tup: TTuple; err: Exception)
   begin
@@ -146,7 +145,7 @@ begin
   end);
 end;
 
-procedure TERC20.Symbol(callback: TASyncString);
+procedure TERC20.Symbol(callback: TAsyncString);
 begin
   web3.eth.call(Client, Contract, 'symbol()', [], procedure(tup: TTuple; err: Exception)
   begin
@@ -157,22 +156,22 @@ begin
   end);
 end;
 
-procedure TERC20.Decimals(callback: TASyncQuantity);
+procedure TERC20.Decimals(callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'decimals()', [], callback);
 end;
 
-procedure TERC20.TotalSupply(callback: TASyncQuantity);
+procedure TERC20.TotalSupply(callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'totalSupply()', [], callback);
 end;
 
-procedure TERC20.BalanceOf(owner: TAddress; callback: TASyncQuantity);
+procedure TERC20.BalanceOf(owner: TAddress; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
 end;
 
-procedure TERC20.Allowance(owner, spender: TAddress; callback: TASyncQuantity);
+procedure TERC20.Allowance(owner, spender: TAddress; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'allowance(address,address)', [owner, spender], callback);
 end;
@@ -181,7 +180,7 @@ procedure TERC20.Transfer(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : UInt64;
-  callback: TASyncReceipt);
+  callback: TAsyncReceipt);
 begin
   web3.eth.write(Client, from, Contract, 'transfer(address,uint256)', [&to, value], callback);
 end;
@@ -190,7 +189,7 @@ procedure TERC20.Approve(
   owner   : TPrivateKey;
   spender : TAddress;
   value   : UInt64;
-  callback: TASyncReceipt);
+  callback: TAsyncReceipt);
 begin
   web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, value], callback);
 end;
