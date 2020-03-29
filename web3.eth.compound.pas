@@ -23,13 +23,12 @@ uses
   // web3
   web3,
   web3.eth,
-  web3.eth.contract,
+  web3.eth.erc20,
   web3.eth.types;
 
 type
-  TCToken = class(TCustomContract)
+  TCToken = class(TERC20)
   public
-    procedure BalanceOf(owner: TAddress; callback: TAsyncQuantity);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
     procedure ExchangeRateCurrent(callback: TAsyncQuantity);
     procedure Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
@@ -66,12 +65,6 @@ const
 implementation
 
 { TCToken }
-
-// returns your wallet's cToken balance.
-procedure TCToken.BalanceOf(owner: TAddress; callback: TAsyncQuantity);
-begin
-  web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
-end;
 
 // returns how much underlying ERC20 tokens your cToken balance entitles you to.
 procedure TCToken.BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
