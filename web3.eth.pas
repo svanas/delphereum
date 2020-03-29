@@ -61,6 +61,9 @@ procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; ar
 
 function sign(privateKey: TPrivateKey; const msg: string): TSignature;
 
+// transact with a non-payable function.
+// default to the median gas price from the latest blocks.
+// default to a 200,000 gas limit.
 procedure write(
   client    : TWeb3;
   from      : TPrivateKey;
@@ -69,10 +72,46 @@ procedure write(
   args      : array of const;
   callback  : TAsyncReceipt); overload;
 
+// transact with a payable function.
+// default to the median gas price from the latest blocks.
+// default to a 200,000 gas limit.
 procedure write(
   client    : TWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
+  value     : TWei;
+  const func: string;
+  args      : array of const;
+  callback  : TAsyncReceipt); overload;
+
+// transact with a non-payable function.
+// default to the median gas price from the latest blocks.
+procedure write(
+  client    : TWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  const func: string;
+  args      : array of const;
+  gasLimit  : TWei;
+  callback  : TAsyncReceipt); overload;
+
+// transact with a payable function.
+// default to the median gas price from the latest blocks.
+procedure write(
+  client    : TWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const func: string;
+  args      : array of const;
+  gasLimit  : TWei;
+  callback  : TAsyncReceipt); overload;
+
+procedure write(
+  client    : TWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
   const func: string;
   args      : array of const;
   gasPrice  : TWei;
@@ -83,6 +122,7 @@ procedure write(
   client    : TWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
+  value     : TWei;
   const data: string;
   gasPrice  : TWei;
   gasLimit  : TWei;
@@ -342,6 +382,43 @@ procedure write(
   const func: string;
   args      : array of const;
   callback  : TAsyncReceipt);
+begin
+  write(client, from, &to, 0, func, args, callback);
+end;
+
+procedure write(
+  client    : TWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const func: string;
+  args      : array of const;
+  callback  : TAsyncReceipt);
+begin
+  write(client, from, &to, value, func, args, 200000, callback);
+end;
+
+procedure write(
+  client    : TWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  const func: string;
+  args      : array of const;
+  gasLimit  : TWei;
+  callback  : TAsyncReceipt);
+begin
+  write(client, from, &to, 0, func, args, gasLimit, callback);
+end;
+
+procedure write(
+  client    : TWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const func: string;
+  args      : array of const;
+  gasLimit  : TWei;
+  callback  : TAsyncReceipt);
 var
   data: string;
 begin
@@ -351,7 +428,7 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      write(client, from, &to, data, gasPrice, 200000, callback);
+      write(client, from, &to, value, data, gasPrice, gasLimit, callback);
   end);
 end;
 
@@ -359,19 +436,21 @@ procedure write(
   client    : TWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
+  value     : TWei;
   const func: string;
   args      : array of const;
   gasPrice  : TWei;
   gasLimit  : TWei;
   callback  : TAsyncReceipt);
 begin
-  write(client, from, &to, web3.eth.abi.encode(func, args), gasPrice, gasLimit, callback);
+  write(client, from, &to, value, web3.eth.abi.encode(func, args), gasPrice, gasLimit, callback);
 end;
 
 procedure write(
   client    : TWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
+  value     : TWei;
   const data: string;
   gasPrice  : TWei;
   gasLimit  : TWei;
@@ -391,7 +470,7 @@ begin
             client.Chain,
             qty,
             from, &to,
-            0,
+            value,
             data,
             gasPrice, gasLimit),
           callback);
