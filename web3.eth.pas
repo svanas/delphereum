@@ -28,6 +28,9 @@ const
   BLOCK_PENDING  = 'pending';
 
 const
+  BLOCKS_PER_DAY = 5760; // 4 * 60 * 24
+
+const
   ADDRESS_ZERO: TAddress = '0x0000000000000000000000000000000000000000';
 
 function  blockNumber(client: TWeb3): BigInteger; overload;

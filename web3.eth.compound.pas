@@ -29,6 +29,7 @@ uses
 type
   TCToken = class(TERC20)
   public
+    procedure APY(callback: TAsyncQuantity);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
     procedure ExchangeRateCurrent(callback: TAsyncQuantity);
     procedure Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
@@ -66,6 +67,27 @@ implementation
 
 { TCToken }
 
+// returns the annual percentage yield for this cToken.
+procedure TCToken.APY(callback: TAsyncQuantity);
+begin
+  SupplyRatePerBlock(procedure(qty: BigInteger; err: Exception)
+  begin
+    if Assigned(err) then
+      callback(BigInteger.Zero, err)
+    else
+      callback(
+        BigInteger.Multiply(
+          BigInteger.Multiply(
+            BigInteger.Multiply(qty, BLOCKS_PER_DAY) + BigInteger.One,
+            365 - 1
+          ),
+          $1e18
+        ),
+        nil
+      );
+  end);
+end;
+
 // returns how much underlying ERC20 tokens your cToken balance entitles you to.
 procedure TCToken.BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
 begin
@@ -88,26 +110,38 @@ end;
 // supply ERC20 tokens to the protocol, and receive interest earning cTokens back.
 // the cTokens are transferred to the wallet of the supplier.
 // please note you needs to first call the approve function on the underlying token's contract.
+// returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
 procedure TCToken.Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
 begin
-  // https://compound.finance/developers#gas-costs
-  web3.eth.write(Client, from, Contract, 'mint(uint256)', [amount], 300000, callback);
+  web3.eth.write(
+    Client, from, Contract,
+    'mint(uint256)', [amount],
+    300000, // https://compound.finance/docs#gas-costs
+    callback);
 end;
 
 // redeems specified amount of cTokens in exchange for the underlying ERC20 tokens.
 // the ERC20 tokens are transferred to the wallet of the supplier.
+// returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
 procedure TCToken.Redeem(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
 begin
-  // https://compound.finance/developers#gas-costs
-  web3.eth.write(Client, from, Contract, 'redeem(uint256)', [amount], 90000, callback);
+  web3.eth.write(
+    Client, from, Contract,
+    'redeem(uint256)', [amount],
+    90000, // https://compound.finance/docs#gas-costs
+    callback);
 end;
 
 // redeems cTokens in exchange for the specified amount of underlying ERC20 tokens.
 // the ERC20 tokens are transferred to the wallet of the supplier.
+// returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
 procedure TCToken.RedeemUnderlying(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
 begin
-  // https://compound.finance/developers#gas-costs
-  web3.eth.write(Client, from, Contract, 'redeemUnderlying(uint256)', [amount], 90000, callback);
+  web3.eth.write(
+    Client, from, Contract,
+    'redeemUnderlying(uint256)', [amount],
+    90000, // https://compound.finance/docs#gas-costs
+    callback);
 end;
 
 // returns the current per-block supply interest rate for this cToken.
@@ -126,7 +160,7 @@ end;
 
 constructor TCDai.Create(aClient: TWeb3);
 begin
-  // https://compound.finance/developers#networks
+  // https://compound.finance/docs#networks
   case aClient.Chain of
     Mainnet, Ganache:
       inherited Create(aClient, '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643');
