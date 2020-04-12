@@ -24,20 +24,44 @@ uses
   web3,
   web3.eth,
   web3.eth.erc20,
+  web3.eth.logs,
   web3.eth.types;
 
 type
+  TOnMint = reference to procedure(
+    Sender: TObject;
+    Minter: TAddress;
+    Amount: UInt64;
+    Tokens: UInt64);
+  TOnRedeem = reference to procedure(
+    Sender  : TObject;
+    Redeemer: TAddress;
+    Amount  : UInt64;
+    Tokens  : UInt64);
+
   TcToken = class abstract(TERC20)
+  strict private
+    FOnMint  : TOnMint;
+    FOnRedeem: TOnRedeem;
+    procedure SetOnMint(Value: TOnMint);
+    procedure SetOnRedeem(Value: TOnRedeem);
   protected
     class function MintGasCost: TWei; virtual;
+    function  ListenForLatestBlock: Boolean; override;
+    procedure OnLatestBlockMined(log: TLog); override;
   public
+    //------- read from contract -----------------------------------------------
     procedure APY(callback: TAsyncQuantity);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
     procedure ExchangeRateCurrent(callback: TAsyncQuantity);
+    procedure SupplyRatePerBlock(callback: TAsyncQuantity);
+    //------- write to contract ------------------------------------------------
     procedure Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
     procedure Redeem(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
     procedure RedeemUnderlying(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
-    procedure SupplyRatePerBlock(callback: TAsyncQuantity);
+    //------- https://compound.finance/docs/ctokens#ctoken-events --------------
+    property OnMint  : TOnMint   read FOnMint   write SetOnMint;
+    property OnRedeem: TOnRedeem read FOnRedeem write SetOnRedeem;
   end;
 
   TcDAI = class(TcToken)
@@ -74,6 +98,45 @@ const
 implementation
 
 { TcToken }
+
+function TcToken.ListenForLatestBlock: Boolean;
+begin
+  Result := inherited ListenForLatestBlock
+         or Assigned(FOnMint) or Assigned(FOnRedeem);
+end;
+
+procedure TcToken.OnLatestBlockMined(log: TLog);
+begin
+  inherited OnLatestBlockMined(log);
+
+  if Assigned(FOnMint) then
+    if log.isEvent('Mint(address,uint256,uint256)') then
+      // emitted upon a successful Mint
+      FOnMint(Self,
+              TAddress.New(log.Topic[1]),
+              toInt(log.Data[0]),
+              toInt(log.Data[1]));
+
+  if Assigned(FOnRedeem) then
+    if log.isEvent('Redeem(address,uint256,uint256)') then
+      // emitted upon a successful Redeem
+      FOnRedeem(Self,
+                TAddress.New(log.Topic[1]),
+                toInt(log.Data[0]),
+                toInt(log.Data[1]));
+end;
+
+procedure TcToken.SetOnMint(Value: TOnMint);
+begin
+  FOnMint := Value;
+  EventChanged;
+end;
+
+procedure TcToken.SetOnRedeem(Value: TOnRedeem);
+begin
+  FOnRedeem := Value;
+  EventChanged;
+end;
 
 // returns the annual percentage yield for this cToken, scaled by 0x1e18
 procedure TcToken.APY(callback: TAsyncQuantity);

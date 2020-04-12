@@ -46,12 +46,14 @@ type
     procedure SetOnTransfer(Value: TOnTransfer);
     procedure SetOnApproval(Value: TOnApproval);
   protected
-    procedure WatchOrStop; virtual;
+    procedure EventChanged;
+    function  ListenForLatestBlock: Boolean; virtual;
+    procedure OnLatestBlockMined(log: TLog); virtual;
   public
     constructor Create(aClient: TWeb3; aContract: TAddress); override;
     destructor  Destroy; override;
 
-    //------- read contract ----------------------------------------------------
+    //------- read from contract -----------------------------------------------
     procedure Name       (callback: TAsyncString);
     procedure Symbol     (callback: TAsyncString);
     procedure Decimals   (callback: TAsyncQuantity);
@@ -59,7 +61,7 @@ type
     procedure BalanceOf  (owner: TAddress; callback: TAsyncQuantity);
     procedure Allowance  (owner, spender: TAddress; callback: TAsyncQuantity);
 
-    //------- write contract ---------------------------------------------------
+    //------- write to contract ------------------------------------------------
     procedure Transfer(
       from    : TPrivateKey;
       &to     : TAddress;
@@ -83,23 +85,7 @@ implementation
 constructor TERC20.Create(aClient: TWeb3; aContract: TAddress);
 begin
   inherited Create(aClient, aContract);
-
-  FTask := web3.eth.logs.get(aClient, aContract,
-    procedure(log: TLog)
-    begin
-      if Assigned(FOnTransfer) then
-        if log.isEvent('Transfer(address,address,uint256)') then
-          FOnTransfer(Self,
-                      TAddress.New(log.Topic[1]),
-                      TAddress.New(log.Topic[2]),
-                      toInt(log.Data[0]));
-      if Assigned(FOnApproval) then
-        if log.isEvent('Approval(address,address,uint256)') then
-          FOnApproval(Self,
-                      TAddress.New(log.Topic[1]),
-                      TAddress.New(log.Topic[2]),
-                      toInt(log.Data[0]));
-    end);
+  FTask := web3.eth.logs.get(aClient, aContract, OnLatestBlockMined);
 end;
 
 destructor TERC20.Destroy;
@@ -109,22 +95,9 @@ begin
   inherited Destroy;
 end;
 
-procedure TERC20.SetOnTransfer(Value: TOnTransfer);
+procedure TERC20.EventChanged;
 begin
-  FOnTransfer := Value;
-  WatchOrStop;
-end;
-
-procedure TERC20.SetOnApproval(Value: TOnApproval);
-begin
-  FOnApproval := Value;
-  WatchOrStop;
-end;
-
-procedure TERC20.WatchOrStop;
-begin
-  if Assigned(FOnTransfer)
-  or Assigned(FOnApproval) then
+  if ListenForLatestBlock then
   begin
     if FTask.Status <> TTaskStatus.Running then
       FTask.Start;
@@ -132,6 +105,40 @@ begin
   end;
   if FTask.Status = TTaskStatus.Running then
     FTask.Cancel;
+end;
+
+function TERC20.ListenForLatestBlock: Boolean;
+begin
+  Result := Assigned(FOnTransfer)
+         or Assigned(FOnApproval);
+end;
+
+procedure TERC20.OnLatestBlockMined(log: TLog);
+begin
+  if Assigned(FOnTransfer) then
+    if log.isEvent('Transfer(address,address,uint256)') then
+      FOnTransfer(Self,
+                  TAddress.New(log.Topic[1]),
+                  TAddress.New(log.Topic[2]),
+                  toInt(log.Data[0]));
+  if Assigned(FOnApproval) then
+    if log.isEvent('Approval(address,address,uint256)') then
+      FOnApproval(Self,
+                  TAddress.New(log.Topic[1]),
+                  TAddress.New(log.Topic[2]),
+                  toInt(log.Data[0]));
+end;
+
+procedure TERC20.SetOnTransfer(Value: TOnTransfer);
+begin
+  FOnTransfer := Value;
+  EventChanged;
+end;
+
+procedure TERC20.SetOnApproval(Value: TOnApproval);
+begin
+  FOnApproval := Value;
+  EventChanged;
 end;
 
 procedure TERC20.Name(callback: TAsyncString);
