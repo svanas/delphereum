@@ -27,7 +27,9 @@ uses
   web3.eth.types;
 
 type
-  TCToken = class(TERC20)
+  TcToken = class abstract(TERC20)
+  protected
+    class function MintGasCost: TWei; virtual;
   public
     procedure APY(callback: TAsyncQuantity);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
@@ -38,8 +40,14 @@ type
     procedure SupplyRatePerBlock(callback: TAsyncQuantity);
   end;
 
-type
-  TCDai = class(TCToken)
+  TcDAI = class(TcToken)
+  protected
+    class function MintGasCost: TWei; override;
+  public
+    constructor Create(aClient: TWeb3); reintroduce;
+  end;
+
+  TcUSDC = class(TcToken)
   public
     constructor Create(aClient: TWeb3); reintroduce;
   end;
@@ -65,10 +73,10 @@ const
 
 implementation
 
-{ TCToken }
+{ TcToken }
 
 // returns the annual percentage yield for this cToken, scaled by 0x1e18
-procedure TCToken.APY(callback: TAsyncQuantity);
+procedure TcToken.APY(callback: TAsyncQuantity);
 begin
   SupplyRatePerBlock(procedure(qty: BigInteger; err: Exception)
   begin
@@ -90,14 +98,14 @@ begin
 end;
 
 // returns how much underlying ERC20 tokens your cToken balance entitles you to.
-procedure TCToken.BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
+procedure TcToken.BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'balanceOfUnderlying(address)', [owner], callback);
 end;
 
 // returns the current exchange rate of cToken to underlying ERC20 token, scaled by 0x1e18
 // please note that the exchange rate of underlying to cToken increases over time.
-procedure TCToken.ExchangeRateCurrent(callback: TAsyncQuantity);
+procedure TcToken.ExchangeRateCurrent(callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'exchangeRateCurrent()', [], procedure(qty: BigInteger; err: Exception)
   begin
@@ -112,19 +120,20 @@ end;
 // the cTokens are transferred to the wallet of the supplier.
 // please note you needs to first call the approve function on the underlying token's contract.
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
-procedure TCToken.Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+procedure TcToken.Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
 begin
-  web3.eth.write(
-    Client, from, Contract,
-    'mint(uint256)', [amount],
-    300000, // https://compound.finance/docs#gas-costs
-    callback);
+  web3.eth.write(Client, from, Contract, 'mint(uint256)', [amount], MintGasCost, callback);
+end;
+
+class function TcToken.MintGasCost: TWei;
+begin
+  Result := 150000; // https://compound.finance/docs#gas-costs
 end;
 
 // redeems specified amount of cTokens in exchange for the underlying ERC20 tokens.
 // the ERC20 tokens are transferred to the wallet of the supplier.
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
-procedure TCToken.Redeem(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+procedure TcToken.Redeem(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
 begin
   web3.eth.write(
     Client, from, Contract,
@@ -136,7 +145,7 @@ end;
 // redeems cTokens in exchange for the specified amount of underlying ERC20 tokens.
 // the ERC20 tokens are transferred to the wallet of the supplier.
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
-procedure TCToken.RedeemUnderlying(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+procedure TcToken.RedeemUnderlying(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
 begin
   web3.eth.write(
     Client, from, Contract,
@@ -146,7 +155,7 @@ begin
 end;
 
 // returns the current per-block supply interest rate for this cToken, scaled by 0x1e18
-procedure TCToken.SupplyRatePerBlock(callback: TAsyncQuantity);
+procedure TcToken.SupplyRatePerBlock(callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'supplyRatePerBlock()', [], procedure(qty: BigInteger; err: Exception)
   begin
@@ -157,9 +166,9 @@ begin
   end);
 end;
 
-{ TCDai }
+{ TcDAI }
 
-constructor TCDai.Create(aClient: TWeb3);
+constructor TcDAI.Create(aClient: TWeb3);
 begin
   // https://compound.finance/docs#networks
   case aClient.Chain of
@@ -173,6 +182,30 @@ begin
       inherited Create(aClient, '0x822397d9a55d0fefd20f5c4bcab33c5f65bd28eb');
     Kovan:
       inherited Create(aClient, '0xe7bc397dbd069fc7d0109c0636d06888bb50668c');
+  end;
+end;
+
+class function TcDAI.MintGasCost: TWei;
+begin
+  Result := 300000; // https://compound.finance/docs#gas-costs
+end;
+
+{ TcUSDC }
+
+constructor TcUSDC.Create(aClient: TWeb3);
+begin
+  // https://compound.finance/docs#networks
+  case aClient.Chain of
+    Mainnet, Ganache:
+      inherited Create(aClient, '0x39aa39c021dfbae8fac545936693ac917d5e7563');
+    Ropsten:
+      inherited Create(aClient, '0x20572e4c090f15667cf7378e16fad2ea0e2f3eff');
+    Rinkeby:
+      inherited Create(aClient, '0x5b281a6dda0b271e91ae35de655ad301c976edb1');
+    Goerli:
+      inherited Create(aClient, '0xcec4a43ebb02f9b80916f1c718338169d6d5c1f0');
+    Kovan:
+      inherited Create(aClient, '0xcfc9bb230f00bffdb560fce2428b4e05f3442e35');
   end;
 end;
 
