@@ -19,6 +19,8 @@ uses
   // Delphi
   System.SysUtils,
   System.Threading,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // web3
   web3,
   web3.eth,
@@ -109,7 +111,7 @@ type
     Sender : TObject;
     From   : TAddress;
     &To    : TAddress;
-    TokenId: UInt64);
+    TokenId: BigInteger);
 
   // This emits when the approved address for an NFT is changed or
   // reaffirmed. The zero address indicates there is no approved address.
@@ -117,7 +119,7 @@ type
     Sender : TObject;
     Owner  : TAddress;
     Spender: TAddress;
-    TokenId: UInt64);
+    TokenId: BigInteger);
 
   // This emits when an operator is enabled or disabled for an owner.
   // The operator can manage all NFTs of the owner.
@@ -204,12 +206,12 @@ begin
         if log.isEvent('Transfer(address,address,uint256)') then
           FOnTransfer(Self,
                       TAddress.New(log.Topic[1]),
-                      TAddress.New(log.Topic[2]), toInt(log.Topic[3]));
+                      TAddress.New(log.Topic[2]), toBigInt(log.Topic[3]));
       if Assigned(FOnApproval) then
         if log.isEvent('Approval(address,address,uint256)') then
           FOnApproval(Self,
                       TAddress.New(log.Topic[1]),
-                      TAddress.New(log.Topic[2]), toInt(log.Topic[3]));
+                      TAddress.New(log.Topic[2]), toBigInt(log.Topic[3]));
       if Assigned(FOnApprovalForAll) then
         if log.isEvent('ApprovalForAll(address,address,bool)') then
           FOnApprovalForAll(Self,

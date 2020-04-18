@@ -19,6 +19,8 @@ uses
   // Delphi
   System.SysUtils,
   System.Threading,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // web3
   web3,
   web3.eth,
@@ -31,12 +33,12 @@ type
     Sender: TObject;
     From  : TAddress;
     &To   : TAddress;
-    Value : UInt64);
+    Value : BigInteger);
   TOnApproval = reference to procedure(
     Sender : TObject;
     Owner  : TAddress;
     Spender: TAddress;
-    Value  : UInt64);
+    Value  : BigInteger);
 
   TERC20 = class(TCustomContract)
   strict private
@@ -99,7 +101,7 @@ procedure TERC20.EventChanged;
 begin
   if ListenForLatestBlock then
   begin
-    if FTask.Status <> TTaskStatus.Running then
+    if not(FTask.Status in [TTaskStatus.WaitingToRun, TTaskStatus.Running]) then
       FTask.Start;
     EXIT;
   end;
@@ -120,13 +122,13 @@ begin
       FOnTransfer(Self,
                   TAddress.New(log.Topic[1]),
                   TAddress.New(log.Topic[2]),
-                  toInt(log.Data[0]));
+                  toBigInt(log.Data[0]));
   if Assigned(FOnApproval) then
     if log.isEvent('Approval(address,address,uint256)') then
       FOnApproval(Self,
                   TAddress.New(log.Topic[1]),
                   TAddress.New(log.Topic[2]),
-                  toInt(log.Data[0]));
+                  toBigInt(log.Data[0]));
 end;
 
 procedure TERC20.SetOnTransfer(Value: TOnTransfer);

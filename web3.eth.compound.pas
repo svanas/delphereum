@@ -29,15 +29,15 @@ uses
 
 type
   TOnMint = reference to procedure(
-    Sender: TObject;
-    Minter: TAddress;
-    Amount: UInt64;
-    Tokens: UInt64);
+    Sender  : TObject;
+    Minter  : TAddress;
+    Amount  : BigInteger;
+    Tokens  : BigInteger);
   TOnRedeem = reference to procedure(
     Sender  : TObject;
     Redeemer: TAddress;
-    Amount  : UInt64;
-    Tokens  : UInt64);
+    Amount  : BigInteger;
+    Tokens  : BigInteger);
 
   TcToken = class abstract(TERC20)
   strict private
@@ -114,16 +114,16 @@ begin
       // emitted upon a successful Mint
       FOnMint(Self,
               TAddress.New(log.Topic[1]),
-              toInt(log.Data[0]),
-              toInt(log.Data[1]));
+              toBigInt(log.Data[0]),
+              toBigInt(log.Data[1]));
 
   if Assigned(FOnRedeem) then
     if log.isEvent('Redeem(address,uint256,uint256)') then
       // emitted upon a successful Redeem
       FOnRedeem(Self,
                 TAddress.New(log.Topic[1]),
-                toInt(log.Data[0]),
-                toInt(log.Data[1]));
+                toBigInt(log.Data[0]),
+                toBigInt(log.Data[1]));
 end;
 
 procedure TcToken.SetOnMint(Value: TOnMint);

@@ -96,7 +96,8 @@ type
   end;
 
 function toHex(const prefix: string; arg: TArg): string;
-function toInt(arg: TArg): UInt64;
+function toInt64(arg: TArg): Int64;
+function toBigInt(arg: TArg): BigInteger;
 function toBool(arg: TArg): Boolean;
 
 implementation
@@ -127,14 +128,19 @@ begin
   end;
 end;
 
-function toInt(arg: TArg): UInt64;
+function toInt64(arg: TArg): Int64;
 begin
   Result := StrToInt64(toHex('$', arg));
 end;
 
+function toBigInt(arg: TArg): BigInteger;
+begin
+  Result := toHex('0x', arg);
+end;
+
 function toBool(arg: TArg): Boolean;
 begin
-  Result := toInt(arg) <> 0;
+  Result := toInt64(arg) <> 0;
 end;
 
 { TAddressHelper }
@@ -245,7 +251,7 @@ begin
   if Length(Self) < 3 then
     EXIT;
   arg := Self[1];
-  len := toInt(arg);
+  len := toInt64(arg);
   if len = 0 then
     EXIT;
   for idx := 2 to High(Self) do
