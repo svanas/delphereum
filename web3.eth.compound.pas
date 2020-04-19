@@ -138,7 +138,7 @@ begin
   EventChanged;
 end;
 
-// returns the annual percentage yield for this cToken, scaled by 0x1e18
+// returns the annual percentage yield for this cToken, scaled by 1e18
 procedure TcToken.APY(callback: TAsyncQuantity);
 begin
   SupplyRatePerBlock(procedure(qty: BigInteger; err: Exception)
@@ -147,13 +147,8 @@ begin
       callback(BigInteger.Zero, err)
     else
       callback(
-        BigInteger.Multiply(
-          BigInteger.Multiply(
-            BigInteger.Multiply(
-              BigInteger.Divide(qty, $1e18), BLOCKS_PER_DAY) + BigInteger.One,
-            365 - 1
-          ),
-          $1e18
+        BigInteger.Create(
+          (((qty.AsInt64 / 1e18) * (BLOCKS_PER_DAY + 1)) * (365 - 1)) * 1e18
         ),
         nil
       );
@@ -166,7 +161,7 @@ begin
   web3.eth.call(Client, Contract, 'balanceOfUnderlying(address)', [owner], callback);
 end;
 
-// returns the current exchange rate of cToken to underlying ERC20 token, scaled by 0x1e18
+// returns the current exchange rate of cToken to underlying ERC20 token, scaled by 1e18
 // please note that the exchange rate of underlying to cToken increases over time.
 procedure TcToken.ExchangeRateCurrent(callback: TAsyncQuantity);
 begin
@@ -217,7 +212,7 @@ begin
     callback);
 end;
 
-// returns the current per-block supply interest rate for this cToken, scaled by 0x1e18
+// returns the current per-block supply interest rate for this cToken, scaled by 1e18
 procedure TcToken.SupplyRatePerBlock(callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'supplyRatePerBlock()', [], procedure(qty: BigInteger; err: Exception)
