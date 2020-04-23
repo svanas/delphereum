@@ -178,15 +178,15 @@ begin
     Signature := Signer.GenerateSignature(
       sha3(
         web3.rlp.encode([
-          web3.utils.toHex(nonce, True),    // nonce
-          web3.utils.toHex(gasPrice, True), // gasPrice
-          web3.utils.toHex(gasLimit, True), // gas(Limit)
-          &to,                              // to
-          web3.utils.toHex(value, True),    // value
-          data,                             // data
-          chainId[chain],                   // v
-          0,                                // r
-          0                                 // s
+          web3.utils.toHex(nonce, [padToEven]),    // nonce
+          web3.utils.toHex(gasPrice, [padToEven]), // gasPrice
+          web3.utils.toHex(gasLimit, [padToEven]), // gas(Limit)
+          &to,                                     // to
+          web3.utils.toHex(value, [padToEven]),    // value
+          data,                                    // data
+          chainId[chain],                          // v
+          0,                                       // r
+          0                                        // s
         ])
       )
     );
@@ -198,11 +198,11 @@ begin
     Result :=
       web3.utils.toHex(
         web3.rlp.encode([
-          web3.utils.toHex(nonce, True),           // nonce
-          web3.utils.toHex(gasPrice, True),        // gasPrice
-          web3.utils.toHex(gasLimit, True),        // gas(Limit)
+          web3.utils.toHex(nonce, [padToEven]),    // nonce
+          web3.utils.toHex(gasPrice, [padToEven]), // gasPrice
+          web3.utils.toHex(gasLimit, [padToEven]), // gas(Limit)
           &to,                                     // to
-          web3.utils.toHex(value, True),           // value
+          web3.utils.toHex(value, [padToEven]),    // value
           data,                                    // data
           web3.utils.toHex(v.ToByteArrayUnsigned), // v
           web3.utils.toHex(r.ToByteArrayUnsigned), // r
@@ -585,7 +585,7 @@ begin
         web3.json.quoteString(string(txn.&to), '"'),
         web3.json.quoteString(txn.input, '"'),
         web3.json.quoteString(string(txn.from), '"'),
-        web3.json.quoteString(toHex(txn.value), '"'),
+        web3.json.quoteString(toHex(txn.value, [zeroAs0x0]), '"'),
         web3.json.quoteString(toHex(txn.gasLimit), '"'),
         web3.json.quoteString(toHex(txn.gasPrice), '"')
       ]

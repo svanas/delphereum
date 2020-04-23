@@ -29,6 +29,9 @@ uses
   web3.json,
   web3.json.rpc;
 
+type
+  TToHex = set of (padToEven, zeroAs0x0);
+
 function toHex(const buf: TBytes): string; overload;
 function toHex(const prefix: string; const buf: TBytes): string; overload;
 function toHex(const buf: TBytes; offset, len: Integer): string; overload;
@@ -40,7 +43,7 @@ function toHex(const str: string; offset, len: Integer): string; overload;
 function toHex(const prefix, str: string; offset, len: Integer): string; overload;
 
 function toHex(val: TVarRec): string; overload;
-function toHex(int: BigInteger; pad: Boolean = False): string; overload;
+function toHex(int: BigInteger; options: TToHex = []): string; overload;
 
 function isHex(const str: string): Boolean; overload;
 function isHex(const prefix, str: string): Boolean; overload;
@@ -137,14 +140,19 @@ begin
   end;
 end;
 
-function toHex(int: BigInteger; pad: Boolean): string;
+function toHex(int: BigInteger; options: TToHex): string;
 begin
   if int.IsZero then
-    Result := ''
+  begin
+    if zeroAs0x0 in options then
+      Result := '0'
+    else
+      Result := ''
+  end
   else
   begin
     Result := int.ToHexString;
-    if pad then
+    if padToEven in options then
       if Result.Length mod 2 > 0 then
         Result := '0' + Result; // pad to even
   end;
