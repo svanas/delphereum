@@ -467,16 +467,14 @@ begin
       if Assigned(err) then
         callback(nil, err)
       else
-        sendTransactionEx(
-          client,
-          signTransaction(
-            client.Chain,
-            qty,
-            from, &to,
-            value,
-            data,
-            gasPrice, gasLimit),
-          callback);
+        signTransaction(client, qty, from, &to, value, data, gasPrice, gasLimit,
+          procedure(const sig: string; err: Exception)
+          begin
+            if Assigned(err) then
+              callback(nil, err)
+            else
+              sendTransactionEx(client, sig, callback);
+          end);
     end
   );
 end;

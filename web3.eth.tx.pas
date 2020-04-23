@@ -36,6 +36,17 @@ uses
   web3.rlp,
   web3.utils;
 
+procedure signTransaction(
+  client    : TWeb3;
+  nonce     : BigInteger;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const data: string;
+  gasPrice  : TWei;
+  gasLimit  : TWei;
+  callback  : TAsyncString); overload;
+
 function signTransaction(
   chain     : TChain;
   nonce     : BigInteger;
@@ -44,7 +55,7 @@ function signTransaction(
   value     : TWei;
   const data: string;
   gasPrice  : TWei;
-  gasLimit  : TWei): string;
+  gasLimit  : TWei): string; overload;
 
 // send raw (aka signed) transaction.
 procedure sendTransaction(
@@ -125,6 +136,26 @@ procedure getTransactionRevertReason(
   callback: TAsyncString);
 
 implementation
+
+procedure signTransaction(
+  client    : TWeb3;
+  nonce     : BigInteger;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const data: string;
+  gasPrice  : TWei;
+  gasLimit  : TWei;
+  callback  : TAsyncString);
+resourcestring
+  RS_SIGNATURE_DENIED = 'User denied transaction signature';
+begin
+  if not client.CanSignTransaction then
+    callback('', ESignatureDenied.Create(RS_SIGNATURE_DENIED))
+  else
+    callback(signTransaction(
+      client.Chain, nonce, from, &to, value, data, gasPrice, gasLimit), nil);
+end;
 
 function signTransaction(
   chain     : TChain;
@@ -296,7 +327,14 @@ begin
       if Assigned(err) then
         callback('', err)
       else
-        sendTransaction(client, signTransaction(client.Chain, qty, from, &to, value, '', gasPrice, gasLimit), callback);
+        signTransaction(client, qty, from, &to, value, '', gasPrice, gasLimit,
+          procedure(const sig: string; err: Exception)
+          begin
+            if Assigned(err) then
+              callback('', err)
+            else
+              sendTransaction(client, sig, callback);
+          end);
     end
   );
 end;
@@ -323,7 +361,14 @@ begin
       if Assigned(err) then
         callback(nil, err)
       else
-        sendTransactionEx(client, signTransaction(client.Chain, qty, from, &to, value, '', gasPrice, gasLimit), callback);
+        signTransaction(client, qty, from, &to, value, '', gasPrice, gasLimit,
+          procedure(const sig: string; err: Exception)
+          begin
+            if Assigned(err) then
+              callback(nil, err)
+            else
+              sendTransactionEx(client, sig, callback);
+          end);
     end
   );
 end;
