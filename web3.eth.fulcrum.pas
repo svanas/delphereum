@@ -16,8 +16,6 @@ unit web3.eth.fulcrum;
 interface
 
 uses
-  // Delphi
-  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -133,7 +131,7 @@ end;
 // Returns the aggregate rate that all lenders are receiving from borrowers, scaled by 1e20
 procedure TiToken.SupplyInterestRate(callback: TAsyncQuantity);
 begin
-  web3.eth.call(Client, Contract, 'supplyInterestRate()', [], procedure(qty: BigInteger; err: Exception)
+  web3.eth.call(Client, Contract, 'supplyInterestRate()', [], procedure(qty: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(BigInteger.Zero, err)
@@ -145,7 +143,7 @@ end;
 // Returns the current price of the iToken, scaled by 1e18
 procedure TiToken.TokenPrice(callback: TAsyncQuantity);
 begin
-  web3.eth.call(Client, Contract, 'tokenPrice()', [], procedure(qty: BigInteger; err: Exception)
+  web3.eth.call(Client, Contract, 'tokenPrice()', [], procedure(qty: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(BigInteger.Zero, err)

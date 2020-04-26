@@ -61,16 +61,16 @@ type
   end;
 
 type
-  TAsyncString     = reference to procedure(const str: string;   err: Exception);
-  TAsyncQuantity   = reference to procedure(qty : BigInteger;    err: Exception);
-  TAsyncBoolean    = reference to procedure(bool: Boolean;       err: Exception);
-  TAsyncResponse   = reference to procedure(resp: IHttpResponse; err: Exception);
-  TAsyncJsonObject = reference to procedure(obj : TJsonObject;   err: Exception);
-  TAsyncAddress    = reference to procedure(addr: TAddress;      err: Exception);
-  TAsyncTuple      = reference to procedure(tup : TTuple;        err: Exception);
-  TAsyncTxHash     = reference to procedure(hash: TTxHash;       err: Exception);
-  TAsyncTxn        = reference to procedure(txn : ITxn;          err: Exception);
-  TAsyncReceipt    = reference to procedure(rcpt: ITxReceipt;    err: Exception);
+  TAsyncString     = reference to procedure(const str: string;   err: IError);
+  TAsyncQuantity   = reference to procedure(qty : BigInteger;    err: IError);
+  TAsyncBoolean    = reference to procedure(bool: Boolean;       err: IError);
+  TAsyncResponse   = reference to procedure(resp: IHttpResponse; err: IError);
+  TAsyncJsonObject = reference to procedure(obj : TJsonObject;   err: IError);
+  TAsyncAddress    = reference to procedure(addr: TAddress;      err: IError);
+  TAsyncTuple      = reference to procedure(tup : TTuple;        err: IError);
+  TAsyncTxHash     = reference to procedure(hash: TTxHash;       err: IError);
+  TAsyncTxn        = reference to procedure(txn : ITxn;          err: IError);
+  TAsyncReceipt    = reference to procedure(rcpt: ITxReceipt;    err: IError);
 
 type
   TAddressHelper = record helper for TAddress
@@ -186,7 +186,7 @@ var
   addr: TAddress;
 begin
   addr := Self;
-  web3.eth.ens.reverse(client, addr, procedure(const name: string; err: Exception)
+  web3.eth.ens.reverse(client, addr, procedure(const name: string; err: IError)
   begin
     if Assigned(err) then
       callback('', err)

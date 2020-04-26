@@ -17,7 +17,6 @@ interface
 
 uses
   // Delphi
-  System.SysUtils,
   System.Threading,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
@@ -145,7 +144,7 @@ end;
 
 procedure TERC20.Name(callback: TAsyncString);
 begin
-  web3.eth.call(Client, Contract, 'name()', [], procedure(tup: TTuple; err: Exception)
+  web3.eth.call(Client, Contract, 'name()', [], procedure(tup: TTuple; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
@@ -156,7 +155,7 @@ end;
 
 procedure TERC20.Symbol(callback: TAsyncString);
 begin
-  web3.eth.call(Client, Contract, 'symbol()', [], procedure(tup: TTuple; err: Exception)
+  web3.eth.call(Client, Contract, 'symbol()', [], procedure(tup: TTuple; err: IError)
   begin
     if Assigned(err) then
       callback('', err)

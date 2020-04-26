@@ -38,7 +38,7 @@ implementation
 
 procedure getGasPrice(client: TWeb3; callback: TAsyncQuantity);
 begin
-  web3.json.rpc.send(client.URL, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -69,7 +69,7 @@ begin
   ));
   try
     // step #3: estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
-    web3.json.rpc.send(client.URL, 'eth_estimateGas', [obj], procedure(resp: TJsonObject; err: Exception)
+    web3.json.rpc.send(client.URL, 'eth_estimateGas', [obj], procedure(resp: TJsonObject; err: IError)
     begin
       if Assigned(err) then
         callback(0, err)

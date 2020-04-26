@@ -67,7 +67,7 @@ end;
 
 procedure resolver(client: TWeb3; const name: string; callback: TAsyncAddress);
 begin
-  web3.eth.call(client, ENS_REGISTRY, 'resolver(bytes32)', [namehash(name)], procedure(const hex: string; err: Exception)
+  web3.eth.call(client, ENS_REGISTRY, 'resolver(bytes32)', [namehash(name)], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
@@ -78,12 +78,12 @@ end;
 
 procedure addr(client: TWeb3; const name: string; callback: TAsyncAddress);
 begin
-  resolver(client, name, procedure(resolver: TAddress; err: Exception)
+  resolver(client, name, procedure(resolver: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
     else
-      web3.eth.call(client, resolver, 'addr(bytes32)', [namehash(name)], procedure(const hex: string; err: Exception)
+      web3.eth.call(client, resolver, 'addr(bytes32)', [namehash(name)], procedure(const hex: string; err: IError)
       begin
         if Assigned(err) then
           callback('', err)
@@ -100,12 +100,12 @@ begin
   name := string(addr).ToLower + '.addr.reverse';
   while Copy(name, Low(name), 2) = '0x' do
     Delete(name, Low(name), 2);
-  resolver(client, name, procedure(resolver: TAddress; err: Exception)
+  resolver(client, name, procedure(resolver: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
     else
-      web3.eth.call(client, resolver, 'name(bytes32)', [namehash(name)], procedure(tup: TTuple; err: Exception)
+      web3.eth.call(client, resolver, 'name(bytes32)', [namehash(name)], procedure(tup: TTuple; err: IError)
       begin
         if Assigned(err) then
           callback('', err)

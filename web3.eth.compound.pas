@@ -16,8 +16,6 @@ unit web3.eth.compound;
 interface
 
 uses
-  // Delphi
-  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -141,7 +139,7 @@ end;
 // returns the annual percentage yield for this cToken, scaled by 1e18
 procedure TcToken.APY(callback: TAsyncQuantity);
 begin
-  SupplyRatePerBlock(procedure(qty: BigInteger; err: Exception)
+  SupplyRatePerBlock(procedure(qty: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(BigInteger.Zero, err)
@@ -165,7 +163,7 @@ end;
 // please note that the exchange rate of underlying to cToken increases over time.
 procedure TcToken.ExchangeRateCurrent(callback: TAsyncQuantity);
 begin
-  web3.eth.call(Client, Contract, 'exchangeRateCurrent()', [], procedure(qty: BigInteger; err: Exception)
+  web3.eth.call(Client, Contract, 'exchangeRateCurrent()', [], procedure(qty: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(BigInteger.Zero, err)
@@ -215,7 +213,7 @@ end;
 // returns the current per-block supply interest rate for this cToken, scaled by 1e18
 procedure TcToken.SupplyRatePerBlock(callback: TAsyncQuantity);
 begin
-  web3.eth.call(Client, Contract, 'supplyRatePerBlock()', [], procedure(qty: BigInteger; err: Exception)
+  web3.eth.call(Client, Contract, 'supplyRatePerBlock()', [], procedure(qty: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(BigInteger.Zero, err)

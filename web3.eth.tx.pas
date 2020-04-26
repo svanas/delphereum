@@ -151,7 +151,7 @@ resourcestring
   RS_SIGNATURE_DENIED = 'User denied transaction signature';
 begin
   if not client.CanSignTransaction then
-    callback('', ESignatureDenied.Create(RS_SIGNATURE_DENIED))
+    callback('', TSignatureDenied.Create(RS_SIGNATURE_DENIED))
   else
     callback(signTransaction(
       client.Chain, nonce, from, &to, value, data, gasPrice, gasLimit), nil);
@@ -217,7 +217,7 @@ end;
 // send raw (aka signed) transaction.
 procedure sendTransaction(client: TWeb3; const raw: string; callback: TAsyncTxHash);
 begin
-  web3.json.rpc.send(client.URL, 'eth_sendRawTransaction', [raw], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_sendRawTransaction', [raw], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
@@ -230,7 +230,7 @@ end;
 procedure sendTransactionEx(client: TWeb3; const raw: string; callback: TAsyncReceipt);
 begin
   // send the raw transaction
-  sendTransaction(client, raw, procedure(hash: TTxHash; err: Exception)
+  sendTransaction(client, raw, procedure(hash: TTxHash; err: IError)
   var
     onReceiptReceived: TAsyncReceipt;
   begin
@@ -240,7 +240,7 @@ begin
       EXIT;
     end;
     // get the transaction receipt
-    onReceiptReceived := procedure(rcpt: ITxReceipt; err: Exception)
+    onReceiptReceived := procedure(rcpt: ITxReceipt; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -255,10 +255,10 @@ begin
       end;
       // did the transaction fail? then get the reason why it failed
       if not rcpt.status then
-        getTransactionRevertReason(client, rcpt, procedure(const reason: string; err: Exception)
+        getTransactionRevertReason(client, rcpt, procedure(const reason: string; err: IError)
         begin
           if not Assigned(err) then
-            callback(rcpt, EWeb3.Create(reason));
+            callback(rcpt, TError.Create(reason));
           EXIT;
         end);
       callback(rcpt, nil);
@@ -278,7 +278,7 @@ procedure sendTransaction(
   value   : TWei;
   callback: TAsyncTxHash);
 begin
-  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: Exception)
+  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
@@ -300,7 +300,7 @@ procedure sendTransactionEx(
   value   : TWei;
   callback: TAsyncReceipt);
 begin
-  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: Exception)
+  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
@@ -322,13 +322,13 @@ begin
   web3.eth.getTransactionCount(
     client,
     from.Address,
-    procedure(qty: BigInteger; err: Exception)
+    procedure(qty: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback('', err)
       else
         signTransaction(client, qty, from, &to, value, '', gasPrice, gasLimit,
-          procedure(const sig: string; err: Exception)
+          procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then
               callback('', err)
@@ -356,13 +356,13 @@ begin
   web3.eth.getTransactionCount(
     client,
     from.Address,
-    procedure(qty: BigInteger; err: Exception)
+    procedure(qty: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(nil, err)
       else
         signTransaction(client, qty, from, &to, value, '', gasPrice, gasLimit,
-          procedure(const sig: string; err: Exception)
+          procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then
               callback(nil, err)
@@ -454,7 +454,7 @@ end;
 // returns the information about a transaction requested by transaction hash.
 procedure getTransaction(client: TWeb3; hash: TTxHash; callback: TAsyncTxn);
 begin
-  web3.json.rpc.send(client.URL, 'eth_getTransactionByHash', [hash], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_getTransactionByHash', [hash], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
@@ -530,7 +530,7 @@ end;
 // returns the receipt of a transaction by transaction hash.
 procedure getTransactionReceipt(client: TWeb3; hash: TTxHash; callback: TAsyncReceipt);
 begin
-  web3.json.rpc.send(client.URL, 'eth_getTransactionReceipt', [hash], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_getTransactionReceipt', [hash], procedure(resp: TJsonObject; err: IError)
   var
     rcpt: TJsonObject;
   begin
@@ -565,7 +565,7 @@ begin
     EXIT;
   end;
 
-  web3.eth.tx.getTransaction(client, rcpt.txHash, procedure(txn: ITxn; err: Exception)
+  web3.eth.tx.getTransaction(client, rcpt.txHash, procedure(txn: ITxn; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -591,7 +591,7 @@ begin
       ]
     ));
     try
-      web3.json.rpc.send(client.URL, 'eth_call', [obj, toHex(txn.blockNumber)], procedure(resp: TJsonObject; err: Exception)
+      web3.json.rpc.send(client.URL, 'eth_call', [obj, toHex(txn.blockNumber)], procedure(resp: TJsonObject; err: IError)
       begin
         if Assigned(err) then
         begin

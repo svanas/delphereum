@@ -36,8 +36,19 @@ type
     property Code: Integer read FCode;
   end;
 
-type
-  TAsyncResponse = reference to procedure(resp: TJsonObject; err: Exception);
+  IJsonRpc = interface
+    function Code: Integer;
+  end;
+
+  TJsonRpc = class(TError, IJsonRpc)
+  private
+    FCode: Integer;
+  public
+    constructor Create(aCode: Integer; const aMsg: string);
+    function Code: Integer;
+  end;
+
+  TAsyncResponse = reference to procedure(resp: TJsonObject; err: IError);
 
 function send(const URL, method: string; args: array of const; callback: TAsyncResponse): IAsyncResult; overload;
 function send(const URL, method: string; args: array of const): TJsonObject; overload;
@@ -53,6 +64,19 @@ constructor EJsonRpc.Create(aCode: Integer; const aMsg: string);
 begin
   inherited Create(aMsg);
   FCode := aCode;
+end;
+
+{ TJsonRpc }
+
+constructor TJsonRpc.Create(aCode: Integer; const aMsg: string);
+begin
+  inherited Create(aMsg);
+  FCode := aCode;
+end;
+
+function TJsonRpc.Code: Integer;
+begin
+   Result := FCode;
 end;
 
 { global functions }
@@ -114,7 +138,7 @@ begin
           // did we receive an error? then translate that into an exception
           err := web3.json.getPropAsObj(resp, 'error');
           if Assigned(err) then
-            callback(resp, EJsonRpc.Create(web3.json.getPropAsInt(err, 'code'), web3.json.getPropAsStr(err, 'message')))
+            callback(resp, TJsonRpc.Create(web3.json.getPropAsInt(err, 'code'), web3.json.getPropAsStr(err, 'message')))
           else
             // if we reached this far, then we have a valid response object
             callback(resp, nil);
@@ -128,7 +152,7 @@ begin
     end, URL, source, nil, [TNetHeader.Create('Content-Type', 'application/json')]);
   except
     on E: Exception do
-      callback(nil, E);
+      callback(nil, TError.Create(E.Message));
   end;
 end;
 

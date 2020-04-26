@@ -17,7 +17,6 @@ interface
 
 uses
   // Delphi
-  System.SysUtils,
   System.Threading,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
@@ -266,7 +265,7 @@ end;
 
 procedure TERC721.OwnerOf(tokenId: UInt64; callback: TAsyncAddress);
 begin
-  web3.eth.call(Client, Contract, 'ownerOf(uint256)', [tokenId], procedure(const hex: string; err: Exception)
+  web3.eth.call(Client, Contract, 'ownerOf(uint256)', [tokenId], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
@@ -317,7 +316,7 @@ end;
 
 procedure TERC721.GetApproved(tokenId: UInt64; callback: TAsyncAddress);
 begin
-  web3.eth.call(Client, Contract, 'getApproved(uint256)', [tokenId], procedure(const hex: string; err: Exception)
+  web3.eth.call(Client, Contract, 'getApproved(uint256)', [tokenId], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
@@ -336,7 +335,7 @@ end;
 
 procedure TERC721.Name(callback: TAsyncString);
 begin
-  web3.eth.call(Client, Contract, 'name()', [], procedure(tup: TTuple; err: Exception)
+  web3.eth.call(Client, Contract, 'name()', [], procedure(tup: TTuple; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
@@ -347,7 +346,7 @@ end;
 
 procedure TERC721.Symbol(callback: TAsyncString);
 begin
-  web3.eth.call(Client, Contract, 'symbol()', [], procedure(tup: TTuple; err: Exception)
+  web3.eth.call(Client, Contract, 'symbol()', [], procedure(tup: TTuple; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
@@ -358,7 +357,7 @@ end;
 
 procedure TERC721.TokenURI(tokenId: UInt64; callback: TAsyncString);
 begin
-  web3.eth.call(Client, Contract, 'tokenURI(uint256)', [tokenId], procedure(tup: TTuple; err: Exception)
+  web3.eth.call(Client, Contract, 'tokenURI(uint256)', [tokenId], procedure(tup: TTuple; err: IError)
   begin
     if Assigned(err) then
       callback('', err)

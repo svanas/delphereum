@@ -42,7 +42,20 @@ const
 type
   EWeb3 = class(Exception);
 
-  ESignatureDenied    = class(EWeb3);
+  IError = interface
+    function Message: string;
+  end;
+
+  TError = class(TInterfacedObject, IError)
+  private
+    FMessage: string;
+  public
+    constructor Create(const Msg: string); overload;
+    constructor Create(const Msg: string; const Args: array of const); overload;
+    function Message: string;
+  end;
+
+  TSignatureDenied    = class(TError);
   TOnSignatureRequest = reference to procedure(var Approve: Boolean);
 
   TWeb3 = record
@@ -75,6 +88,25 @@ uses
 {$ELSE}
   VCL.Dialogs
 {$IFEND};
+
+{ TError }
+
+constructor TError.Create(const Msg: string);
+begin
+  FMessage := Msg;
+end;
+
+constructor TError.Create(const Msg: string; const Args: array of const);
+begin
+  FMessage := Format(Msg, Args);
+end;
+
+function TError.Message: string;
+begin
+  Result := FMessage;
+end;
+
+{ TWeb3 }
 
 function TWeb3.CanSignTransaction: Boolean;
 resourcestring

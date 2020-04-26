@@ -213,7 +213,7 @@ end;
 
 procedure sha3(client: TWeb3; const hex: string; callback: TAsyncString);
 begin
-  web3.json.rpc.send(client.URL, 'web3_sha3', [hex], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'web3_sha3', [hex], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback('', err)

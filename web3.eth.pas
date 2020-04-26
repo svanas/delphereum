@@ -165,7 +165,7 @@ end;
 
 procedure blockNumber(client: TWeb3; callback: TAsyncQuantity);
 begin
-  web3.json.rpc.send(client.URL, 'eth_blockNumber', [], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_blockNumber', [], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -181,7 +181,7 @@ end;
 
 procedure getBalance(client: TWeb3; address: TAddress; const block: string; callback: TAsyncQuantity);
 begin
-  web3.json.rpc.send(client.URL, 'eth_getBalance', [address, block], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_getBalance', [address, block], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -198,7 +198,7 @@ end;
 // returns the number of transations *sent* from an address
 procedure getTransactionCount(client: TWeb3; address: TAddress; const block: string; callback: TAsyncQuantity);
 begin
-  web3.json.rpc.send(client.URL, 'eth_getTransactionCount', [address, block], procedure(resp: TJsonObject; err: Exception)
+  web3.json.rpc.send(client.URL, 'eth_getTransactionCount', [address, block], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -239,7 +239,7 @@ begin
   ));
   try
     // step #3: execute a message call (without creating a transaction on the blockchain)
-    web3.json.rpc.send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: Exception)
+    web3.json.rpc.send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: IError)
     begin
       if Assigned(err) then
         callback('', err)
@@ -268,7 +268,7 @@ end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity);
 begin
-  call(client, from, &to, func, block, args, procedure(const hex: string; err: Exception)
+  call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -297,7 +297,7 @@ end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean);
 begin
-  call(client, from, &to, func, block, args, procedure(const hex: string; err: Exception)
+  call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
   var
     buf: TBytes;
   begin
@@ -331,7 +331,7 @@ var
   buf: TBytes;
   tup: TTuple;
 begin
-  call(client, from, &to, func, block, args, procedure(const hex: string; err: Exception)
+  call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
       callback([], err)
@@ -426,7 +426,7 @@ var
   data: string;
 begin
   data := web3.eth.abi.encode(func, args);
-  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: Exception)
+  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
@@ -462,13 +462,13 @@ begin
   web3.eth.getTransactionCount(
     client,
     from.Address,
-    procedure(qty: BigInteger; err: Exception)
+    procedure(qty: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(nil, err)
       else
         signTransaction(client, qty, from, &to, value, data, gasPrice, gasLimit,
-          procedure(const sig: string; err: Exception)
+          procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then
               callback(nil, err)

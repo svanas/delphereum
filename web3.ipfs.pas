@@ -25,6 +25,7 @@ uses
   System.SysUtils,
   System.Types,
   // Web3
+  web3,
   web3.eth.types,
   web3.json;
 
@@ -44,7 +45,7 @@ type
   PFile = ^TFile;
 
 type
-  TAsyncFile = reference to procedure(&file: PFile; err: Exception);
+  TAsyncFile = reference to procedure(&file: PFile; err: IError);
 
 function add(const fileName: string; callback: TAsyncJsonObject): IAsyncResult; overload;
 function add(const fileName: string; callback: TAsyncFile): IAsyncResult; overload;
@@ -101,7 +102,7 @@ begin
       try
         resp := THttpClient.EndAsyncHttp(aSyncResult);
         if resp.StatusCode <> 200 then
-          callback(nil, ENetHttpResponseException.Create(resp.ContentAsString(TEncoding.UTF8)))
+          callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)))
         else
         begin
           obj := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
@@ -119,7 +120,7 @@ begin
     end, apiHost + '/api/v0/add', source, nil, [TNetHeader.Create('Content-Type', source.MimeTypeHeader)]);
   except
     on E: Exception do
-      callback(nil, E);
+      callback(nil, TError.Create(E.Message));
   end;
 end;
 
@@ -127,7 +128,7 @@ function add(const apiHost, fileName: string; callback: TAsyncFile): IAsyncResul
 var
   &file: TFile;
 begin
-  Result := add(apiHost, fileName, procedure(obj: TJsonObject; err: Exception)
+  Result := add(apiHost, fileName, procedure(obj: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -159,7 +160,7 @@ begin
       try
         resp := THttpClient.EndAsyncHttp(aSyncResult);
         if resp.StatusCode <> 200 then
-          callback(nil, ENetHttpResponseException.Create(resp.ContentAsString(TEncoding.UTF8)))
+          callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)))
         else
         begin
           obj := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
@@ -176,7 +177,7 @@ begin
     end, apiHost + '/api/v0/pin/add?arg=' + TNetEncoding.URL.Encode(hash));
   except
     on E: Exception do
-      callback(nil, E);
+      callback(nil, TError.Create(E.Message));
   end;
 end;
 
@@ -197,7 +198,7 @@ begin
       try
         resp := THttpClient.EndAsyncHttp(aSyncResult);
         if resp.StatusCode <> 200 then
-          callback(nil, ENetHttpResponseException.Create(resp.ContentAsString(TEncoding.UTF8)))
+          callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)))
         else
           callback(resp, nil);
       finally
@@ -206,7 +207,7 @@ begin
     end, apiHost + '/api/v0/cat?arg=' + TNetEncoding.URL.Encode(hash));
   except
     on E: Exception do
-      callback(nil, E);
+      callback(nil, TError.Create(E.Message));
   end;
 end;
 
