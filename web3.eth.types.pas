@@ -71,6 +71,7 @@ type
   TAsyncTxHash     = reference to procedure(hash: TTxHash;       err: IError);
   TAsyncTxn        = reference to procedure(txn : ITxn;          err: IError);
   TAsyncReceipt    = reference to procedure(rcpt: ITxReceipt;    err: IError);
+  TAsyncFloat      = reference to procedure(val : Extended;      err: IError);
 
 type
   TAddressHelper = record helper for TAddress
@@ -93,6 +94,7 @@ type
     function Add     : PArg;
     function Last    : PArg;
     function ToString: string;
+    class function From(const hex: string): TTuple;
   end;
 
 function toHex(const prefix: string; arg: TArg): string;
@@ -257,6 +259,21 @@ begin
   for idx := 2 to High(Self) do
     Result := Result + TEncoding.UTF8.GetString(Self[idx]);
   SetLength(Result, len);
+end;
+
+class function TTupleHelper.From(const hex: string): TTuple;
+var
+  buf: TBytes;
+  tup: TTuple;
+begin
+  buf := web3.utils.fromHex(hex);
+  while Length(buf) >= 32 do
+  begin
+    SetLength(tup, Length(tup) + 1);
+    Move(buf[0], tup[High(tup)][0], 32);
+    Delete(buf, 0, 32);
+  end;
+  Result := tup;
 end;
 
 end.

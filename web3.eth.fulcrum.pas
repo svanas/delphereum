@@ -58,8 +58,8 @@ type
     procedure Burn(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
     procedure Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
     //------- events -----------------------------------------------------------
-    property OnMint  : TOnMint read FOnMint write SetOnMint;
-    property OnRedeem: TOnBurn read FOnBurn write SetOnBurn;
+    property OnMint: TOnMint read FOnMint write SetOnMint;
+    property OnBurn: TOnBurn read FOnBurn write SetOnBurn;
   end;
 
   TiDAI = class(TiToken)

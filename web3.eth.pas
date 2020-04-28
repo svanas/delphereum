@@ -327,25 +327,13 @@ begin
 end;
 
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple);
-var
-  buf: TBytes;
-  tup: TTuple;
 begin
   call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
       callback([], err)
     else
-    begin
-      buf := web3.utils.fromHex(hex);
-      while Length(buf) >= 32 do
-      begin
-        SetLength(tup, Length(tup) + 1);
-        Move(buf[0], tup[High(tup)][0], 32);
-        Delete(buf, 0, 32);
-      end;
-      callback(tup, nil);
-    end;
+      callback(TTuple.From(hex), nil);
   end);
 end;
 
