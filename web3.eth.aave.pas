@@ -24,16 +24,16 @@ uses
   web3,
   web3.eth,
   web3.eth.contract,
+  web3.eth.defi,
   web3.eth.erc20,
   web3.eth.types,
   web3.utils;
 
 type
-  EAave    = class(EWeb3);
-  TReserve = (DAI, USDC);
+  EAave = class(EWeb3);
 
   // Global helper functions and constants
-  TAave = class
+  TAave = class(TLendingProtocol)
   protected
     class procedure GetERC20(
       client  : TWeb3;
@@ -52,7 +52,10 @@ type
       // of precision. All the rates (liquidity/borrow/utilisation rates) as well as
       // the cumulative indexes and the aTokens exchange rates are expressed in Ray.
       RAY = 1e27;
-    class procedure APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
+    class procedure APY(
+      client  : TWeb3;
+      reserve : TReserve;
+      callback: TAsyncFloat); override;
     class procedure Deposit(
       client  : TWeb3;
       from    : TPrivateKey;
@@ -177,7 +180,7 @@ begin
   end;
 end;
 
-// Get the annual yield as a percentage with 4 decimals.
+// Returns the annual yield as a percentage with 4 decimals.
 class procedure TAave.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
 var
   ap  : TAaveAddressesProvider;
@@ -367,7 +370,7 @@ begin
       web3.eth.write(
         Client, from, Contract,
         'deposit(address,uint256,uint16)',
-        [addr, web3.utils.toHex(amount), 0],
+        [addr, web3.utils.toHex(amount), 42],
         180000, // https://docs.aave.com/developers/developing-on-aave/important-considerations
         callback);
   end);

@@ -21,11 +21,20 @@ uses
   // web3
   web3,
   web3.eth,
+  web3.eth.defi,
   web3.eth.erc20,
   web3.eth.logs,
   web3.eth.types;
 
 type
+  TCompound = class(TLendingProtocol)
+  public
+    class procedure APY(
+      client  : TWeb3;
+      reserve : TReserve;
+      callback: TAsyncFloat); override;
+  end;
+
   TOnMint = reference to procedure(
     Sender  : TObject;
     Minter  : TAddress;
@@ -48,6 +57,7 @@ type
     function  ListenForLatestBlock: Boolean; override;
     procedure OnLatestBlockMined(log: TLog); override;
   public
+    constructor Create(aClient: TWeb3); overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
     procedure APY(callback: TAsyncQuantity);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
@@ -66,12 +76,12 @@ type
   protected
     class function MintGasCost: TWei; override;
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: TWeb3); override;
   end;
 
   TcUSDC = class(TcToken)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: TWeb3); override;
   end;
 
 const
@@ -94,6 +104,36 @@ const
   TOKEN_TRANSFER_OUT_FAILED      = 16; // Failure in ERC-20 when transfering token out of the market.
 
 implementation
+
+type
+  TcTokenClass = class of TcToken;
+
+const
+  cTokenClass: array[TReserve] of TcTokenClass = (
+    TcDAI,
+    TcUSDC
+  );
+
+{ TCompound }
+
+// Returns the annual yield as a percentage with 4 decimals.
+class procedure TCompound.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
+var
+  cToken: TcToken;
+begin
+  cToken := cTokenClass[reserve].Create(client);
+  try
+    cToken.APY(procedure(value: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(0, err)
+      else
+        callback(BigInteger.Divide(value, BigInteger.Create(1e12)).AsInt64 / 1e4, nil);
+    end);
+  finally
+    cToken.Free;
+  end;
+end;
 
 { TcToken }
 

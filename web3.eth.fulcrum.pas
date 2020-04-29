@@ -21,12 +21,21 @@ uses
   // web3
   web3,
   web3.eth,
+  web3.eth.defi,
   web3.eth.erc20,
   web3.eth.logs,
   web3.eth.types;
 
 type
   EFulcrum = class(EWeb3);
+
+  TFulcrum = class(TLendingProtocol)
+  public
+    class procedure APY(
+      client  : TWeb3;
+      reserve : TReserve;
+      callback: TAsyncFloat); override;
+  end;
 
   TOnMint = reference to procedure(
     Sender     : TObject;
@@ -51,6 +60,7 @@ type
     function  ListenForLatestBlock: Boolean; override;
     procedure OnLatestBlockMined(log: TLog); override;
   public
+    constructor Create(aClient: TWeb3); overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
     procedure SupplyInterestRate(callback: TAsyncQuantity);
     procedure TokenPrice(callback: TAsyncQuantity);
@@ -64,10 +74,45 @@ type
 
   TiDAI = class(TiToken)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: TWeb3); override;
+  end;
+
+  TiUSDC = class(TiToken)
+  public
+    constructor Create(aClient: TWeb3); override;
   end;
 
 implementation
+
+type
+  TiTokenClass = class of TiToken;
+
+const
+  iTokenClass: array[TReserve] of TiTokenClass = (
+    TiDAI,
+    TiUSDC
+  );
+
+{ TFulcrum }
+
+// Returns the annual yield as a percentage with 4 decimals.
+class procedure TFulcrum.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
+var
+  iToken: TiToken;
+begin
+  iToken := iTokenClass[reserve].Create(client);
+  try
+    iToken.SupplyInterestRate(procedure(value: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(0, err)
+      else
+        callback(BigInteger.Divide(value, BigInteger.Create(1e14)).AsInt64 / 1e4, nil);
+    end);
+  finally
+    iToken.Free;
+  end;
+end;
 
 { TiToken }
 
@@ -168,6 +213,25 @@ begin
       raise EFulcrum.Create('iDAI is not supported on Goerli');
     Kovan:
       inherited Create(aClient, '0x6c1e2b0f67e00c06c8e2be7dc681ab785163ff4d');
+  end;
+end;
+
+{ TiUSDC }
+
+constructor TiUSDC.Create(aClient: TWeb3);
+begin
+  // https://bzx.network/itokens
+  case aClient.Chain of
+    Mainnet, Ganache:
+      inherited Create(aClient, '0xF013406A0B1d544238083DF0B93ad0d2cBE0f65f');
+    Ropsten:
+      raise EFulcrum.Create('iUSDC is not supported on Ropsten');
+    Rinkeby:
+      raise EFulcrum.Create('iUSDC is not supported on Rinkeby');
+    Goerli:
+      raise EFulcrum.Create('iUSDC is not supported on Goerli');
+    Kovan:
+      raise EFulcrum.Create('iUSDC is not supported on Kovan');
   end;
 end;
 
