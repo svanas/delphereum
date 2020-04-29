@@ -25,7 +25,8 @@ uses
   web3.eth,
   web3.eth.contract,
   web3.eth.logs,
-  web3.eth.types;
+  web3.eth.types,
+  web3.utils;
 
 type
   TOnTransfer = reference to procedure(
@@ -71,7 +72,7 @@ type
     procedure Approve(
       owner   : TPrivateKey;
       spender : TAddress;
-      value   : UInt64;
+      value   : BigInteger;
       callback: TAsyncReceipt);
 
     //------- events -----------------------------------------------------------
@@ -196,10 +197,10 @@ end;
 procedure TERC20.Approve(
   owner   : TPrivateKey;
   spender : TAddress;
-  value   : UInt64;
+  value   : BigInteger;
   callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, value], callback);
+  web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, web3.utils.toHex(value)], callback);
 end;
 
 end.

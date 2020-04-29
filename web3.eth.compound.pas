@@ -24,7 +24,8 @@ uses
   web3.eth.defi,
   web3.eth.erc20,
   web3.eth.logs,
-  web3.eth.types;
+  web3.eth.types,
+  web3.utils;
 
 type
   TCompound = class(TLendingProtocol)
@@ -33,6 +34,12 @@ type
       client  : TWeb3;
       reserve : TReserve;
       callback: TAsyncFloat); override;
+    class procedure Deposit(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncReceipt); override;
   end;
 
   TOnMint = reference to procedure(
@@ -57,14 +64,14 @@ type
     function  ListenForLatestBlock: Boolean; override;
     procedure OnLatestBlockMined(log: TLog); override;
   public
-    constructor Create(aClient: TWeb3); overload; virtual; abstract;
+    constructor Create(aClient: TWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
     procedure APY(callback: TAsyncQuantity);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
     procedure ExchangeRateCurrent(callback: TAsyncQuantity);
     procedure SupplyRatePerBlock(callback: TAsyncQuantity);
     //------- write to contract ------------------------------------------------
-    procedure Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+    procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure Redeem(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
     procedure RedeemUnderlying(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
     //------- https://compound.finance/docs/ctokens#ctoken-events --------------
@@ -129,6 +136,43 @@ begin
         callback(0, err)
       else
         callback(BigInteger.Divide(value, BigInteger.Create(1e12)).AsInt64 / 1e4, nil);
+    end);
+  finally
+    cToken.Free;
+  end;
+end;
+
+// Deposits an underlying asset into the lending pool.
+class procedure TCompound.Deposit(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  erc20 : TERC20;
+  cToken: TcToken;
+begin
+  cToken := cTokenClass[reserve].Create(client);
+  try
+    GetERC20(client, reserve, procedure(addr: TAddress; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, err)
+      else
+      begin
+        erc20 := TERC20.Create(client, addr);
+        if Assigned(erc20) then
+        try
+          // Before supplying an asset, we must first approve the cToken.
+          erc20.Approve(from, cToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
+          begin
+            cToken.Mint(from, amount, callback);
+          end);
+        finally
+          erc20.Free;
+        end;
+      end;
     end);
   finally
     cToken.Free;
@@ -216,9 +260,9 @@ end;
 // the cTokens are transferred to the wallet of the supplier.
 // please note you needs to first call the approve function on the underlying token's contract.
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
-procedure TcToken.Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+procedure TcToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, from, Contract, 'mint(uint256)', [amount], MintGasCost, callback);
+  web3.eth.write(Client, from, Contract, 'mint(uint256)', [web3.utils.toHex(amount)], MintGasCost, callback);
 end;
 
 class function TcToken.MintGasCost: TWei;

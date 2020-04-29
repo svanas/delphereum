@@ -60,7 +60,7 @@ type
     function  ListenForLatestBlock: Boolean; override;
     procedure OnLatestBlockMined(log: TLog); override;
   public
-    constructor Create(aClient: TWeb3); overload; virtual; abstract;
+    constructor Create(aClient: TWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
     procedure SupplyInterestRate(callback: TAsyncQuantity);
     procedure TokenPrice(callback: TAsyncQuantity);
