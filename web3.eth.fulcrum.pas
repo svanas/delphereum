@@ -31,6 +31,13 @@ type
   EFulcrum = class(EWeb3);
 
   TFulcrum = class(TLendingProtocol)
+  protected
+    class procedure Approve(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncReceipt);
   public
     class procedure APY(
       client  : TWeb3;
@@ -71,6 +78,7 @@ type
     //------- read from contract -----------------------------------------------
     procedure SupplyInterestRate(callback: TAsyncQuantity);
     procedure TokenPrice(callback: TAsyncQuantity);
+    procedure LoanTokenAddress(callback: TAsyncAddress);
     //------- write to contract ------------------------------------------------
     procedure Burn(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
     procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
@@ -102,6 +110,39 @@ const
 
 { TFulcrum }
 
+// Approve the iToken contract to move your underlying asset.
+class procedure TFulcrum.Approve(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  erc20 : TERC20;
+  iToken: TiToken;
+begin
+  iToken := iTokenClass[reserve].Create(client);
+  try
+    iToken.LoanTokenAddress(procedure(addr: TAddress; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, err)
+      else
+      begin
+        erc20 := TERC20.Create(client, addr);
+        if Assigned(erc20) then
+        try
+          erc20.Approve(from, iToken.Contract, amount, callback);
+        finally
+          erc20.Free;
+        end;
+      end;
+    end);
+  finally
+    iToken.Free;
+  end;
+end;
+
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TFulcrum.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
 var
@@ -129,33 +170,18 @@ class procedure TFulcrum.Deposit(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 var
-  erc20 : TERC20;
   iToken: TiToken;
 begin
-  iToken := iTokenClass[reserve].Create(client);
-  try
-    GetERC20(client, reserve, procedure(addr: TAddress; err: IError)
-    begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-      begin
-        erc20 := TERC20.Create(client, addr);
-        if Assigned(erc20) then
-        try
-          // Before supplying an asset, we must first approve the iToken.
-          erc20.Approve(from, iToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
-          begin
-            iToken.Mint(from, amount, callback);
-          end);
-        finally
-          erc20.Free;
-        end;
-      end;
-    end);
-  finally
-    iToken.Free;
-  end;
+  // Before supplying an asset, we must first approve the iToken.
+  Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
+  begin
+    iToken := iTokenClass[reserve].Create(client);
+    try
+      iToken.Mint(from, amount, callback);
+    finally
+      iToken.Free;
+    end;
+  end);
 end;
 
 { TiToken }
@@ -238,6 +264,18 @@ begin
       callback(BigInteger.Zero, err)
     else
       callback(qty, nil);
+  end);
+end;
+
+// Returns the underlying asset contract address for this iToken.
+procedure TiToken.LoanTokenAddress(callback: TAsyncAddress);
+begin
+  web3.eth.call(Client, Contract, 'loanTokenAddress()', [], procedure(const hex: string; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      callback(TAddress.New(hex), nil)
   end);
 end;
 
