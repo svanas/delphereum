@@ -24,7 +24,8 @@ uses
   web3.eth.defi,
   web3.eth.erc20,
   web3.eth.logs,
-  web3.eth.types;
+  web3.eth.types,
+  web3.utils;
 
 type
   EFulcrum = class(EWeb3);
@@ -35,6 +36,12 @@ type
       client  : TWeb3;
       reserve : TReserve;
       callback: TAsyncFloat); override;
+    class procedure Deposit(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncReceipt); override;
   end;
 
   TOnMint = reference to procedure(
@@ -66,7 +73,7 @@ type
     procedure TokenPrice(callback: TAsyncQuantity);
     //------- write to contract ------------------------------------------------
     procedure Burn(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
-    procedure Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+    procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     //------- events -----------------------------------------------------------
     property OnMint: TOnMint read FOnMint write SetOnMint;
     property OnBurn: TOnBurn read FOnBurn write SetOnBurn;
@@ -108,6 +115,43 @@ begin
         callback(0, err)
       else
         callback(BigInteger.Divide(value, BigInteger.Create(1e14)).AsInt64 / 1e4, nil);
+    end);
+  finally
+    iToken.Free;
+  end;
+end;
+
+// Deposits an underlying asset into the lending pool.
+class procedure TFulcrum.Deposit(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  erc20 : TERC20;
+  iToken: TiToken;
+begin
+  iToken := iTokenClass[reserve].Create(client);
+  try
+    GetERC20(client, reserve, procedure(addr: TAddress; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, err)
+      else
+      begin
+        erc20 := TERC20.Create(client, addr);
+        if Assigned(erc20) then
+        try
+          // Before supplying an asset, we must first approve the iToken.
+          erc20.Approve(from, iToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
+          begin
+            iToken.Mint(from, amount, callback);
+          end);
+        finally
+          erc20.Free;
+        end;
+      end;
     end);
   finally
     iToken.Free;
@@ -168,9 +212,9 @@ end;
 // Called to deposit assets to the iToken, which in turn mints iTokens to the lender’s wallet at the current tokenPrice() rate.
 // A prior ERC20 “approve” transaction should have been sent to the asset token for an amount greater than or equal to the specified amount.
 // The supplier will receive the minted iTokens.
-procedure TiToken.Mint(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+procedure TiToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, from, Contract, 'mint(address,uint256)', [from.Address, amount], callback);
+  web3.eth.write(Client, from, Contract, 'mint(address,uint256)', [from.Address, web3.utils.toHex(amount)], callback);
 end;
 
 // Returns the aggregate rate that all lenders are receiving from borrowers, scaled by 1e20
