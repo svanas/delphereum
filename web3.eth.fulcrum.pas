@@ -76,9 +76,9 @@ type
   public
     constructor Create(aClient: TWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
+    procedure LoanTokenAddress(callback: TAsyncAddress);
     procedure SupplyInterestRate(callback: TAsyncQuantity);
     procedure TokenPrice(callback: TAsyncQuantity);
-    procedure LoanTokenAddress(callback: TAsyncAddress);
     //------- write to contract ------------------------------------------------
     procedure Burn(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
     procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);

@@ -29,6 +29,13 @@ uses
 
 type
   TCompound = class(TLendingProtocol)
+  protected
+    class procedure Approve(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncReceipt);
   public
     class procedure APY(
       client  : TWeb3;
@@ -70,6 +77,7 @@ type
     procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
     procedure ExchangeRateCurrent(callback: TAsyncQuantity);
     procedure SupplyRatePerBlock(callback: TAsyncQuantity);
+    procedure Underlying(callback: TAsyncAddress);
     //------- write to contract ------------------------------------------------
     procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure Redeem(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
@@ -123,6 +131,39 @@ const
 
 { TCompound }
 
+// Approve the cToken contract to move your underlying asset.
+class procedure TCompound.Approve(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  erc20 : TERC20;
+  cToken: TcToken;
+begin
+  cToken := cTokenClass[reserve].Create(client);
+  try
+    cToken.Underlying(procedure(addr: TAddress; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, err)
+      else
+      begin
+        erc20 := TERC20.Create(client, addr);
+        if Assigned(erc20) then
+        try
+          erc20.Approve(from, cToken.Contract, amount, callback);
+        finally
+          erc20.Free;
+        end;
+      end;
+    end);
+  finally
+    cToken.Free;
+  end;
+end;
+
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TCompound.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
 var
@@ -150,33 +191,18 @@ class procedure TCompound.Deposit(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 var
-  erc20 : TERC20;
   cToken: TcToken;
 begin
-  cToken := cTokenClass[reserve].Create(client);
-  try
-    GetERC20(client, reserve, procedure(addr: TAddress; err: IError)
-    begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-      begin
-        erc20 := TERC20.Create(client, addr);
-        if Assigned(erc20) then
-        try
-          // Before supplying an asset, we must first approve the cToken.
-          erc20.Approve(from, cToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
-          begin
-            cToken.Mint(from, amount, callback);
-          end);
-        finally
-          erc20.Free;
-        end;
-      end;
-    end);
-  finally
-    cToken.Free;
-  end;
+  // Before supplying an asset, we must first approve the cToken.
+  Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
+  begin
+    cToken := cTokenClass[reserve].Create(client);
+    try
+      cToken.Mint(from, amount, callback);
+    finally
+      cToken.Free;
+    end;
+  end);
 end;
 
 { TcToken }
@@ -303,6 +329,18 @@ begin
       callback(BigInteger.Zero, err)
     else
       callback(qty, nil);
+  end);
+end;
+
+// Returns the underlying asset contract address for this cToken.
+procedure TcToken.Underlying(callback: TAsyncAddress);
+begin
+  web3.eth.call(Client, Contract, 'underlying()', [], procedure(const hex: string; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      callback(TAddress.New(hex), nil)
   end);
 end;
 
