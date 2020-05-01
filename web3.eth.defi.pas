@@ -40,6 +40,12 @@ type
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); virtual; abstract;
+    // Returns how much underlying assets you are entitled to.
+    class procedure Balance(
+      client  : TWeb3;
+      owner   : TAddress;
+      reserve : TReserve;
+      callback: TAsyncFloat); virtual; abstract;
   end;
 
 implementation

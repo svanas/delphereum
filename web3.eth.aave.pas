@@ -35,7 +35,7 @@ type
   // Global helper functions and constants
   TAave = class(TLendingProtocol)
   protected
-    class procedure GetUnderlying(
+    class procedure UnderlyingAddress(
       client  : TWeb3;
       reserve : TReserve;
       callback: TAsyncAddress);
@@ -62,6 +62,11 @@ type
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
+    class procedure Balance(
+      client  : TWeb3;
+      owner   : TAddress;
+      reserve : TReserve;
+      callback: TAsyncFloat); override;
     class procedure Redeem(
       client  : TWeb3;
       from    : TPrivateKey;
@@ -98,6 +103,7 @@ type
   // https://testnet.aave.com/faucet, making sure that your wallet is set to the relevant testnet.
   TaToken = class(TERC20)
   public
+    procedure PrincipalBalanceOf(owner: TAddress; callback: TAsyncQuantity);
     procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
   end;
 
@@ -106,7 +112,7 @@ implementation
 { TAave }
 
 const
-  UNDERLYING: array[TReserve] of array[TChain] of TAddress = (
+  UNDERLYING_ADDRESS: array[TReserve] of array[TChain] of TAddress = (
     ( // DAI
       '0x6b175474e89094c44da98b954eedeac495271d0f',  // Mainnet
       '0xf80A32A835F79D7787E8a8ee5721D0fEaFd78108',  // Ropsten
@@ -124,11 +130,11 @@ const
   );
 
 // Returns the ERC-20 contract address of the underlying asset.
-class procedure TAave.GetUnderlying(client: TWeb3; reserve: TReserve; callback: TAsyncAddress);
+class procedure TAave.UnderlyingAddress(client: TWeb3; reserve: TReserve; callback: TAsyncAddress);
 var
   addr: TAddress;
 begin
-  addr := UNDERLYING[reserve][client.Chain];
+  addr := UNDERLYING_ADDRESS[reserve][client.Chain];
   if addr <> '' then
     callback(addr, nil)
   else
@@ -159,7 +165,7 @@ begin
       if Assigned(err) then
         callback(nil, err)
       else
-        GetUnderlying(client, reserve, procedure(addr: TAddress; err: IError)
+        UnderlyingAddress(client, reserve, procedure(addr: TAddress; err: IError)
         begin
           if Assigned(err) then
             callback(nil, err)
@@ -253,6 +259,60 @@ begin
     end);
   finally
     ap.Free;
+  end;
+end;
+
+// Returns how much underlying assets you are entitled to.
+class procedure TAave.Balance(
+  client  : TWeb3;
+  owner   : TAddress;
+  reserve : TReserve;
+  callback: TAsyncFloat);
+var
+  aAp   : TAaveAddressesProvider;
+  aPool : TAaveLendingPool;
+  aToken: TaToken;
+begin
+  aAp := TAaveAddressesProvider.Create(client);
+  if Assigned(aAp) then
+  try
+    aAp.GetLendingPool(procedure(addr: TAddress; err: IError)
+    begin
+      if Assigned(err) then
+        callback(0, err)
+      else
+      begin
+        aPool := TAaveLendingPool.Create(client, addr);
+        if Assigned(aPool) then
+        try
+          aPool.aTokenAddress(reserve, procedure(addr: TAddress; err: IError)
+          begin
+            if Assigned(err) then
+              callback(0, err)
+            else
+            begin
+              aToken := TaToken.Create(client, addr);
+              if Assigned(aToken) then
+              try
+                aToken.PrincipalBalanceOf(owner, procedure(qty: BigInteger; err: IError)
+                begin
+                  if Assigned(err) then
+                    callback(0, err)
+                  else
+                    callback(BigInteger.Divide(qty, BigInteger.Create(1e10)).AsInt64 / 1e8, nil);
+                end);
+              finally
+                aToken.Free;
+              end;
+            end;
+          end);
+        finally
+          aPool.Free;
+        end;
+      end;
+    end);
+  finally
+    aAp.Free;
   end;
 end;
 
@@ -363,7 +423,7 @@ procedure TAaveLendingPool.Deposit(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  TAave.GetUnderlying(Client, reserve, procedure(addr: TAddress; err: IError)
+  TAave.UnderlyingAddress(Client, reserve, procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
@@ -380,7 +440,7 @@ end;
 // https://docs.aave.com/developers/developing-on-aave/the-protocol/lendingpool#getreservedata
 procedure TAaveLendingPool.GetReserveData(reserve: TReserve; callback: TAsyncTuple);
 begin
-  TAave.GetUnderlying(Client, reserve, procedure(addr: TAddress; err: IError)
+  TAave.UnderlyingAddress(Client, reserve, procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
@@ -415,6 +475,12 @@ begin
 end;
 
 { TaToken }
+
+// Returns user current balance deposited to the Aave Protocol reserve contract, with interest collected amount removed.
+procedure TaToken.PrincipalBalanceOf(owner: TAddress; callback: TAsyncQuantity);
+begin
+  web3.eth.call(Client, Contract, 'principalBalanceOf(address)', [owner], callback);
+end;
 
 // redeem an `amount` of aTokens for the underlying asset, burning the aTokens during the process.
 procedure TaToken.Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);

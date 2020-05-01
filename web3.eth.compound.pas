@@ -47,6 +47,11 @@ type
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
+    class procedure Balance(
+      client  : TWeb3;
+      owner   : TAddress;
+      reserve : TReserve;
+      callback: TAsyncFloat); override;
   end;
 
   TOnMint = reference to procedure(
@@ -203,6 +208,29 @@ begin
       cToken.Free;
     end;
   end);
+end;
+
+// Returns how much underlying assets you are entitled to.
+class procedure TCompound.Balance(
+  client  : TWeb3;
+  owner   : TAddress;
+  reserve : TReserve;
+  callback: TAsyncFloat);
+var
+  cToken: TcToken;
+begin
+  cToken := cTokenClass[reserve].Create(client);
+  try
+    cToken.BalanceOfUnderlying(owner, procedure(qty: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(0, err)
+      else
+        callback(BigInteger.Divide(qty, BigInteger.Create(1e10)).AsInt64 / 1e8, nil);
+    end);
+  finally
+    cToken.Free;
+  end;
 end;
 
 { TcToken }

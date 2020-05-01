@@ -49,6 +49,11 @@ type
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
+    class procedure Balance(
+      client  : TWeb3;
+      owner   : TAddress;
+      reserve : TReserve;
+      callback: TAsyncFloat); override;
   end;
 
   TOnMint = reference to procedure(
@@ -76,6 +81,7 @@ type
   public
     constructor Create(aClient: TWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
+    procedure AssetBalanceOf(owner: TAddress; callback: TAsyncQuantity);
     procedure LoanTokenAddress(callback: TAsyncAddress);
     procedure SupplyInterestRate(callback: TAsyncQuantity);
     procedure TokenPrice(callback: TAsyncQuantity);
@@ -184,6 +190,29 @@ begin
   end);
 end;
 
+// Returns how much underlying assets you are entitled to.
+class procedure TFulcrum.Balance(
+  client  : TWeb3;
+  owner   : TAddress;
+  reserve : TReserve;
+  callback: TAsyncFloat);
+var
+  iToken: TiToken;
+begin
+  iToken := iTokenClass[reserve].Create(client);
+  try
+    iToken.AssetBalanceOf(owner, procedure(qty: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(0, err)
+      else
+        callback(BigInteger.Divide(qty, BigInteger.Create(1e10)).AsInt64 / 1e8, nil);
+    end);
+  finally
+    iToken.Free;
+  end;
+end;
+
 { TiToken }
 
 function TiToken.ListenForLatestBlock: Boolean;
@@ -243,28 +272,11 @@ begin
   web3.eth.write(Client, from, Contract, 'mint(address,uint256)', [from.Address, web3.utils.toHex(amount)], callback);
 end;
 
-// Returns the aggregate rate that all lenders are receiving from borrowers, scaled by 1e20
-procedure TiToken.SupplyInterestRate(callback: TAsyncQuantity);
+// Returns the user’s balance of the underlying asset, scaled by 1e18
+// This is the same as multiplying the user’s token balance by the token price.
+procedure TiToken.AssetBalanceOf(owner: TAddress; callback: TAsyncQuantity);
 begin
-  web3.eth.call(Client, Contract, 'supplyInterestRate()', [], procedure(qty: BigInteger; err: IError)
-  begin
-    if Assigned(err) then
-      callback(BigInteger.Zero, err)
-    else
-      callback(qty, nil);
-  end);
-end;
-
-// Returns the current price of the iToken, scaled by 1e18
-procedure TiToken.TokenPrice(callback: TAsyncQuantity);
-begin
-  web3.eth.call(Client, Contract, 'tokenPrice()', [], procedure(qty: BigInteger; err: IError)
-  begin
-    if Assigned(err) then
-      callback(BigInteger.Zero, err)
-    else
-      callback(qty, nil);
-  end);
+  web3.eth.call(Client, Contract, 'assetBalanceOf(address)', [owner], callback);
 end;
 
 // Returns the underlying asset contract address for this iToken.
@@ -277,6 +289,18 @@ begin
     else
       callback(TAddress.New(hex), nil)
   end);
+end;
+
+// Returns the aggregate rate that all lenders are receiving from borrowers, scaled by 1e18
+procedure TiToken.SupplyInterestRate(callback: TAsyncQuantity);
+begin
+  web3.eth.call(Client, Contract, 'supplyInterestRate()', [], callback);
+end;
+
+// Returns the current price of the iToken, scaled by 1e18
+procedure TiToken.TokenPrice(callback: TAsyncQuantity);
+begin
+  web3.eth.call(Client, Contract, 'tokenPrice()', [], callback);
 end;
 
 { TiDAI }
