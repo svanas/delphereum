@@ -52,6 +52,11 @@ type
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncFloat); override;
+    class procedure Withdraw(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      callback: TAsyncReceipt); override;
   end;
 
   TOnMint = reference to procedure(
@@ -72,7 +77,6 @@ type
     procedure SetOnMint(Value: TOnMint);
     procedure SetOnRedeem(Value: TOnRedeem);
   protected
-    class function MintGasCost: TWei; virtual;
     function  ListenForLatestBlock: Boolean; override;
     procedure OnLatestBlockMined(log: TLog); override;
   public
@@ -85,7 +89,7 @@ type
     procedure Underlying(callback: TAsyncAddress);
     //------- write to contract ------------------------------------------------
     procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-    procedure Redeem(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+    procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure RedeemUnderlying(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
     //------- https://compound.finance/docs/ctokens#ctoken-events --------------
     property OnMint  : TOnMint   read FOnMint   write SetOnMint;
@@ -93,8 +97,6 @@ type
   end;
 
   TcDAI = class(TcToken)
-  protected
-    class function MintGasCost: TWei; override;
   public
     constructor Create(aClient: TWeb3); override;
   end;
@@ -233,6 +235,29 @@ begin
   end;
 end;
 
+// Redeems your balance of cTokens for the underlying asset.
+class procedure TCompound.Withdraw(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  callback: TAsyncReceipt);
+var
+  cToken: TcToken;
+begin
+  cToken := cTokenClass[reserve].Create(client);
+  try
+    cToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, err)
+      else
+        cToken.Redeem(from, amount, callback);
+    end);
+  finally
+    cToken.Free;
+  end;
+end;
+
 { TcToken }
 
 function TcToken.ListenForLatestBlock: Boolean;
@@ -316,22 +341,20 @@ end;
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
 procedure TcToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, from, Contract, 'mint(uint256)', [web3.utils.toHex(amount)], MintGasCost, callback);
-end;
-
-class function TcToken.MintGasCost: TWei;
-begin
-  Result := 150000; // https://compound.finance/docs#gas-costs
+  web3.eth.write(Client, from, Contract,
+    'mint(uint256)', [web3.utils.toHex(amount)],
+    300000, // https://compound.finance/docs#gas-costs
+    callback);
 end;
 
 // redeems specified amount of cTokens in exchange for the underlying ERC20 tokens.
 // the ERC20 tokens are transferred to the wallet of the supplier.
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
-procedure TcToken.Redeem(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+procedure TcToken.Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
   web3.eth.write(
     Client, from, Contract,
-    'redeem(uint256)', [amount],
+    'redeem(uint256)', [web3.utils.toHex(amount)],
     90000, // https://compound.finance/docs#gas-costs
     callback);
 end;
@@ -389,11 +412,6 @@ begin
     Kovan:
       inherited Create(aClient, '0xe7bc397dbd069fc7d0109c0636d06888bb50668c');
   end;
-end;
-
-class function TcDAI.MintGasCost: TWei;
-begin
-  Result := 300000; // https://compound.finance/docs#gas-costs
 end;
 
 { TcUSDC }

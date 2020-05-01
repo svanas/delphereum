@@ -46,6 +46,12 @@ type
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncFloat); virtual; abstract;
+    // Withdraws your underlying asset from the lending pool.
+    class procedure Withdraw(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      callback: TAsyncReceipt); virtual; abstract;
   end;
 
 implementation

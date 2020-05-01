@@ -32,7 +32,7 @@ uses
 type
   EAave = class(EWeb3);
 
-  // Global helper functions and constants
+  // Global helper functions
   TAave = class(TLendingProtocol)
   protected
     class procedure UnderlyingAddress(
@@ -46,12 +46,6 @@ type
       amount  : BigInteger;
       callback: TAsyncReceipt);
   public
-    const
-      // For internal calculations and to reduce the impact of rounding errors, the
-      // Aave protocol uses the concept of Ray Math. A Ray is a unit with 27 decimals
-      // of precision. All the rates (liquidity/borrow/utilisation rates) as well as
-      // the cumulative indexes and the aTokens exchange rates are expressed in Ray.
-      RAY = 1e27;
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
@@ -67,12 +61,11 @@ type
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncFloat); override;
-    class procedure Redeem(
+    class procedure Withdraw(
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TAsyncReceipt); override;
   end;
 
   // Global addresses register of the protocol. This contract is immutable and the address will never change.
@@ -106,6 +99,13 @@ type
     procedure PrincipalBalanceOf(owner: TAddress; callback: TAsyncQuantity);
     procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
   end;
+
+// For internal calculations and to reduce the impact of rounding errors, the
+// Aave protocol uses the concept of Ray Math. A Ray is a unit with 27 decimals
+// of precision. All the rates (liquidity/borrow/utilisation rates) as well as
+// the cumulative indexes and the aTokens exchange rates are expressed in Ray.
+const
+  RAY = 1e27;
 
 implementation
 
@@ -316,12 +316,11 @@ begin
   end;
 end;
 
-// Global helper function that redeems an `amount` of aTokens for the underlying asset.
-class procedure TAave.Redeem(
+// Global helper function that redeems your balance of aTokens for the underlying asset.
+class procedure TAave.Withdraw(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  amount  : BigInteger;
   callback: TAsyncReceipt);
 var
   aAp   : TAaveAddressesProvider;
@@ -349,7 +348,13 @@ begin
               aToken := TaToken.Create(client, addr);
               if Assigned(aToken) then
               try
-                aToken.Redeem(from, amount, callback);
+                aToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
+                begin
+                  if Assigned(err) then
+                    callback(nil, err)
+                  else
+                    aToken.Redeem(from, amount, callback);
+                end);
               finally
                 aToken.Free;
               end;

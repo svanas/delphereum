@@ -586,8 +586,8 @@ begin
         web3.json.quoteString(txn.input, '"'),
         web3.json.quoteString(string(txn.from), '"'),
         web3.json.quoteString(toHex(txn.value, [zeroAs0x0]), '"'),
-        web3.json.quoteString(toHex(txn.gasLimit), '"'),
-        web3.json.quoteString(toHex(txn.gasPrice), '"')
+        web3.json.quoteString(toHex(txn.gasLimit, [zeroAs0x0]), '"'),
+        web3.json.quoteString(toHex(txn.gasPrice, [zeroAs0x0]), '"')
       ]
     ));
     try

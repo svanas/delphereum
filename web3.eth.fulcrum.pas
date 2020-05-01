@@ -54,6 +54,11 @@ type
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncFloat); override;
+    class procedure Withdraw(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      callback: TAsyncReceipt); override;
   end;
 
   TOnMint = reference to procedure(
@@ -86,7 +91,7 @@ type
     procedure SupplyInterestRate(callback: TAsyncQuantity);
     procedure TokenPrice(callback: TAsyncQuantity);
     //------- write to contract ------------------------------------------------
-    procedure Burn(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+    procedure Burn(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     //------- events -----------------------------------------------------------
     property OnMint: TOnMint read FOnMint write SetOnMint;
@@ -213,6 +218,29 @@ begin
   end;
 end;
 
+// Redeems your balance of iTokens for the underlying asset.
+class procedure TFulcrum.Withdraw(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  callback: TAsyncReceipt);
+var
+  iToken: TiToken;
+begin
+  iToken := iTokenClass[reserve].Create(client);
+  try
+    iToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, err)
+      else
+        iToken.Burn(from, amount, callback);
+    end);
+  finally
+    iToken.Free;
+  end;
+end;
+
 { TiToken }
 
 function TiToken.ListenForLatestBlock: Boolean;
@@ -259,9 +287,9 @@ end;
 
 // Called to redeem owned iTokens for an equivalent amount of the underlying asset, at the current tokenPrice() rate.
 // The supplier will receive the asset proceeds.
-procedure TiToken.Burn(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+procedure TiToken.Burn(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, from, Contract, 'burn(address,uint256)', [from.Address, amount], callback);
+  web3.eth.write(Client, from, Contract, 'burn(address,uint256)', [from.Address, web3.utils.toHex(amount)], callback);
 end;
 
 // Called to deposit assets to the iToken, which in turn mints iTokens to the lender’s wallet at the current tokenPrice() rate.

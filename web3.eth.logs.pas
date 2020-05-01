@@ -146,7 +146,7 @@ begin
   Result := nil;
   &in := web3.json.unmarshal(Format(
     '{"fromBlock": "%s", "toBlock": %s, "address": %s}', [
-      web3.utils.toHex(fromBlock),
+      web3.utils.toHex(fromBlock, [zeroAs0x0]),
       web3.json.quoteString(BLOCK_LATEST, '"'),
       web3.json.quoteString(string(address), '"')
     ]
