@@ -232,34 +232,36 @@ var
   ap  : TAaveAddressesProvider;
   pool: TAaveLendingPool;
 begin
-  ap := TAaveAddressesProvider.Create(client);
-  if Assigned(ap) then
-  try
-    ap.GetLendingPool(procedure(addr: TAddress; err: IError)
+  // Before supplying an asset, we must first approve the LendingPoolCore contract.
+  Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
     begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-      begin
-        pool := TAaveLendingPool.Create(client, addr);
-        if Assigned(pool) then
-        try
-          // Before supplying an asset, we must first approve the LendingPoolCore contract.
-          Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
+      ap := TAaveAddressesProvider.Create(client);
+      if Assigned(ap) then
+      try
+        ap.GetLendingPool(procedure(addr: TAddress; err: IError)
+        begin
+          if Assigned(err) then
+            callback(nil, err)
+          else
           begin
-            if Assigned(err) then
-              callback(nil, err)
-            else
+            pool := TAaveLendingPool.Create(client, addr);
+            if Assigned(pool) then
+            try
               pool.Deposit(from, reserve, amount, callback);
-          end);
-        finally
-          pool.Free;
-        end;
+            finally
+              pool.Free;
+            end;
+          end;
+        end);
+      finally
+        ap.Free;
       end;
-    end);
-  finally
-    ap.Free;
-  end;
+    end;
+  end);
 end;
 
 // Returns how much underlying assets you are entitled to.
@@ -437,7 +439,7 @@ begin
         Client, from, Contract,
         'deposit(address,uint256,uint16)',
         [addr, web3.utils.toHex(amount), 42],
-        180000, // https://docs.aave.com/developers/developing-on-aave/important-considerations
+        300000, // https://docs.aave.com/developers/developing-on-aave/important-considerations
         callback);
   end);
 end;

@@ -254,14 +254,18 @@ begin
         EXIT;
       end;
       // did the transaction fail? then get the reason why it failed
-      if not rcpt.status then
-        getTransactionRevertReason(client, rcpt, procedure(const reason: string; err: IError)
-        begin
-          if not Assigned(err) then
-            callback(rcpt, TError.Create(reason));
-          EXIT;
-        end);
-      callback(rcpt, nil);
+      if rcpt.status then
+      begin
+        callback(rcpt, nil);
+        EXIT;
+      end;
+      getTransactionRevertReason(client, rcpt, procedure(const reason: string; err: IError)
+      begin
+        if Assigned(err) then
+          callback(rcpt, nil)
+        else
+          callback(rcpt, TError.Create(reason));
+      end);
     end;
     getTransactionReceipt(client, hash, onReceiptReceived);
   end);
@@ -548,16 +552,12 @@ begin
 end;
 
 resourcestring
-  TX_DID_NOT_FAIL = 'Transaction did not fail';
-  TX_OUT_OF_GAS   = 'Transaction ran out of gas';
+  TX_DID_NOT_FAIL  = 'Transaction did not fail';
+  TX_OUT_OF_GAS    = 'Transaction ran out of gas';
+  TX_UNKNOWN_ERROR = 'Unknown error encountered during contract execution';
 
 // get the revert reason for a failed transaction.
 procedure getTransactionRevertReason(client: TWeb3; rcpt: ITxReceipt; callback: TAsyncString);
-var
-  decoded,
-  encoded: string;
-  len: Int64;
-  obj: TJsonObject;
 begin
   if rcpt.status then
   begin
@@ -566,6 +566,8 @@ begin
   end;
 
   web3.eth.tx.getTransaction(client, rcpt.txHash, procedure(txn: ITxn; err: IError)
+  var
+    obj: TJsonObject;
   begin
     if Assigned(err) then
     begin
@@ -592,6 +594,10 @@ begin
     ));
     try
       web3.json.rpc.send(client.URL, 'eth_call', [obj, toHex(txn.blockNumber)], procedure(resp: TJsonObject; err: IError)
+      var
+        len: Int64;
+        decoded,
+        encoded: string;
       begin
         if Assigned(err) then
         begin
@@ -603,6 +609,11 @@ begin
         encoded := web3.json.getPropAsStr(resp, 'result');
         // trim the 0x prefix
         Delete(encoded, Low(encoded), 2);
+        if encoded.Length = 0 then
+        begin
+          callback(TX_UNKNOWN_ERROR, nil);
+          EXIT;
+        end;
         // get the length of the revert reason
         len := StrToInt64('$' + Copy(encoded, Low(encoded) + 8 + 64, 64));
         // using the length and known offset, extract the revert reason
