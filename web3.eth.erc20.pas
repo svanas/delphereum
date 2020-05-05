@@ -40,7 +40,28 @@ type
     Spender: TAddress;
     Value  : BigInteger);
 
-  TERC20 = class(TCustomContract)
+  IERC20 = interface
+    //------- read from contract -----------------------------------------------
+    procedure Name       (callback: TAsyncString);
+    procedure Symbol     (callback: TAsyncString);
+    procedure Decimals   (callback: TAsyncQuantity);
+    procedure TotalSupply(callback: TAsyncQuantity);
+    procedure BalanceOf  (owner: TAddress; callback: TAsyncQuantity);
+    procedure Allowance  (owner, spender: TAddress; callback: TAsyncQuantity);
+    //------- write to contract ------------------------------------------------
+    procedure Transfer(
+      from    : TPrivateKey;
+      &to     : TAddress;
+      value   : UInt64;
+      callback: TAsyncReceipt);
+    procedure Approve(
+      owner   : TPrivateKey;
+      spender : TAddress;
+      value   : BigInteger;
+      callback: TAsyncReceipt);
+  end;
+
+  TERC20 = class(TCustomContract, IERC20)
   strict private
     FTask      : ITask;
     FOnTransfer: TOnTransfer;

@@ -90,11 +90,15 @@ type
     procedure aTokenAddress(reserve: TReserve; callback: TAsyncAddress);
   end;
 
+  IaToken = interface(IERC20)
+    procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+  end;
+
   // aTokens are interest-bearing derivative tokens that are minted and burned
   // upon deposit (called from LendingPool) and redeem (called from the aToken contract).
   // If you are developing on a testnet and require tokens, go to
   // https://testnet.aave.com/faucet, making sure that your wallet is set to the relevant testnet.
-  TaToken = class(TERC20)
+  TaToken = class(TERC20, IaToken)
   public
     procedure PrincipalBalanceOf(owner: TAddress; callback: TAsyncQuantity);
     procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
@@ -327,7 +331,7 @@ class procedure TAave.Withdraw(
 var
   aAp   : TAaveAddressesProvider;
   aPool : TAaveLendingPool;
-  aToken: TaToken;
+  aToken: IaToken;
 begin
   aAp := TAaveAddressesProvider.Create(client);
   if Assigned(aAp) then
@@ -349,7 +353,7 @@ begin
             begin
               aToken := TaToken.Create(client, addr);
               if Assigned(aToken) then
-              try
+              begin
                 aToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
                 begin
                   if Assigned(err) then
@@ -357,8 +361,6 @@ begin
                   else
                     aToken.Redeem(from, amount, callback);
                 end);
-              finally
-                aToken.Free;
               end;
             end;
           end);
@@ -495,7 +497,7 @@ begin
   web3.eth.write(
     Client, from, Contract,
     'redeem(uint256)', [web3.utils.toHex(amount)],
-    400000, // https://docs.aave.com/developers/developing-on-aave/important-considerations
+    600000, // https://docs.aave.com/developers/developing-on-aave/important-considerations
     callback);
 end;
 

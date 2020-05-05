@@ -36,7 +36,7 @@ type
     property Code: Integer read FCode;
   end;
 
-  IJsonRpc = interface
+  IJsonRpc = interface(IError)
     function Code: Integer;
   end;
 
