@@ -189,6 +189,8 @@ begin
   hex := Trim(hex);
   while Copy(hex, Low(hex), 2) = '0x' do
     Delete(hex, Low(hex), 2);
+  if hex.Length mod 2 > 0 then
+    hex := '0' + hex; // pad to even
   SetLength(Result, Length(hex) div 2);
   for I := Low(hex) to Length(hex) div 2 do
     Result[I - 1] := StrToInt('$' + Copy(hex, (I - 1) * 2 + 1, 2));
