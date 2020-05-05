@@ -21,14 +21,19 @@ uses
   web3.eth.types;
 
 type
-  TCustomContract = class abstract(TInterfacedObject)
+  ICustomContract = interface
+    function Client  : TWeb3;
+    function Contract: TAddress;
+  end;
+
+  TCustomContract = class abstract(TInterfacedObject, ICustomContract)
   strict private
     FClient  : TWeb3;
     FContract: TAddress;
   public
     constructor Create(aClient: TWeb3; aContract: TAddress); virtual;
-    property Client  : TWeb3    read FClient;
-    property Contract: TAddress read FContract;
+    function Client  : TWeb3;
+    function Contract: TAddress;
   end;
 
 implementation
@@ -40,6 +45,16 @@ begin
   inherited Create;
   FClient   := aClient;
   FContract := aContract;
+end;
+
+function TCustomContract.Client: TWeb3;
+begin
+  Result := FClient;
+end;
+
+function TCustomContract.Contract: TAddress;
+begin
+  Result := FContract;
 end;
 
 end.

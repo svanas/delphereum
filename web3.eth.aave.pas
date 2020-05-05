@@ -7,6 +7,10 @@
 {                                                                              }
 {   Distributed under Creative Commons NonCommercial (aka CC BY-NC) license.   }
 {                                                                              }
+{            need tokens to test with?                                         }
+{            1. make sure your wallet is set to the relevant testnet           }
+{            2. go to https://testnet.aave.com/faucet                          }
+{                                                                              }
 {******************************************************************************}
 
 unit web3.eth.aave;
@@ -91,6 +95,7 @@ type
   end;
 
   IaToken = interface(IERC20)
+    procedure PrincipalBalanceOf(owner: TAddress; callback: TAsyncQuantity);
     procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
   end;
 
@@ -277,7 +282,7 @@ class procedure TAave.Balance(
 var
   aAp   : TAaveAddressesProvider;
   aPool : TAaveLendingPool;
-  aToken: TaToken;
+  aToken: IaToken;
 begin
   aAp := TAaveAddressesProvider.Create(client);
   if Assigned(aAp) then
@@ -299,7 +304,7 @@ begin
             begin
               aToken := TaToken.Create(client, addr);
               if Assigned(aToken) then
-              try
+              begin
                 aToken.PrincipalBalanceOf(owner, procedure(qty: BigInteger; err: IError)
                 begin
                   if Assigned(err) then
@@ -307,8 +312,6 @@ begin
                   else
                     callback(BigInteger.Divide(qty, BigInteger.Create(1e10)).AsInt64 / 1e8, nil);
                 end);
-              finally
-                aToken.Free;
               end;
             end;
           end);

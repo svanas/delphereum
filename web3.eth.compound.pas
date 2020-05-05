@@ -7,6 +7,11 @@
 {                                                                              }
 {   Distributed under Creative Commons NonCommercial (aka CC BY-NC) license.   }
 {                                                                              }
+{        need tokens to test with?                                             }
+{        1. make sure your wallet is set to the relevant testnet               }
+{        2. go to https://app.compound.finance                                 }
+{        3. click an asset, then withdraw, and there will be a faucet button   }
+{                                                                              }
 {******************************************************************************}
 
 unit web3.eth.compound;
@@ -28,6 +33,7 @@ uses
   web3.utils;
 
 type
+  // Global helper functions
   TCompound = class(TLendingProtocol)
   protected
     class procedure Approve(
@@ -70,7 +76,15 @@ type
     Amount  : BigInteger;
     Tokens  : BigInteger);
 
-  TcToken = class abstract(TERC20)
+  IcToken = interface(IERC20)
+    //------- read from contract -----------------------------------------------
+    procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
+    procedure Underlying(callback: TAsyncAddress);
+    //------- write to contract ------------------------------------------------
+    procedure RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+  end;
+
+  TcToken = class abstract(TERC20, IcToken)
   strict private
     FOnMint  : TOnMint;
     FOnRedeem: TOnRedeem;
@@ -90,7 +104,7 @@ type
     //------- write to contract ------------------------------------------------
     procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-    procedure RedeemUnderlying(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+    procedure RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     //------- https://compound.finance/docs/ctokens#ctoken-events --------------
     property OnMint  : TOnMint   read FOnMint   write SetOnMint;
     property OnRedeem: TOnRedeem read FOnRedeem write SetOnRedeem;
@@ -147,10 +161,11 @@ class procedure TCompound.Approve(
   callback: TAsyncReceipt);
 var
   erc20 : TERC20;
-  cToken: TcToken;
+  cToken: IcToken;
 begin
   cToken := cTokenClass[reserve].Create(client);
-  try
+  if Assigned(cToken) then
+  begin
     cToken.Underlying(procedure(addr: TAddress; err: IError)
     begin
       if Assigned(err) then
@@ -166,8 +181,6 @@ begin
         end;
       end;
     end);
-  finally
-    cToken.Free;
   end;
 end;
 
@@ -242,19 +255,18 @@ class procedure TCompound.Withdraw(
   reserve : TReserve;
   callback: TAsyncReceipt);
 var
-  cToken: TcToken;
+  cToken: IcToken;
 begin
   cToken := cTokenClass[reserve].Create(client);
-  try
-    cToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
+  if Assigned(cToken) then
+  begin
+    cToken.BalanceOfUnderlying(from.Address, procedure(amount: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(nil, err)
       else
-        cToken.Redeem(from, amount, callback);
+        cToken.RedeemUnderlying(from, amount, callback);
     end);
-  finally
-    cToken.Free;
   end;
 end;
 
@@ -355,19 +367,19 @@ begin
   web3.eth.write(
     Client, from, Contract,
     'redeem(uint256)', [web3.utils.toHex(amount)],
-    90000, // https://compound.finance/docs#gas-costs
+    150000, // https://compound.finance/docs#gas-costs
     callback);
 end;
 
 // redeems cTokens in exchange for the specified amount of underlying ERC20 tokens.
 // the ERC20 tokens are transferred to the wallet of the supplier.
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
-procedure TcToken.RedeemUnderlying(from: TPrivateKey; amount: UInt64; callback: TAsyncReceipt);
+procedure TcToken.RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
   web3.eth.write(
     Client, from, Contract,
-    'redeemUnderlying(uint256)', [amount],
-    90000, // https://compound.finance/docs#gas-costs
+    'redeemUnderlying(uint256)', [web3.utils.toHex(amount)],
+    150000, // https://compound.finance/docs#gas-costs
     callback);
 end;
 
