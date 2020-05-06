@@ -78,10 +78,9 @@ type
 
   IcToken = interface(IERC20)
     //------- read from contract -----------------------------------------------
-    procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
     procedure Underlying(callback: TAsyncAddress);
     //------- write to contract ------------------------------------------------
-    procedure RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+    procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
   end;
 
   TcToken = class abstract(TERC20, IcToken)
@@ -260,12 +259,12 @@ begin
   cToken := cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
   begin
-    cToken.BalanceOfUnderlying(from.Address, procedure(amount: BigInteger; err: IError)
+    cToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(nil, err)
       else
-        cToken.RedeemUnderlying(from, amount, callback);
+        cToken.Redeem(from, amount, callback);
     end);
   end;
 end;
