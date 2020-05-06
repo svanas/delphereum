@@ -95,7 +95,6 @@ type
   end;
 
   IaToken = interface(IERC20)
-    procedure PrincipalBalanceOf(owner: TAddress; callback: TAsyncQuantity);
     procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
   end;
 
@@ -105,7 +104,6 @@ type
   // https://testnet.aave.com/faucet, making sure that your wallet is set to the relevant testnet.
   TaToken = class(TERC20, IaToken)
   public
-    procedure PrincipalBalanceOf(owner: TAddress; callback: TAsyncQuantity);
     procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
   end;
 
@@ -305,7 +303,7 @@ begin
               aToken := TaToken.Create(client, addr);
               if Assigned(aToken) then
               begin
-                aToken.PrincipalBalanceOf(owner, procedure(qty: BigInteger; err: IError)
+                aToken.BalanceOf(owner, procedure(qty: BigInteger; err: IError)
                 begin
                   if Assigned(err) then
                     callback(0, err)
@@ -487,12 +485,6 @@ begin
 end;
 
 { TaToken }
-
-// Returns user current balance deposited to the Aave Protocol reserve contract, with interest collected amount removed.
-procedure TaToken.PrincipalBalanceOf(owner: TAddress; callback: TAsyncQuantity);
-begin
-  web3.eth.call(Client, Contract, 'principalBalanceOf(address)', [owner], callback);
-end;
 
 // redeem an `amount` of aTokens for the underlying asset, burning the aTokens during the process.
 procedure TaToken.Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
