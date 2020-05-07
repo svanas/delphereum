@@ -52,7 +52,7 @@ type
     procedure Transfer(
       from    : TPrivateKey;
       &to     : TAddress;
-      value   : UInt64;
+      value   : BigInteger;
       callback: TAsyncReceipt);
     procedure Approve(
       owner   : TPrivateKey;
@@ -88,7 +88,7 @@ type
     procedure Transfer(
       from    : TPrivateKey;
       &to     : TAddress;
-      value   : UInt64;
+      value   : BigInteger;
       callback: TAsyncReceipt);
     procedure Approve(
       owner   : TPrivateKey;
@@ -209,10 +209,10 @@ end;
 procedure TERC20.Transfer(
   from    : TPrivateKey;
   &to     : TAddress;
-  value   : UInt64;
+  value   : BigInteger;
   callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, from, Contract, 'transfer(address,uint256)', [&to, value], callback);
+  web3.eth.write(Client, from, Contract, 'transfer(address,uint256)', [&to, web3.utils.toHex(value)], callback);
 end;
 
 procedure TERC20.Approve(
