@@ -85,7 +85,7 @@ begin
       buf := web3.utils.fromHex(tpcs.Items[tpc].Value);
       if Length(buf) >= SizeOf(TArg) then
       begin
-        Move(buf[0], arg[0], SizeOf(TArg));
+        Move(buf[0], arg.Bytes[0], SizeOf(TArg));
         FTopics[tpc] := arg;
       end;
     end;
@@ -94,7 +94,7 @@ begin
   while Length(buf) >= SizeOf(TArg) do
   begin
     last := Data.Add;
-    Move(buf[0], last[0], SizeOf(TArg));
+    Move(buf[0], last^.Bytes[0], SizeOf(TArg));
     Delete(buf, 0, SizeOf(TArg));
   end;
 end;
@@ -105,7 +105,7 @@ var
   arg: TArg;
 begin
   buf := web3.utils.sha3(web3.utils.toHex(name));
-  Move(buf[0], arg[0], SizeOf(TArg));
+  Move(buf[0], arg.Bytes[0], SizeOf(TArg));
   Result := CompareMem(@FTopics[0], @arg, SizeOf(TArg));
 end;
 

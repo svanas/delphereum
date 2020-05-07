@@ -286,16 +286,16 @@ begin
       // emitted upon a successful Mint
       FOnMint(Self,
               TAddress.New(log.Topic[1]),
-              toBigInt(log.Data[0]),
-              toBigInt(log.Data[1]));
+              log.Data[0].toBigInt,
+              log.Data[1].toBigInt);
 
   if Assigned(FOnRedeem) then
     if log.isEvent('Redeem(address,uint256,uint256)') then
       // emitted upon a successful Redeem
       FOnRedeem(Self,
                 TAddress.New(log.Topic[1]),
-                toBigInt(log.Data[0]),
-                toBigInt(log.Data[1]));
+                log.Data[0].toBigInt,
+                log.Data[1].toBigInt);
 end;
 
 procedure TcToken.SetOnMint(Value: TOnMint);

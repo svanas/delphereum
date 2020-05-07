@@ -467,7 +467,7 @@ begin
     if Assigned(err) then
       callback(BigInteger.Zero, err)
     else
-      callback(toBigInt(tup[4]), nil);
+      callback(tup[4].toBigInt, nil);
   end);
 end;
 

@@ -143,13 +143,13 @@ begin
       FOnTransfer(Self,
                   TAddress.New(log.Topic[1]),
                   TAddress.New(log.Topic[2]),
-                  toBigInt(log.Data[0]));
+                  log.Data[0].toBigInt);
   if Assigned(FOnApproval) then
     if log.isEvent('Approval(address,address,uint256)') then
       FOnApproval(Self,
                   TAddress.New(log.Topic[1]),
                   TAddress.New(log.Topic[2]),
-                  toBigInt(log.Data[0]));
+                  log.Data[0].toBigInt);
 end;
 
 procedure TERC20.SetOnTransfer(Value: TOnTransfer);

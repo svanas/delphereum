@@ -271,18 +271,18 @@ begin
       // emitted upon a successful Mint
       FOnMint(Self,
               TAddress.New(log.Topic[1]),
-              toBigInt(log.Data[0]),
-              toBigInt(log.Data[1]),
-              toBigInt(log.Data[2]));
+              log.Data[0].toBigInt,
+              log.Data[1].toBigInt,
+              log.Data[2].toBigInt);
 
   if Assigned(FOnBurn) then
     if log.isEvent('Burn(address,uint256,uint256,uint256)') then
       // emitted upon a successful Burn
       FOnBurn(Self,
               TAddress.New(log.Topic[1]),
-              toBigInt(log.Data[0]),
-              toBigInt(log.Data[1]),
-              toBigInt(log.Data[2]));
+              log.Data[0].toBigInt,
+              log.Data[1].toBigInt,
+              log.Data[2].toBigInt);
 end;
 
 procedure TiToken.SetOnMint(Value: TOnMint);

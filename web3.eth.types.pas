@@ -28,9 +28,18 @@ uses
   web3;
 
 type
+  TArg = record
+    Bytes: array[0..31] of Byte;
+    function toHex(const prefix: string): string;
+    function toInt64: Int64;
+    function toBigInt: BigInteger;
+    function toBool: Boolean;
+    function toString: string;
+  end;
+
+type
   TAddress    = string[42];
   TPrivateKey = string[64];
-  TArg        = array[0..31] of Byte;
   PArg        = ^TArg;
   TTuple      = TArray<TArg>;
   TSignature  = string[132];
@@ -97,11 +106,6 @@ type
     class function From(const hex: string): TTuple;
   end;
 
-function toHex(const prefix: string; arg: TArg): string;
-function toInt64(arg: TArg): Int64;
-function toBigInt(arg: TArg): BigInteger;
-function toBool(arg: TArg): Boolean;
-
 implementation
 
 uses
@@ -112,44 +116,49 @@ uses
 
 { TArg }
 
-function toHex(const prefix: string; arg: TArg): string;
+function TArg.toHex(const prefix: string): string;
 const
   Digits = '0123456789ABCDEF';
 var
   I: Integer;
 begin
-  Result := StringOfChar('0', Length(Arg) * 2);
+  Result := StringOfChar('0', Length(Bytes) * 2);
   try
-    for I := 0 to Length(arg) - 1 do
+    for I := 0 to Length(Bytes) - 1 do
     begin
-      Result[2 * I + 1] := Digits[(arg[I] shr 4)  + 1];
-      Result[2 * I + 2] := Digits[(arg[I] and $F) + 1];
+      Result[2 * I + 1] := Digits[(Bytes[I] shr 4)  + 1];
+      Result[2 * I + 2] := Digits[(Bytes[I] and $F) + 1];
     end;
   finally
     Result := prefix + Result;
   end;
 end;
 
-function toInt64(arg: TArg): Int64;
+function TArg.toInt64: Int64;
 begin
-  Result := StrToInt64(toHex('$', arg));
+  Result := StrToInt64(Self.toHex('$'));
 end;
 
-function toBigInt(arg: TArg): BigInteger;
+function TArg.toBigInt: BigInteger;
 begin
-  Result := toHex('0x', arg);
+  Result := Self.toHex('0x');
 end;
 
-function toBool(arg: TArg): Boolean;
+function TArg.toBool: Boolean;
 begin
-  Result := toInt64(arg) <> 0;
+  Result := Self.toInt64 <> 0;
+end;
+
+function TArg.toString: string;
+begin
+  Result := TEncoding.UTF8.GetString(Bytes);
 end;
 
 { TAddressHelper }
 
 class function TAddressHelper.New(arg: TArg): TAddress;
 begin
-  Result := New(toHex('0x', arg));
+  Result := New(arg.toHex('0x'));
 end;
 
 class function TAddressHelper.New(const hex: string): TAddress;
@@ -253,11 +262,11 @@ begin
   if Length(Self) < 3 then
     EXIT;
   arg := Self[1];
-  len := toInt64(arg);
+  len := arg.toInt64;
   if len = 0 then
     EXIT;
   for idx := 2 to High(Self) do
-    Result := Result + TEncoding.UTF8.GetString(Self[idx]);
+    Result := Result + Self[idx].toString;
   SetLength(Result, len);
 end;
 
@@ -270,7 +279,7 @@ begin
   while Length(buf) >= 32 do
   begin
     SetLength(tup, Length(tup) + 1);
-    Move(buf[0], tup[High(tup)][0], 32);
+    Move(buf[0], tup[High(tup)].Bytes[0], 32);
     Delete(buf, 0, 32);
   end;
   Result := tup;

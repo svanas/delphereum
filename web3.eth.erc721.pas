@@ -205,17 +205,17 @@ begin
         if log.isEvent('Transfer(address,address,uint256)') then
           FOnTransfer(Self,
                       TAddress.New(log.Topic[1]),
-                      TAddress.New(log.Topic[2]), toBigInt(log.Topic[3]));
+                      TAddress.New(log.Topic[2]), log.Topic[3].toBigInt);
       if Assigned(FOnApproval) then
         if log.isEvent('Approval(address,address,uint256)') then
           FOnApproval(Self,
                       TAddress.New(log.Topic[1]),
-                      TAddress.New(log.Topic[2]), toBigInt(log.Topic[3]));
+                      TAddress.New(log.Topic[2]), log.Topic[3].toBigInt);
       if Assigned(FOnApprovalForAll) then
         if log.isEvent('ApprovalForAll(address,address,bool)') then
           FOnApprovalForAll(Self,
                             TAddress.New(log.Topic[1]),
-                            TAddress.New(log.Topic[2]), toBool(log.Data[0]));
+                            TAddress.New(log.Topic[2]), log.Data[0].toBool);
     end);
 end;
 
