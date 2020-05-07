@@ -7,6 +7,13 @@
 {                                                                              }
 {   Distributed under Creative Commons NonCommercial (aka CC BY-NC) license.   }
 {                                                                              }
+{        need tokens to test with?                                             }
+{        1. make sure your wallet is set to the relevant testnet               }
+{        2. go to https://faucet.kovan.network                                 }
+{        3. get yourself some KETH (aka Kovan Ether)                           }
+{        4. go to https://oasis.app/?network=kovan, click on Borrow            }
+{        5. using your KETH as collateral, generate yourself some DAI          }
+{                                                                              }
 {******************************************************************************}
 
 unit web3.eth.fulcrum;
@@ -74,7 +81,14 @@ type
     AssetAmount: BigInteger;
     Price      : BigInteger);
 
-  TiToken = class abstract(TERC20)
+  IiToken = interface(IERC20)
+    //------- read from contract -----------------------------------------------
+    procedure LoanTokenAddress(callback: TAsyncAddress);
+    //------- write to contract ------------------------------------------------
+    procedure Burn(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+  end;
+
+  TiToken = class abstract(TERC20, IiToken)
   strict private
     FOnMint: TOnMint;
     FOnBurn: TOnBurn;
@@ -130,10 +144,11 @@ class procedure TFulcrum.Approve(
   callback: TAsyncReceipt);
 var
   erc20 : TERC20;
-  iToken: TiToken;
+  iToken: IiToken;
 begin
   iToken := iTokenClass[reserve].Create(client);
-  try
+  if Assigned(iToken) then
+  begin
     iToken.LoanTokenAddress(procedure(addr: TAddress; err: IError)
     begin
       if Assigned(err) then
@@ -149,8 +164,6 @@ begin
         end;
       end;
     end);
-  finally
-    iToken.Free;
   end;
 end;
 
@@ -225,10 +238,11 @@ class procedure TFulcrum.Withdraw(
   reserve : TReserve;
   callback: TAsyncReceipt);
 var
-  iToken: TiToken;
+  iToken: IiToken;
 begin
   iToken := iTokenClass[reserve].Create(client);
-  try
+  if Assigned(iToken) then
+  begin
     iToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
     begin
       if Assigned(err) then
@@ -236,8 +250,6 @@ begin
       else
         iToken.Burn(from, amount, callback);
     end);
-  finally
-    iToken.Free;
   end;
 end;
 
@@ -289,7 +301,10 @@ end;
 // The supplier will receive the asset proceeds.
 procedure TiToken.Burn(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, from, Contract, 'burn(address,uint256)', [from.Address, web3.utils.toHex(amount)], callback);
+  web3.eth.write(
+    Client, from, Contract,
+    'burn(address,uint256)', [from.Address, web3.utils.toHex(amount)],
+    400000, callback);
 end;
 
 // Called to deposit assets to the iToken, which in turn mints iTokens to the lender’s wallet at the current tokenPrice() rate.
@@ -297,7 +312,10 @@ end;
 // The supplier will receive the minted iTokens.
 procedure TiToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, from, Contract, 'mint(address,uint256)', [from.Address, web3.utils.toHex(amount)], callback);
+  web3.eth.write(
+    Client, from, Contract,
+    'mint(address,uint256)', [from.Address, web3.utils.toHex(amount)],
+    500000, callback);
 end;
 
 // Returns the user’s balance of the underlying asset, scaled by 1e18
