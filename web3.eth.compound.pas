@@ -57,7 +57,8 @@ type
       client  : TWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncFloat); override;
+      callback: TAsyncQuantity); override;
+    class function Unscale(amount: BigInteger): Extended; override;
     class procedure Withdraw(
       client  : TWeb3;
       from    : TPrivateKey;
@@ -229,22 +230,21 @@ class procedure TCompound.Balance(
   client  : TWeb3;
   owner   : TAddress;
   reserve : TReserve;
-  callback: TAsyncFloat);
+  callback: TAsyncQuantity);
 var
   cToken: TcToken;
 begin
   cToken := cTokenClass[reserve].Create(client);
   try
-    cToken.BalanceOfUnderlying(owner, procedure(qty: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(BigInteger.Divide(qty, BigInteger.Create(1e10)).AsInt64 / 1e8, nil);
-    end);
+    cToken.BalanceOfUnderlying(owner, callback);
   finally
     cToken.Free;
   end;
+end;
+
+class function TCompound.Unscale(amount: BigInteger): Extended;
+begin
+  Result := BigInteger.Divide(amount, BigInteger.Create(1e10)).AsInt64 / 1e8;
 end;
 
 // Redeems your balance of cTokens for the underlying asset.
@@ -366,7 +366,7 @@ begin
   web3.eth.write(
     Client, from, Contract,
     'redeem(uint256)', [web3.utils.toHex(amount)],
-    150000, // https://compound.finance/docs#gas-costs
+    300000, // https://compound.finance/docs#gas-costs
     callback);
 end;
 
@@ -378,7 +378,7 @@ begin
   web3.eth.write(
     Client, from, Contract,
     'redeemUnderlying(uint256)', [web3.utils.toHex(amount)],
-    150000, // https://compound.finance/docs#gas-costs
+    300000, // https://compound.finance/docs#gas-costs
     callback);
 end;
 

@@ -60,7 +60,8 @@ type
       client  : TWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncFloat); override;
+      callback: TAsyncQuantity); override;
+    class function Unscale(amount: BigInteger): Extended; override;
     class procedure Withdraw(
       client  : TWeb3;
       from    : TPrivateKey;
@@ -213,22 +214,21 @@ class procedure TFulcrum.Balance(
   client  : TWeb3;
   owner   : TAddress;
   reserve : TReserve;
-  callback: TAsyncFloat);
+  callback: TAsyncQuantity);
 var
   iToken: TiToken;
 begin
   iToken := iTokenClass[reserve].Create(client);
   try
-    iToken.AssetBalanceOf(owner, procedure(qty: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(BigInteger.Divide(qty, BigInteger.Create(1e10)).AsInt64 / 1e8, nil);
-    end);
+    iToken.AssetBalanceOf(owner, callback);
   finally
     iToken.Free;
   end;
+end;
+
+class function TFulcrum.Unscale(amount: BigInteger): Extended;
+begin
+  Result := BigInteger.Divide(amount, BigInteger.Create(1e10)).AsInt64 / 1e8;
 end;
 
 // Redeems your balance of iTokens for the underlying asset.

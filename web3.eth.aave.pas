@@ -64,7 +64,8 @@ type
       client  : TWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncFloat); override;
+      callback: TAsyncQuantity); override;
+    class function Unscale(amount: BigInteger): Extended; override;
     class procedure Withdraw(
       client  : TWeb3;
       from    : TPrivateKey;
@@ -276,11 +277,11 @@ class procedure TAave.Balance(
   client  : TWeb3;
   owner   : TAddress;
   reserve : TReserve;
-  callback: TAsyncFloat);
+  callback: TAsyncQuantity);
 var
   aAp   : TAaveAddressesProvider;
   aPool : TAaveLendingPool;
-  aToken: IaToken;
+  aToken: TaToken;
 begin
   aAp := TAaveAddressesProvider.Create(client);
   if Assigned(aAp) then
@@ -302,14 +303,10 @@ begin
             begin
               aToken := TaToken.Create(client, addr);
               if Assigned(aToken) then
-              begin
-                aToken.BalanceOf(owner, procedure(qty: BigInteger; err: IError)
-                begin
-                  if Assigned(err) then
-                    callback(0, err)
-                  else
-                    callback(BigInteger.Divide(qty, BigInteger.Create(1e10)).AsInt64 / 1e8, nil);
-                end);
+              try
+                aToken.BalanceOf(owner, callback);
+              finally
+                aToken.Free;
               end;
             end;
           end);
@@ -321,6 +318,11 @@ begin
   finally
     aAp.Free;
   end;
+end;
+
+class function TAave.Unscale(amount: BigInteger): Extended;
+begin
+  Result := BigInteger.Divide(amount, BigInteger.Create(1e10)).AsInt64 / 1e8;
 end;
 
 // Global helper function that redeems your balance of aTokens for the underlying asset.

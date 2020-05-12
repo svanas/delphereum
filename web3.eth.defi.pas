@@ -45,7 +45,9 @@ type
       client  : TWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncFloat); virtual; abstract;
+      callback: TAsyncQuantity); virtual; abstract;
+    // Returns balance as floating point with 8 decimals.
+    class function Unscale(amount: BigInteger): Extended; virtual; abstract;
     // Withdraws your underlying asset from the lending pool.
     class procedure Withdraw(
       client  : TWeb3;
@@ -53,6 +55,10 @@ type
       reserve : TReserve;
       callback: TAsyncReceipt); virtual; abstract;
   end;
+
+type
+  TLendingProtocolClass = class of TLendingProtocol;
+  TAsyncLendingProtocol = reference to procedure(proto: TLendingProtocolClass; err: IError);
 
 implementation
 
