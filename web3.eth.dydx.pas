@@ -28,6 +28,15 @@ uses
 type
   EdYdX = class(EWeb3);
 
+  // Global helper functions
+  TdYdX = class(TLendingProtocol)
+  public
+    class procedure APY(
+      client  : TWeb3;
+      reserve : TReserve;
+      callback: TAsyncFloat); override;
+  end;
+
   TSoloTotalPar = record
     Borrow: BigInteger;
     Supply: BigInteger;
@@ -52,11 +61,7 @@ type
 
   TAsyncSoloMarket = reference to procedure(market: ISoloMarket; err: IError);
 
-  ISoloMargin = interface
-    procedure GetMarketSupplyInterestRate(marketId: Integer; callback: TAsyncFloat);
-  end;
-
-  TSoloMargin = class(TCustomContract, ISoloMargin)
+  TSoloMargin = class(TCustomContract)
   public
     const
       marketId: array[TReserve] of Integer = (
@@ -75,6 +80,32 @@ implementation
 
 const
   INTEREST_RATE_BASE = 1e18;
+
+{ TdYdX }
+
+// Returns the annual yield as a percentage.
+class procedure TdYdX.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
+const
+  SECONDS_PER_YEAR = 31536000;
+var
+  dYdX: TSoloMargin;
+begin
+  dYdX := TSoloMargin.Create(client);
+  if Assigned(dYdX) then
+  begin
+    dYdX.GetMarketSupplyInterestRate(TSoloMargin.marketId[reserve], procedure(qty: Extended; err: IError)
+    begin
+      try
+        if Assigned(err) then
+          callback(0, err)
+        else
+          callback(qty * SECONDS_PER_YEAR * 100, nil);
+      finally
+        dYdX.Free;
+      end;
+    end);
+  end;
+end;
 
 { TSoloMarket }
 
@@ -198,6 +229,7 @@ begin
   end);
 end;
 
+// https://github.com/dydxprotocol/solo/blob/master/src/modules/Getters.ts#L253
 procedure TSoloMargin.GetMarketSupplyInterestRate(marketId: Integer; callback: TAsyncFloat);
 begin
   GetEarningsRate(procedure(earningsRate: Extended; err: IError)
@@ -221,6 +253,7 @@ begin
   end);
 end;
 
+// https://github.com/dydxprotocol/solo/blob/master/src/modules/Getters.ts#L230
 procedure TSoloMargin.GetMarketUtilization(marketId: Integer; callback: TAsyncFloat);
 begin
   GetMarket(marketId, procedure(market: ISoloMarket; err: IError)
