@@ -35,6 +35,12 @@ type
       client  : TWeb3;
       reserve : TReserve;
       callback: TAsyncFloat); override;
+    class procedure Balance(
+      client  : TWeb3;
+      owner   : TAddress;
+      reserve : TReserve;
+      callback: TAsyncQuantity); override;
+    class function Unscale(amount: BigInteger): Extended; override;
   end;
 
   TSoloTotalPar = record
@@ -62,6 +68,8 @@ type
   TAsyncSoloMarket = reference to procedure(market: ISoloMarket; err: IError);
 
   TSoloMargin = class(TCustomContract)
+  protected
+    class function ToBigInt(value: TTuple): BigInteger;
   public
     const
       marketId: array[TReserve] of Integer = (
@@ -69,6 +77,7 @@ type
         2  // USDC
       );
     constructor Create(aClient: TWeb3); reintroduce;
+    procedure GetAccountWei(owner: TAddress; marketId: Integer; callback: TAsyncQuantity);
     procedure GetEarningsRate(callback: TAsyncFloat);
     procedure GetMarket(marketId: Integer; callback: TAsyncSoloMarket);
     procedure GetMarketInterestRate(marketId: Integer; callback: TAsyncFloat);
@@ -105,6 +114,28 @@ begin
       end;
     end);
   end;
+end;
+
+class procedure TdYdX.Balance(
+  client  : TWeb3;
+  owner   : TAddress;
+  reserve : TReserve;
+  callback: TAsyncQuantity);
+var
+  dYdX: TSoloMargin;
+begin
+  dYdX := TSoloMargin.Create(client);
+  if Assigned(dYdX) then
+  try
+    dYdX.GetAccountWei(owner, TSoloMargin.marketId[reserve], callback);
+  finally
+    dYdX.Free;
+  end;
+end;
+
+class function TdYdX.Unscale(amount: BigInteger): Extended;
+begin
+  Result := BigInteger.Divide(amount, BigInteger.Create(1e10)).AsInt64 / 1e8;
 end;
 
 { TSoloMarket }
@@ -190,6 +221,33 @@ begin
     Kovan:
       raise EdYdx.Create('dYdX is not deployed on Kovan');
   end;
+end;
+
+class function TSoloMargin.ToBigInt(value: TTuple): BigInteger;
+begin
+  if Length(value) < 2 then
+    raise EdYdX.Create('not a valid dYdX integer value');
+  Result := value[1].toBigInt;
+  if (not Result.IsZero) and (not value[0].toBool) then
+    Result.Sign := -1;
+end;
+
+// Get the token balance for a particular account and market.
+procedure TSoloMargin.GetAccountWei(
+  owner   : TAddress;
+  marketId: Integer;
+  callback: TAsyncQuantity);
+begin
+  web3.eth.call(Client, Contract,
+    'getAccountWei((address,uint256),uint256)', [owner, 0, marketId],
+    procedure(tup: TTuple; err: IError)
+    begin
+      if Assigned(err) then
+        callback(BigInteger.Zero, err)
+      else
+        callback(TSoloMargin.ToBigInt(tup), err);
+    end
+  );
 end;
 
 // Get the global earnings-rate variable that determines what percentage of the
