@@ -337,7 +337,13 @@ begin
             if Assigned(err) then
               callback('', err)
             else
-              sendTransaction(client, sig, callback);
+              sendTransaction(client, sig, procedure(hash: TTxHash; err: IError)
+              begin
+                if Assigned(err) and (err.Message = 'nonce too low') then
+                  sendTransaction(client, from, &to, value, gasPrice, gasLimit, callback)
+                else
+                  callback(hash, err);
+              end);
           end);
     end
   );
@@ -371,7 +377,13 @@ begin
             if Assigned(err) then
               callback(nil, err)
             else
-              sendTransactionEx(client, sig, callback);
+              sendTransactionEx(client, sig, procedure(rcpt: ITxReceipt; err: IError)
+              begin
+                if Assigned(err) and (err.Message = 'nonce too low') then
+                  sendTransactionEx(client, from, &to, value, gasPrice, gasLimit, callback)
+                else
+                  callback(rcpt, err);
+              end);
           end);
     end
   );

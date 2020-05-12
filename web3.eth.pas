@@ -461,7 +461,13 @@ begin
             if Assigned(err) then
               callback(nil, err)
             else
-              sendTransactionEx(client, sig, callback);
+              sendTransactionEx(client, sig, procedure(rcpt: ITxReceipt; err: IError)
+              begin
+                if Assigned(err) and (err.Message = 'nonce too low') then
+                  write(client, from, &to, value, data, gasPrice, gasLimit, callback)
+                else
+                  callback(rcpt, err);
+              end);
           end);
     end
   );
