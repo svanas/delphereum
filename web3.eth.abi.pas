@@ -22,6 +22,7 @@ uses
 type
   TContractArray = TList<Variant>;
 
+function  tuple(args: array of Variant): Variant;
 function &array(args: array of Variant): TContractArray;
 function encode(const func: string; args: array of const): string;
 
@@ -33,6 +34,14 @@ uses
   System.Variants,
   // web3
   web3.utils;
+
+function tuple(args: array of Variant): Variant;
+var
+  I: Integer;
+begin
+  Result := VarArrayCreate([0, High(args)], varVariant);
+  for I := 0 to High(args) do Result[I] := args[I];
+end;
 
 function &array(args: array of Variant): TContractArray;
 var
@@ -71,7 +80,7 @@ function encode(const func: string; args: array of const): string;
       begin
         buf := TEncoding.UTF8.GetBytes(str);
         hex := web3.utils.toHex('', buf);
-        while Length(hex) mod 64 <> 0 do hex := hex + '0';
+        while (hex = '') or (Length(hex) mod 64 <> 0) do hex := hex + '0';
         hex := '0x' + IntToHex(Length(buf), 64) + hex;
       end
       else
@@ -85,9 +94,93 @@ function encode(const func: string; args: array of const): string;
       Result := web3.utils.fromHex(hex);
     end;
 
-    function encodeArg(arg: TVarRec): TBytes; overload;
+    function isDynamic(const arg: Variant): Boolean; overload;
     var
-      V: Variant;
+      I: Integer;
+    begin
+      Result := False;
+      case FindVarData(arg)^.VType of
+        varOleStr,
+        varStrArg,
+        varUStrArg,
+        varString,
+        varUString:
+          Result := Copy(string(arg), Low(string(arg)), 2) <> '0x';
+      else
+        if VarIsArray(arg) then // tuple is dynamic if any of the elements is dynamic
+          for I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
+          begin
+            Result := isDynamic(VarArrayGet(arg, [I]));
+            if Result then
+              EXIT;
+          end;
+      end;
+    end;
+
+    function encodeArg(const arg: Variant): TBytes; overload;
+
+      function VarArrayCount(const arg: Variant): Integer;
+      begin
+        Result := VarArrayHighBound(arg, 1) - VarArrayLowBound(arg, 1) + 1;
+      end;
+
+    var
+      idx   : Integer;
+      elem  : Variant;
+      curr  : TBytes;
+      suffix: TBytes;
+      offset: Integer;
+    begin
+      Result := [];
+      case FindVarData(arg)^.VType of
+        varSmallint,
+        varShortInt,
+        varInteger:
+          Result := encodeArg(Integer(arg));
+        varByte,
+        varWord,
+        varUInt32:
+          Result := encodeArg(Cardinal(arg));
+        varInt64:
+          Result := encodeArg(Int64(arg));
+        varUInt64:
+          Result := encodeArg(UInt64(arg));
+        varOleStr,
+        varStrArg,
+        varUStrArg,
+        varString,
+        varUString:
+          Result := encodeArg(string(arg));
+        varBoolean:
+          Result := encodeArg(Boolean(arg));
+      else
+        if VarIsArray(arg) then // tuple
+        begin
+          offset  := VarArrayCount(arg) * 32;
+          for idx := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
+          begin
+            elem := VarArrayGet(arg, [idx]);
+            curr := encodeArg(elem);
+            if isDynamic(elem) then
+            begin
+              Result := Result + encodeArg(offset);
+              suffix := suffix + curr;
+              offset := offset + Length(curr);
+            end
+            else
+              Result := Result + curr;
+          end;
+          Result := Result + suffix;
+        end;
+      end;
+    end;
+
+    function encodeArg(const arg: TVarRec): TBytes; overload;
+    var
+      elem  : Variant;
+      curr  : TBytes;
+      suffix: TBytes;
+      offset: Integer;
     begin
       case arg.VType of
         vtBoolean:
@@ -102,57 +195,53 @@ function encode(const func: string; args: array of const): string;
           Result := encodeArg(arg.VInt64^);
         vtUnicodeString:
           Result := encodeArg(string(arg.VUnicodeString));
+        vtVariant:
+          Result := encodeArg(arg.VVariant^);
         vtObject:
-          if arg.VObject is TContractArray then
+          if arg.VObject is TContractArray then // array
           begin
             Result := encodeArg((arg.VObject as TContractArray).Count);
-            for V in arg.VObject as TContractArray do
-              case VarType(V) and varTypeMask of
-                varSmallint,
-                varShortInt,
-                varInteger:
-                  Result := Result + encodeArg(Integer(V));
-                varByte,
-                varWord,
-                varUInt32:
-                  Result := Result + encodeArg(Cardinal(V));
-                varInt64:
-                  Result := Result + encodeArg(Int64(V));
-                varUInt64:
-                  Result := Result + encodeArg(UInt64(V));
-                varOleStr,
-                varStrArg,
-                varUStrArg,
-                varString,
-                varUString:
-                  Result := Result + encodeArg(string(V));
-                varBoolean:
-                  Result := Result + encodeArg(Boolean(V));
-              end;
+            offset := ((arg.VObject as TContractArray).Count + 1) * 32;
+            for elem in arg.VObject as TContractArray do
+            begin
+              curr := encodeArg(elem);
+              if isDynamic(elem) then
+              begin
+                Result := Result + encodeArg(offset);
+                suffix := suffix + curr;
+                offset := offset + Length(curr);
+              end
+              else
+                Result := Result + curr;
+            end;
+            Result := Result + suffix;
           end;
       end;
     end;
 
-    function isDynamic(arg: TVarRec): Boolean;
+    function isDynamic(const arg: TVarRec): Boolean; overload;
     var
       S: string;
     begin
       Result := False;
-      if arg.VType = vtObject then
-        Result := arg.VObject is TContractArray
+      if arg.VType = vtVariant then
+        Result := isDynamic(arg.VVariant^)
       else
-        if arg.VType in [vtString, vtWideString, vtUnicodeString] then
-        begin
-          case arg.VType of
-            vtString:
-              S := UnicodeString(PShortString(arg.VAnsiString)^);
-            vtWideString:
-              S := WideString(arg.VWideString^);
-            vtUnicodeString:
-              S := string(arg.VUnicodeString);
+        if arg.VType = vtObject then
+          Result := arg.VObject is TContractArray
+        else
+          if arg.VType in [vtString, vtWideString, vtUnicodeString] then
+          begin
+            case arg.VType of
+              vtString:
+                S := UnicodeString(PShortString(arg.VAnsiString)^);
+              vtWideString:
+                S := WideString(arg.VWideString^);
+              vtUnicodeString:
+                S := string(arg.VUnicodeString);
+            end;
+            Result := Copy(S, Low(S), 2) <> '0x';
           end;
-          Result := Copy(S, Low(S), 2) <> '0x';
-        end;
     end;
 
   var
