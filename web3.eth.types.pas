@@ -88,6 +88,7 @@ type
     class function  New(const hex: string): TAddress; overload; static;
     class procedure New(client: TWeb3; const name: string; callback: TAsyncAddress); overload; static;
     procedure ToString(client: TWeb3; callback: TAsyncString);
+    function  IsZero: Boolean;
   end;
 
 type
@@ -207,6 +208,13 @@ begin
       else
         callback(string(addr), nil);
   end);
+end;
+
+function TAddressHelper.IsZero: Boolean;
+begin
+  Result := (Self = '')
+         or (Self = '0x')
+         or (Self = '0x0000000000000000000000000000000000000000');
 end;
 
 { TPrivateKeyHelper }

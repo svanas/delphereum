@@ -16,6 +16,8 @@ unit web3.eth.dydx;
 interface
 
 uses
+  // Delphi
+  System.TypInfo,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -24,6 +26,7 @@ uses
   web3.eth.abi,
   web3.eth.contract,
   web3.eth.defi,
+  web3.eth.erc20,
   web3.eth.types,
   web3.utils;
 
@@ -32,11 +35,28 @@ type
 
   // Global helper functions
   TdYdX = class(TLendingProtocol)
+  protected
+    class procedure TokenAddress(
+      client  : TWeb3;
+      reserve : TReserve;
+      callback: TAsyncAddress);
+    class procedure Approve(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncReceipt);
   public
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
       callback: TAsyncFloat); override;
+    class procedure Deposit(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncReceipt); override;
     class procedure Balance(
       client  : TWeb3;
       owner   : TAddress;
@@ -96,6 +116,16 @@ type
   );
 
   TSoloMargin = class(TCustomContract)
+  private
+    const
+      deployed: array[TChain] of TAddress = (
+        '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e', // Mainnet
+        '',                                           // Ropsten
+        '',                                           // Rinkeby
+        '',                                           // Goerli
+        '',                                           // Kovan
+        '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e'  // Ganache
+      );
   protected
     class function ToBigInt(value: TTuple): BigInteger;
   public
@@ -122,6 +152,11 @@ type
       otherAddress     : TAddress;
       otherAccountId   : Integer;
       callback         : TAsyncReceipt);
+    procedure Deposit(
+      owner   : TPrivateKey;
+      marketId: Integer;
+      amount  : BigInteger;
+      callback: TAsyncReceipt);
     procedure Withdraw(
       owner   : TPrivateKey;
       marketId: Integer;
@@ -135,6 +170,56 @@ const
   INTEREST_RATE_BASE = 1e18;
 
 { TdYdX }
+
+// Returns contract address of the associated ERC20 token
+class procedure TdYdX.TokenAddress(
+  client  : TWeb3;
+  reserve : TReserve;
+  callback: TAsyncAddress);
+var
+  dYdX: TSoloMargin;
+begin
+  dYdX := TSoloMargin.Create(client);
+  if Assigned(dYdX) then
+  try
+    dYdX.GetMarket(TSoloMargin.marketId[reserve], procedure(market: ISoloMarket; err: IError)
+    begin
+      if Assigned(err) then
+        callback(ADDRESS_ZERO, err)
+      else
+        callback(market.Token, nil);
+    end);
+  finally
+    dYdX.Free;
+  end;
+end;
+
+// Approve the Solo contract to move your tokens.
+class procedure TdYdX.Approve(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  erc20: TERC20;
+begin
+  TokenAddress(client, reserve, procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+    begin
+      erc20 := TERC20.Create(client, addr);
+      if Assigned(erc20) then
+      try
+        erc20.Approve(from, TSoloMargin.deployed[client.Chain], amount, callback);
+      finally
+        erc20.Free;
+      end;
+    end;
+  end);
+end;
 
 // Returns the annual yield as a percentage.
 class procedure TdYdX.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
@@ -158,6 +243,33 @@ begin
       end;
     end);
   end;
+end;
+
+class procedure TdYdX.Deposit(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  dYdX: TSoloMargin;
+begin
+  // Before moving tokens, we must first approve the Solo contract.
+  Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+    begin
+      dYdX := TSoloMargin.Create(client);
+      if Assigned(dYdX) then
+      try
+        dYdX.Deposit(from, TSoloMargin.marketId[reserve], amount, callback);
+      finally
+        dYdX.Free;
+      end;
+    end;
+  end);
 end;
 
 class procedure TdYdX.Balance(
@@ -272,19 +384,14 @@ end;
 { TSoloMargin }
 
 constructor TSoloMargin.Create(aClient: TWeb3);
+var
+  addr: TAddress;
 begin
-  case aClient.Chain of
-    Mainnet, Ganache:
-      inherited Create(aClient, '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e');
-    Ropsten:
-      raise EdYdx.Create('dYdX is not deployed on Ropsten');
-    Rinkeby:
-      raise EdYdx.Create('dYdX is not deployed on Rinkeby');
-    Goerli:
-      raise EdYdx.Create('dYdX is not deployed on Goerli');
-    Kovan:
-      raise EdYdx.Create('dYdX is not deployed on Kovan');
-  end;
+  addr := TSoloMargin.deployed[aClient.Chain];
+  if addr.IsZero then
+    raise EdYdx.CreateFmt('dYdX is not deployed on %s',
+          [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
+  inherited Create(aClient, addr);
 end;
 
 class function TSoloMargin.ToBigInt(value: TTuple): BigInteger;
@@ -438,6 +545,27 @@ begin
     ],
     500000, callback
   );
+end;
+
+// Moves tokens from an address to Solo.
+// Can either repay a borrow or provide additional supply.
+procedure TSoloMargin.Deposit(
+  owner   : TPrivateKey;
+  marketId: Integer;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+begin
+  Operate(
+    owner,                    // owner
+    TSoloActionType.Deposit,  // actionType
+    amount,                   // amount
+    TSoloDenomination.Wei,    // denomination
+    TSoloReference.Delta,     // reference
+    marketId,                 // primaryMarketId
+    0,                        // secondaryMarketId (ignored)
+    owner.Address,            // otherAddress
+    0,                        // otherAccountId (ignored)
+    callback);
 end;
 
 // Moves tokens from Solo to another address.
