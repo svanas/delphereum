@@ -21,9 +21,11 @@ uses
   // web3
   web3,
   web3.eth,
+  web3.eth.abi,
   web3.eth.contract,
   web3.eth.defi,
-  web3.eth.types;
+  web3.eth.types,
+  web3.utils;
 
 type
   EdYdX = class(EWeb3);
@@ -40,7 +42,11 @@ type
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
-    class function Unscale(amount: BigInteger): Extended; override;
+    class procedure Withdraw(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      callback: TAsyncReceipt); override;
   end;
 
   TSoloTotalPar = record
@@ -67,6 +73,28 @@ type
 
   TAsyncSoloMarket = reference to procedure(market: ISoloMarket; err: IError);
 
+  TSoloActionType = (
+    Deposit,   // supply tokens
+    Withdraw,  // borrow tokens
+    Transfer,  // transfer balance between accounts
+    Buy,       // buy an amount of some token (externally)
+    Sell,      // sell an amount of some token (externally)
+    Trade,     // trade tokens against another account
+    Liquidate, // liquidate an undercollateralized or expiring account
+    Vaporize,  // use excess tokens to zero-out a completely negative account
+    Call       // send arbitrary data to an address
+  );
+
+  TSoloDenomination = (
+    Wei, // the amount is denominated in wei
+    Par  // the amount is denominated in par
+  );
+
+  TSoloReference = (
+    Delta, // the amount is given as a delta from the current value
+    Target // the amount is given as an exact number to end up at
+  );
+
   TSoloMargin = class(TCustomContract)
   protected
     class function ToBigInt(value: TTuple): BigInteger;
@@ -83,6 +111,22 @@ type
     procedure GetMarketInterestRate(marketId: Integer; callback: TAsyncFloat);
     procedure GetMarketSupplyInterestRate(marketId: Integer; callback: TAsyncFloat);
     procedure GetMarketUtilization(marketId: Integer; callback: TAsyncFloat);
+    procedure Operate(
+      owner            : TPrivateKey;
+      actionType       : TSoloActionType;
+      amount           : BigInteger;
+      denomination     : TSoloDenomination;
+      reference        : TSoloReference;
+      primaryMarketId  : Integer;
+      secondaryMarketId: Integer;
+      otherAddress     : TAddress;
+      otherAccountId   : Integer;
+      callback         : TAsyncReceipt);
+    procedure Withdraw(
+      owner   : TPrivateKey;
+      marketId: Integer;
+      amount  : BigInteger;
+      callback: TAsyncReceipt);
   end;
 
 implementation
@@ -133,9 +177,29 @@ begin
   end;
 end;
 
-class function TdYdX.Unscale(amount: BigInteger): Extended;
+class procedure TdYdX.Withdraw(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  callback: TAsyncReceipt);
+var
+  dYdX: TSoloMargin;
 begin
-  Result := BigInteger.Divide(amount, BigInteger.Create(1e10)).AsInt64 / 1e8;
+  Balance(client, from.Address, reserve, procedure(amount: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+    begin
+      dYdX := TSoloMargin.Create(client);
+      if Assigned(dYdX) then
+      try
+        dYdX.Withdraw(from, TSoloMargin.marketId[reserve], amount, callback);
+      finally
+        dYdX.Free;
+      end;
+    end;
+  end);
 end;
 
 { TSoloMarket }
@@ -239,7 +303,7 @@ procedure TSoloMargin.GetAccountWei(
   callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract,
-    'getAccountWei((address,uint256),uint256)', [owner, 0, marketId],
+    'getAccountWei((address,uint256),uint256)', [tuple([owner, 0]), marketId],
     procedure(tup: TTuple; err: IError)
     begin
       if Assigned(err) then
@@ -328,6 +392,75 @@ begin
       callback(totalBorrow / totalSupply, nil);
     end;
   end);
+end;
+
+// The main entry-point to Solo that allows users and contracts to manage accounts.
+procedure TSoloMargin.Operate(
+  owner            : TPrivateKey;
+  actionType       : TSoloActionType;
+  amount           : BigInteger;
+  denomination     : TSoloDenomination;
+  reference        : TSoloReference;
+  primaryMarketId  : Integer;
+  secondaryMarketId: Integer;
+  otherAddress     : TAddress;
+  otherAccountId   : Integer;
+  callback         : TAsyncReceipt);
+begin
+  web3.eth.write(Client, owner, Contract,
+    'operate(' +
+      '(address,uint256)[],' +             // accountOwner, accountNumber
+      '(' +
+        'uint8,uint256,' +                 // actionType, accountId
+        '(bool,uint8,uint8,uint256),' +    // sign, denomination, reference, value
+        'uint256,' +                       // primaryMarketId
+        'uint256,' +                       // secondaryMarketId
+        'address,' +                       // otherAddress
+        'uint256,' +                       // otherAccountId
+        'bytes' +                          // arbitrary data
+      ')[]' +
+    ')',
+    [
+      &array([tuple([owner.Address, 0])]), // accountOwner, accountNumber
+      &array([tuple([actionType, 0,        // actionType, accountId
+        tuple([
+          not(amount.Negative),            // sign
+          denomination,                    // denomination
+          reference,                       // reference
+          web3.utils.toHex(amount.Abs)     // value
+        ]),
+        primaryMarketId,
+        secondaryMarketId,
+        otherAddress,
+        otherAccountId,
+        ''
+      ])])
+    ],
+    500000, callback
+  );
+end;
+
+// Moves tokens from Solo to another address.
+// Can either borrow tokens or reduce the amount previously supplied.
+procedure TSoloMargin.Withdraw(
+  owner   : TPrivateKey;
+  marketId: Integer;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+begin
+  if not(amount.IsZero) then
+    amount.Sign := -1;
+  Operate(
+    owner,                    // owner
+    TSoloActionType.Withdraw, // actionType
+    amount,                   // amount
+    TSoloDenomination.Wei,    // denomination
+    TSoloReference.Delta,     // reference
+    marketId,                 // primaryMarketId
+    0,                        // secondaryMarketId (ignored)
+    owner.Address,            // otherAddress
+    0,                        // otherAccountId (ignored)
+    callback);
 end;
 
 end.

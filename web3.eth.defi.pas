@@ -46,8 +46,10 @@ type
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); virtual; abstract;
-    // Returns balance as floating point with 8 decimals.
-    class function Unscale(amount: BigInteger): Extended; virtual; abstract;
+    // Returns balance as floating point with a maximum of 8 decimals.
+    class function Unscale(
+      reserve: TReserve;
+      amount : BigInteger): Extended;
     // Withdraws your underlying asset from the lending pool.
     class procedure Withdraw(
       client  : TWeb3;
@@ -61,5 +63,15 @@ type
   TAsyncLendingProtocol = reference to procedure(proto: TLendingProtocolClass; err: IError);
 
 implementation
+
+class function TLendingProtocol.Unscale(reserve: TReserve; amount: BigInteger): Extended;
+begin
+  case reserve of
+    DAI : Result := BigInteger.Divide(amount, BigInteger.Create(1e10)).AsInt64 / 1e8;
+    USDC: Result := amount.AsInt64 / 1e6;
+  else
+    raise EWeb3.Create('not implemented');
+  end;
+end;
 
 end.

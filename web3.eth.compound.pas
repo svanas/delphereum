@@ -58,7 +58,6 @@ type
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
-    class function Unscale(amount: BigInteger): Extended; override;
     class procedure Withdraw(
       client  : TWeb3;
       from    : TPrivateKey;
@@ -240,11 +239,6 @@ begin
   finally
     cToken.Free;
   end;
-end;
-
-class function TCompound.Unscale(amount: BigInteger): Extended;
-begin
-  Result := BigInteger.Divide(amount, BigInteger.Create(1e10)).AsInt64 / 1e8;
 end;
 
 // Redeems your balance of cTokens for the underlying asset.

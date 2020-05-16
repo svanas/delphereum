@@ -120,8 +120,16 @@ function encode(const func: string; args: array of const): string;
     function encodeArg(const arg: Variant): TBytes; overload;
 
       function VarArrayCount(const arg: Variant): Integer;
+      var
+        I: Integer;
       begin
-        Result := VarArrayHighBound(arg, 1) - VarArrayLowBound(arg, 1) + 1;
+        Result := 0;
+        if VarIsArray(arg) then
+        begin
+          Result := VarArrayHighBound(arg, 1) - VarArrayLowBound(arg, 1) + 1;
+          for I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
+            Result := Result + VarArrayCount(VarArrayGet(arg, [I]));
+        end;
       end;
 
     var
@@ -156,7 +164,7 @@ function encode(const func: string; args: array of const): string;
       else
         if VarIsArray(arg) then // tuple
         begin
-          offset  := VarArrayCount(arg) * 32;
+          offset  := (VarArrayCount(arg) - 1) * 32;
           for idx := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
           begin
             elem := VarArrayGet(arg, [idx]);
@@ -201,7 +209,7 @@ function encode(const func: string; args: array of const): string;
           if arg.VObject is TContractArray then // array
           begin
             Result := encodeArg((arg.VObject as TContractArray).Count);
-            offset := ((arg.VObject as TContractArray).Count + 1) * 32;
+            offset := (arg.VObject as TContractArray).Count * 32;
             for elem in arg.VObject as TContractArray do
             begin
               curr := encodeArg(elem);
@@ -247,9 +255,10 @@ function encode(const func: string; args: array of const): string;
   var
     arg   : TVarRec;
     curr  : TBytes;
-    data  : TBytes;
+    suffix: TBytes;
     offset: Integer;
   begin
+    Result := [];
     offset := Length(args) * 32;
     for arg in args do
     begin
@@ -257,13 +266,13 @@ function encode(const func: string; args: array of const): string;
       if isDynamic(arg) then
       begin
         Result := Result + encodeArg(offset);
-        data   := data + curr;
+        suffix := suffix + curr;
         offset := offset + Length(curr);
       end
       else
         Result := Result + curr;
     end;
-    Result := Result + data;
+    Result := Result + suffix;
   end;
 
 var
