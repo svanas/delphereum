@@ -347,9 +347,7 @@ end;
 procedure TcToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
   web3.eth.write(Client, from, Contract,
-    'mint(uint256)', [web3.utils.toHex(amount)],
-    300000, // https://compound.finance/docs#gas-costs
-    callback);
+    'mint(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 // redeems specified amount of cTokens in exchange for the underlying ERC20 tokens.
@@ -359,9 +357,7 @@ procedure TcToken.Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsync
 begin
   web3.eth.write(
     Client, from, Contract,
-    'redeem(uint256)', [web3.utils.toHex(amount)],
-    300000, // https://compound.finance/docs#gas-costs
-    callback);
+    'redeem(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 // redeems cTokens in exchange for the specified amount of underlying ERC20 tokens.
@@ -371,9 +367,7 @@ procedure TcToken.RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callba
 begin
   web3.eth.write(
     Client, from, Contract,
-    'redeemUnderlying(uint256)', [web3.utils.toHex(amount)],
-    300000, // https://compound.finance/docs#gas-costs
-    callback);
+    'redeemUnderlying(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 // returns the current per-block supply interest rate for this cToken, scaled by 1e18

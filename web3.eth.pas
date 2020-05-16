@@ -77,7 +77,7 @@ procedure write(
 
 // transact with a payable function.
 // default to the median gas price from the latest blocks.
-// default to a 200,000 gas limit.
+// default to a 500,000 gas limit.
 procedure write(
   client    : TWeb3;
   from      : TPrivateKey;
@@ -85,17 +85,6 @@ procedure write(
   value     : TWei;
   const func: string;
   args      : array of const;
-  callback  : TAsyncReceipt); overload;
-
-// transact with a non-payable function.
-// default to the median gas price from the latest blocks.
-procedure write(
-  client    : TWeb3;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  const func: string;
-  args      : array of const;
-  gasLimit  : TWei;
   callback  : TAsyncReceipt); overload;
 
 // transact with a payable function.
@@ -386,19 +375,7 @@ procedure write(
   args      : array of const;
   callback  : TAsyncReceipt);
 begin
-  write(client, from, &to, value, func, args, 200000, callback);
-end;
-
-procedure write(
-  client    : TWeb3;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  const func: string;
-  args      : array of const;
-  gasLimit  : TWei;
-  callback  : TAsyncReceipt);
-begin
-  write(client, from, &to, 0, func, args, gasLimit, callback);
+  write(client, from, &to, value, func, args, 500000, callback);
 end;
 
 procedure write(

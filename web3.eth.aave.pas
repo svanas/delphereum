@@ -437,9 +437,7 @@ begin
       web3.eth.write(
         Client, from, Contract,
         'deposit(address,uint256,uint16)',
-        [addr, web3.utils.toHex(amount), 42],
-        300000, // https://docs.aave.com/developers/developing-on-aave/important-considerations
-        callback);
+        [addr, web3.utils.toHex(amount), 42], callback);
   end);
 end;
 
@@ -487,9 +485,7 @@ procedure TaToken.Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsync
 begin
   web3.eth.write(
     Client, from, Contract,
-    'redeem(uint256)', [web3.utils.toHex(amount)],
-    600000, // https://docs.aave.com/developers/developing-on-aave/important-considerations
-    callback);
+    'redeem(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 end.

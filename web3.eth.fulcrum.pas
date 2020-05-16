@@ -297,8 +297,7 @@ procedure TiToken.Burn(from: TPrivateKey; amount: BigInteger; callback: TAsyncRe
 begin
   web3.eth.write(
     Client, from, Contract,
-    'burn(address,uint256)', [from.Address, web3.utils.toHex(amount)],
-    400000, callback);
+    'burn(address,uint256)', [from.Address, web3.utils.toHex(amount)], callback);
 end;
 
 // Called to deposit assets to the iToken, which in turn mints iTokens to the lender’s wallet at the current tokenPrice() rate.
@@ -308,8 +307,7 @@ procedure TiToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncRe
 begin
   web3.eth.write(
     Client, from, Contract,
-    'mint(address,uint256)', [from.Address, web3.utils.toHex(amount)],
-    500000, callback);
+    'mint(address,uint256)', [from.Address, web3.utils.toHex(amount)], callback);
 end;
 
 // Returns the user’s balance of the underlying asset, scaled by 1e18
