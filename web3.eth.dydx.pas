@@ -47,6 +47,9 @@ type
       amount  : BigInteger;
       callback: TAsyncReceipt);
   public
+    class function Supports(
+      chain   : TChain;
+      reserve : TReserve): Boolean; override;
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
@@ -213,12 +216,17 @@ begin
       erc20 := TERC20.Create(client, addr);
       if Assigned(erc20) then
       try
-        erc20.Approve(from, TSoloMargin.deployed[client.Chain], amount, callback);
+        erc20.ApproveEx(from, TSoloMargin.deployed[client.Chain], amount, callback);
       finally
         erc20.Free;
       end;
     end;
   end);
+end;
+
+class function TdYdX.Supports(chain: TChain; reserve: TReserve): Boolean;
+begin
+  Result := chain in [Mainnet, Ganache];
 end;
 
 // Returns the annual yield as a percentage.

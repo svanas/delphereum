@@ -50,6 +50,9 @@ type
       amount  : BigInteger;
       callback: TAsyncReceipt);
   public
+    class function Supports(
+      chain  : TChain;
+      reserve: TReserve): Boolean; override;
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
@@ -94,15 +97,11 @@ type
     procedure aTokenAddress(reserve: TReserve; callback: TAsyncAddress);
   end;
 
-  IaToken = interface(IERC20)
-    procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-  end;
-
   // aTokens are interest-bearing derivative tokens that are minted and burned
   // upon deposit (called from LendingPool) and redeem (called from the aToken contract).
   // If you are developing on a testnet and require tokens, go to
   // https://testnet.aave.com/faucet, making sure that your wallet is set to the relevant testnet.
-  TaToken = class(TERC20, IaToken)
+  TaToken = class(TERC20)
   public
     procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
   end;
@@ -181,7 +180,7 @@ begin
             erc20 := TERC20.Create(client, addr);
             if Assigned(erc20) then
             try
-              erc20.Approve(from, core, amount, callback);
+              erc20.ApproveEx(from, core, amount, callback);
             finally
               erc20.Free;
             end;
@@ -191,6 +190,11 @@ begin
   finally
     ap.Free;
   end;
+end;
+
+class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
+begin
+  Result := chain in [Mainnet, Ganache, Ropsten, Kovan];
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -328,7 +332,7 @@ class procedure TAave.Withdraw(
 var
   aAp   : TAaveAddressesProvider;
   aPool : TAaveLendingPool;
-  aToken: IaToken;
+  aToken: TaToken;
 begin
   aAp := TAaveAddressesProvider.Create(client);
   if Assigned(aAp) then
@@ -353,10 +357,14 @@ begin
               begin
                 aToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
                 begin
-                  if Assigned(err) then
-                    callback(nil, err)
-                  else
-                    aToken.Redeem(from, amount, callback);
+                  try
+                    if Assigned(err) then
+                      callback(nil, err)
+                    else
+                      aToken.Redeem(from, amount, callback);
+                  finally
+                    aToken.Free;
+                  end;
                 end);
               end;
             end;

@@ -59,6 +59,11 @@ type
       spender : TAddress;
       value   : BigInteger;
       callback: TAsyncReceipt);
+    procedure ApproveEx(
+      owner   : TPrivateKey;
+      spender : TAddress;
+      value   : BigInteger;
+      callback: TAsyncReceipt);
   end;
 
   TERC20 = class(TCustomContract, IERC20)
@@ -91,6 +96,11 @@ type
       value   : BigInteger;
       callback: TAsyncReceipt);
     procedure Approve(
+      owner   : TPrivateKey;
+      spender : TAddress;
+      value   : BigInteger;
+      callback: TAsyncReceipt);
+    procedure ApproveEx(
       owner   : TPrivateKey;
       spender : TAddress;
       value   : BigInteger;
@@ -222,6 +232,25 @@ procedure TERC20.Approve(
   callback: TAsyncReceipt);
 begin
   web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, web3.utils.toHex(value)], callback);
+end;
+
+procedure TERC20.ApproveEx(
+  owner   : TPrivateKey;
+  spender : TAddress;
+  value   : BigInteger;
+  callback: TAsyncReceipt);
+begin
+  Allowance(owner.Address, spender, procedure(approved: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      if ((value = 0) and (approved = 0))
+      or ((value > 0) and (approved >= value)) then
+        callback(nil, nil)
+      else
+        Approve(owner, spender, value, callback);
+  end);
 end;
 
 end.

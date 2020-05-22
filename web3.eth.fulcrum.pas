@@ -46,6 +46,9 @@ type
       amount  : BigInteger;
       callback: TAsyncReceipt);
   public
+    class function Supports(
+      chain  : TChain;
+      reserve: TReserve): Boolean; override;
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
@@ -81,14 +84,7 @@ type
     AssetAmount: BigInteger;
     Price      : BigInteger);
 
-  IiToken = interface(IERC20)
-    //------- read from contract -----------------------------------------------
-    procedure LoanTokenAddress(callback: TAsyncAddress);
-    //------- write to contract ------------------------------------------------
-    procedure Burn(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-  end;
-
-  TiToken = class abstract(TERC20, IiToken)
+  TiToken = class abstract(TERC20)
   strict private
     FOnMint: TOnMint;
     FOnBurn: TOnBurn;
@@ -144,27 +140,39 @@ class procedure TFulcrum.Approve(
   callback: TAsyncReceipt);
 var
   erc20 : TERC20;
-  iToken: IiToken;
+  iToken: TiToken;
 begin
   iToken := iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
   begin
     iToken.LoanTokenAddress(procedure(addr: TAddress; err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-      begin
-        erc20 := TERC20.Create(client, addr);
-        if Assigned(erc20) then
-        try
-          erc20.Approve(from, iToken.Contract, amount, callback);
-        finally
-          erc20.Free;
+      try
+        if Assigned(err) then
+          callback(nil, err)
+        else
+        begin
+          erc20 := TERC20.Create(client, addr);
+          if Assigned(erc20) then
+          try
+            erc20.ApproveEx(from, iToken.Contract, amount, callback);
+          finally
+            erc20.Free;
+          end;
         end;
+      finally
+        iToken.Free;
       end;
     end);
   end;
+end;
+
+class function TFulcrum.Supports(chain: TChain; reserve: TReserve): Boolean;
+begin
+  if reserve = DAI then
+    Result := chain in [Mainnet, Ganache, Kovan]
+  else
+    Result := chain in [Mainnet, Ganache];
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -232,17 +240,21 @@ class procedure TFulcrum.Withdraw(
   reserve : TReserve;
   callback: TAsyncReceipt);
 var
-  iToken: IiToken;
+  iToken: TiToken;
 begin
   iToken := iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
   begin
     iToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        iToken.Burn(from, amount, callback);
+      try
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          iToken.Burn(from, amount, callback);
+      finally
+        iToken.Free;
+      end;
     end);
   end;
 end;

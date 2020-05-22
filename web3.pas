@@ -80,14 +80,15 @@ type
 
 implementation
 
+// https://www.ideasawakened.com/post/writing-cross-framework-code-in-delphi
 uses
-  // Delphi
+  System.Classes,
   System.UITypes,
-{$IF DECLARED(FireMonkeyVersion)}
+{$IFDEF FMX}
   FMX.Dialogs
 {$ELSE}
   VCL.Dialogs
-{$IFEND};
+{$ENDIF};
 
 { TError }
 
@@ -112,6 +113,8 @@ function TWeb3.CanSignTransaction: Boolean;
 resourcestring
   RS_SIGNATURE_REQUEST = 'Your signature is being requested.'
         + #13#10#13#10 + 'Do you approve of this request?';
+var
+  MR: Integer;
 begin
   Result := False;
 
@@ -121,10 +124,14 @@ begin
     EXIT;
   end;
 
-  Result :=
-    MessageDlg(
+  TThread.Synchronize(nil, procedure
+  begin
+    MR := MessageDlg(
       RS_SIGNATURE_REQUEST, TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
-    ) = mrYes;
+    );
+  end);
+
+  Result := MR = mrYes;
 end;
 
 class function TWeb3.New(const aURL: string): TWeb3;

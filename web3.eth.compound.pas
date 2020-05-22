@@ -43,6 +43,9 @@ type
       amount  : BigInteger;
       callback: TAsyncReceipt);
   public
+    class function Supports(
+      chain  : TChain;
+      reserve: TReserve): Boolean; override;
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
@@ -76,14 +79,7 @@ type
     Amount  : BigInteger;
     Tokens  : BigInteger);
 
-  IcToken = interface(IERC20)
-    //------- read from contract -----------------------------------------------
-    procedure Underlying(callback: TAsyncAddress);
-    //------- write to contract ------------------------------------------------
-    procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-  end;
-
-  TcToken = class abstract(TERC20, IcToken)
+  TcToken = class abstract(TERC20)
   strict private
     FOnMint  : TOnMint;
     FOnRedeem: TOnRedeem;
@@ -160,27 +156,36 @@ class procedure TCompound.Approve(
   callback: TAsyncReceipt);
 var
   erc20 : TERC20;
-  cToken: IcToken;
+  cToken: TcToken;
 begin
   cToken := cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
   begin
     cToken.Underlying(procedure(addr: TAddress; err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-      begin
-        erc20 := TERC20.Create(client, addr);
-        if Assigned(erc20) then
-        try
-          erc20.Approve(from, cToken.Contract, amount, callback);
-        finally
-          erc20.Free;
+      try
+        if Assigned(err) then
+          callback(nil, err)
+        else
+        begin
+          erc20 := TERC20.Create(client, addr);
+          if Assigned(erc20) then
+          try
+            erc20.ApproveEx(from, cToken.Contract, amount, callback);
+          finally
+            erc20.Free;
+          end;
         end;
+      finally
+        cToken.Free;
       end;
     end);
   end;
+end;
+
+class function TCompound.Supports(chain: TChain; reserve: TReserve): Boolean;
+begin
+  Result := chain in [Mainnet, Ropsten, Rinkeby, Goerli, Kovan, Ganache];
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -248,17 +253,21 @@ class procedure TCompound.Withdraw(
   reserve : TReserve;
   callback: TAsyncReceipt);
 var
-  cToken: IcToken;
+  cToken: TcToken;
 begin
   cToken := cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
   begin
     cToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        cToken.Redeem(from, amount, callback);
+      try
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          cToken.Redeem(from, amount, callback);
+      finally
+        cToken.Free;
+      end;
     end);
   end;
 end;
