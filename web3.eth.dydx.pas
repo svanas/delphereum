@@ -47,6 +47,7 @@ type
       amount  : BigInteger;
       callback: TAsyncReceipt);
   public
+    class function Name: string; override;
     class function Supports(
       chain   : TChain;
       reserve : TReserve): Boolean; override;
@@ -69,6 +70,12 @@ type
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
+      callback: TAsyncReceipt); override;
+    class procedure WithdrawEx(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
       callback: TAsyncReceipt); override;
   end;
 
@@ -215,13 +222,23 @@ begin
     begin
       erc20 := TERC20.Create(client, addr);
       if Assigned(erc20) then
-      try
-        erc20.ApproveEx(from, TSoloMargin.deployed[client.Chain], amount, callback);
-      finally
-        erc20.Free;
+      begin
+        erc20.ApproveEx(from, TSoloMargin.deployed[client.Chain], amount, procedure(rcpt: ITxReceipt; err: IError)
+        begin
+          try
+            callback(rcpt, err);
+          finally
+            erc20.Free;
+          end;
+        end);
       end;
     end;
   end);
+end;
+
+class function TdYdX.Name: string;
+begin
+  Result := 'dYdX';
 end;
 
 class function TdYdX.Supports(chain: TChain; reserve: TReserve): Boolean;
@@ -302,24 +319,32 @@ class procedure TdYdX.Withdraw(
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceipt);
-var
-  dYdX: TSoloMargin;
 begin
   Balance(client, from.Address, reserve, procedure(amount: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
     else
-    begin
-      dYdX := TSoloMargin.Create(client);
-      if Assigned(dYdX) then
-      try
-        dYdX.Withdraw(from, TSoloMargin.marketId[reserve], amount, callback);
-      finally
-        dYdX.Free;
-      end;
-    end;
+      WithdrawEx(client, from, reserve, amount, callback);
   end);
+end;
+
+class procedure TdYdX.WithdrawEx(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  dYdX: TSoloMargin;
+begin
+  dYdX := TSoloMargin.Create(client);
+  if Assigned(dYdX) then
+  try
+    dYdX.Withdraw(from, TSoloMargin.marketId[reserve], amount, callback);
+  finally
+    dYdX.Free;
+  end;
 end;
 
 { TSoloMarket }

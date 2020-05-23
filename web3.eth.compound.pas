@@ -43,6 +43,7 @@ type
       amount  : BigInteger;
       callback: TAsyncReceipt);
   public
+    class function Name: string; override;
     class function Supports(
       chain  : TChain;
       reserve: TReserve): Boolean; override;
@@ -65,6 +66,12 @@ type
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
+      callback: TAsyncReceipt); override;
+    class procedure WithdrawEx(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
       callback: TAsyncReceipt); override;
   end;
 
@@ -170,10 +177,15 @@ begin
         begin
           erc20 := TERC20.Create(client, addr);
           if Assigned(erc20) then
-          try
-            erc20.ApproveEx(from, cToken.Contract, amount, callback);
-          finally
-            erc20.Free;
+          begin
+            erc20.ApproveEx(from, cToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
+            begin
+              try
+                callback(rcpt, err);
+              finally
+                erc20.Free;
+              end;
+            end);
           end;
         end;
       finally
@@ -181,6 +193,11 @@ begin
       end;
     end);
   end;
+end;
+
+class function TCompound.Name: string;
+begin
+  Result := 'Compound';
 end;
 
 class function TCompound.Supports(chain: TChain; reserve: TReserve): Boolean;
@@ -269,6 +286,24 @@ begin
         cToken.Free;
       end;
     end);
+  end;
+end;
+
+class procedure TCompound.WithdrawEx(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  cToken: TcToken;
+begin
+  cToken := cTokenClass[reserve].Create(client);
+  if Assigned(cToken) then
+  try
+    cToken.RedeemUnderlying(from, amount, callback);
+  finally
+    cToken.Free;
   end;
 end;
 

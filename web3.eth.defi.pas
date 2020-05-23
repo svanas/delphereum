@@ -26,12 +26,14 @@ type
   TReserve = (DAI, USDC);
 
   TReserveHelper = record helper for TReserve
+    function Scale(amount: Extended): BigInteger;
     function Unscale(amount: BigInteger): Extended;
   end;
 
 type
   TLendingProtocol = class abstract
   public
+    class function Name: string; virtual; abstract;
     class function Supports(
       chain  : TChain;
       reserve: TReserve): Boolean; virtual; abstract;
@@ -59,6 +61,12 @@ type
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceipt); virtual; abstract;
+    class procedure WithdrawEx(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncReceipt); virtual; abstract;
   end;
 
   TLendingProtocolClass = class of TLendingProtocol;
@@ -66,11 +74,21 @@ type
 
 implementation
 
+function TReserveHelper.Scale(amount: Extended): BigInteger;
+begin
+  case Self of
+    DAI : Result := BigInteger.Create(amount * 1e18);
+    USDC: Result := BigInteger.Create(amount * 1e6);
+  else
+    raise EWeb3.Create('not implemented');
+  end;
+end;
+
 function TReserveHelper.Unscale(amount: BigInteger): Extended;
 begin
   case Self of
-    DAI : Result := BigInteger.Divide(amount, BigInteger.Create(1e10)).AsInt64 / 1e8;
-    USDC: Result := amount.AsInt64 / 1e6;
+    DAI : Result := amount.AsExtended / 1e18;
+    USDC: Result := amount.AsExtended / 1e6;
   else
     raise EWeb3.Create('not implemented');
   end;

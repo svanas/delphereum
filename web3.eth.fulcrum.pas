@@ -46,6 +46,7 @@ type
       amount  : BigInteger;
       callback: TAsyncReceipt);
   public
+    class function Name: string; override;
     class function Supports(
       chain  : TChain;
       reserve: TReserve): Boolean; override;
@@ -68,6 +69,12 @@ type
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
+      callback: TAsyncReceipt); override;
+    class procedure WithdrawEx(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
       callback: TAsyncReceipt); override;
   end;
 
@@ -154,10 +161,15 @@ begin
         begin
           erc20 := TERC20.Create(client, addr);
           if Assigned(erc20) then
-          try
-            erc20.ApproveEx(from, iToken.Contract, amount, callback);
-          finally
-            erc20.Free;
+          begin
+            erc20.ApproveEx(from, iToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
+            begin
+              try
+                callback(rcpt, err);
+              finally
+                erc20.Free;
+              end;
+            end);
           end;
         end;
       finally
@@ -165,6 +177,11 @@ begin
       end;
     end);
   end;
+end;
+
+class function TFulcrum.Name: string;
+begin
+  Result := 'Fulcrum';
 end;
 
 class function TFulcrum.Supports(chain: TChain; reserve: TReserve): Boolean;
@@ -252,6 +269,34 @@ begin
           callback(nil, err)
         else
           iToken.Burn(from, amount, callback);
+      finally
+        iToken.Free;
+      end;
+    end);
+  end;
+end;
+
+class procedure TFulcrum.WithdrawEx(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  iToken: TiToken;
+begin
+  iToken := iTokenClass[reserve].Create(client);
+  if Assigned(iToken) then
+  begin
+    iToken.TokenPrice(procedure(price: BigInteger; err: IError)
+    begin
+      try
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          iToken.Burn(from, BigInteger.Create(
+            amount.AsExtended / (price.AsExtended / 1e18)
+          ), callback);
       finally
         iToken.Free;
       end;

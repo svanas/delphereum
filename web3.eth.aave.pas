@@ -50,6 +50,7 @@ type
       amount  : BigInteger;
       callback: TAsyncReceipt);
   public
+    class function Name: string; override;
     class function Supports(
       chain  : TChain;
       reserve: TReserve): Boolean; override;
@@ -72,6 +73,12 @@ type
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
+      callback: TAsyncReceipt); override;
+    class procedure WithdrawEx(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
       callback: TAsyncReceipt); override;
   end;
 
@@ -179,10 +186,15 @@ begin
           begin
             erc20 := TERC20.Create(client, addr);
             if Assigned(erc20) then
-            try
-              erc20.ApproveEx(from, core, amount, callback);
-            finally
-              erc20.Free;
+            begin
+              erc20.ApproveEx(from, core, amount, procedure(rcpt: ITxReceipt; err: IError)
+              begin
+                try
+                  callback(rcpt, err);
+                finally
+                  erc20.Free;
+                end;
+              end);
             end;
           end;
         end);
@@ -190,6 +202,11 @@ begin
   finally
     ap.Free;
   end;
+end;
+
+class function TAave.Name: string;
+begin
+  Result := 'Aave';
 end;
 
 class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
@@ -329,6 +346,22 @@ class procedure TAave.Withdraw(
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceipt);
+begin
+  Balance(client, from.Address, reserve, procedure(amount: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      WithdrawEx(client, from, reserve, amount, callback);
+  end);
+end;
+
+class procedure TAave.WithdrawEx(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
 var
   aAp   : TAaveAddressesProvider;
   aPool : TAaveLendingPool;
@@ -354,18 +387,13 @@ begin
             begin
               aToken := TaToken.Create(client, addr);
               if Assigned(aToken) then
-              begin
-                aToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
-                begin
-                  try
-                    if Assigned(err) then
-                      callback(nil, err)
-                    else
-                      aToken.Redeem(from, amount, callback);
-                  finally
-                    aToken.Free;
-                  end;
-                end);
+              try
+                if Assigned(err) then
+                  callback(nil, err)
+                else
+                  aToken.Redeem(from, amount, callback);
+              finally
+                aToken.Free;
               end;
             end;
           end);
