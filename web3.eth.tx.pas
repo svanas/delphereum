@@ -36,6 +36,20 @@ uses
   web3.rlp,
   web3.utils;
 
+type
+  ITxError = interface(IError)
+  ['{52B97571-7EF2-4BA3-929D-4AB5A131D570}']
+    function Hash: TTxHash;
+  end;
+
+  TTxError = class(TError, ITxError)
+  private
+    FHash: TTxHash;
+  public
+    constructor Create(aHash: TTxHash; const aMsg: string);
+    function Hash: TTxHash;
+  end;
+
 procedure signTransaction(
   client    : TWeb3;
   nonce     : BigInteger;
@@ -136,6 +150,19 @@ procedure getTransactionRevertReason(
   callback: TAsyncString);
 
 implementation
+
+{ TTxError }
+
+constructor TTxError.Create(aHash: TTxHash; const aMsg: string);
+begin
+  inherited Create(aMsg);
+  FHash := aHash;
+end;
+
+function TTxError.Hash: TTxHash;
+begin
+   Result := FHash;
+end;
 
 procedure signTransaction(
   client    : TWeb3;
@@ -244,7 +271,7 @@ begin
     begin
       if Assigned(err) then
       begin
-        callback(nil, err);
+        callback(nil, TTxError.Create(hash, err.Message));
         EXIT;
       end;
       // has the transaction been mined, or is it still pending?
@@ -264,7 +291,7 @@ begin
         if Assigned(err) then
           callback(rcpt, nil)
         else
-          callback(rcpt, TError.Create(reason));
+          callback(rcpt, TTxError.Create(rcpt.txHash, reason));
       end);
     end;
     getTransactionReceipt(client, hash, onReceiptReceived);
@@ -473,7 +500,7 @@ begin
   web3.json.rpc.send(client.URL, 'eth_getTransactionByHash', [hash], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
+      callback(nil, TTxError.Create(hash, err.Message))
     else
       callback(TTxn.Create(web3.json.getPropAsObj(resp, 'result')), nil);
   end);
@@ -552,7 +579,7 @@ begin
   begin
     if Assigned(err) then
     begin
-      callback(nil, err);
+      callback(nil, TTxError.Create(hash, err.Message));
       EXIT;
     end;
     rcpt := web3.json.getPropAsObj(resp, 'result');

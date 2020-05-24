@@ -43,6 +43,7 @@ type
   EWeb3 = class(Exception);
 
   IError = interface
+  ['{562C0444-B452-4552-9242-62E02B5D6DD0}']
     function Message: string;
   end;
 

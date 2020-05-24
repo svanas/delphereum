@@ -37,6 +37,7 @@ type
   end;
 
   IJsonRpc = interface(IError)
+  ['{CA68D639-A1CF-458F-B2BF-70E5F947DD41}']
     function Code: Integer;
   end;
 

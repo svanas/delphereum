@@ -375,7 +375,7 @@ procedure write(
   args      : array of const;
   callback  : TAsyncReceipt);
 begin
-  write(client, from, &to, value, func, args, 500000, callback);
+  write(client, from, &to, value, func, args, 600000, callback);
 end;
 
 procedure write(

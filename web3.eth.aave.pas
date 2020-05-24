@@ -167,13 +167,13 @@ class procedure TAave.Approve(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 var
-  ap   : TAaveAddressesProvider;
+  aap  : TAaveAddressesProvider;
   erc20: TERC20;
 begin
-  ap := TAaveAddressesProvider.Create(client);
-  if Assigned(ap) then
+  aap := TAaveAddressesProvider.Create(client);
+  if Assigned(aap) then
   try
-    ap.GetLendingPoolCore(procedure(core: TAddress; err: IError)
+    aap.GetLendingPoolCore(procedure(core: TAddress; err: IError)
     begin
       if Assigned(err) then
         callback(nil, err)
@@ -200,7 +200,7 @@ begin
         end);
     end);
   finally
-    ap.Free;
+    aap.Free;
   end;
 end;
 
@@ -217,13 +217,13 @@ end;
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TAave.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
 var
-  ap  : TAaveAddressesProvider;
+  aap : TAaveAddressesProvider;
   pool: TAaveLendingPool;
 begin
-  ap := TAaveAddressesProvider.Create(client);
-  if Assigned(ap) then
+  aap := TAaveAddressesProvider.Create(client);
+  if Assigned(aap) then
   try
-    ap.GetLendingPool(procedure(addr: TAddress; err: IError)
+    aap.GetLendingPool(procedure(addr: TAddress; err: IError)
     begin
       if Assigned(err) then
         callback(0, err)
@@ -245,7 +245,7 @@ begin
       end;
     end);
   finally
-    ap.Free;
+    aap.Free;
   end;
 end;
 
@@ -257,7 +257,7 @@ class procedure TAave.Deposit(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 var
-  ap  : TAaveAddressesProvider;
+  aap : TAaveAddressesProvider;
   pool: TAaveLendingPool;
 begin
   // Before supplying an asset, we must first approve the LendingPoolCore contract.
@@ -267,10 +267,10 @@ begin
       callback(nil, err)
     else
     begin
-      ap := TAaveAddressesProvider.Create(client);
-      if Assigned(ap) then
+      aap := TAaveAddressesProvider.Create(client);
+      if Assigned(aap) then
       try
-        ap.GetLendingPool(procedure(addr: TAddress; err: IError)
+        aap.GetLendingPool(procedure(addr: TAddress; err: IError)
         begin
           if Assigned(err) then
             callback(nil, err)
@@ -286,7 +286,7 @@ begin
           end;
         end);
       finally
-        ap.Free;
+        aap.Free;
       end;
     end;
   end);
