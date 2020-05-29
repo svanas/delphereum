@@ -177,7 +177,7 @@ procedure signTransaction(
 resourcestring
   RS_SIGNATURE_DENIED = 'User denied transaction signature';
 begin
-  if not client.CanSignTransaction then
+  if not client.CanSignTransaction(from.Address, gasPrice) then
     callback('', TSignatureDenied.Create(RS_SIGNATURE_DENIED))
   else
     callback(signTransaction(

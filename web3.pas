@@ -17,7 +17,9 @@ interface
 
 uses
   // Delphi
-  System.SysUtils;
+  System.SysUtils,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers;
 
 type
   TChain = (
@@ -38,6 +40,13 @@ const
     42,  // Kovan
     1    // Ganache
   );
+
+type
+  TAddress    = string[42];
+  TPrivateKey = string[64];
+  TSignature  = string[132];
+  TWei        = BigInteger;
+  TTxHash     = string[66];
 
 type
   EWeb3 = class(Exception);
@@ -65,7 +74,7 @@ type
     FURL  : string;
     FOnSignatureRequest: TOnSignatureRequest;
   public
-    function CanSignTransaction: Boolean;
+    function CanSignTransaction(account: TAddress; gasPrice: TWei): Boolean;
 
     class function New(const aURL: string): TWeb3; overload; static;
     class function New(aChain: TChain; const aURL: string): TWeb3; overload; static;
@@ -85,11 +94,13 @@ implementation
 uses
   System.Classes,
   System.UITypes,
+  System.TypInfo,
 {$IFDEF FMX}
-  FMX.Dialogs
+  FMX.Dialogs,
 {$ELSE}
-  VCL.Dialogs
-{$ENDIF};
+  VCL.Dialogs,
+{$ENDIF}
+  web3.eth.utils;
 
 { TError }
 
@@ -110,12 +121,16 @@ end;
 
 { TWeb3 }
 
-function TWeb3.CanSignTransaction: Boolean;
+function TWeb3.CanSignTransaction(account: TAddress; gasPrice: TWei): Boolean;
 resourcestring
   RS_SIGNATURE_REQUEST = 'Your signature is being requested.'
+        + #13#10#13#10 + 'Network'   + #9 + ': %s'
+              + #13#10 + 'Address'   + #9 + ': %s'
+              + #13#10 + 'Gas price' + #9 + ': %s Gwei'
         + #13#10#13#10 + 'Do you approve of this request?';
 var
-  MR: Integer;
+  chainName  : string;
+  modalResult: Integer;
 begin
   Result := False;
 
@@ -125,14 +140,16 @@ begin
     EXIT;
   end;
 
+  chainName := GetEnumName(TypeInfo(TChain), Ord(Chain));
   TThread.Synchronize(nil, procedure
   begin
-    MR := MessageDlg(
-      RS_SIGNATURE_REQUEST, TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
+    modalResult := MessageDlg(Format(RS_SIGNATURE_REQUEST,
+      [chainName, account, fromWei(gasPrice, gwei)]),
+      TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
     );
   end);
 
-  Result := MR = mrYes;
+  Result := modalResult = mrYes;
 end;
 
 class function TWeb3.New(const aURL: string): TWeb3;

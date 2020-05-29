@@ -38,14 +38,9 @@ type
   end;
 
 type
-  TAddress    = string[42];
-  TPrivateKey = string[64];
-  PArg        = ^TArg;
-  TTuple      = TArray<TArg>;
-  TSignature  = string[132];
-  TWei        = BigInteger;
-  TTxHash     = string[66];
-  TTopics     = array[0..3] of TArg;
+  PArg    = ^TArg;
+  TTuple  = TArray<TArg>;
+  TTopics = array[0..3] of TArg;
 
 type
   ITxn = interface

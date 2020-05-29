@@ -20,14 +20,16 @@ uses
   Velthuis.BigIntegers,
   // web3
   web3,
+  web3.eth.erc20,
   web3.eth.types;
 
 type
   TReserve = (DAI, USDC);
 
   TReserveHelper = record helper for TReserve
-    function Scale(amount: Extended): BigInteger;
-    function Unscale(amount: BigInteger): Extended;
+    function  Scale(amount: Extended): BigInteger;
+    function  Unscale(amount: BigInteger): Extended;
+    procedure Balance(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
   end;
 
 type
@@ -74,6 +76,24 @@ type
 
 implementation
 
+const
+  RESERVE_ADDRESS: array[TReserve] of array[TChain] of TAddress = (
+    ( // DAI
+      '0x6b175474e89094c44da98b954eedeac495271d0f',  // Mainnet
+      '',                                            // Ropsten
+      '',                                            // Rinkeby
+      '',                                            // Goerli
+      '',                                            // Kovan
+      '0x6b175474e89094c44da98b954eedeac495271d0f'), // Ganache
+    ( // USDC
+      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',  // Mainnet
+      '',                                            // Ropsten
+      '',                                            // Rinkeby
+      '',                                            // Goerli
+      '',                                            // Kovan
+      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')  // Ganache
+  );
+
 function TReserveHelper.Scale(amount: Extended): BigInteger;
 begin
   case Self of
@@ -91,6 +111,18 @@ begin
     USDC: Result := amount.AsExtended / 1e6;
   else
     raise EWeb3.Create('not implemented');
+  end;
+end;
+
+procedure TReserveHelper.Balance(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
+var
+  erc20: TERC20;
+begin
+  erc20 := TERC20.Create(client, RESERVE_ADDRESS[Self][client.Chain]);
+  try
+    erc20.BalanceOf(owner, callback);
+  finally
+    erc20.Free;
   end;
 end;
 
