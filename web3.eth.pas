@@ -247,6 +247,8 @@ end;
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity);
 begin
   call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
+  var
+    buf: TBytes;
   begin
     if Assigned(err) then
       callback(0, err)
@@ -254,7 +256,13 @@ begin
       if (hex = '') or (hex = '0x') then
         callback(0, nil)
       else
-        callback(hex, nil);
+      begin
+        buf := web3.utils.fromHex(hex);
+        if Length(buf) <= 32 then
+          callback(hex, nil)
+        else
+          callback(web3.utils.toHex(Copy(buf, 0, 32)), nil);
+      end;
   end);
 end;
 

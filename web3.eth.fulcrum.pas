@@ -125,6 +125,11 @@ type
     constructor Create(aClient: TWeb3); override;
   end;
 
+  TiUSDT = class(TiToken)
+  public
+    constructor Create(aClient: TWeb3); override;
+  end;
+
 implementation
 
 type
@@ -133,7 +138,8 @@ type
 const
   iTokenClass: array[TReserve] of TiTokenClass = (
     TiDAI,
-    TiUSDC
+    TiUSDC,
+    TiUSDT
   );
 
 { TFulcrum }
@@ -433,6 +439,25 @@ begin
       raise EFulcrum.Create('iUSDC is not supported on Goerli');
     Kovan:
       raise EFulcrum.Create('iUSDC is not supported on Kovan');
+  end;
+end;
+
+{ TiUSDT }
+
+constructor TiUSDT.Create(aClient: TWeb3);
+begin
+  // https://bzx.network/itokens
+  case aClient.Chain of
+    Mainnet, Ganache:
+      inherited Create(aClient, '0x8326645f3aa6de6420102fdb7da9e3a91855045b');
+    Ropsten:
+      raise EFulcrum.Create('iUSDT is not supported on Ropsten');
+    Rinkeby:
+      raise EFulcrum.Create('iUSDT is not supported on Rinkeby');
+    Goerli:
+      raise EFulcrum.Create('iUSDT is not supported on Goerli');
+    Kovan:
+      raise EFulcrum.Create('iUSDT is not supported on Kovan');
   end;
 end;
 

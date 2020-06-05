@@ -139,7 +139,14 @@ const
       '',                                            // Rinkeby
       '',                                            // Goerli
       '0xe22da380ee6B445bb8273C81944ADEB6E8450422',  // Kovan
-      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')  // Ganache
+      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'), // Ganache
+    ( // USDT
+      '0xdac17f958d2ee523a2206206994597c13d831ec7',  // Mainnet
+      '0xB404c51BBC10dcBE948077F18a4B8E553D160084',  // Ropsten
+      '',                                            // Rinkeby
+      '',                                            // Goerli
+      '0x13512979ADE267AB5100878E2e0f485B568328a4',  // Kovan
+      '0xdac17f958d2ee523a2206206994597c13d831ec7')  // Ganache
   );
 
 // Returns the ERC-20 contract address of the underlying asset.

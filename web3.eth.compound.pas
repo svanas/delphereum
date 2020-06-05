@@ -33,6 +33,8 @@ uses
   web3.utils;
 
 type
+  ECompound = class(EWeb3);
+
   // Global helper functions
   TCompound = class(TLendingProtocol)
   protected
@@ -122,6 +124,11 @@ type
     constructor Create(aClient: TWeb3); override;
   end;
 
+  TcUSDT = class(TcToken)
+  public
+    constructor Create(aClient: TWeb3); override;
+  end;
+
 const
   NO_ERROR                       = 0;
   UNAUTHORIZED                   = 1;  // The sender is not authorized to perform this action.
@@ -149,7 +156,8 @@ type
 const
   cTokenClass: array[TReserve] of TcTokenClass = (
     TcDAI,
-    TcUSDC
+    TcUSDC,
+    TcUSDT
   );
 
 { TCompound }
@@ -202,7 +210,10 @@ end;
 
 class function TCompound.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := chain in [Mainnet, Ropsten, Rinkeby, Goerli, Kovan, Ganache];
+  if reserve = USDT then
+    Result := chain in [Mainnet, Ropsten, Rinkeby, Kovan, Ganache]
+  else
+    Result := chain in [Mainnet, Ropsten, Rinkeby, Goerli, Kovan, Ganache];
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -473,6 +484,25 @@ begin
       inherited Create(aClient, '0xcec4a43ebb02f9b80916f1c718338169d6d5c1f0');
     Kovan:
       inherited Create(aClient, '0xcfc9bb230f00bffdb560fce2428b4e05f3442e35');
+  end;
+end;
+
+{ TcUSDT }
+
+constructor TcUSDT.Create(aClient: TWeb3);
+begin
+  // https://compound.finance/docs#networks
+  case aClient.Chain of
+    Mainnet, Ganache:
+      inherited Create(aClient, '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9');
+    Ropsten:
+      inherited Create(aClient, '0xb6f7f1901ffbcbadf9cd9831a032395105bc3142');
+    Rinkeby:
+      inherited Create(aClient, '0x2fb298bdbef468638ad6653ff8376575ea41e768');
+    Goerli:
+      raise ECompound.Create('cUSDT is not supported on Goerli');
+    Kovan:
+      inherited Create(aClient, '0x3f0a0ea2f86bae6362cf9799b523ba06647da018');
   end;
 end;
 

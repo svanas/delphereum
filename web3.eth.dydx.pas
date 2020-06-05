@@ -142,7 +142,8 @@ type
     const
       marketId: array[TReserve] of Integer = (
         3, // DAI
-        2  // USDC
+        2, // USDC
+        -1 // USDT
       );
     constructor Create(aClient: TWeb3); reintroduce;
     procedure GetAccountWei(owner: TAddress; marketId: Integer; callback: TAsyncQuantity);
@@ -243,7 +244,7 @@ end;
 
 class function TdYdX.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := chain in [Mainnet, Ganache];
+  Result := (chain in [Mainnet, Ganache]) and (reserve <> USDT);
 end;
 
 // Returns the annual yield as a percentage.
