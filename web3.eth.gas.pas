@@ -29,10 +29,10 @@ uses
 
 procedure getGasPrice(client: TWeb3; callback: TAsyncQuantity);
 
-procedure estimateGas(client: TWeb3; &to: TAddress;
-  const func: string; args: array of const; callback: TAsyncQuantity); overload;
 procedure estimateGas(client: TWeb3; from, &to: TAddress;
   const func: string; args: array of const; callback: TAsyncQuantity); overload;
+procedure estimateGas(client: TWeb3; from, &to: TAddress;
+  const data: string; callback: TAsyncQuantity); overload;
 
 implementation
 
@@ -47,28 +47,25 @@ begin
   end);
 end;
 
-procedure estimateGas(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
+procedure estimateGas(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
 begin
-  estimateGas(client, ADDRESS_ZERO, &to, func, args, callback);
+  estimateGas(client, from, &to, web3.eth.abi.encode(func, args), callback);
 end;
 
-procedure estimateGas(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
+procedure estimateGas(client: TWeb3; from, &to: TAddress; const data: string; callback: TAsyncQuantity);
 var
-  abi: string;
   obj: TJsonObject;
 begin
-  // step #1: encode the function abi
-  abi := web3.eth.abi.encode(func, args);
-  // step #2: construct the transaction call object
+  // construct the transaction call object
   obj := web3.json.unmarshal(Format(
     '{"from": %s, "to": %s, "data": %s}', [
       web3.json.quoteString(string(from), '"'),
       web3.json.quoteString(string(&to), '"'),
-      web3.json.quoteString(abi, '"')
+      web3.json.quoteString(data, '"')
     ]
   ));
   try
-    // step #3: estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
+    // estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
     web3.json.rpc.send(client.URL, 'eth_estimateGas', [obj], procedure(resp: TJsonObject; err: IError)
     begin
       if Assigned(err) then

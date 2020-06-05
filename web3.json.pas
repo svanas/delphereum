@@ -25,6 +25,7 @@ function unmarshal(const val: string)    : TJsonObject;
 
 function getPropAsStr(obj: TJsonValue; const name: string; const def: string = ''): string;
 function getPropAsInt(obj: TJsonValue; const name: string; def: Integer = 0): Integer;
+function getPropAsExt(obj: TJsonValue; const name: string; def: Extended = 0): Extended;
 function getPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
 function getPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
 
@@ -118,6 +119,27 @@ begin
       else
         if P.JsonValue is TJsonString then
           Result := StrToIntDef(TJsonString(P.JsonValue).Value, def)
+        else
+          Result := def;
+end;
+
+function getPropAsExt(obj: TJsonValue; const name: string; def: Extended): Extended;
+var
+  P: TJsonPair;
+begin
+  Result := def;
+  if not Assigned(obj) then
+    EXIT;
+  if not(obj is TJsonObject) then
+    EXIT;
+  P := TJsonObject(obj).Get(name);
+  if Assigned(P) then
+    if Assigned(P.JsonValue) then
+      if P.JsonValue is TJsonNumber then
+        Result := TJsonNumber(P.JsonValue).AsDouble
+      else
+        if P.JsonValue is TJsonString then
+          Result := StrToFloatDef(TJsonString(P.JsonValue).Value, def)
         else
           Result := def;
 end;

@@ -105,13 +105,16 @@ begin
     if Assigned(err) then
       callback('', err)
     else
-      web3.eth.call(client, resolver, 'name(bytes32)', [namehash(name)], procedure(tup: TTuple; err: IError)
-      begin
-        if Assigned(err) then
-          callback('', err)
-        else
-          callback(tup.ToString, nil);
-      end);
+      if resolver.IsZero then
+        callback(string(addr), nil)
+      else
+        web3.eth.call(client, resolver, 'name(bytes32)', [namehash(name)], procedure(tup: TTuple; err: IError)
+        begin
+          if Assigned(err) then
+            callback('', err)
+          else
+            callback(tup.ToString, nil);
+        end);
   end);
 end;
 

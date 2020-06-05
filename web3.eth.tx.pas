@@ -51,15 +51,16 @@ type
   end;
 
 procedure signTransaction(
-  client    : TWeb3;
-  nonce     : BigInteger;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  value     : TWei;
-  const data: string;
-  gasPrice  : TWei;
-  gasLimit  : TWei;
-  callback  : TAsyncString); overload;
+  client      : TWeb3;
+  nonce       : BigInteger;
+  from        : TPrivateKey;
+  &to         : TAddress;
+  value       : TWei;
+  const data  : string;
+  gasPrice    : TWei;
+  gasLimit    : TWei;
+  estimatedGas: TWei;
+  callback    : TAsyncString); overload;
 
 function signTransaction(
   chain     : TChain;
@@ -165,23 +166,29 @@ begin
 end;
 
 procedure signTransaction(
-  client    : TWeb3;
-  nonce     : BigInteger;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  value     : TWei;
-  const data: string;
-  gasPrice  : TWei;
-  gasLimit  : TWei;
-  callback  : TAsyncString);
+  client      : TWeb3;
+  nonce       : BigInteger;
+  from        : TPrivateKey;
+  &to         : TAddress;
+  value       : TWei;
+  const data  : string;
+  gasPrice    : TWei;
+  gasLimit    : TWei;
+  estimatedGas: TWei;
+  callback    : TAsyncString);
 resourcestring
   RS_SIGNATURE_DENIED = 'User denied transaction signature';
 begin
-  if not client.CanSignTransaction(from.Address, gasPrice) then
-    callback('', TSignatureDenied.Create(RS_SIGNATURE_DENIED))
-  else
-    callback(signTransaction(
-      client.Chain, nonce, from, &to, value, data, gasPrice, gasLimit), nil);
+  client.CanSignTransaction(from.Address, &to, gasPrice, estimatedGas, procedure(approved: Boolean; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      if not approved then
+        callback('', TSignatureDenied.Create(RS_SIGNATURE_DENIED))
+      else
+        callback(signTransaction(client.Chain, nonce, from, &to, value, data, gasPrice, gasLimit), nil);
+  end);
 end;
 
 function signTransaction(
@@ -358,7 +365,7 @@ begin
       if Assigned(err) then
         callback('', err)
       else
-        signTransaction(client, qty, from, &to, value, '', gasPrice, gasLimit,
+        signTransaction(client, qty, from, &to, value, '', gasPrice, gasLimit, 21000,
           procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then
@@ -398,7 +405,7 @@ begin
       if Assigned(err) then
         callback(nil, err)
       else
-        signTransaction(client, qty, from, &to, value, '', gasPrice, gasLimit,
+        signTransaction(client, qty, from, &to, value, '', gasPrice, gasLimit, 21000,
           procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then

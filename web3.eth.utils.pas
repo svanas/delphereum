@@ -52,8 +52,9 @@ type
     tether
   );
 
-function fromWei(wei: TWei; &unit: TEthUnit): string;
+function fromWei(wei: TWei; &to: TEthUnit; decimals: Byte = 18): string;
 function toWei(input: string; &unit: TEthUnit): TWei;
+function ethToFloat(const value: string): Extended;
 
 implementation
 
@@ -84,7 +85,7 @@ const
     '1000000000000000000000000000',
     '1000000000000000000000000000000');
 
-function fromWei(wei: TWei; &unit: TEthUnit): string;
+function fromWei(wei: TWei; &to: TEthUnit; decimals: Byte): string;
 var
   negative: Boolean;
   base    : BigInteger;
@@ -94,8 +95,8 @@ var
 begin
   Result := '';
   negative := wei.Negative;
-  base := UnitToWei[&unit];
-  baseLen := UnitToWei[&unit].Length;
+  base := UnitToWei[&to];
+  baseLen := UnitToWei[&to].Length;
   if negative then
     wei := wei.Abs;
   BigInteger.DivMod(wei, base, whole, fraction);
@@ -106,7 +107,10 @@ begin
       Result := '0' + Result;
     while (Result.Length > 1) and (Result[High(Result)] = '0') do
       Delete(Result, High(Result), 1);
-    Result := '.' + Result;
+    while Result.Length > decimals do
+      Delete(Result, High(Result), 1);
+    if Length(Result) > 0 then
+      Result := '.' + Result;
   end;
   Result := whole.ToString + Result;
   if negative then
@@ -146,6 +150,15 @@ begin
   end;
   if negative then
     Result := BigInteger.Negate(Result);
+end;
+
+function ethToFloat(const value: string): Extended;
+var
+  FS: TFormatSettings;
+begin
+  FS := TFormatSettings.Create;
+  FS.DecimalSeparator := '.';
+  Result := StrToFloat(value, FS);
 end;
 
 end.

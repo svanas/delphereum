@@ -65,8 +65,10 @@ type
     function Message: string;
   end;
 
-  TSignatureDenied    = class(TError);
-  TOnSignatureRequest = reference to procedure(var Approve: Boolean);
+  TSignatureDenied        = class(TError);
+  TSignatureRequestResult = reference to procedure(approved: Boolean; err: IError);
+  TOnSignatureRequest     = reference to procedure(from, &to: TAddress;
+                            gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
 
   TWeb3 = record
   private
@@ -74,18 +76,17 @@ type
     FURL  : string;
     FOnSignatureRequest: TOnSignatureRequest;
   public
-    function CanSignTransaction(account: TAddress; gasPrice: TWei): Boolean;
+    procedure CanSignTransaction(from, &to: TAddress;
+      gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
 
     class function New(const aURL: string): TWeb3; overload; static;
     class function New(aChain: TChain; const aURL: string): TWeb3; overload; static;
 
-    class function New(const aURL: string;
-      aSignatureRequest: TOnSignatureRequest): TWeb3; overload; static;
-    class function New(aChain: TChain; const aURL: string;
-      aSignatureRequest: TOnSignatureRequest): TWeb3; overload; static;
-
     property URL  : string read FURL;
     property Chain: TChain read FChain;
+
+    property OnSignatureRequest: TOnSignatureRequest
+                                 read FOnSignatureRequest write FOnSignatureRequest;
   end;
 
 implementation
@@ -100,7 +101,9 @@ uses
 {$ELSE}
   VCL.Dialogs,
 {$ENDIF}
-  web3.eth.utils;
+  web3.eth.types,
+  web3.eth.utils,
+  web3.eth.infura;
 
 { TError }
 
@@ -121,35 +124,64 @@ end;
 
 { TWeb3 }
 
-function TWeb3.CanSignTransaction(account: TAddress; gasPrice: TWei): Boolean;
+procedure TWeb3.CanSignTransaction(from, &to: TAddress;
+  gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
 resourcestring
   RS_SIGNATURE_REQUEST = 'Your signature is being requested.'
         + #13#10#13#10 + 'Network'   + #9 + ': %s'
-              + #13#10 + 'Address'   + #9 + ': %s'
+              + #13#10 + 'From'      + #9 + ': %s'
+              + #13#10 + 'To'        + #9 + ': %s'
               + #13#10 + 'Gas price' + #9 + ': %s Gwei'
+              + #13#10 + 'Estimate'  + #9 + ': %s gas units'
+              + #13#10 + 'Gas fee'   + #9 + ': $ %.2f'
         + #13#10#13#10 + 'Do you approve of this request?';
 var
+  client     : TWeb3;
   chainName  : string;
   modalResult: Integer;
 begin
-  Result := False;
-
   if Assigned(FOnSignatureRequest) then
   begin
-    FOnSignatureRequest(Result);
+    FOnSignatureRequest(from, &to, gasPrice, estimatedGas, callback);
     EXIT;
   end;
 
+  client    := Self;
   chainName := GetEnumName(TypeInfo(TChain), Ord(Chain));
-  TThread.Synchronize(nil, procedure
-  begin
-    modalResult := MessageDlg(Format(RS_SIGNATURE_REQUEST,
-      [chainName, account, fromWei(gasPrice, gwei)]),
-      TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
-    );
-  end);
 
-  Result := modalResult = mrYes;
+  from.ToString(client, procedure(const from: string; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(False, err);
+      EXIT;
+    end;
+    &to.ToString(client, procedure(const &to: string; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        callback(False, err);
+        EXIT;
+      end;
+      web3.eth.infura.ticker('ethusd', procedure(ticker: ITicker; err: IError)
+      begin
+        if Assigned(err) then
+        begin
+          callback(False, err);
+          EXIT;
+        end;
+        TThread.Synchronize(nil, procedure
+        begin
+          modalResult := MessageDlg(Format(RS_SIGNATURE_REQUEST, [chainName,
+            from, &to, fromWei(gasPrice, gwei, 1), estimatedGas.ToString,
+            ethToFloat(fromWei(estimatedGas * gasPrice, ether)) * ticker.Ask]),
+            TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
+          );
+        end);
+        callback(modalResult = mrYes, nil);
+      end);
+    end);
+  end);
 end;
 
 class function TWeb3.New(const aURL: string): TWeb3;
@@ -159,21 +191,8 @@ end;
 
 class function TWeb3.New(aChain: TChain; const aURL: string): TWeb3;
 begin
-  Result := New(aChain, aURL, nil);
-end;
-
-class function TWeb3.New(const aURL: string;
-  aSignatureRequest: TOnSignatureRequest): TWeb3;
-begin
-  Result := New(Mainnet, aURL, aSignatureRequest);
-end;
-
-class function TWeb3.New(aChain: TChain; const aURL: string;
-  aSignatureRequest: TOnSignatureRequest): TWeb3;
-begin
   Result.FChain := aChain;
   Result.FURL   := aURL;
-  Result.FOnSignatureRequest := aSignatureRequest;
 end;
 
 end.
