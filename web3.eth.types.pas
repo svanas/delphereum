@@ -82,7 +82,7 @@ type
     class function  New(arg: TArg): TAddress; overload; static;
     class function  New(const hex: string): TAddress; overload; static;
     class procedure New(client: TWeb3; const name: string; callback: TAsyncAddress); overload; static;
-    procedure ToString(client: TWeb3; callback: TAsyncString);
+    procedure ToString(client: TWeb3; callback: TAsyncString; abbreviated: Boolean = False);
     function  IsZero: Boolean;
   end;
 
@@ -188,20 +188,34 @@ begin
     web3.eth.ens.addr(client, name, callback);
 end;
 
-procedure TAddressHelper.ToString(client: TWeb3; callback: TAsyncString);
+procedure TAddressHelper.ToString(client: TWeb3; callback: TAsyncString; abbreviated: Boolean);
 var
   addr: TAddress;
 begin
   addr := Self;
   web3.eth.ens.reverse(client, addr, procedure(const name: string; err: IError)
+  var
+    output: string;
   begin
     if Assigned(err) then
-      callback('', err)
+    begin
+      callback('', err);
+      EXIT;
+    end;
+
+    if  (name <> '')
+    and (name <> '0x')
+    and (name <> '0x0000000000000000000000000000000000000000') then
+      output := name
     else
-      if (name <> '') and (name <> '0x') then
-        callback(name, nil)
-      else
-        callback(string(addr), nil);
+      output := string(addr);
+
+    if abbreviated then
+      if isHex(output) then
+        while Length(output) > 8 do
+          Delete(output, High(output), 1);
+
+    callback(output, nil);
   end);
 end;
 

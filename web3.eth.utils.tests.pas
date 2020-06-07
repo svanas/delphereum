@@ -17,7 +17,7 @@ interface
 
 uses
   // web3
-  web3.eth.types,
+  web3,
   web3.eth.utils;
 
 function testCase1: Boolean;

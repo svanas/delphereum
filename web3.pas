@@ -180,8 +180,8 @@ begin
         end);
         callback(modalResult = mrYes, nil);
       end);
-    end);
-  end);
+    end, True);
+  end, True);
 end;
 
 class function TWeb3.New(const aURL: string): TWeb3;
