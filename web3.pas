@@ -65,7 +65,11 @@ type
     function Message: string;
   end;
 
-  TSignatureDenied        = class(TError);
+  ISignatureDenied = interface(IError)
+  ['{AFFFBC21-3686-44A8-9034-2B38B3001B02}']
+  end;
+
+  TSignatureDenied        = class(TError, ISignatureDenied);
   TSignatureRequestResult = reference to procedure(approved: Boolean; err: IError);
   TOnSignatureRequest     = reference to procedure(from, &to: TAddress;
                             gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
@@ -129,8 +133,8 @@ procedure TWeb3.CanSignTransaction(from, &to: TAddress;
 resourcestring
   RS_SIGNATURE_REQUEST = 'Your signature is being requested.'
         + #13#10#13#10 + 'Network'   + #9 + ': %s'
-              + #13#10 + 'From'      + #9 + ': %s'
-              + #13#10 + 'To'        + #9 + ': %s'
+              + #13#10 + 'From   '   + #9 + ': %s'
+              + #13#10 + 'To     '   + #9 + ': %s'
               + #13#10 + 'Gas price' + #9 + ': %s Gwei'
               + #13#10 + 'Estimate'  + #9 + ': %s gas units'
               + #13#10 + 'Gas fee'   + #9 + ': $ %.2f'
