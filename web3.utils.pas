@@ -168,12 +168,12 @@ function isHex(const prefix, str: string): Boolean;
 var
   I: Integer;
 begin
-  Result := str.Length > 1;
+  Result := Length(str) > 1;
   if Result then
   begin
-    Result := Copy(str, Low(str), 2) = prefix;
+    Result := Copy(str, Low(str), Length(prefix)) = prefix;
     if Result then
-      for I := Low(str) + 2 to High(str) do
+      for I := Low(str) + Length(prefix) to High(str) do
       begin
         Result := CharInSet(str[I], ['0'..'9', 'a'..'f', 'A'..'F']);
         if not Result then
