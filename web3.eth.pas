@@ -380,13 +380,14 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      web3.eth.gas.estimateGas(client, from.Address, &to, data, procedure(estimatedGas: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
-          callback(nil, err)
-        else
-          write(client, from, &to, value, data, gasPrice, 600000, estimatedGas, callback);
-      end);
+      web3.eth.gas.estimateGas(client, from.Address, &to, data, 600000,
+        procedure(estimatedGas: BigInteger; err: IError)
+        begin
+          if Assigned(err) then
+            callback(nil, err)
+          else
+            write(client, from, &to, value, data, gasPrice, 600000, estimatedGas, callback);
+        end);
   end);
 end;
 
@@ -404,13 +405,14 @@ var
   data: string;
 begin
   data := web3.eth.abi.encode(func, args);
-  web3.eth.gas.estimateGas(client, from.Address, &to, data, procedure(estimatedGas: BigInteger; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, err)
-    else
-      write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback);
-  end);
+  web3.eth.gas.estimateGas(client, from.Address, &to, data, gasLimit,
+    procedure(estimatedGas: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, err)
+      else
+        write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback);
+    end);
 end;
 
 procedure write(

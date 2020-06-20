@@ -30,9 +30,9 @@ uses
 procedure getGasPrice(client: TWeb3; callback: TAsyncQuantity);
 
 procedure estimateGas(client: TWeb3; from, &to: TAddress;
-  const func: string; args: array of const; callback: TAsyncQuantity); overload;
+  const func: string; args: array of const; default: TWei; callback: TAsyncQuantity); overload;
 procedure estimateGas(client: TWeb3; from, &to: TAddress;
-  const data: string; callback: TAsyncQuantity); overload;
+  const data: string; default: TWei; callback: TAsyncQuantity); overload;
 
 implementation
 
@@ -47,12 +47,14 @@ begin
   end);
 end;
 
-procedure estimateGas(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
+procedure estimateGas(client: TWeb3; from, &to: TAddress;
+  const func: string; args: array of const; default: TWei; callback: TAsyncQuantity);
 begin
-  estimateGas(client, from, &to, web3.eth.abi.encode(func, args), callback);
+  estimateGas(client, from, &to, web3.eth.abi.encode(func, args), default, callback);
 end;
 
-procedure estimateGas(client: TWeb3; from, &to: TAddress; const data: string; callback: TAsyncQuantity);
+procedure estimateGas(client: TWeb3; from, &to: TAddress;
+  const data: string; default: TWei; callback: TAsyncQuantity);
 var
   obj: TJsonObject;
 begin
@@ -69,9 +71,14 @@ begin
     web3.json.rpc.send(client.URL, 'eth_estimateGas', [obj], procedure(resp: TJsonObject; err: IError)
     begin
       if Assigned(err) then
-        callback(0, err)
-      else
-        callback(web3.json.getPropAsStr(resp, 'result'), nil);
+      begin
+        if err.Message.Contains('gas required exceeds allowance') then
+          callback(default, nil)
+        else
+          callback(0, err);
+        EXIT;
+      end;
+      callback(web3.json.getPropAsStr(resp, 'result'), nil);
     end);
   finally
     obj.Free;
