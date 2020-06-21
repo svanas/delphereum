@@ -360,12 +360,20 @@ class procedure TAave.Withdraw(
   reserve : TReserve;
   callback: TAsyncReceiptEx);
 begin
-  Balance(client, from.Address, reserve, procedure(amount: BigInteger; err: IError)
+  Balance(client, from.Address, reserve, procedure(balance: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(nil, 0, err)
     else
-      WithdrawEx(client, from, reserve, amount, callback);
+      WithdrawEx(client, from, reserve,
+        BigInteger.MinusOne, // if amount is equal to uint(-1), the user wants to redeem everything
+        procedure(rcpt: ITxReceipt; amount: BigInteger; err: IError)
+        begin
+          if Assigned(err) then
+            callback(nil, 0, err)
+          else
+            callback(rcpt, balance, err);
+        end);
   end);
 end;
 
