@@ -63,13 +63,13 @@ type
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceipt); virtual; abstract;
+      callback: TAsyncReceiptEx); virtual; abstract;
     class procedure WithdrawEx(
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); virtual; abstract;
+      callback: TAsyncReceiptEx); virtual; abstract;
   end;
 
   TLendingProtocolClass = class of TLendingProtocol;

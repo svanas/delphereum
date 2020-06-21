@@ -69,13 +69,13 @@ type
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceipt); override;
+      callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); override;
+      callback: TAsyncReceiptEx); override;
   end;
 
   TOnMint = reference to procedure(
@@ -261,7 +261,7 @@ class procedure TFulcrum.Withdraw(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  callback: TAsyncReceipt);
+  callback: TAsyncReceiptEx);
 var
   iToken: TiToken;
 begin
@@ -272,9 +272,15 @@ begin
     begin
       try
         if Assigned(err) then
-          callback(nil, err)
+          callback(nil, 0, err)
         else
-          iToken.Burn(from, amount, callback);
+          iToken.Burn(from, amount, procedure(rcpt: ITxReceipt; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, 0, err)
+            else
+              callback(rcpt, amount, err);
+          end);
       finally
         iToken.Free;
       end;
@@ -287,7 +293,7 @@ class procedure TFulcrum.WithdrawEx(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TAsyncReceiptEx);
 var
   iToken: TiToken;
 begin
@@ -298,11 +304,16 @@ begin
     begin
       try
         if Assigned(err) then
-          callback(nil, err)
+          callback(nil, 0, err)
         else
-          iToken.Burn(from, BigInteger.Create(
-            amount.AsExtended / (price.AsExtended / 1e18)
-          ), callback);
+          iToken.Burn(from, BigInteger.Create(amount.AsExtended / (price.AsExtended / 1e18)),
+            procedure(rcpt: ITxReceipt; err: IError)
+            begin
+              if Assigned(err) then
+                callback(nil, 0, err)
+              else
+                callback(rcpt, BigInteger.Create(amount.AsExtended / (price.AsExtended / 1e18)), err);
+            end);
       finally
         iToken.Free;
       end;

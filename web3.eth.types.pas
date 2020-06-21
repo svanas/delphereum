@@ -75,6 +75,8 @@ type
   TAsyncTxHash     = reference to procedure(hash: TTxHash;       err: IError);
   TAsyncTxn        = reference to procedure(txn : ITxn;          err: IError);
   TAsyncReceipt    = reference to procedure(rcpt: ITxReceipt;    err: IError);
+  TAsyncReceiptEx  = reference to procedure(rcpt: ITxReceipt;
+                                            qty : BigInteger;    err: IError);
   TAsyncFloat      = reference to procedure(val : Extended;      err: IError);
 
 type

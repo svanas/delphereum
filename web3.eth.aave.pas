@@ -73,13 +73,13 @@ type
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceipt); override;
+      callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); override;
+      callback: TAsyncReceiptEx); override;
   end;
 
   // Global addresses register of the protocol. This contract is immutable and the address will never change.
@@ -358,12 +358,12 @@ class procedure TAave.Withdraw(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  callback: TAsyncReceipt);
+  callback: TAsyncReceiptEx);
 begin
   Balance(client, from.Address, reserve, procedure(amount: BigInteger; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
+      callback(nil, 0, err)
     else
       WithdrawEx(client, from, reserve, amount, callback);
   end);
@@ -374,7 +374,7 @@ class procedure TAave.WithdrawEx(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TAsyncReceiptEx);
 var
   aAp   : TAaveAddressesProvider;
   aPool : TAaveLendingPool;
@@ -386,7 +386,7 @@ begin
     aAp.GetLendingPool(procedure(addr: TAddress; err: IError)
     begin
       if Assigned(err) then
-        callback(nil, err)
+        callback(nil, 0, err)
       else
       begin
         aPool := TAaveLendingPool.Create(client, addr);
@@ -395,16 +395,22 @@ begin
           aPool.aTokenAddress(reserve, procedure(addr: TAddress; err: IError)
           begin
             if Assigned(err) then
-              callback(nil, err)
+              callback(nil, 0, err)
             else
             begin
               aToken := TaToken.Create(client, addr);
               if Assigned(aToken) then
               try
                 if Assigned(err) then
-                  callback(nil, err)
+                  callback(nil, 0, err)
                 else
-                  aToken.Redeem(from, amount, callback);
+                  aToken.Redeem(from, amount, procedure(rcpt: ITxReceipt; err: IError)
+                  begin
+                    if Assigned(err) then
+                      callback(nil, 0, err)
+                    else
+                      callback(rcpt, amount, nil);
+                  end);
               finally
                 aToken.Free;
               end;

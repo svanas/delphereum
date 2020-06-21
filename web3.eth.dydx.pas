@@ -70,13 +70,13 @@ type
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceipt); override;
+      callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); override;
+      callback: TAsyncReceiptEx); override;
   end;
 
   TSoloTotalPar = record
@@ -321,12 +321,12 @@ class procedure TdYdX.Withdraw(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  callback: TAsyncReceipt);
+  callback: TAsyncReceiptEx);
 begin
   Balance(client, from.Address, reserve, procedure(amount: BigInteger; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
+      callback(nil, 0, err)
     else
       WithdrawEx(client, from, reserve, amount, callback);
   end);
@@ -337,14 +337,20 @@ class procedure TdYdX.WithdrawEx(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TAsyncReceiptEx);
 var
   dYdX: TSoloMargin;
 begin
   dYdX := TSoloMargin.Create(client);
   if Assigned(dYdX) then
   try
-    dYdX.Withdraw(from, TSoloMargin.marketId[reserve], amount, callback);
+    dYdX.Withdraw(from, TSoloMargin.marketId[reserve], amount, procedure(rcpt: ITxReceipt; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, 0, err)
+      else
+        callback(rcpt, amount, err);
+    end);
   finally
     dYdX.Free;
   end;

@@ -68,13 +68,13 @@ type
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceipt); override;
+      callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
       client  : TWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); override;
+      callback: TAsyncReceiptEx); override;
   end;
 
   TOnMint = reference to procedure(
@@ -279,7 +279,7 @@ class procedure TCompound.Withdraw(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  callback: TAsyncReceipt);
+  callback: TAsyncReceiptEx);
 var
   cToken: TcToken;
 begin
@@ -290,9 +290,15 @@ begin
     begin
       try
         if Assigned(err) then
-          callback(nil, err)
+          callback(nil, 0, err)
         else
-          cToken.Redeem(from, amount, callback);
+          cToken.Redeem(from, amount, procedure(rcpt: ITxReceipt; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, 0, err)
+            else
+              callback(rcpt, amount, err);
+          end);
       finally
         cToken.Free;
       end;
@@ -305,14 +311,20 @@ class procedure TCompound.WithdrawEx(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TAsyncReceiptEx);
 var
   cToken: TcToken;
 begin
   cToken := cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
   try
-    cToken.RedeemUnderlying(from, amount, callback);
+    cToken.RedeemUnderlying(from, amount, procedure(rcpt: ITxReceipt; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, 0, err)
+      else
+        callback(rcpt, amount, err);
+    end);
   finally
     cToken.Free;
   end;
