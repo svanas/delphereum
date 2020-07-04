@@ -248,11 +248,16 @@ begin
   // Before supplying an asset, we must first approve the cToken.
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
-    cToken := cTokenClass[reserve].Create(client);
-    try
-      cToken.Mint(from, amount, callback);
-    finally
-      cToken.Free;
+    if Assigned(err) then
+      callback(nil, err)
+    else
+    begin
+      cToken := cTokenClass[reserve].Create(client);
+      try
+        cToken.Mint(from, amount, callback);
+      finally
+        cToken.Free;
+      end;
     end;
   end);
 end;

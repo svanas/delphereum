@@ -230,11 +230,16 @@ begin
   // Before supplying an asset, we must first approve the iToken.
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
-    iToken := iTokenClass[reserve].Create(client);
-    try
-      iToken.Mint(from, amount, callback);
-    finally
-      iToken.Free;
+    if Assigned(err) then
+      callback(nil, err)
+    else
+    begin
+      iToken := iTokenClass[reserve].Create(client);
+      try
+        iToken.Mint(from, amount, callback);
+      finally
+        iToken.Free;
+      end;
     end;
   end);
 end;
