@@ -18,9 +18,9 @@ Smart Contracts can have many applications, ranging from sports betting to onlin
 
 Once added to the blockchain, a Smart Contract becomes public and cannot be modified or removed. This assures your users that the rules are transparent and will never change.
 
-## What is a dApp?
+## What is a dapp?
 
-A dApp is an application whose backend runs on a decentralised network with trustless protocols. dApps aren’t owned by anyone, cannot be shut down, and have zero downtime.
+A [dapp](https://en.wikipedia.org/wiki/Decentralized_application) is an application whose backend runs on a decentralised network with trustless protocols. Dapps aren’t owned by anyone, cannot be shut down, and have zero downtime.
 
 ## Dependencies
 
@@ -45,6 +45,14 @@ Please note there are NO runtime dependencies. Delphereum is lightweight and sel
 8. [A 3-minute Smart Contract and Delphi - Part 1](https://medium.com/@svanas/a-3-minute-smart-contract-and-delphi-61d998571d)
 9. [A 3-minute Smart Contract and Delphi - Part 2](https://medium.com/@svanas/a-3-minute-smart-contract-and-delphi-part-2-446925faa47b)
 10. [QuikNode, Ethereum and Delphi](https://medium.com/@svanas/quiknode-ethereum-and-delphi-f7bfc9671c23)
+
+## Case study
+
+Bankless is a DeFi desktop app with the highest possible yield on your stable coin savings.
+
+Made with Delphi, Bankless is a small and simple dapp that makes it super easy to transfer your savings from one lending protocol to another with the click of one button.
+
+You can download Bankless [for Windows](https://www.microsoft.com/store/productId/9P50F616XCDJ) or [for macOS](https://apps.apple.com/us/app/id1521153171).
 
 ## License
 
