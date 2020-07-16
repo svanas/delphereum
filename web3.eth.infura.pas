@@ -23,6 +23,11 @@ uses
   web3.eth.types;
 
 type
+  EInfura = class(EWeb3);
+
+function endpoint(chain: TChain; const projectId: string): string;
+
+type
   ITicker = interface
     function Base        : string;   // Currency pair base
     function Quote       : string;   // Currency pair quote
@@ -47,8 +52,29 @@ uses
   System.Net.HttpClient,
   System.NetEncoding,
   System.SysUtils,
+  System.TypInfo,
   // web3
   web3.json;
+
+function endpoint(chain: TChain; const projectId: string): string;
+const
+  ENDPOINT: array[TChain] of string = (
+    'https://mainnet.infura.io/v3/%s', // Mainnet
+    'https://ropsten.infura.io/v3/%s', // Ropsten
+    'https://rinkeby.infura.io/v3/%s', // Rinkeby
+    'https://goerli.infura.io/v3/%s',  // Goerli
+    '',                                // RSK_main_net
+    '',                                // RSK_test_net
+    'https://kovan.infura.io/v3/%s',   // Kovan
+    ''                                 // Ganache
+  );
+begin
+  Result := ENDPOINT[chain];
+  if Result = '' then
+    raise EInfura.CreateFmt('%s not supported', [GetEnumName(TypeInfo(TChain), Ord(chain))])
+  else
+    Result := Format(Result, [projectId]);
+end;
 
 type
   TTicker = class(TInterfacedObject, ITicker)
