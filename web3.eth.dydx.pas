@@ -133,9 +133,9 @@ type
         '',                                           // Ropsten
         '',                                           // Rinkeby
         '',                                           // Goerli
-        '',                                           // rsk_main_net
-        '',                                           // rsk_test_net
-        '',                                           // Kovan
+        '',                                           // RSK_main_net
+        '',                                           // RSK_test_net
+        '0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE', // Kovan
         '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e'  // Ganache
       );
   protected
@@ -246,7 +246,7 @@ end;
 
 class function TdYdX.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain in [Mainnet, Ganache]) and (reserve <> USDT);
+  Result := (chain in [Mainnet, Ganache, Kovan]) and (reserve <> USDT);
 end;
 
 // Returns the annual yield as a percentage.

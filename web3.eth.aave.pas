@@ -131,8 +131,8 @@ const
       '0xf80A32A835F79D7787E8a8ee5721D0fEaFd78108',  // Ropsten
       '',                                            // Rinkeby
       '',                                            // Goerli
-      '',                                            // rsk_main_net
-      '',                                            // rsk_test_net
+      '',                                            // RSK_main_net
+      '',                                            // RSK_test_net
       '0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD',  // Kovan
       '0x6b175474e89094c44da98b954eedeac495271d0f'), // Ganache
     ( // USDC
@@ -140,8 +140,8 @@ const
       '0x851dEf71f0e6A903375C1e536Bd9ff1684BAD802',  // Ropsten
       '',                                            // Rinkeby
       '',                                            // Goerli
-      '',                                            // rsk_main_net
-      '',                                            // rsk_test_net
+      '',                                            // RSK_main_net
+      '',                                            // RSK_test_net
       '0xe22da380ee6B445bb8273C81944ADEB6E8450422',  // Kovan
       '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'), // Ganache
     ( // USDT
@@ -149,8 +149,8 @@ const
       '0xB404c51BBC10dcBE948077F18a4B8E553D160084',  // Ropsten
       '',                                            // Rinkeby
       '',                                            // Goerli
-      '',                                            // rsk_main_net
-      '',                                            // rsk_test_net
+      '',                                            // RSK_main_net
+      '',                                            // RSK_test_net
       '0x13512979ADE267AB5100878E2e0f485B568328a4',  // Kovan
       '0xdac17f958d2ee523a2206206994597c13d831ec7')  // Ganache
   );

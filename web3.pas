@@ -27,8 +27,8 @@ type
     Ropsten,
     Rinkeby,
     Goerli,
-    rsk_main_net,
-    rsk_test_net,
+    RSK_main_net,
+    RSK_test_net,
     Kovan,
     Ganache
   );
@@ -39,8 +39,8 @@ const
     3,   // Ropsten
     4,   // Rinkeby
     5,   // Goerli
-    30,  // rsk_main_net
-    31,  // rsk_test_net
+    30,  // RSK_main_net
+    31,  // RSK_test_net
     42,  // Kovan
     1    // Ganache
   );
