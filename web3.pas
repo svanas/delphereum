@@ -52,7 +52,6 @@ type
   TWei        = BigInteger;
   TTxHash     = string[66];
 
-type
   EWeb3 = class(Exception);
 
   IError = interface
@@ -69,6 +68,18 @@ type
     function Message: string;
   end;
 
+  TGasPrice = (
+    Fast,    // expected to be mined in < 2 minutes
+    Average, // expected to be mined in < 5 minutes
+    SafeLow  // expected to be mined in < 30 minutes
+  );
+
+  TGasStationInfo = record
+    Speed : TGasPrice;
+    ApiKey: string;
+  end;
+  TOnGasStationInfo = reference to procedure(var info: TGasStationInfo);
+
   ISignatureDenied = interface(IError)
   ['{AFFFBC21-3686-44A8-9034-2B38B3001B02}']
   end;
@@ -82,8 +93,10 @@ type
   private
     FChain: TChain;
     FURL  : string;
+    FOnGasStationInfo  : TOnGasStationInfo;
     FOnSignatureRequest: TOnSignatureRequest;
   public
+    function  GetGasStationInfo: TGasStationInfo;
     procedure CanSignTransaction(from, &to: TAddress;
       gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
 
@@ -92,7 +105,8 @@ type
 
     property URL  : string read FURL;
     property Chain: TChain read FChain;
-
+    property OnGasStationInfo: TOnGasStationInfo
+                               read FOnGasStationInfo write FOnGasStationInfo;
     property OnSignatureRequest: TOnSignatureRequest
                                  read FOnSignatureRequest write FOnSignatureRequest;
   end;
@@ -131,6 +145,13 @@ begin
 end;
 
 { TWeb3 }
+
+function TWeb3.GetGasStationInfo: TGasStationInfo;
+begin
+  Result.Speed := Average;
+  if Assigned(FOnGasStationInfo) then
+    FOnGasStationInfo(Result);
+end;
 
 procedure TWeb3.CanSignTransaction(from, &to: TAddress;
   gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
@@ -182,7 +203,7 @@ begin
         begin
           modalResult := MessageDlg(Format(RS_SIGNATURE_REQUEST, [chainName,
             from, &to, fromWei(gasPrice, gwei, 1), estimatedGas.ToString,
-            ethToFloat(fromWei(estimatedGas * gasPrice, ether)) * ticker.Ask]),
+            EthToFloat(fromWei(estimatedGas * gasPrice, ether)) * ticker.Ask]),
             TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
           );
         end);

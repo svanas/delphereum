@@ -23,38 +23,77 @@ uses
   web3,
   web3.eth,
   web3.eth.abi,
+  web3.eth.gas.station,
   web3.eth.types,
   web3.json,
   web3.json.rpc;
 
 procedure getGasPrice(client: TWeb3; callback: TAsyncQuantity);
 
-procedure estimateGas(client: TWeb3; from, &to: TAddress;
-  const func: string; args: array of const; default: TWei; callback: TAsyncQuantity); overload;
-procedure estimateGas(client: TWeb3; from, &to: TAddress;
-  const data: string; default: TWei; callback: TAsyncQuantity); overload;
+procedure estimateGas(
+  client    : TWeb3;
+  from, &to : TAddress;
+  const func: string;
+  args      : array of const;
+  default   : TWei;
+  callback  : TAsyncQuantity); overload;
+procedure estimateGas(
+  client    : TWeb3;
+  from, &to : TAddress;
+  const data: string;
+  default   : TWei;
+  callback  : TAsyncQuantity); overload;
 
 implementation
 
 procedure getGasPrice(client: TWeb3; callback: TAsyncQuantity);
+var
+  gasInfo: TGasStationInfo;
 begin
-  web3.json.rpc.send(client.URL, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
+  gasInfo := client.GetGasStationInfo;
+
+  if gasInfo.Speed = Average then
+  begin
+    web3.json.rpc.send(client.URL, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
+    begin
+      if Assigned(err) then
+        callback(0, err)
+      else
+        callback(web3.json.getPropAsStr(resp, 'result'), nil);
+    end);
+    EXIT;
+  end;
+
+  web3.eth.gas.station.getGasPrice(gasInfo.apiKey, procedure(price: IGasPrice; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(web3.json.getPropAsStr(resp, 'result'), nil);
+      case gasInfo.Speed of
+        Fast   : callback(price.Fast,    nil);
+        Average: callback(price.Average, nil);
+        SafeLow: callback(price.SafeLow, nil);
+      end;
   end);
 end;
 
-procedure estimateGas(client: TWeb3; from, &to: TAddress;
-  const func: string; args: array of const; default: TWei; callback: TAsyncQuantity);
+procedure estimateGas(
+  client    : TWeb3;
+  from, &to : TAddress;
+  const func: string;
+  args      : array of const;
+  default   : TWei;
+  callback  : TAsyncQuantity);
 begin
   estimateGas(client, from, &to, web3.eth.abi.encode(func, args), default, callback);
 end;
 
-procedure estimateGas(client: TWeb3; from, &to: TAddress;
-  const data: string; default: TWei; callback: TAsyncQuantity);
+procedure estimateGas(
+  client    : TWeb3;
+  from, &to : TAddress;
+  const data: string;
+  default   : TWei;
+  callback  : TAsyncQuantity);
 var
   obj: TJsonObject;
 begin
