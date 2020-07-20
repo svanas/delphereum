@@ -201,11 +201,13 @@ begin
         end;
         TThread.Synchronize(nil, procedure
         begin
+{$WARN SYMBOL_DEPRECATED OFF}
           modalResult := MessageDlg(Format(RS_SIGNATURE_REQUEST, [chainName,
             from, &to, fromWei(gasPrice, gwei, 1), estimatedGas.ToString,
             EthToFloat(fromWei(estimatedGas * gasPrice, ether)) * ticker.Ask]),
             TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
           );
+{$WARN SYMBOL_DEPRECATED DEFAULT}
         end);
         callback(modalResult = mrYes, nil);
       end);
