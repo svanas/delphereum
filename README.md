@@ -1,6 +1,6 @@
 ## What is Delphereum?
 
-Delphereum is a Delphi interface to the Ethereum blockchain that allows for development of native dApps (aka _decentralized_ applications).
+Delphereum is a Delphi interface to the Ethereum blockchain that allows for development of native dapps (aka _decentralized_ applications).
 
 ## What is Delphi?
 
@@ -48,7 +48,7 @@ Please note there are NO runtime dependencies. Delphereum is lightweight and sel
 
 ## Case study
 
-Bankless is a DeFi desktop app with the highest possible yield on your stable coin savings.
+Bankless is a DeFi desktop app with the highest possible yield on your stablecoin savings.
 
 Made with Delphi, Bankless is a small and simple dapp that makes it super easy to transfer your savings from one lending protocol to another with the click of one button.
 
