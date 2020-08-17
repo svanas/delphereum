@@ -75,6 +75,17 @@ procedure write(
   args      : array of const;
   callback  : TAsyncReceipt); overload;
 
+// transact with a non-payable function.
+// default to the median gas price from the latest blocks.
+procedure write(
+  client    : TWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  const func: string;
+  args      : array of const;
+  gasLimit  : TWei;
+  callback  : TAsyncReceipt); overload;
+
 // transact with a payable function.
 // default to the median gas price from the latest blocks.
 // default to a 600,000 gas limit.
@@ -85,6 +96,18 @@ procedure write(
   value     : TWei;
   const func: string;
   args      : array of const;
+  callback  : TAsyncReceipt); overload;
+
+// transact with a payable function.
+// default to the median gas price from the latest blocks.
+procedure write(
+  client    : TWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const func: string;
+  args      : array of const;
+  gasLimit  : TWei;
   callback  : TAsyncReceipt); overload;
 
 procedure write(
@@ -367,9 +390,34 @@ procedure write(
   client    : TWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
+  const func: string;
+  args      : array of const;
+  gasLimit  : TWei;
+  callback  : TAsyncReceipt);
+begin
+  write(client, from, &to, 0, func, args, gasLimit, callback);
+end;
+
+procedure write(
+  client    : TWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
   value     : TWei;
   const func: string;
   args      : array of const;
+  callback  : TAsyncReceipt);
+begin
+  write(client, from, &to, value, func, args, 600000, callback);
+end;
+
+procedure write(
+  client    : TWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const func: string;
+  args      : array of const;
+  gasLimit  : TWei;
   callback  : TAsyncReceipt);
 var
   data: string;
@@ -380,13 +428,13 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      web3.eth.gas.estimateGas(client, from.Address, &to, data, 600000,
+      web3.eth.gas.estimateGas(client, from.Address, &to, data, gasLimit,
         procedure(estimatedGas: BigInteger; err: IError)
         begin
           if Assigned(err) then
             callback(nil, err)
           else
-            write(client, from, &to, value, data, gasPrice, 600000, estimatedGas, callback);
+            write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback);
         end);
   end);
 end;

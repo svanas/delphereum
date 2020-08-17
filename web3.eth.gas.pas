@@ -111,7 +111,7 @@ begin
     begin
       if Assigned(err) then
       begin
-        if err.Message.Contains('gas required exceeds allowance') then
+        if err.Message.Contains('gas required exceeds allowance') and (default > 0) then
           callback(default, nil)
         else
           callback(0, err);
