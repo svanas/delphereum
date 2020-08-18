@@ -80,11 +80,19 @@ type
   end;
   TOnGasStationInfo = reference to procedure(var info: TGasStationInfo);
 
+  INotImplemented = interface(IError)
+  ['{FFB9DA94-0C40-4A7C-9C47-CD790E3435A2}']
+  end;
+  TNotImplemented = class(TError, INotImplemented)
+  public
+    constructor Create;
+  end;
+
   ISignatureDenied = interface(IError)
   ['{AFFFBC21-3686-44A8-9034-2B38B3001B02}']
   end;
+  TSignatureDenied = class(TError, ISignatureDenied);
 
-  TSignatureDenied        = class(TError, ISignatureDenied);
   TSignatureRequestResult = reference to procedure(approved: Boolean; err: IError);
   TOnSignatureRequest     = reference to procedure(from, &to: TAddress;
                             gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
@@ -142,6 +150,13 @@ end;
 function TError.Message: string;
 begin
   Result := FMessage;
+end;
+
+{ TNotImplemented }
+
+constructor TNotImplemented.Create;
+begin
+  inherited Create('Not implemented');
 end;
 
 { TWeb3 }
