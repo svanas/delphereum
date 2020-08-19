@@ -288,27 +288,37 @@ class procedure TCompound.Withdraw(
 var
   cToken: TcToken;
 begin
-  cToken := cTokenClass[reserve].Create(client);
-  if Assigned(cToken) then
+  Balance(client, from, reserve, procedure(amount_underlying: BigInteger; err: IError)
   begin
-    cToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
+    if Assigned(err) then
     begin
-      try
-        if Assigned(err) then
-          callback(nil, 0, err)
-        else
-          cToken.Redeem(from, amount, procedure(rcpt: ITxReceipt; err: IError)
+      callback(nil, 0, err);
+      EXIT;
+    end;
+    cToken := cTokenClass[reserve].Create(client);
+    if Assigned(cToken) then
+    begin
+      cToken.BalanceOf(from.Address, procedure(amount_ctoken: BigInteger; err: IError)
+      begin
+        try
+          if Assigned(err) then
+          begin
+            callback(nil, 0, err);
+            EXIT;
+          end;
+          cToken.Redeem(from, amount_ctoken, procedure(rcpt: ITxReceipt; err: IError)
           begin
             if Assigned(err) then
               callback(nil, 0, err)
             else
-              callback(rcpt, amount, err);
+              callback(rcpt, amount_underlying, err);
           end);
-      finally
-        cToken.Free;
-      end;
-    end);
-  end;
+        finally
+          cToken.Free;
+        end;
+      end);
+    end;
+  end);
 end;
 
 class procedure TCompound.WithdrawEx(
