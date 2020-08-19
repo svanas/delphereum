@@ -215,7 +215,12 @@ end;
 
 class function TIdle.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := chain = Mainnet;
+  Result := False;
+  case reserve of
+    DAI : Result := chain in [Mainnet, Kovan];
+    USDC: Result := chain = Mainnet;
+    USDT: Result := chain = Mainnet;
+  end;
 end;
 
 class procedure TIdle.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
@@ -416,7 +421,10 @@ end;
 
 constructor TIdleDAI.Create(aClient: TWeb3);
 begin
-  inherited Create(aClient, '0x3fe7940616e5bc47b0775a0dccf6237893353bb4');
+  if aClient.Chain = Kovan then
+    inherited Create(aClient, '0x295CA5bC5153698162dDbcE5dF50E436a58BA21e')
+  else
+    inherited Create(aClient, '0x3fe7940616e5bc47b0775a0dccf6237893353bb4');
 end;
 
 { TIdleUSDC }
