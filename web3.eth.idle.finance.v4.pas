@@ -27,7 +27,7 @@ uses
   web3.utils;
 
 type
-  TIdleFinance = class(TLendingProtocol)
+  TIdle = class(TLendingProtocol)
   protected
     class procedure Approve(
       client  : TWeb3;
@@ -120,9 +120,9 @@ const
     TIdleUSDT
   );
 
-{ TIdleFinance }
+{ TIdle }
 
-class procedure TIdleFinance.Approve(
+class procedure TIdle.Approve(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
@@ -162,7 +162,7 @@ begin
   end;
 end;
 
-class procedure TIdleFinance.IdleToUnderlying(
+class procedure TIdle.IdleToUnderlying(
   client  : TWeb3;
   reserve : TReserve;
   amount  : BigInteger;
@@ -185,7 +185,7 @@ begin
   end;
 end;
 
-class procedure TIdleFinance.UnderlyingToIdle(
+class procedure TIdle.UnderlyingToIdle(
   client  : TWeb3;
   reserve : TReserve;
   amount  : BIgInteger;
@@ -208,17 +208,17 @@ begin
   end;
 end;
 
-class function TIdleFinance.Name: string;
+class function TIdle.Name: string;
 begin
   Result := 'Idle';
 end;
 
-class function TIdleFinance.Supports(chain: TChain; reserve: TReserve): Boolean;
+class function TIdle.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
   Result := chain = Mainnet;
 end;
 
-class procedure TIdleFinance.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
+class procedure TIdle.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
 var
   IdleToken: TIdleToken;
 begin
@@ -236,7 +236,7 @@ begin
   end;
 end;
 
-class procedure TIdleFinance.Deposit(
+class procedure TIdle.Deposit(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
@@ -261,7 +261,7 @@ begin
   end);
 end;
 
-class procedure TIdleFinance.Balance(
+class procedure TIdle.Balance(
   client  : TWeb3;
   owner   : TAddress;
   reserve : TReserve;
@@ -292,7 +292,7 @@ begin
   end;
 end;
 
-class procedure TIdleFinance.Withdraw(
+class procedure TIdle.Withdraw(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
@@ -331,7 +331,7 @@ begin
   end;
 end;
 
-class procedure TIdleFinance.WithdrawEx(
+class procedure TIdle.WithdrawEx(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
