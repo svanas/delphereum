@@ -45,6 +45,16 @@ type
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt);
+    class procedure TokenToUnderlying(
+      client  : TWeb3;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncQuantity);
+    class procedure UnderlyingToToken(
+      client  : TWeb3;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncQuantity);
   public
     class function Name: string; override;
     class function Supports(
@@ -185,6 +195,52 @@ begin
   end;
 end;
 
+class procedure TFulcrum.TokenToUnderlying(
+  client  : TWeb3;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncQuantity);
+var
+  iToken: TiToken;
+begin
+  iToken := iTokenClass[reserve].Create(client);
+  if Assigned(iToken) then
+  try
+    iToken.TokenPrice(procedure(price: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(0, err)
+      else
+        callback(reserve.Scale(reserve.Unscale(amount) * (price.AsExtended / 1e18)), nil);
+    end);
+  finally
+    iToken.free;
+  end;
+end;
+
+class procedure TFulcrum.UnderlyingToToken(
+  client  : TWeb3;
+  reserve : TReserve;
+  amount  : BIgInteger;
+  callback: TAsyncQuantity);
+var
+  iToken: TiToken;
+begin
+  iToken := iTokenClass[reserve].Create(client);
+  if Assigned(iToken) then
+  try
+    iToken.TokenPrice(procedure(price: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(0, err)
+      else
+        callback(reserve.Scale(reserve.Unscale(amount) / (price.AsExtended / 1e18)), nil);
+    end);
+  finally
+    iToken.free;
+  end;
+end;
+
 class function TFulcrum.Name: string;
 begin
   Result := 'Fulcrum';
@@ -273,18 +329,26 @@ begin
   iToken := iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
   begin
+    // step #1: get the iToken balance
     iToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
     begin
       try
         if Assigned(err) then
           callback(nil, 0, err)
         else
+          // step #2: redeem iToken-amount in exchange for the underlying asset
           iToken.Burn(from, amount, procedure(rcpt: ITxReceipt; err: IError)
           begin
             if Assigned(err) then
               callback(nil, 0, err)
             else
-              callback(rcpt, amount, err);
+              TokenToUnderlying(client, reserve, amount, procedure(output: BigInteger; err: IError)
+              begin
+                if Assigned(err) then
+                  callback(rcpt, 0, err)
+                else
+                  callback(rcpt, output, nil);
+              end);
           end);
       finally
         iToken.Free;
@@ -302,28 +366,29 @@ class procedure TFulcrum.WithdrawEx(
 var
   iToken: TiToken;
 begin
-  iToken := iTokenClass[reserve].Create(client);
-  if Assigned(iToken) then
+  // step #1: from underlying-amount to iToken-amount
+  UnderlyingToToken(client, reserve, amount, procedure(input: BigInteger; err: IError)
   begin
-    iToken.TokenPrice(procedure(price: BigInteger; err: IError)
+    if Assigned(err) then
     begin
-      try
+      callback(nil, 0, err);
+      EXIT;
+    end;
+    iToken := iTokenClass[reserve].Create(client);
+    if Assigned(iToken) then
+    try
+      // step #2: redeem iToken-amount in exchange for the underlying asset
+      iToken.Burn(from, input, procedure(rcpt: ITxReceipt; err: IError)
+      begin
         if Assigned(err) then
           callback(nil, 0, err)
         else
-          iToken.Burn(from, BigInteger.Create(amount.AsExtended / (price.AsExtended / 1e18)),
-            procedure(rcpt: ITxReceipt; err: IError)
-            begin
-              if Assigned(err) then
-                callback(nil, 0, err)
-              else
-                callback(rcpt, BigInteger.Create(amount.AsExtended / (price.AsExtended / 1e18)), err);
-            end);
-      finally
-        iToken.Free;
-      end;
-    end);
-  end;
+          callback(rcpt, amount, err);
+      end);
+    finally
+      iToken.Free;
+    end;
+  end);
 end;
 
 { TiToken }
