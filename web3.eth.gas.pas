@@ -52,7 +52,7 @@ var
 begin
   gasInfo := client.GetGasStationInfo;
 
-  if gasInfo.Speed = Average then
+  if (gasInfo.apiKey = '') and (gasInfo.Speed = Average) then
   begin
     web3.json.rpc.send(client.URL, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
     begin

@@ -50,6 +50,11 @@ type
     function Hash: TTxHash;
   end;
 
+procedure getNonce(
+  client  : TWeb3;
+  address : TAddress;
+  callback: TAsyncQuantity);
+
 procedure signTransaction(
   client      : TWeb3;
   nonce       : BigInteger;
@@ -163,6 +168,32 @@ end;
 function TTxError.Hash: TTxHash;
 begin
    Result := FHash;
+end;
+
+var
+  gNonce: BigInteger;
+
+procedure getNonce(
+  client  : TWeb3;
+  address : TAddress;
+  callback: TAsyncQuantity);
+begin
+  if gNonce > -1 then
+  begin
+    gNonce := BigInteger.Add(gNonce, 1);
+    callback(gNonce, nil);
+    EXIT;
+  end;
+  web3.eth.getTransactionCount(client, address, procedure(cnt: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(0, err);
+      EXIT;
+    end;
+    gNonce := cnt;
+    callback(gNonce, nil);
+  end);
 end;
 
 procedure signTransaction(
@@ -357,15 +388,15 @@ procedure sendTransaction(
   gasLimit: TWei;
   callback: TAsyncTxHash);
 begin
-  web3.eth.getTransactionCount(
+  web3.eth.tx.getNonce(
     client,
     from.Address,
-    procedure(qty: BigInteger; err: IError)
+    procedure(nonce: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback('', err)
       else
-        signTransaction(client, qty, from, &to, value, '', gasPrice, gasLimit, 21000,
+        signTransaction(client, nonce, from, &to, value, '', gasPrice, gasLimit, 21000,
           procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then
@@ -397,15 +428,15 @@ procedure sendTransactionEx(
   gasLimit: TWei;
   callback: TAsyncReceipt);
 begin
-  web3.eth.getTransactionCount(
+  web3.eth.tx.getNonce(
     client,
     from.Address,
-    procedure(qty: BigInteger; err: IError)
+    procedure(nonce: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(nil, err)
       else
-        signTransaction(client, qty, from, &to, value, '', gasPrice, gasLimit, 21000,
+        signTransaction(client, nonce, from, &to, value, '', gasPrice, gasLimit, 21000,
           procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then
@@ -674,5 +705,8 @@ begin
     end;
   end);
 end;
+
+initialization
+  gNonce := -1;
 
 end.

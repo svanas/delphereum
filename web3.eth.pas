@@ -474,15 +474,15 @@ procedure write(
   estimatedGas: TWei;
   callback    : TAsyncReceipt);
 begin
-  web3.eth.getTransactionCount(
+  web3.eth.tx.getNonce(
     client,
     from.Address,
-    procedure(qty: BigInteger; err: IError)
+    procedure(nonce: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(nil, err)
       else
-        signTransaction(client, qty, from, &to, value, data, gasPrice, gasLimit, estimatedGas,
+        signTransaction(client, nonce, from, &to, value, data, gasPrice, gasLimit, estimatedGas,
           procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then

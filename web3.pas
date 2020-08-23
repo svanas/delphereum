@@ -76,7 +76,7 @@ type
 
   TGasStationInfo = record
     Speed : TGasPrice;
-    ApiKey: string;
+    apiKey: string;
   end;
   TOnGasStationInfo = reference to procedure(var info: TGasStationInfo);
 
