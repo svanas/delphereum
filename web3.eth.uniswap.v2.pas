@@ -105,11 +105,21 @@ end;
 procedure TFactory.GetPair(tokenA, tokenB: TAddress; callback: TAsyncAddress);
 begin
   call(Client, Contract, 'getPair(address,address)', [tokenA, tokenB], procedure(const hex: string; err: IError)
+  var
+    pair: TAddress;
   begin
     if Assigned(err) then
-      callback('', err)
-    else
-      callback(TAddress.New(hex), nil)
+    begin
+      callback(ADDRESS_ZERO, err);
+      EXIT;
+    end;
+    pair := TAddress.New(hex);
+    if pair.IsZero then
+    begin
+      callback(ADDRESS_ZERO, TError.Create('%s does not exist', [tokenA]));
+      EXIT;
+    end;
+    callback(pair, nil)
   end);
 end;
 

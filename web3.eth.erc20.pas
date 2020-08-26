@@ -17,6 +17,7 @@ interface
 
 uses
   // Delphi
+  System.Math,
   System.Threading,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
@@ -88,6 +89,10 @@ type
     procedure TotalSupply(callback: TAsyncQuantity);
     procedure BalanceOf  (owner: TAddress; callback: TAsyncQuantity);
     procedure Allowance  (owner, spender: TAddress; callback: TAsyncQuantity);
+
+    //------- helpers ----------------------------------------------------------
+    procedure Scale  (amount: Extended; callback: TAsyncQuantity);
+    procedure Unscale(amount: BigInteger; callback: TAsyncFloat);
 
     //------- write to contract ------------------------------------------------
     procedure Transfer(
@@ -214,6 +219,34 @@ end;
 procedure TERC20.Allowance(owner, spender: TAddress; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'allowance(address,address)', [owner, spender], callback);
+end;
+
+procedure TERC20.Scale(amount: Extended; callback: TAsyncQuantity);
+begin
+  Self.Decimals(procedure(dec: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      if dec.IsZero then
+        callback(BigInteger.Create(amount), nil)
+      else
+        callback(BigInteger.Create(amount * Power(10, dec.AsExtended)), nil);
+  end);
+end;
+
+procedure TERC20.Unscale(amount: BigInteger; callback: TAsyncFloat);
+begin
+  Self.Decimals(procedure(dec: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      if dec.IsZero then
+        callback(amount.AsExtended, nil)
+      else
+        callback(amount.AsExtended / Power(10, dec.AsExtended), nil);
+  end);
 end;
 
 procedure TERC20.Transfer(

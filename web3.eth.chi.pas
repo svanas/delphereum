@@ -27,34 +27,78 @@ uses
   web3.utils;
 
 type
-  TChi = class(TERC20)
+  TGasToken = class abstract(TERC20)
   public
     constructor Create(aClient: TWeb3); reintroduce;
+    // Address on mainnet where this token is deployed
+    class function DeployedAt: TAddress; virtual; abstract;
     // Estimate the number of gas units needed for Mint
     procedure Mint(from: TAddress; amount: BigInteger; callback: TAsyncQuantity); overload;
-    // Mint Chi tokens
+    // Mint gas tokens
     procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt); overload;
+  end;
+
+  TGasTokenClass = class of TGasToken;
+
+  TGST1 = class(TGasToken)
+  public
+    class function DeployedAt: TAddress; override;
+  end;
+
+  TGST2 = class(TGasToken)
+  public
+    class function DeployedAt: TAddress; override;
+  end;
+
+  TCHI = class(TGasToken)
+  public
+    class function DeployedAt: TAddress; override;
   end;
 
 implementation
 
-constructor TChi.Create(aClient: TWeb3);
+{ TGasToken }
+
+constructor TGasToken.Create(aClient: TWeb3);
 begin
-  inherited Create(aClient, '0x0000000000004946c0e9F43F4Dee607b0eF1fA1c');
+  inherited Create(aClient, Self.DeployedAt);
 end;
 
 // Estimate the number of gas units needed for Mint
-procedure TChi.Mint(from: TAddress; amount: BigInteger; callback: TAsyncQuantity);
+procedure TGasToken.Mint(from: TAddress; amount: BigInteger; callback: TAsyncQuantity);
 begin
-  estimateGas(Client, from, Contract,
-              'mint(uint256)', [web3.utils.toHex(amount)], 0, callback);
+  estimateGas(
+    Self.Client, from, Self.Contract,
+    'mint(uint256)', [web3.utils.toHex(amount)], 0, callback);
 end;
 
-// Mint Chi tokens
-procedure TChi.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+// Mint gas tokens
+procedure TGasToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, from, Contract,
-                 'mint(uint256)', [web3.utils.toHex(amount)], 5200000, callback);
+  web3.eth.write(
+    Self.Client, from, Self.Contract,
+    'mint(uint256)', [web3.utils.toHex(amount)], 5200000, callback);
+end;
+
+{ TGST1 }
+
+class function TGST1.DeployedAt: TAddress;
+begin
+  Result := TAddress.New('0x88d60255F917e3eb94eaE199d827DAd837fac4cB');
+end;
+
+{ TGST2 }
+
+class function TGST2.DeployedAt: TAddress;
+begin
+  Result := TAddress.New('0x0000000000b3F879cb30FE243b4Dfee438691c04');
+end;
+
+{ TCHI }
+
+class function TCHI.DeployedAt: TAddress;
+begin
+  Result := TAddress.New('0x0000000000004946c0e9F43F4Dee607b0eF1fA1c');
 end;
 
 end.
