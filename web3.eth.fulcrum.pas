@@ -214,7 +214,7 @@ begin
         callback(reserve.Scale(reserve.Unscale(amount) * (price.AsExtended / 1e18)), nil);
     end);
   finally
-    iToken.free;
+    iToken.Free;
   end;
 end;
 
@@ -237,7 +237,7 @@ begin
         callback(reserve.Scale(reserve.Unscale(amount) / (price.AsExtended / 1e18)), nil);
     end);
   finally
-    iToken.free;
+    iToken.Free;
   end;
 end;
 
