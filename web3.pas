@@ -51,6 +51,7 @@ type
   TSignature  = string[132];
   TWei        = BigInteger;
   TTxHash     = string[66];
+  TTimestamp  = Int64;
 
   EWeb3 = class(Exception);
 
@@ -67,6 +68,8 @@ type
     constructor Create(const Msg: string; const Args: array of const); overload;
     function Message: string;
   end;
+
+  TOnEtherscanApiKey = reference to procedure(var apiKey: string);
 
   TGasPrice = (
     Fast,    // expected to be mined in < 2 minutes
@@ -102,8 +105,10 @@ type
     FChain: TChain;
     FURL  : string;
     FOnGasStationInfo  : TOnGasStationInfo;
+    FOnEtherscanApiKey : TOnEtherscanApiKey;
     FOnSignatureRequest: TOnSignatureRequest;
   public
+    function  ETHERSCAN_API_KEY: string;
     function  GetGasStationInfo: TGasStationInfo;
     procedure CanSignTransaction(from, &to: TAddress;
       gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
@@ -115,6 +120,8 @@ type
     property Chain: TChain read FChain;
     property OnGasStationInfo: TOnGasStationInfo
                                read FOnGasStationInfo write FOnGasStationInfo;
+    property OnEtherscanApiKey: TOnEtherscanApiKey
+                                read FOnEtherscanApiKey write FOnEtherscanApiKey;
     property OnSignatureRequest: TOnSignatureRequest
                                  read FOnSignatureRequest write FOnSignatureRequest;
   end;
@@ -160,6 +167,13 @@ begin
 end;
 
 { TWeb3 }
+
+function TWeb3.ETHERSCAN_API_KEY: string;
+begin
+  Result := '';
+  if Assigned(FOnEtherscanApiKey) then
+    FOnEtherscanApiKey(Result);
+end;
 
 function TWeb3.GetGasStationInfo: TGasStationInfo;
 begin

@@ -23,6 +23,7 @@ uses
   web3.eth,
   web3.eth.defi,
   web3.eth.erc20,
+  web3.eth.etherscan,
   web3.eth.types,
   web3.utils;
 
@@ -89,7 +90,7 @@ type
   public
     constructor Create(aClient: TWeb3); reintroduce; overload; virtual; abstract;
     procedure Token(callback: TAsyncAddress);
-    procedure GetPricePerFullShare(callback: TAsyncQuantity);
+    procedure GetPricePerFullShare(const block: string; callback: TAsyncQuantity);
     procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
   end;
@@ -125,6 +126,11 @@ type
   end;
 
 implementation
+
+uses
+  // Delphi
+  System.DateUtils,
+  System.SysUtils;
 
 type
   TyTokenClass = class of TyToken;
@@ -190,7 +196,7 @@ begin
   yToken := yTokenClass[reserve][version].Create(client);
   if Assigned(yToken) then
   try
-    yToken.GetPricePerFullShare(procedure(price: BigInteger; err: IError)
+    yToken.GetPricePerFullShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(0, err)
@@ -214,7 +220,7 @@ begin
   yToken := yTokenClass[reserve][version].Create(client);
   if Assigned(yToken) then
   try
-    yToken.GetPricePerFullShare(procedure(price: BigInteger; err: IError)
+    yToken.GetPricePerFullShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(0, err)
@@ -237,8 +243,47 @@ begin
 end;
 
 class procedure TyEarn.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
+var
+  yToken    : TyToken;
+  oneWeekAgo: TDateTime;
 begin
-  callback(0, TNotImplemented.Create);
+  yToken := yTokenClass[reserve][v2].Create(client);
+  try
+    yToken.GetPricePerFullShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        callback(0, err);
+        EXIT;
+      end;
+      oneWeekAgo := IncDay(Now, -7);
+      getBlockNumberByTimestamp(client.Chain, DateTimeToUnix(oneWeekAgo, False), client.ETHERSCAN_API_KEY,
+        procedure(bn: BigInteger; err: IError)
+        begin
+          if Assigned(err) then
+          begin
+            callback(0, err);
+            EXIT;
+          end;
+          yToken := yTokenClass[reserve][v2].Create(client);
+          try
+            yToken.GetPricePerFullShare(web3.utils.toHex(bn), procedure(pastPrice: BigInteger; err: IError)
+            begin
+              if Assigned(err) then
+              begin
+                callback(0, err);
+                EXIT;
+              end;
+              callback((((currPrice.AsExtended / pastPrice.AsExtended) - 1) * 100) * 52, nil);
+            end);
+          finally
+            yToken.Free;
+          end;
+        end);
+    end);
+  finally
+    yToken.Free;
+  end;
 end;
 
 class procedure TyEarn.Deposit(
@@ -449,9 +494,9 @@ begin
 end;
 
 // Current yToken price, in underlying (eg. DAI) terms.
-procedure TyToken.GetPricePerFullShare(callback: TAsyncQuantity);
+procedure TyToken.GetPricePerFullShare(const block: string; callback: TAsyncQuantity);
 begin
-  web3.eth.call(Client, Contract, 'getPricePerFullShare()', [], callback);
+  web3.eth.call(Client, Contract, 'getPricePerFullShare()', block, [], callback);
 end;
 
 procedure TyToken.Deposit(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);

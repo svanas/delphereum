@@ -36,12 +36,12 @@ type
     property Code: Integer read FCode;
   end;
 
-  IJsonRpc = interface(IError)
+  IJsonRpcError = interface(IError)
   ['{CA68D639-A1CF-458F-B2BF-70E5F947DD41}']
     function Code: Integer;
   end;
 
-  TJsonRpc = class(TError, IJsonRpc)
+  TJsonRpcError = class(TError, IJsonRpcError)
   private
     FCode: Integer;
   public
@@ -67,15 +67,15 @@ begin
   FCode := aCode;
 end;
 
-{ TJsonRpc }
+{ TJsonRpcError }
 
-constructor TJsonRpc.Create(aCode: Integer; const aMsg: string);
+constructor TJsonRpcError.Create(aCode: Integer; const aMsg: string);
 begin
   inherited Create(aMsg);
   FCode := aCode;
 end;
 
-function TJsonRpc.Code: Integer;
+function TJsonRpcError.Code: Integer;
 begin
    Result := FCode;
 end;
@@ -124,7 +124,8 @@ function send(const URL, method: string; args: array of const; callback: TAsyncR
 var
   client: THttpClient;
   source: TStream;
-  resp  : TJsonObject;
+  resp  : IHttpResponse;
+  output: TJsonObject;
   err   : TJsonObject;
 begin
   try
@@ -133,19 +134,28 @@ begin
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
     begin
       try
-        resp := web3.json.unmarshal(THttpClient.EndAsyncHTTP(aSyncResult).ContentAsString(TEncoding.UTF8));
-        if Assigned(resp) then
-        try
-          // did we receive an error? then translate that into an exception
-          err := web3.json.getPropAsObj(resp, 'error');
-          if Assigned(err) then
-            callback(resp, TJsonRpc.Create(web3.json.getPropAsInt(err, 'code'), web3.json.getPropAsStr(err, 'message')))
-          else
-            // if we reached this far, then we have a valid response object
-            callback(resp, nil);
-        finally
-          resp.Free;
+        resp := THttpClient.EndAsyncHttp(aSyncResult);
+        if resp.StatusCode = 200 then
+        begin
+          output := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
+          if Assigned(output) then
+          try
+            // did we receive an error?
+            err := web3.json.getPropAsObj(output, 'error');
+            if Assigned(err) then
+              callback(output, TJsonRpcError.Create(
+                web3.json.getPropAsInt(err, 'code'),
+                web3.json.getPropAsStr(err, 'message')
+              ))
+            else
+              // if we reached this far, then we have a valid response object
+              callback(output, nil);
+            EXIT;
+          finally
+            output.Free;
+          end;
         end;
+        callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
       finally
         source.Free;
         client.Free;

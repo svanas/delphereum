@@ -51,7 +51,7 @@ type
       token0      : TAddress;    // The address of the pair token with the lower sort order.
       token1      : TAddress;    // The address of the pair token with the higher sort order.
       &to         : TAddress;    // Recipient of the ETH.
-      deadline    : Int64;       // Unix timestamp after which the transaction will revert.
+      deadline    : TTimestamp;  // Unix timestamp after which the transaction will revert.
       callback    : TAsyncQuantity); overload;
     procedure SwapExactTokensForETH(
       from        : TPrivateKey; // Sender of the token.
@@ -60,7 +60,7 @@ type
       token0      : TAddress;    // The address of the pair token with the lower sort order.
       token1      : TAddress;    // The address of the pair token with the higher sort order.
       &to         : TAddress;    // Recipient of the ETH.
-      deadline    : Int64;       // Unix timestamp after which the transaction will revert.
+      deadline    : TTimestamp;  // Unix timestamp after which the transaction will revert.
       callback    : TAsyncReceipt); overload;
   public
     constructor Create(aClient: TWeb3); reintroduce;
@@ -150,7 +150,7 @@ procedure TRouter02.EstimateExactTokensForETH(
   token0      : TAddress;   // The address of the pair token with the lower sort order.
   token1      : TAddress;   // The address of the pair token with the higher sort order.
   &to         : TAddress;   // Recipient of the ETH.
-  deadline    : Int64;      // Unix timestamp after which the transaction will revert.
+  deadline    : TTimestamp; // Unix timestamp after which the transaction will revert.
   callback    : TAsyncQuantity);
 begin
   estimateGas(Client, from, Contract,
@@ -172,7 +172,7 @@ procedure TRouter02.SwapExactTokensForETH(
   token0      : TAddress;    // The address of the pair token with the lower sort order.
   token1      : TAddress;    // The address of the pair token with the higher sort order.
   &to         : TAddress;    // Recipient of the ETH.
-  deadline    : Int64;       // Unix timestamp after which the transaction will revert.
+  deadline    : TTimestamp;  // Unix timestamp after which the transaction will revert.
   callback    : TAsyncReceipt);
 var
   erc20: TERC20;

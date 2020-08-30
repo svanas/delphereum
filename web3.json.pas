@@ -18,7 +18,9 @@ interface
 uses
   // Delphi
   System.JSON,
-  System.SysUtils;
+  System.SysUtils,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers;
 
 function marshal  (const obj: TJsonValue): string;
 function unmarshal(const val: string)    : TJsonObject;
@@ -26,6 +28,7 @@ function unmarshal(const val: string)    : TJsonObject;
 function getPropAsStr(obj: TJsonValue; const name: string; const def: string = ''): string;
 function getPropAsInt(obj: TJsonValue; const name: string; def: Integer = 0): Integer;
 function getPropAsExt(obj: TJsonValue; const name: string; def: Extended = 0): Extended;
+function getPropAsBig(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;
 function getPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
 function getPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
 
@@ -140,6 +143,27 @@ begin
       else
         if P.JsonValue is TJsonString then
           Result := StrToFloatDef(TJsonString(P.JsonValue).Value, def)
+        else
+          Result := def;
+end;
+
+function getPropAsBig(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;
+var
+  P: TJsonPair;
+begin
+  Result := def;
+  if not Assigned(obj) then
+    EXIT;
+  if not(obj is TJsonObject) then
+    EXIT;
+  P := TJsonObject(obj).Get(name);
+  if Assigned(P) then
+    if Assigned(P.JsonValue) then
+      if P.JsonValue is TJsonNumber then
+        Result := TJsonNumber(P.JsonValue).AsInt64
+      else
+        if P.JsonValue is TJsonString then
+          Result := BigInteger.Create(TJsonString(P.JsonValue).Value)
         else
           Result := def;
 end;
