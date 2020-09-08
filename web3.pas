@@ -46,12 +46,12 @@ const
   );
 
 type
-  TAddress    = string[42];
-  TPrivateKey = string[64];
-  TSignature  = string[132];
-  TWei        = BigInteger;
-  TTxHash     = string[66];
-  TTimestamp  = Int64;
+  TAddress      = string[42];
+  TPrivateKey   = string[64];
+  TSignature    = string[132];
+  TWei          = BigInteger;
+  TTxHash       = string[66];
+  TUnixDateTime = Int64;
 
   EWeb3 = class(Exception);
 

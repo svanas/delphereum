@@ -39,8 +39,8 @@ type
   end;
 
 function getBlockNumberByTimestamp(
-  chain       : web3.TChain;
-  timestamp   : web3.TTimestamp;
+  chain       : TChain;
+  timestamp   : TUnixDateTime;
   const apiKey: string;
   callback    : TAsyncQuantity): IAsyncResult;
 
@@ -92,8 +92,8 @@ end;
 { global functions }
 
 function getBlockNumberByTimestamp(
-  chain       : web3.TChain;
-  timestamp   : web3.TTimestamp;
+  chain       : TChain;
+  timestamp   : TUnixDateTime;
   const apiKey: string;
   callback    : TAsyncQuantity): IAsyncResult;
 var

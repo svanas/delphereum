@@ -89,12 +89,27 @@ type
   TyToken = class abstract(TERC20)
   public
     constructor Create(aClient: TWeb3); reintroduce; overload; virtual; abstract;
+    //------- read from contract -----------------------------------------------
     procedure Token(callback: TAsyncAddress);
     procedure GetPricePerFullShare(const block: string; callback: TAsyncQuantity);
+    //------- helpers ----------------------------------------------------------
+    procedure ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+    procedure TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
+    procedure UnderlyingToToken(amount: BigInteger; callback: TAsyncQuantity);
+    procedure APY(callback: TAsyncFloat);
+    //------- write to contract ------------------------------------------------
     procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
   end;
 
+implementation
+
+uses
+  // Delphi
+  System.DateUtils,
+  System.SysUtils;
+
+type
   TyDAIv2 = class(TyToken)
   public
     constructor Create(aClient: TWeb3); override;
@@ -125,13 +140,6 @@ type
     constructor Create(aClient: TWeb3); override;
   end;
 
-implementation
-
-uses
-  // Delphi
-  System.DateUtils,
-  System.SysUtils;
-
 type
   TyTokenClass = class of TyToken;
 
@@ -151,32 +159,15 @@ class procedure TyEarn.Approve(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 var
-  erc20 : TERC20;
   yToken: TyToken;
 begin
   yToken := yTokenClass[reserve][v2].Create(client);
   if Assigned(yToken) then
   begin
-    yToken.Token(procedure(addr: TAddress; err: IError)
+    yToken.ApproveUnderlying(from, amount, procedure(rcpt: ITxReceipt; err: IError)
     begin
       try
-        if Assigned(err) then
-          callback(nil, err)
-        else
-        begin
-          erc20 := TERC20.Create(client, addr);
-          if Assigned(erc20) then
-          begin
-            erc20.ApproveEx(from, yToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
-            begin
-              try
-                callback(rcpt, err);
-              finally
-                erc20.Free;
-              end;
-            end);
-          end;
-        end;
+        callback(rcpt, err);
       finally
         yToken.Free;
       end;
@@ -196,13 +187,7 @@ begin
   yToken := yTokenClass[reserve][version].Create(client);
   if Assigned(yToken) then
   try
-    yToken.GetPricePerFullShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(reserve.Scale(reserve.Unscale(amount) * (price.AsExtended / 1e18)), nil);
-    end);
+    yToken.TokenToUnderlying(amount, callback);
   finally
     yToken.Free;
   end;
@@ -220,13 +205,7 @@ begin
   yToken := yTokenClass[reserve][version].Create(client);
   if Assigned(yToken) then
   try
-    yToken.GetPricePerFullShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(reserve.Scale(reserve.Unscale(amount) / (price.AsExtended / 1e18)), nil);
-    end);
+    yToken.UnderlyingToToken(amount, callback);
   finally
     yToken.Free;
   end;
@@ -244,45 +223,19 @@ end;
 
 class procedure TyEarn.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
 var
-  yToken    : TyToken;
-  oneWeekAgo: TDateTime;
+  yToken: TyToken;
 begin
   yToken := yTokenClass[reserve][v2].Create(client);
-  try
-    yToken.GetPricePerFullShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
+  if Assigned(yToken) then
+  begin
+    yToken.APY(procedure(apy: Extended; err: IError)
     begin
-      if Assigned(err) then
-      begin
-        callback(0, err);
-        EXIT;
+      try
+        callback(apy, err);
+      finally
+        yToken.Free;
       end;
-      oneWeekAgo := IncDay(Now, -7);
-      getBlockNumberByTimestamp(client.Chain, DateTimeToUnix(oneWeekAgo, False), client.ETHERSCAN_API_KEY,
-        procedure(bn: BigInteger; err: IError)
-        begin
-          if Assigned(err) then
-          begin
-            callback(0, err);
-            EXIT;
-          end;
-          yToken := yTokenClass[reserve][v2].Create(client);
-          try
-            yToken.GetPricePerFullShare(web3.utils.toHex(bn), procedure(pastPrice: BigInteger; err: IError)
-            begin
-              if Assigned(err) then
-              begin
-                callback(0, err);
-                EXIT;
-              end;
-              callback((((currPrice.AsExtended / pastPrice.AsExtended) - 1) * 100) * 52, nil);
-            end);
-          finally
-            yToken.Free;
-          end;
-        end);
     end);
-  finally
-    yToken.Free;
   end;
 end;
 
@@ -497,6 +450,86 @@ end;
 procedure TyToken.GetPricePerFullShare(const block: string; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'getPricePerFullShare()', block, [], callback);
+end;
+
+procedure TyToken.ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+var
+  erc20: TERC20;
+begin
+  Self.Token(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+    begin
+      erc20 := TERC20.Create(client, addr);
+      if Assigned(erc20) then
+      begin
+        erc20.ApproveEx(from, Self.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
+        begin
+          try
+            callback(rcpt, err);
+          finally
+            erc20.Free;
+          end;
+        end);
+      end;
+    end;
+  end);
+end;
+
+procedure TyToken.TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
+begin
+  Self.GetPricePerFullShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      callback(BigInteger.Create(amount.AsExtended * (price.AsExtended / 1e18)), nil);
+  end);
+end;
+
+procedure TyToken.UnderlyingToToken(amount: BIgInteger; callback: TAsyncQuantity);
+begin
+  Self.GetPricePerFullShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      callback(BigInteger.Create(amount.AsExtended / (price.AsExtended / 1e18)), nil);
+  end);
+end;
+
+procedure TyToken.APY(callback: TAsyncFloat);
+var
+  twoWeeksAgo: TUnixDateTime;
+begin
+  Self.GetPricePerFullShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(0, err);
+      EXIT;
+    end;
+    twoWeeksAgo := DateTimeToUnix(Now, False) - 60 * 60 * 24 * 14;
+    getBlockNumberByTimestamp(client.Chain, twoWeeksAgo, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        callback(0, err);
+        EXIT;
+      end;
+      Self.GetPricePerFullShare(web3.utils.toHex(bn), procedure(pastPrice: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+        begin
+          callback(0, err);
+          EXIT;
+        end;
+        callback(((currPrice.AsExtended / pastPrice.AsExtended - 1) * 100) * 24, nil);
+      end);
+    end);
+  end);
 end;
 
 procedure TyToken.Deposit(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
