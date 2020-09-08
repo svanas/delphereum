@@ -78,23 +78,30 @@ type
 implementation
 
 uses
+  // Delphi
+  System.Generics.Collections,
+  System.JSON,
+  System.Net.HttpClient,
+  System.SysUtils,
+  System.Types,
   // web3
-  web3.eth.yearn.finance;
+  web3.eth.yearn.finance,
+  web3.json;
 
 type
   TyDAI = class(TyToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    class function DeployedAt: TAddress; override;
   end;
 
   TyUSDC = class(TyToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    class function DeployedAt: TAddress; override;
   end;
 
   TyUSDT = class(TyToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    class function DeployedAt: TAddress; override;
   end;
 
 type
@@ -177,21 +184,77 @@ begin
 end;
 
 class procedure TyVault.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
+
+  function getAPY(callback: TAsyncFloat): IAsyncResult;
+  var
+    client: THttpClient;
+  begin
+    try
+      client := THttpClient.Create;
+      Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
+      var
+        resp: IHttpResponse;
+        arr : TJsonValue;
+        idx : Integer;
+        elem: TJsonValue;
+      begin
+        try
+          resp := THttpClient.EndAsyncHttp(aSyncResult);
+          if resp.StatusCode = 200 then
+          begin
+            arr := TJsonObject.ParseJsonValue(resp.ContentAsString(TEncoding.UTF8));
+            if Assigned(arr) then
+            try
+              if arr is TJsonArray then
+              begin
+                for idx := 0 to Pred(TJsonArray(arr).Count) do
+                begin
+                  elem := TJsonArray(arr).Items[idx];
+                  if SameText(getPropAsStr(elem, 'address'), string(yTokenClass[reserve].DeployedAt)) then
+                  begin
+                    callback(getPropAsExt(elem, 'apyInceptionSample'), nil);
+                    EXIT;
+                  end;
+                end;
+              end;
+            finally
+              arr.Free;
+            end;
+          end;
+          callback(0, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
+        finally
+          client.Free;
+        end;
+      end, 'https://api.vaults.finance/apy');
+    except
+      on E: Exception do
+        callback(0, TError.Create(E.Message));
+    end;
+  end;
+
 var
   yToken: TyToken;
 begin
-  yToken := yTokenClass[reserve].Create(client);
-  if Assigned(yToken) then
+  getAPY(procedure(apy: Extended; err: IError)
   begin
-    yToken.APY(procedure(apy: Extended; err: IError)
+    if (apy > 0) and not Assigned(err) then
     begin
-      try
-        callback(apy, err);
-      finally
-        yToken.Free;
-      end;
-    end);
-  end;
+      callback(apy, err);
+      EXIT;
+    end;
+    yToken := yTokenClass[reserve].Create(client);
+    if Assigned(yToken) then
+    begin
+      yToken.APY(procedure(apy: Extended; err: IError)
+      begin
+        try
+          callback(apy, err);
+        finally
+          yToken.Free;
+        end;
+      end);
+    end;
+  end);
 end;
 
 class procedure TyVault.Deposit(
@@ -326,23 +389,23 @@ end;
 
 { TyDAI }
 
-constructor TyDAI.Create(aClient: TWeb3);
+class function TyDAI.DeployedAt: TAddress;
 begin
-  inherited Create(aClient, '0xACd43E627e64355f1861cEC6d3a6688B31a6F952');
+  Result := TAddress.New('0xACd43E627e64355f1861cEC6d3a6688B31a6F952');
 end;
 
 { TyUSDC }
 
-constructor TyUSDC.Create(aClient: TWeb3);
+class function TyUSDC.DeployedAt: TAddress;
 begin
-  inherited Create(aClient, '0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e');
+  Result := TAddress.New('0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e');
 end;
 
 { TyUSDT }
 
-constructor TyUSDT.Create(aClient: TWeb3);
+class function TyUSDT.DeployedAt: TAddress;
 begin
-  inherited Create(aClient, '0x2f08119C6f07c006695E079AAFc638b8789FAf18');
+  Result := TAddress.New('0x2f08119C6f07c006695E079AAFc638b8789FAf18');
 end;
 
 end.

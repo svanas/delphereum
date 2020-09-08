@@ -88,11 +88,12 @@ type
 
   TyToken = class abstract(TERC20)
   public
-    constructor Create(aClient: TWeb3); reintroduce; overload; virtual; abstract;
+    constructor Create(aClient: TWeb3); reintroduce;
     //------- read from contract -----------------------------------------------
     procedure Token(callback: TAsyncAddress);
     procedure GetPricePerFullShare(const block: string; callback: TAsyncQuantity);
     //------- helpers ----------------------------------------------------------
+    class function DeployedAt: TAddress; virtual; abstract;
     procedure ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
     procedure UnderlyingToToken(amount: BigInteger; callback: TAsyncQuantity);
@@ -112,32 +113,32 @@ uses
 type
   TyDAIv2 = class(TyToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    class function DeployedAt: TAddress; override;
   end;
 
   TyUSDCv2 = class(TyToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    class function DeployedAt: TAddress; override;
   end;
 
   TyUSDTv2 = class(TyToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    class function DeployedAt: TAddress; override;
   end;
 
   TyDAIv3 = class(TyToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    class function DeployedAt: TAddress; override;
   end;
 
   TyUSDCv3 = class(TyToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    class function DeployedAt: TAddress; override;
   end;
 
   TyUSDTv3 = class(TyToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    class function DeployedAt: TAddress; override;
   end;
 
 type
@@ -434,6 +435,11 @@ end;
 
 { TyToken }
 
+constructor TyToken.Create(aClient: TWeb3);
+begin
+  inherited Create(aClient, Self.DeployedAt);
+end;
+
 // Returns the underlying asset contract address for this yToken.
 procedure TyToken.Token(callback: TAsyncAddress);
 begin
@@ -502,7 +508,7 @@ end;
 
 procedure TyToken.APY(callback: TAsyncFloat);
 var
-  twoWeeksAgo: TUnixDateTime;
+  oneMonthAgo: TUnixDateTime;
 begin
   Self.GetPricePerFullShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
   begin
@@ -511,8 +517,8 @@ begin
       callback(0, err);
       EXIT;
     end;
-    twoWeeksAgo := DateTimeToUnix(Now, False) - 60 * 60 * 24 * 14;
-    getBlockNumberByTimestamp(client.Chain, twoWeeksAgo, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
+    oneMonthAgo := DateTimeToUnix(Now, False) - 60 * 60 * 24 * 30;
+    getBlockNumberByTimestamp(client.Chain, oneMonthAgo, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -526,7 +532,7 @@ begin
           callback(0, err);
           EXIT;
         end;
-        callback(((currPrice.AsExtended / pastPrice.AsExtended - 1) * 100) * 24, nil);
+        callback(((currPrice.AsExtended / pastPrice.AsExtended - 1) * 100) * 12, nil);
       end);
     end);
   end);
@@ -544,44 +550,44 @@ end;
 
 { TyDAIv2 }
 
-constructor TyDAIv2.Create(aClient: TWeb3);
+class function TyDAIv2.DeployedAt: TAddress;
 begin
-  inherited Create(aClient, '0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01');
+  Result := TAddress.New('0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01');
 end;
 
 { TyUSDCv2 }
 
-constructor TyUSDCv2.Create(aClient: TWeb3);
+class function TyUSDCv2.DeployedAt: TAddress;
 begin
-  inherited Create(aClient, '0xd6aD7a6750A7593E092a9B218d66C0A814a3436e');
+  Result := TAddress.New('0xd6aD7a6750A7593E092a9B218d66C0A814a3436e');
 end;
 
 { TyUSDTv2 }
 
-constructor TyUSDTv2.Create(aClient: TWeb3);
+class function TyUSDTv2.DeployedAt: TAddress;
 begin
-  inherited Create(aClient, '0x83f798e925BcD4017Eb265844FDDAbb448f1707D');
+  Result := TAddress.New('0x83f798e925BcD4017Eb265844FDDAbb448f1707D');
 end;
 
 { TyDAIv3 }
 
-constructor TyDAIv3.Create(aClient: TWeb3);
+class function TyDAIv3.DeployedAt: TAddress;
 begin
-  inherited Create(aClient, '0xC2cB1040220768554cf699b0d863A3cd4324ce32');
+  Result := TAddress.New('0xC2cB1040220768554cf699b0d863A3cd4324ce32');
 end;
 
 { TyUSDCv3 }
 
-constructor TyUSDCv3.Create(aClient: TWeb3);
+class function TyUSDCv3.DeployedAt: TAddress;
 begin
-  inherited Create(aClient, '0x26EA744E5B887E5205727f55dFBE8685e3b21951');
+  Result := TAddress.New('0x26EA744E5B887E5205727f55dFBE8685e3b21951');
 end;
 
 { TyUSDTv2 }
 
-constructor TyUSDTv3.Create(aClient: TWeb3);
+class function TyUSDTv3.DeployedAt: TAddress;
 begin
-  inherited Create(aClient, '0xE6354ed5bC4b393a5Aad09f21c46E101e692d447');
+  Result := TAddress.New('0xE6354ed5bC4b393a5Aad09f21c46E101e692d447');
 end;
 
 end.
