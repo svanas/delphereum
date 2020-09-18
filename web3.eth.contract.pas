@@ -17,8 +17,7 @@ interface
 
 uses
   // web3
-  web3,
-  web3.eth.types;
+  web3;
 
 type
   ICustomContract = interface

@@ -20,7 +20,7 @@ uses
   System.Types,
   // web3
   web3,
-  web3.eth.types;
+  web3.http;
 
 type
   EInfura = class(EWeb3);
@@ -49,7 +49,6 @@ implementation
 uses
   // Delphi
   System.JSON,
-  System.Net.HttpClient,
   System.NetEncoding,
   System.SysUtils,
   System.TypInfo,
@@ -158,37 +157,11 @@ begin
 end;
 
 function ticker(const symbol: string; callback: TAsyncJsonObject): IAsyncResult;
-var
-  client: THttpClient;
-  resp  : IHttpResponse;
-  obj   : TJsonObject;
 begin
-  try
-    client := THttpClient.Create;
-    Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
-    begin
-      try
-        resp := THttpClient.EndAsyncHttp(aSyncResult);
-        if resp.StatusCode <> 200 then
-          callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)))
-        else
-        begin
-          obj := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
-          if Assigned(obj) then
-          try
-            callback(obj, nil);
-          finally
-            obj.Free;
-          end;
-        end;
-      finally
-        client.Free;
-      end;
-    end, 'https://api.infura.io/v1/ticker/' + TNetEncoding.URL.Encode(symbol));
-  except
-    on E: Exception do
-      callback(nil, TError.Create(E.Message));
-  end;
+  Result := web3.http.get(
+    'https://api.infura.io/v1/ticker/' + TNetEncoding.URL.Encode(symbol),
+    callback
+  );
 end;
 
 end.

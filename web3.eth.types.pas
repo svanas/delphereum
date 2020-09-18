@@ -68,8 +68,6 @@ type
   TAsyncString     = reference to procedure(const str: string;   err: IError);
   TAsyncQuantity   = reference to procedure(qty : BigInteger;    err: IError);
   TAsyncBoolean    = reference to procedure(bool: Boolean;       err: IError);
-  TAsyncResponse   = reference to procedure(resp: IHttpResponse; err: IError);
-  TAsyncJsonObject = reference to procedure(obj : TJsonObject;   err: IError);
   TAsyncAddress    = reference to procedure(addr: TAddress;      err: IError);
   TAsyncTuple      = reference to procedure(tup : TTuple;        err: IError);
   TAsyncTxHash     = reference to procedure(hash: TTxHash;       err: IError);
@@ -110,6 +108,7 @@ uses
   // web3
   web3.crypto,
   web3.eth.ens,
+  web3.http,
   web3.utils;
 
 { TArg }

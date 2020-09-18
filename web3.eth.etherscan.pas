@@ -49,11 +49,11 @@ implementation
 uses
   // Delphi
   System.JSON,
-  System.Net.HttpClient,
   System.NetEncoding,
   System.SysUtils,
   System.TypInfo,
   // web3
+  web3.http,
   web3.json;
 
 function endpoint(chain: TChain; const apiKey: string): string;
@@ -97,41 +97,24 @@ function getBlockNumberByTimestamp(
   const apiKey: string;
   callback    : TAsyncQuantity): IAsyncResult;
 var
-  client: THttpClient;
-  resp  : IHttpResponse;
-  output: TJsonObject;
   status: Integer;
 begin
-  try
-    client := THttpClient.Create;
-    Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
+  Result := web3.http.get(
+    endpoint(chain, TNetEncoding.URL.Encode(apiKey)) +
+    Format('&module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
+  procedure(resp: TJsonObject; err: IError)
+  begin
+    if Assigned(err) then
     begin
-      try
-        resp := THttpClient.EndAsyncHttp(aSyncResult);
-        if resp.StatusCode = 200 then
-        begin
-          output := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
-          if Assigned(output) then
-          try
-            status := web3.json.getPropAsInt(output, 'status');
-            if status = 0 then
-              callback(0, TEtherscanError.Create(status, web3.json.getPropAsStr(output, 'message')))
-            else
-              callback(web3.json.getPropAsBig(output, 'result', 0), nil);
-            EXIT;
-          finally
-            output.Free;
-          end;
-        end;
-        callback(0, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
-      finally
-        client.Free;
-      end;
-    end, endpoint(chain, TNetEncoding.URL.Encode(apiKey)) + Format('&module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]));
-  except
-    on E: Exception do
-      callback(0, TError.Create(E.Message));
-  end;
+      callback(0, err);
+      EXIT;
+    end;
+    status := web3.json.getPropAsInt(resp, 'status');
+    if status = 0 then
+      callback(0, TEtherscanError.Create(status, web3.json.getPropAsStr(resp, 'message')))
+    else
+      callback(web3.json.getPropAsBig(resp, 'result', 0), nil);
+  end);
 end;
 
 end.

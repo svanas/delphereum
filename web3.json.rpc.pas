@@ -17,15 +17,11 @@ interface
 
 uses
   // Delphi
-  System.Types,
-  System.Classes,
-  System.SysUtils,
   System.JSON,
-  System.Net.URLClient,
-  System.Net.HttpClient,
-  // Web3
+  System.Types,
+  // web3
   web3,
-  web3.json;
+  web3.http;
 
 type
   EJsonRpc = class(EWeb3)
@@ -49,12 +45,26 @@ type
     function Code: Integer;
   end;
 
-  TAsyncResponse = reference to procedure(resp: TJsonObject; err: IError);
+function send( // async
+  const URL   : string;
+  const method: string;
+  args        : array of const;
+  callback    : TAsyncJsonObject): IAsyncResult; overload;
 
-function send(const URL, method: string; args: array of const; callback: TAsyncResponse): IAsyncResult; overload;
-function send(const URL, method: string; args: array of const): TJsonObject; overload;
+function send( // blocking
+  const URL   : string;
+  const method: string;
+  args        : array of const): TJsonObject; overload;
 
 implementation
+
+uses
+  // Delphi
+  System.Classes,
+  System.Net.URLClient,
+  System.SysUtils,
+  // web3
+  web3.json;
 
 var
   id: Cardinal;
@@ -120,75 +130,75 @@ begin
     , [web3.json.quoteString(method, '"'), formatArgs(args), id]);
 end;
 
-function send(const URL, method: string; args: array of const; callback: TAsyncResponse): IAsyncResult;
+function send(
+  const URL   : string;
+  const method: string;
+  args        : array of const;
+  callback    : TAsyncJsonObject): IAsyncResult;
 var
-  client: THttpClient;
   source: TStream;
-  resp  : IHttpResponse;
-  output: TJsonObject;
-  err   : TJsonObject;
 begin
-  try
-    client := THttpClient.Create;
-    source := TStringStream.Create(getPayload(method, args));
-    Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
-    begin
-      try
-        resp := THttpClient.EndAsyncHttp(aSyncResult);
-        if resp.StatusCode = 200 then
-        begin
-          output := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
-          if Assigned(output) then
-          try
-            // did we receive an error?
-            err := web3.json.getPropAsObj(output, 'error');
-            if Assigned(err) then
-              callback(output, TJsonRpcError.Create(
-                web3.json.getPropAsInt(err, 'code'),
-                web3.json.getPropAsStr(err, 'message')
-              ))
-            else
-              // if we reached this far, then we have a valid response object
-              callback(output, nil);
-            EXIT;
-          finally
-            output.Free;
-          end;
-        end;
-        callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
-      finally
-        source.Free;
-        client.Free;
+  source := TStringStream.Create(getPayload(method, args));
+  web3.http.post(
+    URL,
+    source,
+    [TNetHeader.Create('Content-Type', 'application/json')],
+    procedure(resp: TJsonObject; err: IError)
+  var
+    error: TJsonObject;
+  begin
+    try
+      if Assigned(err) then
+      begin
+        callback(nil, err);
+        EXIT;
       end;
-    end, URL, source, nil, [TNetHeader.Create('Content-Type', 'application/json')]);
-  except
-    on E: Exception do
-      callback(nil, TError.Create(E.Message));
-  end;
+      // did we receive an error?
+      error := web3.json.getPropAsObj(resp, 'error');
+      if Assigned(error) then
+        callback(resp, TJsonRpcError.Create(
+          web3.json.getPropAsInt(error, 'code'),
+          web3.json.getPropAsStr(error, 'message')
+        ))
+      else
+        // if we reached this far, then we have a valid response object
+        callback(resp, nil);
+    finally
+      source.Free;
+    end;
+  end);
 end;
 
 function send(const URL, method: string; args: array of const): TJsonObject;
 var
-  client: THttpClient;
   source: TStream;
-  err   : TJsonObject;
+  resp  : TJsonObject;
+  error : TJsonObject;
 begin
-  client := THttpClient.Create;
+  Result := nil;
   source := TStringStream.Create(getPayload(method, args));
   try
-    Result := web3.json.unmarshal(
-      client.Post(URL, source, nil, [TNetHeader.Create('Content-Type', 'application/json')]).ContentAsString(TEncoding.UTF8)
+    web3.http.post(
+      URL,
+      source,
+      [TNetHeader.Create('Content-Type', 'application/json')],
+      resp
     );
-    if Assigned(Result) then
-    begin
+    if Assigned(resp) then
+    try
       // did we receive an error? then translate that into an exception
-      err := web3.json.getPropAsObj(Result, 'error');
-      if Assigned(err) then
-        raise EJsonRpc.Create(web3.json.getPropAsInt(err, 'code'), web3.json.getPropAsStr(err, 'message'));
+      error := web3.json.getPropAsObj(resp, 'error');
+      if Assigned(error) then
+        raise EJsonRpc.Create(
+          web3.json.getPropAsInt(error, 'code'),
+          web3.json.getPropAsStr(error, 'message')
+        );
+      Result := resp.Clone as TJsonObject;
+    finally
+      resp.Free;
     end;
   finally
     source.Free;
-    client.Free;
   end;
 end;
 

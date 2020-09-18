@@ -17,71 +17,66 @@ interface
 
 uses
   // Delphi
-  System.Classes,
-  System.Generics.Collections,
-  System.JSON,
-  System.Net.URLClient,
-  System.Net.HttpClient,
-  System.SysUtils,
   System.Types,
   // web3
   web3,
-  web3.json;
+  web3.http;
 
 type
-  IGraphQL = interface(IError)
+  IGraphError = interface(IError)
   ['{46F0E07F-F47C-41BC-98BF-B8F7FA24AB91}']
   end;
 
-  TGraphQL = class(TError, IGraphQL);
-
-  TAsyncResponse = reference to procedure(resp: TJsonObject; err: IError);
+  TGraphError = class(TError, IGraphError);
 
 const
   UNISWAP_V2 = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2';
 
-function execute(const URL, query: string; callback: TAsyncResponse): IAsyncResult;
+function execute(const URL, query: string; callback: TAsyncJsonObject): IAsyncResult;
 
 implementation
 
-function execute(const URL, query: string; callback: TAsyncResponse): IAsyncResult;
+uses
+  // Delphi
+  System.Classes,
+  System.Generics.Collections,
+  System.JSON,
+  System.Net.URLClient,
+  // web3
+  web3.json;
+
+function execute(const URL, query: string; callback: TAsyncJsonObject): IAsyncResult;
 var
-  client: THttpClient;
   source: TStream;
-  resp  : TJsonObject;
   errors: TJsonArray;
 begin
-  try
-    client := THttpClient.Create;
-    source := TStringStream.Create(query);
-    Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
+  source := TStringStream.Create(query);
+  web3.http.post(
+    URL,
+    source,
+    [TNetHeader.Create('Content-Type', 'application/graphql')],
+    procedure(resp: TJsonObject; err: IError)
     begin
       try
-        resp := web3.json.unmarshal(THttpClient.EndAsyncHTTP(aSyncResult).ContentAsString(TEncoding.UTF8));
-        if Assigned(resp) then
-        try
-          // did we receive an error?
-          errors := web3.json.getPropAsArr(resp, 'errors');
-          if Assigned(errors) then
-            if errors.Count > 0 then
-            begin
-              callback(resp, TGraphQL.Create(web3.json.getPropAsStr(errors.Items[0], 'message')));
-              EXIT;
-            end;
-          // if we reached this far, then we have a valid response object
-          callback(resp, nil);
-        finally
-          resp.Free;
+        if Assigned(err) then
+        begin
+          callback(nil, err);
+          EXIT;
         end;
+        // did we receive an error?
+        errors := web3.json.getPropAsArr(resp, 'errors');
+        if Assigned(errors) and (errors.Count > 0) then
+        begin
+          callback(resp, TGraphError.Create(web3.json.getPropAsStr(errors.Items[0], 'message')));
+          EXIT;
+        end;
+        // if we reached this far, then we have a valid response object
+        callback(resp, nil);
       finally
         source.Free;
-        client.Free;
       end;
-    end, URL, source, nil, [TNetHeader.Create('Content-Type', 'application/graphql')]);
-  except
-    on E: Exception do
-      callback(nil, TError.Create(E.Message));
-  end;
+    end
+  );
 end;
 
 end.

@@ -18,7 +18,7 @@ interface
 uses
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
-  // Web3
+  // web3
   web3,
   web3.eth.types;
 
@@ -33,8 +33,8 @@ const
 const
   ADDRESS_ZERO: TAddress = '0x0000000000000000000000000000000000000000';
 
-function  blockNumber(client: TWeb3): BigInteger; overload;
-procedure blockNumber(client: TWeb3; callback: TAsyncQuantity); overload;
+function  blockNumber(client: TWeb3): BigInteger; overload;               // blocking
+procedure blockNumber(client: TWeb3; callback: TAsyncQuantity); overload; // async
 
 procedure getBalance(client: TWeb3; address: TAddress; callback: TAsyncQuantity); overload;
 procedure getBalance(client: TWeb3; address: TAddress; const block: string; callback: TAsyncQuantity); overload;
@@ -141,7 +141,7 @@ uses
   // CryptoLib4Pascal
   ClpBigInteger,
   ClpIECPrivateKeyParameters,
-  // Web3
+  // web3
   web3.crypto,
   web3.eth.abi,
   web3.eth.crypto,

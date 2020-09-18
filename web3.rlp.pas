@@ -19,7 +19,7 @@ uses
   // Delphi
   System.Math,
   System.SysUtils,
-  // Web3
+  // web3
   web3,
   web3.utils;
 

@@ -81,11 +81,11 @@ uses
   // Delphi
   System.Generics.Collections,
   System.JSON,
-  System.Net.HttpClient,
   System.SysUtils,
   System.Types,
   // web3
   web3.eth.yearn.finance,
+  web3.http,
   web3.json;
 
 type
@@ -186,50 +186,27 @@ end;
 class procedure TyVault.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
 
   function getAPY(callback: TAsyncFloat): IAsyncResult;
-  var
-    client: THttpClient;
   begin
-    try
-      client := THttpClient.Create;
-      Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
-      var
-        resp: IHttpResponse;
-        arr : TJsonValue;
-        idx : Integer;
-        elem: TJsonValue;
+    Result := web3.http.get('https://api.vaults.finance/apy', procedure(arr: TJsonArray; err: IError)
+    var
+      idx : Integer;
+      elem: TJsonValue;
+    begin
+      if Assigned(err) then
       begin
-        try
-          resp := THttpClient.EndAsyncHttp(aSyncResult);
-          if resp.StatusCode = 200 then
-          begin
-            arr := TJsonObject.ParseJsonValue(resp.ContentAsString(TEncoding.UTF8));
-            if Assigned(arr) then
-            try
-              if arr is TJsonArray then
-              begin
-                for idx := 0 to Pred(TJsonArray(arr).Count) do
-                begin
-                  elem := TJsonArray(arr).Items[idx];
-                  if SameText(getPropAsStr(elem, 'address'), string(yTokenClass[reserve].DeployedAt)) then
-                  begin
-                    callback(getPropAsExt(elem, 'apyInceptionSample'), nil);
-                    EXIT;
-                  end;
-                end;
-              end;
-            finally
-              arr.Free;
-            end;
-          end;
-          callback(0, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
-        finally
-          client.Free;
+        callback(0, err);
+        EXIT;
+      end;
+      for idx := 0 to Pred(arr.Count) do
+      begin
+        elem := TJsonArray(arr).Items[idx];
+        if SameText(getPropAsStr(elem, 'address'), string(yTokenClass[reserve].DeployedAt)) then
+        begin
+          callback(getPropAsExt(elem, 'apyInceptionSample'), nil);
+          EXIT;
         end;
-      end, 'https://api.vaults.finance/apy');
-    except
-      on E: Exception do
-        callback(0, TError.Create(E.Message));
-    end;
+      end;
+    end);
   end;
 
 var

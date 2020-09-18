@@ -19,7 +19,7 @@ uses
   // Delphi
   System.JSON,
   System.SysUtils,
-  // Web3
+  // web3
   web3,
   web3.eth,
   web3.eth.abi,

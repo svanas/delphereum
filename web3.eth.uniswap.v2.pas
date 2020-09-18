@@ -45,22 +45,22 @@ type
   TRouter02 = class(TCustomContract)
   private
     procedure EstimateExactTokensForETH(
-      from        : TAddress;    // Sender of the token.
-      amountIn    : BigInteger;  // The amount of input tokens to send.
-      amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
-      token0      : TAddress;    // The address of the pair token with the lower sort order.
-      token1      : TAddress;    // The address of the pair token with the higher sort order.
-      &to         : TAddress;    // Recipient of the ETH.
-      deadline    : TTimestamp;  // Unix timestamp after which the transaction will revert.
+      from        : TAddress;      // Sender of the token.
+      amountIn    : BigInteger;    // The amount of input tokens to send.
+      amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
+      token0      : TAddress;      // The address of the pair token with the lower sort order.
+      token1      : TAddress;      // The address of the pair token with the higher sort order.
+      &to         : TAddress;      // Recipient of the ETH.
+      deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
       callback    : TAsyncQuantity); overload;
     procedure SwapExactTokensForETH(
-      from        : TPrivateKey; // Sender of the token.
-      amountIn    : BigInteger;  // The amount of input tokens to send.
-      amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
-      token0      : TAddress;    // The address of the pair token with the lower sort order.
-      token1      : TAddress;    // The address of the pair token with the higher sort order.
-      &to         : TAddress;    // Recipient of the ETH.
-      deadline    : TTimestamp;  // Unix timestamp after which the transaction will revert.
+      from        : TPrivateKey;   // Sender of the token.
+      amountIn    : BigInteger;    // The amount of input tokens to send.
+      amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
+      token0      : TAddress;      // The address of the pair token with the lower sort order.
+      token1      : TAddress;      // The address of the pair token with the higher sort order.
+      &to         : TAddress;      // Recipient of the ETH.
+      deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
       callback    : TAsyncReceipt); overload;
   public
     constructor Create(aClient: TWeb3); reintroduce;
@@ -144,13 +144,13 @@ end;
 
 // Estimate the number of gas units needed for a Swap
 procedure TRouter02.EstimateExactTokensForETH(
-  from        : TAddress;   // Sender of the token.
-  amountIn    : BigInteger; // The amount of input tokens to send.
-  amountOutMin: BigInteger; // The minimum amount of output tokens that must be received for the transaction not to revert.
-  token0      : TAddress;   // The address of the pair token with the lower sort order.
-  token1      : TAddress;   // The address of the pair token with the higher sort order.
-  &to         : TAddress;   // Recipient of the ETH.
-  deadline    : TTimestamp; // Unix timestamp after which the transaction will revert.
+  from        : TAddress;      // Sender of the token.
+  amountIn    : BigInteger;    // The amount of input tokens to send.
+  amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
+  token0      : TAddress;      // The address of the pair token with the lower sort order.
+  token1      : TAddress;      // The address of the pair token with the higher sort order.
+  &to         : TAddress;      // Recipient of the ETH.
+  deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
   callback    : TAsyncQuantity);
 begin
   estimateGas(Client, from, Contract,
@@ -166,13 +166,13 @@ end;
 
 // Swaps an exact amount of tokens for as much ETH as possible.
 procedure TRouter02.SwapExactTokensForETH(
-  from        : TPrivateKey; // Sender of the token.
-  amountIn    : BigInteger;  // The amount of input tokens to send.
-  amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
-  token0      : TAddress;    // The address of the pair token with the lower sort order.
-  token1      : TAddress;    // The address of the pair token with the higher sort order.
-  &to         : TAddress;    // Recipient of the ETH.
-  deadline    : TTimestamp;  // Unix timestamp after which the transaction will revert.
+  from        : TPrivateKey;   // Sender of the token.
+  amountIn    : BigInteger;    // The amount of input tokens to send.
+  amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
+  token0      : TAddress;      // The address of the pair token with the lower sort order.
+  token1      : TAddress;      // The address of the pair token with the higher sort order.
+  &to         : TAddress;      // Recipient of the ETH.
+  deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
   callback    : TAsyncReceipt);
 var
   erc20: TERC20;
@@ -308,7 +308,7 @@ begin
         EXIT;
       end;
     end;
-    callback(0, TGraphQL.Create('an unknown error occurred'));
+    callback(0, TGraphError.Create('an unknown error occurred'));
   end);
 end;
 

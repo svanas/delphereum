@@ -23,7 +23,7 @@ uses
   Velthuis.BigIntegers,
   // HashLib4Pascal
   HlpSHA3,
-  // Web3
+  // web3
   web3,
   web3.eth.types,
   web3.json,
