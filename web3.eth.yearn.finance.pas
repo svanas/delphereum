@@ -61,6 +61,7 @@ type
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
+      perform : TPerformance;
       callback: TAsyncFloat); override;
     class procedure Deposit(
       client  : TWeb3;
@@ -97,7 +98,7 @@ type
     procedure ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
     procedure UnderlyingToToken(amount: BigInteger; callback: TAsyncQuantity);
-    procedure APY(callback: TAsyncFloat);
+    procedure APY(perform: TPerformance; callback: TAsyncFloat);
     //------- write to contract ------------------------------------------------
     procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
@@ -222,14 +223,18 @@ begin
   Result := chain = Mainnet;
 end;
 
-class procedure TyEarn.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
+class procedure TyEarn.APY(
+  client  : TWeb3;
+  reserve : TReserve;
+  perform : TPerformance;
+  callback: TAsyncFloat);
 var
   yToken: TyToken;
 begin
   yToken := yTokenClass[reserve][v2].Create(client);
   if Assigned(yToken) then
   begin
-    yToken.APY(procedure(apy: Extended; err: IError)
+    yToken.APY(perform, procedure(apy: Extended; err: IError)
     begin
       try
         callback(apy, err);
@@ -506,9 +511,9 @@ begin
   end);
 end;
 
-procedure TyToken.APY(callback: TAsyncFloat);
+procedure TyToken.APY(perform: TPerformance; callback: TAsyncFloat);
 var
-  oneMonthAgo: TUnixDateTime;
+  secs: Integer;
 begin
   Self.GetPricePerFullShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
   begin
@@ -517,8 +522,13 @@ begin
       callback(0, err);
       EXIT;
     end;
-    oneMonthAgo := DateTimeToUnix(Now, False) - 60 * 60 * 24 * 30;
-    getBlockNumberByTimestamp(client.Chain, oneMonthAgo, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
+    secs := 60 * 60 * 24; // one day
+    case perform of
+      threeDays: secs := secs * 3;
+      oneWeek  : secs := secs * 7;
+      oneMonth : secs := secs * 30;
+    end;
+    getBlockNumberByTimestamp(client.Chain, DateTimeToUnix(Now, False) - secs, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
     begin
       if Assigned(err) then
       begin

@@ -33,7 +33,8 @@ type
     procedure Balance(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
   end;
 
-type
+  TPerformance = (oneDay, threeDays, oneWeek, oneMonth);
+
   TLendingProtocol = class abstract
   public
     class function Name: string; virtual; abstract;
@@ -44,6 +45,7 @@ type
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
+      perform : TPerformance;
       callback: TAsyncFloat); virtual; abstract;
     // Deposits an underlying asset into the lending pool.
     class procedure Deposit(

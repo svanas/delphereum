@@ -50,6 +50,7 @@ type
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
+      perform : TPerformance;
       callback: TAsyncFloat); override;
     class procedure Deposit(
       client  : TWeb3;
@@ -183,9 +184,20 @@ begin
   Result := chain = Mainnet;
 end;
 
-class procedure TyVault.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
+class procedure TyVault.APY(
+  client  : TWeb3;
+  reserve : TReserve;
+  perform : TPerformance;
+  callback: TAsyncFloat);
 
-  function getAPY(callback: TAsyncFloat): IAsyncResult;
+  function getAPY(perform: TPerformance; callback: TAsyncFloat): IAsyncResult;
+  const
+    PROP_NAME: array[TPerformance] of string = (
+      'apyOneDaySample',   // oneDay
+      'apyThreeDaySample', // threeDays
+      'apyOneWeekSample',  // oneWeek
+      'apyOneMonthSample'  // oneMonth
+    );
   begin
     Result := web3.http.get('https://api.vaults.finance/apy', procedure(arr: TJsonArray; err: IError)
     var
@@ -202,7 +214,7 @@ class procedure TyVault.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFl
         elem := TJsonArray(arr).Items[idx];
         if SameText(getPropAsStr(elem, 'address'), string(yTokenClass[reserve].DeployedAt)) then
         begin
-          callback(getPropAsExt(elem, 'apyInceptionSample'), nil);
+          callback(getPropAsExt(elem, PROP_NAME[perform]), nil);
           EXIT;
         end;
       end;
@@ -212,7 +224,7 @@ class procedure TyVault.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFl
 var
   yToken: TyToken;
 begin
-  getAPY(procedure(apy: Extended; err: IError)
+  getAPY(perform, procedure(apy: Extended; err: IError)
   begin
     if (apy > 0) and not Assigned(err) then
     begin
@@ -222,7 +234,7 @@ begin
     yToken := yTokenClass[reserve].Create(client);
     if Assigned(yToken) then
     begin
-      yToken.APY(procedure(apy: Extended; err: IError)
+      yToken.APY(perform, procedure(apy: Extended; err: IError)
       begin
         try
           callback(apy, err);

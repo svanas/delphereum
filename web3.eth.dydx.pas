@@ -54,6 +54,7 @@ type
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
+      _perform: TPerformance;
       callback: TAsyncFloat); override;
     class procedure Deposit(
       client  : TWeb3;
@@ -250,7 +251,11 @@ begin
 end;
 
 // Returns the annual yield as a percentage.
-class procedure TdYdX.APY(client: TWeb3; reserve: TReserve; callback: TAsyncFloat);
+class procedure TdYdX.APY(
+  client  : TWeb3;
+  reserve : TReserve;
+  _perform: TPerformance;
+  callback: TAsyncFloat);
 const
   SECONDS_PER_YEAR = 31536000;
 var
