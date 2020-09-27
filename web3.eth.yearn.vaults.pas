@@ -80,14 +80,10 @@ implementation
 
 uses
   // Delphi
-  System.Generics.Collections,
-  System.JSON,
-  System.SysUtils,
   System.Types,
   // web3
   web3.eth.yearn.finance,
-  web3.http,
-  web3.json;
+  web3.eth.yearn.tools;
 
 type
   TyDAI = class(TyToken)
@@ -190,41 +186,21 @@ class procedure TyVault.APY(
   perform : TPerformance;
   callback: TAsyncFloat);
 
-  function getAPY(perform: TPerformance; callback: TAsyncFloat): IAsyncResult;
-  const
-    PROP_NAME: array[TPerformance] of string = (
-      'apyOneDaySample',   // oneDay
-      'apyThreeDaySample', // threeDays
-      'apyOneWeekSample',  // oneWeek
-      'apyOneMonthSample'  // oneMonth
-    );
+  function getAPY(addr: TAddress; prfm: TPerformance; callback: TAsyncFloat): IAsyncResult;
   begin
-    Result := web3.http.get('https://api.vaults.finance/apy', procedure(arr: TJsonArray; err: IError)
-    var
-      idx : Integer;
-      elem: TJsonValue;
+    Result := web3.eth.yearn.tools.vault(addr, procedure(vault: IYearnVault; err: IError)
     begin
       if Assigned(err) then
-      begin
-        callback(0, err);
-        EXIT;
-      end;
-      for idx := 0 to Pred(arr.Count) do
-      begin
-        elem := TJsonArray(arr).Items[idx];
-        if SameText(getPropAsStr(elem, 'address'), string(yTokenClass[reserve].DeployedAt)) then
-        begin
-          callback(getPropAsExt(elem, PROP_NAME[perform]), nil);
-          EXIT;
-        end;
-      end;
+        callback(0, err)
+      else
+        callback(vault.APY(prfm), nil);
     end);
   end;
 
 var
   yToken: TyToken;
 begin
-  getAPY(perform, procedure(apy: Extended; err: IError)
+  getAPY(yTokenClass[reserve].DeployedAt, perform, procedure(apy: Extended; err: IError)
   begin
     if (apy > 0) and not Assigned(err) then
     begin
