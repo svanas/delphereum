@@ -210,15 +210,21 @@ procedure signTransaction(
 resourcestring
   RS_SIGNATURE_DENIED = 'User denied transaction signature';
 begin
-  client.CanSignTransaction(from.Address, &to, gasPrice, estimatedGas, procedure(approved: Boolean; err: IError)
+  from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
     else
-      if not approved then
-        callback('', TSignatureDenied.Create(RS_SIGNATURE_DENIED))
-      else
-        callback(signTransaction(client.Chain, nonce, from, &to, value, data, gasPrice, gasLimit), nil);
+      client.CanSignTransaction(addr, &to, gasPrice, estimatedGas, procedure(approved: Boolean; err: IError)
+      begin
+        if Assigned(err) then
+          callback('', err)
+        else
+          if not approved then
+            callback('', TSignatureDenied.Create(RS_SIGNATURE_DENIED))
+          else
+            callback(signTransaction(client.Chain, nonce, from, &to, value, data, gasPrice, gasLimit), nil);
+      end);
   end);
 end;
 
@@ -388,30 +394,32 @@ procedure sendTransaction(
   gasLimit: TWei;
   callback: TAsyncTxHash);
 begin
-  web3.eth.tx.getNonce(
-    client,
-    from.Address,
-    procedure(nonce: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback('', err)
-      else
-        signTransaction(client, nonce, from, &to, value, '', gasPrice, gasLimit, 21000,
-          procedure(const sig: string; err: IError)
-          begin
-            if Assigned(err) then
-              callback('', err)
-            else
-              sendTransaction(client, sig, procedure(hash: TTxHash; err: IError)
-              begin
-                if Assigned(err) and (err.Message = 'nonce too low') then
-                  sendTransaction(client, from, &to, value, gasPrice, gasLimit, callback)
-                else
-                  callback(hash, err);
-              end);
-          end);
-    end
-  );
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      web3.eth.tx.getNonce(client, addr, procedure(nonce: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback('', err)
+        else
+          signTransaction(client, nonce, from, &to, value, '', gasPrice, gasLimit, 21000,
+            procedure(const sig: string; err: IError)
+            begin
+              if Assigned(err) then
+                callback('', err)
+              else
+                sendTransaction(client, sig, procedure(hash: TTxHash; err: IError)
+                begin
+                  if Assigned(err) and (err.Message = 'nonce too low') then
+                    sendTransaction(client, from, &to, value, gasPrice, gasLimit, callback)
+                  else
+                    callback(hash, err);
+                end);
+            end);
+      end);
+  end);
 end;
 
 // 1. calculate the nonce, then
@@ -428,15 +436,18 @@ procedure sendTransactionEx(
   gasLimit: TWei;
   callback: TAsyncReceipt);
 begin
-  web3.eth.tx.getNonce(
-    client,
-    from.Address,
-    procedure(nonce: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        signTransaction(client, nonce, from, &to, value, '', gasPrice, gasLimit, 21000,
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      web3.eth.tx.getNonce(client, addr, procedure(nonce: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          signTransaction(
+            client, nonce, from, &to, value, '', gasPrice, gasLimit, 21000,
           procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then
@@ -450,8 +461,8 @@ begin
                   callback(rcpt, err);
               end);
           end);
-    end
-  );
+      end);
+  end);
 end;
 
 { TTxn }

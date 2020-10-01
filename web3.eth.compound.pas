@@ -300,29 +300,37 @@ begin
       callback(nil, 0, err);
       EXIT;
     end;
-    cToken := cTokenClass[reserve].Create(client);
-    if Assigned(cToken) then
+    from.Address(procedure(addr: TAddress; err: IError)
     begin
-      cToken.BalanceOf(from.Address, procedure(amount_ctoken: BigInteger; err: IError)
+      if Assigned(err) then
       begin
-        try
-          if Assigned(err) then
-          begin
-            callback(nil, 0, err);
-            EXIT;
-          end;
-          cToken.Redeem(from, amount_ctoken, procedure(rcpt: ITxReceipt; err: IError)
-          begin
+        callback(nil, 0, err);
+        EXIT;
+      end;
+      cToken := cTokenClass[reserve].Create(client);
+      if Assigned(cToken) then
+      begin
+        cToken.BalanceOf(addr, procedure(amount_ctoken: BigInteger; err: IError)
+        begin
+          try
             if Assigned(err) then
-              callback(nil, 0, err)
-            else
-              callback(rcpt, amount_underlying, err);
-          end);
-        finally
-          cToken.Free;
-        end;
-      end);
-    end;
+            begin
+              callback(nil, 0, err);
+              EXIT;
+            end;
+            cToken.Redeem(from, amount_ctoken, procedure(rcpt: ITxReceipt; err: IError)
+            begin
+              if Assigned(err) then
+                callback(nil, 0, err)
+              else
+                callback(rcpt, amount_underlying, err);
+            end);
+          finally
+            cToken.Free;
+          end;
+        end);
+      end;
+    end);
   end);
 end;
 

@@ -91,7 +91,7 @@ type
     class function Generate: TPrivateKey; static;
     class function New(params: IECPrivateKeyParameters): TPrivateKey; static;
     function Parameters: IECPrivateKeyParameters;
-    function Address: TAddress;
+    procedure Address(callback: TAsyncAddress);
   end;
 
 type
@@ -244,15 +244,19 @@ begin
   Result := web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, fromHex(string(Self)));
 end;
 
-function TPrivateKeyHelper.Address: TAddress;
+procedure TPrivateKeyHelper.Address(callback: TAsyncAddress);
 var
   pubKey: TBytes;
   buffer: TBytes;
 begin
-  pubKey := web3.crypto.publicKeyFromPrivateKey(Self.Parameters);
-  buffer := web3.utils.sha3(pubKey);
-  Delete(buffer, 0, 12);
-  Result := TAddress(web3.utils.toHex(buffer));
+  try
+    pubKey := web3.crypto.publicKeyFromPrivateKey(Self.Parameters);
+    buffer := web3.utils.sha3(pubKey);
+    Delete(buffer, 0, 12);
+    callback(TAddress(web3.utils.toHex(buffer)), nil);
+  except
+    callback('', TError.Create('Private key is invalid'));
+  end;
 end;
 
 { TTupleHelper }

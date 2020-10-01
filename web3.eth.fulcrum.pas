@@ -331,35 +331,47 @@ class procedure TFulcrum.Withdraw(
 var
   iToken: TiToken;
 begin
-  iToken := iTokenClass[reserve].Create(client);
-  if Assigned(iToken) then
+  from.Address(procedure(addr: TAddress; err: IError)
   begin
-    // step #1: get the iToken balance
-    iToken.BalanceOf(from.Address, procedure(amount: BigInteger; err: IError)
+    if Assigned(err) then
     begin
-      try
-        if Assigned(err) then
-          callback(nil, 0, err)
-        else
+      callback(nil, 0, err);
+      EXIT;
+    end;
+    iToken := iTokenClass[reserve].Create(client);
+    if Assigned(iToken) then
+    begin
+      // step #1: get the iToken balance
+      iToken.BalanceOf(addr, procedure(amount: BigInteger; err: IError)
+      begin
+        try
+          if Assigned(err) then
+          begin
+            callback(nil, 0, err);
+            EXIT;
+          end;
           // step #2: redeem iToken-amount in exchange for the underlying asset
           iToken.Burn(from, amount, procedure(rcpt: ITxReceipt; err: IError)
           begin
             if Assigned(err) then
-              callback(nil, 0, err)
-            else
-              TokenToUnderlying(client, reserve, amount, procedure(output: BigInteger; err: IError)
-              begin
-                if Assigned(err) then
-                  callback(rcpt, 0, err)
-                else
-                  callback(rcpt, output, nil);
-              end);
+            begin
+              callback(nil, 0, err);
+              EXIT;
+            end;
+            TokenToUnderlying(client, reserve, amount, procedure(output: BigInteger; err: IError)
+            begin
+              if Assigned(err) then
+                callback(rcpt, 0, err)
+              else
+                callback(rcpt, output, nil);
+            end);
           end);
-      finally
-        iToken.Free;
-      end;
-    end);
-  end;
+        finally
+          iToken.Free;
+        end;
+      end);
+    end;
+  end);
 end;
 
 class procedure TFulcrum.WithdrawEx(
@@ -444,9 +456,15 @@ end;
 // The supplier will receive the asset proceeds.
 procedure TiToken.Burn(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
-  web3.eth.write(
-    Client, from, Contract,
-    'burn(address,uint256)', [from.Address, web3.utils.toHex(amount)], callback);
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      web3.eth.write(
+        Client, from, Contract,
+        'burn(address,uint256)', [addr, web3.utils.toHex(amount)], callback);
+  end);
 end;
 
 // Called to deposit assets to the iToken, which in turn mints iTokens to the lender’s wallet at the current tokenPrice() rate.
@@ -454,9 +472,15 @@ end;
 // The supplier will receive the minted iTokens.
 procedure TiToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
-  web3.eth.write(
-    Client, from, Contract,
-    'mint(address,uint256)', [from.Address, web3.utils.toHex(amount)], callback);
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      web3.eth.write(
+        Client, from, Contract,
+        'mint(address,uint256)', [addr, web3.utils.toHex(amount)], callback);
+  end);
 end;
 
 // Returns the user’s balance of the underlying asset, scaled by 1e18

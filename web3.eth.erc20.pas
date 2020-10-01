@@ -273,16 +273,22 @@ procedure TERC20.ApproveEx(
   value   : BigInteger;
   callback: TAsyncReceipt);
 begin
-  Allowance(owner.Address, spender, procedure(approved: BigInteger; err: IError)
+  owner.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
     else
-      if ((value = 0) and (approved = 0))
-      or ((value > 0) and (approved >= value)) then
-        callback(nil, nil)
-      else
-        Approve(owner, spender, value, callback);
+      Allowance(addr, spender, procedure(approved: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          if ((value = 0) and (approved = 0))
+          or ((value > 0) and (approved >= value)) then
+            callback(nil, nil)
+          else
+            Approve(owner, spender, value, callback);
+      end);
   end);
 end;
 

@@ -280,9 +280,16 @@ procedure TERC721.SafeTransferFrom(
   tokenId : UInt64;
   callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, from, Contract,
-    'safeTransferFrom(address,address,uint256)',
-    [from.Address, &to, tokenId], callback);
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      web3.eth.write(
+        Client, from, Contract,
+        'safeTransferFrom(address,address,uint256)', [addr, &to, tokenId], callback
+      );
+  end);
 end;
 
 procedure TERC721.TransferFrom(
@@ -291,9 +298,16 @@ procedure TERC721.TransferFrom(
   tokenId : UInt64;
   callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, from, Contract,
-    'transferFrom(address,address,uint256)',
-    [from.Address, &to, tokenId], callback);
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      web3.eth.write(
+        Client, from, Contract,
+        'transferFrom(address,address,uint256)', [addr, &to, tokenId], callback
+      );
+  end);
 end;
 
 procedure TERC721.Approve(

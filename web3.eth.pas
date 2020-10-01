@@ -428,14 +428,21 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      web3.eth.gas.estimateGas(client, from.Address, &to, data, gasLimit,
-        procedure(estimatedGas: BigInteger; err: IError)
-        begin
-          if Assigned(err) then
-            callback(nil, err)
-          else
-            write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback);
-        end);
+      from.Address(procedure(addr: TAddress; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          web3.eth.gas.estimateGas(
+            client, addr, &to, data, gasLimit,
+          procedure(estimatedGas: BigInteger; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, err)
+            else
+              write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback);
+          end);
+      end);
   end);
 end;
 
@@ -453,14 +460,21 @@ var
   data: string;
 begin
   data := web3.eth.abi.encode(func, args);
-  web3.eth.gas.estimateGas(client, from.Address, &to, data, gasLimit,
-    procedure(estimatedGas: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback);
-    end);
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      web3.eth.gas.estimateGas(
+        client, addr, &to, data, gasLimit,
+      procedure(estimatedGas: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback);
+      end);
+  end);
 end;
 
 procedure write(
@@ -474,30 +488,32 @@ procedure write(
   estimatedGas: TWei;
   callback    : TAsyncReceipt);
 begin
-  web3.eth.tx.getNonce(
-    client,
-    from.Address,
-    procedure(nonce: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        signTransaction(client, nonce, from, &to, value, data, gasPrice, gasLimit, estimatedGas,
-          procedure(const sig: string; err: IError)
-          begin
-            if Assigned(err) then
-              callback(nil, err)
-            else
-              sendTransactionEx(client, sig, procedure(rcpt: ITxReceipt; err: IError)
-              begin
-                if Assigned(err) and (err.Message = 'nonce too low') then
-                  write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback)
-                else
-                  callback(rcpt, err);
-              end);
-          end);
-    end
-  );
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      web3.eth.tx.getNonce(client, addr, procedure(nonce: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          signTransaction(client, nonce, from, &to, value, data, gasPrice, gasLimit, estimatedGas,
+            procedure(const sig: string; err: IError)
+            begin
+              if Assigned(err) then
+                callback(nil, err)
+              else
+                sendTransactionEx(client, sig, procedure(rcpt: ITxReceipt; err: IError)
+                begin
+                  if Assigned(err) and (err.Message = 'nonce too low') then
+                    write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback)
+                  else
+                    callback(rcpt, err);
+                end);
+            end);
+      end);
+  end);
 end;
 
 end.

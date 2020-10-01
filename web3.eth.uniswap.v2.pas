@@ -240,16 +240,22 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      Self.SwapExactTokensForETH(
-        owner,
-        amountIn,
-        amountOutMin,
-        token,
-        WETH,
-        owner.Address,
-        DateTimeToUnix(IncMinute(Now, minutes), False),
-        callback
-      );
+      owner.Address(procedure(addr: TAddress; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          Self.SwapExactTokensForETH(
+            owner,
+            amountIn,
+            amountOutMin,
+            token,
+            WETH,
+            addr,
+            DateTimeToUnix(IncMinute(Now, minutes), False),
+            callback
+          );
+      end);
   end);
 end;
 

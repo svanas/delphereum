@@ -328,12 +328,18 @@ class procedure TdYdX.Withdraw(
   reserve : TReserve;
   callback: TAsyncReceiptEx);
 begin
-  Balance(client, from.Address, reserve, procedure(amount: BigInteger; err: IError)
+  from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback(nil, 0, err)
     else
-      WithdrawEx(client, from, reserve, amount, callback);
+      Balance(client, addr, reserve, procedure(amount: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, 0, err)
+        else
+          WithdrawEx(client, from, reserve, amount, callback);
+      end);
   end);
 end;
 
@@ -561,37 +567,43 @@ procedure TSoloMargin.Operate(
   otherAccountId   : Integer;
   callback         : TAsyncReceipt);
 begin
-  web3.eth.write(Client, owner, Contract,
-    'operate(' +
-      '(address,uint256)[],' +             // accountOwner, accountNumber
-      '(' +
-        'uint8,uint256,' +                 // actionType, accountId
-        '(bool,uint8,uint8,uint256),' +    // sign, denomination, reference, value
-        'uint256,' +                       // primaryMarketId
-        'uint256,' +                       // secondaryMarketId
-        'address,' +                       // otherAddress
-        'uint256,' +                       // otherAccountId
-        'bytes' +                          // arbitrary data
-      ')[]' +
-    ')',
-    [
-      &array([tuple([owner.Address, 0])]), // accountOwner, accountNumber
-      &array([tuple([actionType, 0,        // actionType, accountId
-        tuple([
-          not(amount.Negative),            // sign
-          denomination,                    // denomination
-          reference,                       // reference
-          web3.utils.toHex(amount.Abs)     // value
-        ]),
-        primaryMarketId,
-        secondaryMarketId,
-        otherAddress,
-        otherAccountId,
-        ''
-      ])])
-    ],
-    callback
-  );
+  owner.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      web3.eth.write(Client, owner, Contract,
+        'operate(' +
+          '(address,uint256)[],' +           // accountOwner, accountNumber
+          '(' +
+            'uint8,uint256,' +               // actionType, accountId
+            '(bool,uint8,uint8,uint256),' +  // sign, denomination, reference, value
+            'uint256,' +                     // primaryMarketId
+            'uint256,' +                     // secondaryMarketId
+            'address,' +                     // otherAddress
+            'uint256,' +                     // otherAccountId
+            'bytes' +                        // arbitrary data
+          ')[]' +
+        ')',
+        [
+          &array([tuple([addr, 0])]),        // accountOwner, accountNumber
+          &array([tuple([actionType, 0,      // actionType, accountId
+            tuple([
+              not(amount.Negative),          // sign
+              denomination,                  // denomination
+              reference,                     // reference
+              web3.utils.toHex(amount.Abs)   // value
+            ]),
+            primaryMarketId,
+            secondaryMarketId,
+            otherAddress,
+            otherAccountId,
+            ''
+          ])])
+        ],
+        callback
+      );
+  end);
 end;
 
 // Moves tokens from an address to Solo.
@@ -602,17 +614,23 @@ procedure TSoloMargin.Deposit(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  Operate(
-    owner,                    // owner
-    TSoloActionType.Deposit,  // actionType
-    amount,                   // amount
-    TSoloDenomination.Wei,    // denomination
-    TSoloReference.Delta,     // reference
-    marketId,                 // primaryMarketId
-    0,                        // secondaryMarketId (ignored)
-    owner.Address,            // otherAddress
-    0,                        // otherAccountId (ignored)
-    callback);
+  owner.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      Operate(
+        owner,                    // owner
+        TSoloActionType.Deposit,  // actionType
+        amount,                   // amount
+        TSoloDenomination.Wei,    // denomination
+        TSoloReference.Delta,     // reference
+        marketId,                 // primaryMarketId
+        0,                        // secondaryMarketId (ignored)
+        addr,                     // otherAddress
+        0,                        // otherAccountId (ignored)
+        callback);
+  end);
 end;
 
 // Moves tokens from Solo to another address.
@@ -625,17 +643,23 @@ procedure TSoloMargin.Withdraw(
 begin
   if not(amount.IsZero) then
     amount.Sign := -1;
-  Operate(
-    owner,                    // owner
-    TSoloActionType.Withdraw, // actionType
-    amount,                   // amount
-    TSoloDenomination.Wei,    // denomination
-    TSoloReference.Delta,     // reference
-    marketId,                 // primaryMarketId
-    0,                        // secondaryMarketId (ignored)
-    owner.Address,            // otherAddress
-    0,                        // otherAccountId (ignored)
-    callback);
+  owner.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      Operate(
+        owner,                     // owner
+        TSoloActionType.Withdraw,  // actionType
+        amount,                    // amount
+        TSoloDenomination.Wei,     // denomination
+        TSoloReference.Delta,      // reference
+        marketId,                  // primaryMarketId
+        0,                         // secondaryMarketId (ignored)
+        addr,                      // otherAddress
+        0,                         // otherAccountId (ignored)
+        callback);
+  end);
 end;
 
 end.
