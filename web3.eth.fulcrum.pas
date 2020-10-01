@@ -249,10 +249,7 @@ end;
 
 class function TFulcrum.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  if reserve = DAI then
-    Result := chain in [Mainnet, Ganache, Kovan]
-  else
-    Result := chain in [Mainnet, Ganache];
+  Result := chain in [Mainnet, Ganache, Kovan];
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -521,7 +518,7 @@ begin
   // https://bzx.network/itokens
   case aClient.Chain of
     Mainnet, Ganache:
-      inherited Create(aClient, '0x493c57c4763932315a328269e1adad09653b9081');
+      inherited Create(aClient, '0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0');
     Ropsten:
       raise EFulcrum.Create('iDAI is not supported on Ropsten');
     Rinkeby:
@@ -529,7 +526,7 @@ begin
     Goerli:
       raise EFulcrum.Create('iDAI is not supported on Goerli');
     Kovan:
-      inherited Create(aClient, '0x6c1e2b0f67e00c06c8e2be7dc681ab785163ff4d');
+      inherited Create(aClient, '0x73d0B4834Ba4ADa053d8282c02305eCdAC2304f0');
   end;
 end;
 
@@ -540,7 +537,7 @@ begin
   // https://bzx.network/itokens
   case aClient.Chain of
     Mainnet, Ganache:
-      inherited Create(aClient, '0xF013406A0B1d544238083DF0B93ad0d2cBE0f65f');
+      inherited Create(aClient, '0x32e4c68b3a4a813b710595aeba7f6b7604ab9c15');
     Ropsten:
       raise EFulcrum.Create('iUSDC is not supported on Ropsten');
     Rinkeby:
@@ -548,7 +545,7 @@ begin
     Goerli:
       raise EFulcrum.Create('iUSDC is not supported on Goerli');
     Kovan:
-      raise EFulcrum.Create('iUSDC is not supported on Kovan');
+      inherited Create(aClient, '0xaaC9822F31e5Aefb32bC228DcF259F23B49B9855');
   end;
 end;
 
@@ -559,7 +556,7 @@ begin
   // https://bzx.network/itokens
   case aClient.Chain of
     Mainnet, Ganache:
-      inherited Create(aClient, '0x8326645f3aa6de6420102fdb7da9e3a91855045b');
+      inherited Create(aClient, '0x7e9997a38a439b2be7ed9c9c4628391d3e055d48');
     Ropsten:
       raise EFulcrum.Create('iUSDT is not supported on Ropsten');
     Rinkeby:
@@ -567,7 +564,7 @@ begin
     Goerli:
       raise EFulcrum.Create('iUSDT is not supported on Goerli');
     Kovan:
-      raise EFulcrum.Create('iUSDT is not supported on Kovan');
+      inherited Create(aClient, '0x6b9F03e05423cC8D00617497890C0872FF33d4E8');
   end;
 end;
 
