@@ -18,6 +18,8 @@ interface
 uses
   // Delphi
   System.Types,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // web3
   web3,
   web3.eth.types;
@@ -38,16 +40,38 @@ type
     function Status: Integer;
   end;
 
+  IErc20TransferEvent = interface
+    function Hash: TTxHash;
+    function From: TAddress;
+    function &To: TAddress;
+    function Contract: TAddress;
+    function Value: BigInteger;
+  end;
+
+  IErc20TransferEvents = interface
+    function Count: Integer;
+    function Item(const Index: Integer): IErc20TransferEvent;
+  end;
+
+  TAsyncErc20TransferEvents = reference to procedure(events: IErc20TransferEvents; err: IError);
+
 function getBlockNumberByTimestamp(
   chain       : TChain;
   timestamp   : TUnixDateTime;
   const apiKey: string;
   callback    : TAsyncQuantity): IAsyncResult;
 
+function getErc20TransferEvents(
+  chain       : TChain;
+  address     : TAddress;
+  const apiKey: string;
+  callback    : TAsyncErc20TransferEvents): IAsyncResult;
+
 implementation
 
 uses
   // Delphi
+  System.Generics.Collections,
   System.JSON,
   System.NetEncoding,
   System.SysUtils,
@@ -89,6 +113,96 @@ begin
   Result := FStatus;
 end;
 
+{ TErc20TransferEvent }
+
+type
+  TErc20TransferEvent = class(TInterfacedObject, IErc20TransferEvent)
+  private
+    FJsonObject: TJsonObject;
+  public
+    function Hash: TTxHash;
+    function From: TAddress;
+    function &To: TAddress;
+    function Contract: TAddress;
+    function Value: BigInteger;
+    constructor Create(aJsonObject: TJsonObject);
+    destructor Destroy; override;
+  end;
+
+constructor TErc20TransferEvent.Create(aJsonObject: TJsonObject);
+begin
+  inherited Create;
+  FJsonObject := aJsonObject;
+end;
+
+destructor TErc20TransferEvent.Destroy;
+begin
+  if Assigned(FJsonObject) then
+    FJsonObject.Free;
+  inherited Destroy;
+end;
+
+function TErc20TransferEvent.Hash: TTxHash;
+begin
+  Result := TTxHash(getPropAsStr(FJsonObject, 'hash'));
+end;
+
+function TErc20TransferEvent.From: TAddress;
+begin
+  Result := TAddress.New(getPropAsStr(FJsonObject, 'from'));
+end;
+
+function TErc20TransferEvent.&To: TAddress;
+begin
+  Result := TAddress.New(getPropAsStr(FJsonObject, 'to'));
+end;
+
+function TErc20TransferEvent.Contract: TAddress;
+begin
+  Result := TAddress.New(getPropAsStr(FJsonObject, 'contractAddress'));
+end;
+
+function TErc20TransferEvent.Value: BigInteger;
+begin
+  Result := getPropAsBig(FJsonObject, 'value', 0);
+end;
+
+{ TErc20TransferEvents }
+
+type
+  TErc20TransferEvents = class(TInterfacedObject, IErc20TransferEvents)
+  private
+    FJsonArray: TJsonArray;
+  public
+    function Count: Integer;
+    function Item(const Index: Integer): IErc20TransferEvent;
+    constructor Create(aJsonArray: TJsonArray);
+    destructor Destroy; override;
+  end;
+
+constructor TErc20TransferEvents.Create(aJsonArray: TJsonArray);
+begin
+  inherited Create;
+  FJsonArray := aJsonArray;
+end;
+
+destructor TErc20TransferEvents.Destroy;
+begin
+  if Assigned(FJsonArray) then
+    FJsonArray.Free;
+  inherited Destroy;
+end;
+
+function TErc20TransferEvents.Count: Integer;
+begin
+  Result := FJsonArray.Count;
+end;
+
+function TErc20TransferEvents.Item(const Index: Integer): IErc20TransferEvent;
+begin
+  Result := TErc20TransferEvent.Create(FJsonArray.Items[Index].Clone as TJsonObject);
+end;
+
 { global functions }
 
 function getBlockNumberByTimestamp(
@@ -114,6 +228,41 @@ begin
       callback(0, TEtherscanError.Create(status, web3.json.getPropAsStr(resp, 'message')))
     else
       callback(web3.json.getPropAsBig(resp, 'result', 0), nil);
+  end);
+end;
+
+function getErc20TransferEvents(
+  chain       : TChain;
+  address     : TAddress;
+  const apiKey: string;
+  callback    : TAsyncErc20TransferEvents): IAsyncResult;
+var
+  status: Integer;
+  &array: TJsonArray;
+begin
+  Result := web3.http.get(
+    endpoint(chain, TNetEncoding.URL.Encode(apiKey)) +
+    Format('&module=account&action=tokentx&address=%s&sort=desc', [address]),
+  procedure(resp: TJsonObject; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    status := web3.json.getPropAsInt(resp, 'status');
+    if status = 0 then
+    begin
+      callback(nil, TEtherscanError.Create(status, web3.json.getPropAsStr(resp, 'message')));
+      EXIT;
+    end;
+    &array := web3.json.getPropAsArr(resp, 'result');
+    if not Assigned(&array) then
+    begin
+      callback(nil, TEtherscanError.Create(status, 'an unknown error occurred'));
+      EXIT;
+    end;
+    callback(TErc20TransferEvents.Create(&array.Clone as TJsonArray), nil);
   end);
 end;
 
