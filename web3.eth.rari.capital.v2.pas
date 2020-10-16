@@ -1,0 +1,324 @@
+{******************************************************************************}
+{                                                                              }
+{                                  Delphereum                                  }
+{                                                                              }
+{             Copyright(c) 2020 Stefan van As <svanas@runbox.com>              }
+{           Github Repository <https://github.com/svanas/delphereum>           }
+{                                                                              }
+{   Distributed under Creative Commons NonCommercial (aka CC BY-NC) license.   }
+{                                                                              }
+{******************************************************************************}
+
+unit web3.eth.rari.capital.v2;
+
+{$I web3.inc}
+
+interface
+
+uses
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
+  // web3
+  web3,
+  web3.eth,
+  web3.eth.contract,
+  web3.eth.defi,
+  web3.eth.erc20,
+  web3.eth.types,
+  web3.utils;
+
+type
+  TRari = class(TLendingProtocol)
+  protected
+    class procedure Approve(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncReceipt);
+  public
+    class function Name: string; override;
+    class function Supports(
+      chain  : TChain;
+      reserve: TReserve): Boolean; override;
+    class procedure APY(
+      _client : TWeb3;
+      _reserve: TReserve;
+      _perform: TPerformance;
+      callback: TAsyncFloat); override;
+    class procedure Deposit(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      amount  : BigInteger;
+      callback: TAsyncReceipt); override;
+    class procedure Balance(
+      client  : TWeb3;
+      owner   : TAddress;
+      _reserve: TReserve;
+      callback: TAsyncQuantity); override;
+    class procedure Withdraw(
+      client  : TWeb3;
+      from    : TPrivateKey;
+      reserve : TReserve;
+      callback: TAsyncReceiptEx); override;
+    class procedure WithdrawEx(
+      _client : TWeb3;
+      _from   : TPrivateKey;
+      _reserve: TReserve;
+      _amount : BigInteger;
+      callback: TAsyncReceiptEx); override;
+  end;
+
+  TRariFundManager = class(TCustomContract)
+  public
+    constructor Create(aClient: TWeb3); reintroduce;
+    // Address where RariFundManager is deployed.
+    class function DeployedAt: TAddress;
+    // Returns the total balance in USD (scaled by 1e18) supplied by `owner`.
+    procedure BalanceOf(owner: TAddress; callback: TAsyncQuantity);
+    // Returns an array of currency codes currently accepted for deposits.
+    procedure GetAcceptedCurrencies(callback: TAsyncTuple);
+    // Deposits funds to the Rari Stable Pool in exchange for RSPT.
+    procedure Deposit(
+      from: TPrivateKey;          // supplier of the funds, and receiver of RSPT.
+      const currencyCode: string; // The currency code of the token to be deposited.
+      amount: BigInteger;         // The amount of tokens to be deposited.
+      callback: TAsyncReceipt);
+    // Withdraws funds from the Rari Stable Pool in exchange for RSPT.
+    procedure Withdraw(
+      from: TPrivateKey;          // supplier of RSPT, and receiver of the funds.
+      const currencyCode: string; // The currency code of the token to be withdrawn.
+      amount: BigInteger;         // The amount of tokens to be withdrawn.
+      callback: TAsyncReceipt);
+  end;
+
+  TRariFundToken = class(TERC20)
+  public
+    constructor Create(aClient: TWeb3); reintroduce;
+  end;
+
+implementation
+
+{ TRari }
+
+class procedure TRari.Approve(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  erc20: TERC20;
+begin
+  erc20 := TERC20.Create(client, reserve.Address(client.Chain));
+  if Assigned(erc20) then
+  begin
+    erc20.ApproveEx(from, TRariFundManager.DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
+    begin
+      try
+        callback(rcpt, err);
+      finally
+        erc20.Free;
+      end;
+    end);
+  end;
+end;
+
+class function TRari.Name: string;
+begin
+  Result := 'Rari';
+end;
+
+class function TRari.Supports(chain: TChain; reserve: TReserve): Boolean;
+begin
+  Result := (reserve = DAI) and (chain = Mainnet);
+end;
+
+class procedure TRari.APY(
+  _client : TWeb3;
+  _reserve: TReserve;
+  _perform: TPerformance;
+  callback: TAsyncFloat);
+begin
+  callback(0, nil);
+end;
+
+class procedure TRari.Deposit(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  amount  : BigInteger;
+  callback: TAsyncReceipt);
+var
+  manager : TRariFundManager;
+begin
+  Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+    begin
+      manager := TRariFundManager.Create(client);
+      try
+        manager.Deposit(from, reserve.Symbol, amount, callback);
+      finally
+        manager.Free;
+      end;
+    end;
+  end);
+end;
+
+class procedure TRari.Balance(
+  client  : TWeb3;
+  owner   : TAddress;
+  _reserve: TReserve;
+  callback: TAsyncQuantity);
+var
+  manager : TRariFundManager;
+begin
+  manager := TRariFundManager.Create(client);
+  if Assigned(manager) then
+  try
+    manager.BalanceOf(owner, callback);
+  finally
+    manager.Free;
+  end;
+end;
+
+class procedure TRari.Withdraw(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  reserve : TReserve;
+  callback: TAsyncReceiptEx);
+var
+  RSPT: TRariFundToken;
+  mngr: TRariFundManager;
+begin
+  from.Address(procedure(owner: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, 0, err);
+      EXIT;
+    end;
+    RSPT := TRariFundToken.Create(client);
+    if Assigned(RSPT) then
+    begin
+      // step #1: get the RSPT balance
+      RSPT.BalanceOf(owner, procedure(input: BigInteger; err: IError)
+      begin
+        try
+          if Assigned(err) then
+          begin
+            callback(nil, 0, err);
+            EXIT;
+          end;
+          // step #2: approve RariFundManager to burn RSPT
+          RSPT.ApproveEx(from, TRariFundManager.DeployedAt, input, procedure(rcpt: ITxReceipt; err: IError)
+          begin
+            if Assigned(err) then
+            begin
+              callback(nil, 0, err);
+              EXIT;
+            end;
+            // step #3: get the USD balance
+            Self.Balance(client, owner, reserve, procedure(output: BigInteger; err: IError)
+            begin
+              if Assigned(err) then
+              begin
+                callback(nil, 0, err);
+                EXIT;
+              end;
+              mngr := TRariFundManager.Create(client);
+              try
+                // step #4: withdraws funds from the pool in exchange for RSPT
+                mngr.Withdraw(from, reserve.Symbol, input, procedure(rcpt: ITxReceipt; err: IError)
+                begin
+                  if Assigned(err) then
+                    callback(nil, 0, err)
+                  else
+                    callback(rcpt, output, nil);
+                end);
+              finally
+                mngr.Free;
+              end;
+            end);
+          end);
+        finally
+          RSPT.Free;
+        end;
+      end);
+    end;
+  end);
+end;
+
+class procedure TRari.WithdrawEx(
+  _client : TWeb3;
+  _from   : TPrivateKey;
+  _reserve: TReserve;
+  _amount : BigInteger;
+  callback: TAsyncReceiptEx);
+begin
+  callback(nil, 0, TNotImplemented.Create);
+end;
+
+{ TRariFundManager }
+
+constructor TRariFundManager.Create(aClient: TWeb3);
+begin
+  inherited Create(aClient, Self.DeployedAt);
+end;
+
+// Address where RariFundManager is deployed.
+class function TRariFundManager.DeployedAt: TAddress;
+begin
+  Result := TAddress.New('0xC6BF8C8A55f77686720E0a88e2Fd1fEEF58ddf4a');
+end;
+
+// Returns the total balance in USD (scaled by 1e18) supplied by `owner`.
+procedure TRariFundManager.BalanceOf(owner: TAddress; callback: TAsyncQuantity);
+begin
+  web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
+end;
+
+// Returns an array of currency codes currently accepted for deposits.
+procedure TRariFundManager.GetAcceptedCurrencies(callback: TAsyncTuple);
+begin
+  web3.eth.call(Client, Contract, 'getAcceptedCurrencies()', [], callback);
+end;
+
+// Deposits funds to the Rari Stable Pool in exchange for RSPT.
+// Please note that you must approve RariFundManager to transfer at least amount.
+procedure TRariFundManager.Deposit(
+  from: TPrivateKey;          // supplier of the funds, and receiver of RSPT.
+  const currencyCode: string; // The currency code of the token to be deposited.
+  amount: BigInteger;         // The amount of tokens to be deposited.
+  callback: TAsyncReceipt);
+begin
+  web3.eth.write(Client, from, Contract,
+    'deposit(string,uint256)',
+    [currencyCode, web3.utils.toHex(amount)], callback);
+end;
+
+// Withdraws funds from the Rari Stable Pool in exchange for RSPT.
+// Please note that you must approve RariFundManager to burn the necessary amount of RSPT.
+procedure TRariFundManager.Withdraw(
+  from: TPrivateKey;          // supplier of RSPT, and receiver of the funds.
+  const currencyCode: string; // The currency code of the token to be withdrawn.
+  amount: BigInteger;         // The amount of tokens to be withdrawn.
+  callback: TAsyncReceipt);
+begin
+  web3.eth.write(Client, from, Contract,
+    'withdraw(string,uint256)',
+    [currencyCode, web3.utils.toHex(amount)], callback);
+end;
+
+{ TRariFundToken }
+
+constructor TRariFundToken.Create(aClient: TWeb3);
+begin
+  inherited Create(aClient, '0x016bf078ABcaCB987f0589a6d3BEAdD4316922B0');
+end;
+
+end.

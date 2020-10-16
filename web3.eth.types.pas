@@ -17,6 +17,7 @@ interface
 
 uses
   // Delphi
+  System.Classes,
   System.JSON,
   System.Net.HttpClient,
   System.SysUtils,
@@ -96,9 +97,12 @@ type
 
 type
   TTupleHelper = record helper for TTuple
-    function Add     : PArg;
-    function Last    : PArg;
+    function Add: PArg;
+    function Last: PArg;
+    function Empty: Boolean;
+    function &Array: Boolean;
     function ToString: string;
+    function ToStrings: TStrings;
     class function From(const hex: string): TTuple;
   end;
 
@@ -274,22 +278,71 @@ begin
     Result := @Self[High(Self)];
 end;
 
+function TTupleHelper.Empty: Boolean;
+begin
+  Result := (Length(Self) < 2) or (Self[1].toInt64 = 0);
+end;
+
+function TTupleHelper.&Array: Boolean;
+begin
+  Result := (not Self.Empty) and (Length(Self) > (Self[1].toInt64 + 2));
+end;
+
 function TTupleHelper.ToString: string;
 var
-  arg: TArg;
+  SL: TStrings;
   len: Integer;
   idx: Integer;
 begin
   Result := '';
+
+  if Self.Empty then
+    EXIT;
+
+  if Self.&Array then
+  begin
+    SL := Self.ToStrings;
+    if Assigned(SL) then
+    try
+      Result := TrimRight(SL.Text);
+    finally
+      SL.Free;
+    end;
+    EXIT;
+  end;
+
   if Length(Self) < 3 then
     EXIT;
-  arg := Self[1];
-  len := arg.toInt64;
+  len := Self[1].toInt64;
   if len = 0 then
     EXIT;
   for idx := 2 to High(Self) do
     Result := Result + Self[idx].toString;
   SetLength(Result, len);
+end;
+
+function TTupleHelper.ToStrings: TStrings;
+var
+  str: string;
+  len,
+  idx,
+  ndx: Integer;
+begin
+  Result := nil;
+  if Length(Self) < 3 then
+    EXIT;
+  len := Self[1].toInt64;
+  if len = 0 then
+    EXIT;
+  Result := TStringList.Create;
+  for idx := 2 to len + 1 do
+  begin
+    ndx := Self[idx].toInt64 div SizeOf(TArg) + 2;
+    len := Self[ndx].toInt64;
+    str := Self[ndx + 1].toString;
+    SetLength(str, len);
+    Result.Add(str);
+  end;
 end;
 
 class function TTupleHelper.From(const hex: string): TTuple;

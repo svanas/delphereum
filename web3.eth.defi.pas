@@ -27,6 +27,7 @@ type
   TReserve = (DAI, USDC, USDT);
 
   TReserveHelper = record helper for TReserve
+    function  Symbol: string;
     function  Address(chain: TChain): TAddress;
     function  Scale(amount: Extended): BigInteger;
     function  Unscale(amount: BigInteger): Extended;
@@ -114,6 +115,11 @@ const
       '0xdac17f958d2ee523a2206206994597c13d831ec7')  // Ganache
   );
 
+function TReserveHelper.Symbol: string;
+begin
+  Result := GetEnumName(TypeInfo(TReserve), Ord(Self));
+end;
+
 function TReserveHelper.Address(chain: TChain): TAddress;
 begin
   Result := RESERVE_ADDRESS[Self][chain];
@@ -126,7 +132,7 @@ begin
     USDC: Result := BigInteger.Create(amount * 1e6);
     USDT: Result := BigInteger.Create(amount * 1e6);
   else
-    raise EWeb3.CreateFmt('%s not implemented', [GetEnumName(TypeInfo(TReserve), Ord(Self))]);
+    raise EWeb3.CreateFmt('%s not implemented', [Self.Symbol]);
   end;
 end;
 
@@ -137,7 +143,7 @@ begin
     USDC: Result := amount.AsExtended / 1e6;
     USDT: Result := amount.AsExtended / 1e6;
   else
-    raise EWeb3.CreateFmt('%s not implemented', [GetEnumName(TypeInfo(TReserve), Ord(Self))]);
+    raise EWeb3.CreateFmt('%s not implemented', [Self.Symbol]);
   end;
 end;
 
