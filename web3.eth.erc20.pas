@@ -86,7 +86,8 @@ type
     procedure Name       (callback: TAsyncString);
     procedure Symbol     (callback: TAsyncString);
     procedure Decimals   (callback: TAsyncQuantity);
-    procedure TotalSupply(callback: TAsyncQuantity);
+    procedure TotalSupply(callback: TAsyncQuantity); overload;
+    procedure TotalSupply(const block: string; callback: TAsyncQuantity); overload;
     procedure BalanceOf  (owner: TAddress; callback: TAsyncQuantity);
     procedure Allowance  (owner, spender: TAddress; callback: TAsyncQuantity);
 
@@ -209,6 +210,11 @@ end;
 procedure TERC20.TotalSupply(callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'totalSupply()', [], callback);
+end;
+
+procedure TERC20.TotalSupply(const block: string; callback: TAsyncQuantity);
+begin
+  web3.eth.call(Client, Contract, 'totalSupply()', block, [], callback);
 end;
 
 procedure TERC20.BalanceOf(owner: TAddress; callback: TAsyncQuantity);
