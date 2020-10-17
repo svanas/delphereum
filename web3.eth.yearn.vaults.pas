@@ -50,7 +50,7 @@ type
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
-      perform : TPerformance;
+      base    : TPerformance;
       callback: TAsyncFloat); override;
     class procedure Deposit(
       client  : TWeb3;
@@ -183,24 +183,24 @@ end;
 class procedure TyVault.APY(
   client  : TWeb3;
   reserve : TReserve;
-  perform : TPerformance;
+  base    : TPerformance;
   callback: TAsyncFloat);
 
-  function getAPY(addr: TAddress; prfm: TPerformance; callback: TAsyncFloat): IAsyncResult;
+  function getAPY(addr: TAddress; base: TPerformance; callback: TAsyncFloat): IAsyncResult;
   begin
     Result := web3.eth.yearn.tools.vault(addr, procedure(vault: IYearnVault; err: IError)
     begin
       if Assigned(err) then
         callback(0, err)
       else
-        callback(vault.APY(prfm), nil);
+        callback(vault.APY(base), nil);
     end);
   end;
 
 var
   yToken: TyToken;
 begin
-  getAPY(yTokenClass[reserve].DeployedAt, perform, procedure(apy: Extended; err: IError)
+  getAPY(yTokenClass[reserve].DeployedAt, base, procedure(apy: Extended; err: IError)
   begin
     if (apy > 0) and not Assigned(err) then
     begin
@@ -210,7 +210,7 @@ begin
     yToken := yTokenClass[reserve].Create(client);
     if Assigned(yToken) then
     begin
-      yToken.APY(perform, procedure(apy: Extended; err: IError)
+      yToken.APY(base, procedure(apy: Extended; err: IError)
       begin
         try
           callback(apy, err);

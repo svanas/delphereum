@@ -45,7 +45,7 @@ type
     class procedure APY(
       client  : TWeb3;
       _reserve: TReserve;
-      perform : TPerformance;
+      base    : TPerformance;
       callback: TAsyncFloat); override;
     class procedure Deposit(
       client  : TWeb3;
@@ -98,7 +98,7 @@ type
     // Get the exchange rate of RSPT in USD (scaled by 1e18).
     procedure GetExchangeRate(const block: string; callback: TAsyncFloat);
     // Returns the annual yield as a percentage.
-    procedure APY(perform: TPerformance; callback: TAsyncFloat);
+    procedure APY(base: TPerformance; callback: TAsyncFloat);
   end;
 
   TRariFundToken = class(TERC20)
@@ -152,7 +152,7 @@ end;
 class procedure TRari.APY(
   client  : TWeb3;
   _reserve: TReserve;
-  perform : TPerformance;
+  base    : TPerformance;
   callback: TAsyncFloat);
 var
   manager : TRariFundManager;
@@ -160,7 +160,7 @@ begin
   manager := TRariFundManager.Create(client);
   if Assigned(manager) then
   begin
-    manager.APY(perform, procedure(apy: Extended; err: IError)
+    manager.APY(base, procedure(apy: Extended; err: IError)
     begin
       try
         callback(apy, err);
@@ -383,24 +383,16 @@ begin
 end;
 
 // Returns the annual yield as a percentage.
-procedure TRariFundManager.APY(perform: TPerformance; callback: TAsyncFloat);
+procedure TRariFundManager.APY(base: TPerformance; callback: TAsyncFloat);
 begin
   Self.GetExchangeRate(BLOCK_LATEST, procedure(currRate: Extended; err: IError)
-  var
-    secs: Integer;
   begin
     if Assigned(err) then
     begin
       callback(0, err);
       EXIT;
     end;
-    secs := 60 * 60 * 24; // one day
-    case perform of
-      threeDays: secs := secs * 3;
-      oneWeek  : secs := secs * 7;
-      oneMonth : secs := secs * 30;
-    end;
-    getBlockNumberByTimestamp(client.Chain, DateTimeToUnix(Now, False) - secs, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
+    getBlockNumberByTimestamp(client.Chain, DateTimeToUnix(Now, False) - base.Seconds, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -408,24 +400,13 @@ begin
         EXIT;
       end;
       Self.GetExchangeRate(web3.utils.toHex(bn), procedure(pastRate: Extended; err: IError)
-      var
-        days: Integer;
       begin
         if Assigned(err) then
         begin
           callback(0, err);
           EXIT;
         end;
-        days := 1;
-        case perform of
-          threeDays: days := 3;
-          oneWeek  : days := 7;
-          oneMonth : days := 30;
-        end;
-        // Divide the ending exchange rate by the starting exchange rate, raise
-        // this quotient to the power of 1 year divided by the length of the time
-        // range, and subtract one to get the Stable Pool APY over this time range.
-        callback(Power(currRate / pastRate, (365 / days) - 1), nil);
+        callback((((currRate - pastRate) / pastRate) * 100) * (365 / base.Days), nil);
       end);
     end);
   end);

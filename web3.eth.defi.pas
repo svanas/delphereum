@@ -36,6 +36,13 @@ type
 
   TPerformance = (oneDay, threeDays, oneWeek, oneMonth);
 
+  TPerformanceHelper = record helper for TPerformance
+    function Days   : Integer;
+    function Hours  : Integer;
+    function Minutes: Integer;
+    function Seconds: Integer;
+  end;
+
   TLendingProtocol = class abstract
   public
     class function Name: string; virtual; abstract;
@@ -46,7 +53,7 @@ type
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
-      perform : TPerformance;
+      base    : TPerformance;
       callback: TAsyncFloat); virtual; abstract;
     // Deposits an underlying asset into the lending pool.
     class procedure Deposit(
@@ -114,6 +121,36 @@ const
       '',                                            // Kovan
       '0xdac17f958d2ee523a2206206994597c13d831ec7')  // Ganache
   );
+
+
+{ TPerformanceHelper }
+
+function TPerformanceHelper.Days: Integer;
+begin
+  Result := 1;
+  case Self of
+    threeDays: Result := 3;
+    oneWeek  : Result := 7;
+    oneMonth : Result := 30;
+  end;
+end;
+
+function TPerformanceHelper.Hours: Integer;
+begin
+  Result := Self.Days * 24;
+end;
+
+function TPerformanceHelper.Minutes: Integer;
+begin
+  Result := Self.Hours * 60;
+end;
+
+function TPerformanceHelper.Seconds: Integer;
+begin
+  Result := Self.Minutes * 60;
+end;
+
+{ TReserveHelper }
 
 function TReserveHelper.Symbol: string;
 begin
