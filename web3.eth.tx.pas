@@ -333,7 +333,7 @@ begin
       getTransactionRevertReason(client, rcpt, procedure(const reason: string; err: IError)
       begin
         if Assigned(err) then
-          callback(rcpt, nil)
+          callback(rcpt, TTxError.Create(hash, err.Message))
         else
           callback(rcpt, TTxError.Create(rcpt.txHash, reason));
       end);
@@ -640,8 +640,8 @@ begin
 end;
 
 resourcestring
-  TX_DID_NOT_FAIL  = 'Transaction did not fail';
-  TX_OUT_OF_GAS    = 'Transaction ran out of gas';
+  TX_SUCCESS       = 'Success';
+  TX_OUT_OF_GAS    = 'Out of gas';
   TX_UNKNOWN_ERROR = 'Unknown error encountered during contract execution';
 
 // get the revert reason for a failed transaction.
@@ -649,7 +649,7 @@ procedure getTransactionRevertReason(client: TWeb3; rcpt: ITxReceipt; callback: 
 begin
   if rcpt.status then
   begin
-    callback(TX_DID_NOT_FAIL, nil);
+    callback(TX_SUCCESS, nil);
     EXIT;
   end;
 
@@ -664,6 +664,12 @@ begin
     end;
 
     if rcpt.gasUsed = txn.gasLimit then
+    begin
+      callback(TX_OUT_OF_GAS, nil);
+      EXIT;
+    end;
+
+    if rcpt.gasUsed.AsInt64 / txn.gasLimit.AsInt64 > 0.98 then
     begin
       callback(TX_OUT_OF_GAS, nil);
       EXIT;
