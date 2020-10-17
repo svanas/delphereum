@@ -332,7 +332,7 @@ procedure TRariFundManager.Deposit(
 begin
   web3.eth.write(Client, from, Contract,
     'deposit(string,uint256)',
-    [currencyCode, web3.utils.toHex(amount)], callback);
+    [currencyCode, web3.utils.toHex(amount)], 900000, callback);
 end;
 
 // Withdraws funds from the Rari Stable Pool in exchange for RSPT.
@@ -345,7 +345,7 @@ procedure TRariFundManager.Withdraw(
 begin
   web3.eth.write(Client, from, Contract,
     'withdraw(string,uint256)',
-    [currencyCode, web3.utils.toHex(amount)], callback);
+    [currencyCode, web3.utils.toHex(amount)], 1200000, callback);
 end;
 
 // Get the exchange rate of RSPT in USD (scaled by 1e18).
