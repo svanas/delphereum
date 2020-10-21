@@ -163,7 +163,12 @@ begin
     manager.APY(base, procedure(apy: Extended; err: IError)
     begin
       try
-        callback(apy, err);
+        if Assigned(err) or (not IsNAN(apy)) or (base = Low(TPerformance)) then
+        begin
+          callback(apy, err);
+          EXIT;
+        end;
+        Self.APY(client, _reserve, Pred(base), callback);
       finally
         manager.Free;
       end;
@@ -406,7 +411,10 @@ begin
           callback(0, err);
           EXIT;
         end;
-        callback((((currRate - pastRate) / pastRate) * 100) * (365 / base.Days), nil);
+        if currRate < pastRate then
+          callback(NaN, nil)
+        else
+          callback(((currRate / pastRate - 1) * 100) * (365 / base.Days), nil);
       end);
     end);
   end);
