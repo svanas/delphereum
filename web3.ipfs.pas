@@ -24,21 +24,21 @@ uses
 
 type
   TGateway = (
+    Canonical,
     ProtocolLabs,
     Infura,
     Cloudflare);
 
 type
-  TFile = record
-    Name: string;
-    Hash: string;
-    Size: UInt64;
+  IFile = interface
+    function Name: string;
+    function Hash: string;
+    function Size: UInt64;
     function Endpoint(Gateway: TGateway): string;
   end;
-  PFile = ^TFile;
 
 type
-  TAsyncFile = reference to procedure(&file: PFile; err: IError);
+  TAsyncFile = reference to procedure(F: IFile; E: IError);
 
 function add(const fileName: string; callback: TAsyncJsonObject): IAsyncResult; overload;
 function add(const fileName: string; callback: TAsyncFile): IAsyncResult; overload;
@@ -65,11 +65,53 @@ uses
 
 const
   IPFS_HOST: array[TGateway] of string = (
+    'ipfs://',
     'https://gateway.ipfs.io',
     'https://ipfs.infura.io',
     'https://cloudflare-ipfs.com');
 
 { TFile }
+
+type
+  TFile = class(TInterfacedObject, IFile)
+  private
+    FJsonObject: TJsonObject;
+  public
+    function Name: string;
+    function Hash: string;
+    function Size: UInt64;
+    function Endpoint(Gateway: TGateway): string;
+    constructor Create(aJsonObject: TJsonObject);
+    destructor Destroy; override;
+  end;
+
+constructor TFile.Create(aJsonObject: TJsonObject);
+begin
+  inherited Create;
+  FJsonObject := aJsonObject;
+end;
+
+destructor TFile.Destroy;
+begin
+  if Assigned(FJsonObject) then
+    FJsonObject.Free;
+  inherited Destroy;
+end;
+
+function TFile.Name: string;
+begin
+  Result := getPropAsStr(FJsonObject, 'Name');
+end;
+
+function TFile.Hash: string;
+begin
+  Result := getPropAsStr(FJsonObject, 'Hash');
+end;
+
+function TFile.Size: UInt64;
+begin
+  Result := getPropAsInt(FJsonObject, 'Size');
+end;
 
 function TFile.Endpoint(Gateway: TGateway): string;
 begin
@@ -109,8 +151,6 @@ begin
 end;
 
 function add(const apiHost, fileName: string; callback: TAsyncFile): IAsyncResult;
-var
-  &file: TFile;
 begin
   Result := add(apiHost, fileName, procedure(obj: TJsonObject; err: IError)
   begin
@@ -119,10 +159,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    &file.Name := getPropAsStr(obj, 'Name');
-    &file.Hash := getPropAsStr(obj, 'Hash');
-    &file.Size := getPropAsInt(obj, 'Size');
-    callback(@&file, nil);
+    callback(TFile.Create(obj.Clone as TJsonObject), nil);
   end);
 end;
 
