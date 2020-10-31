@@ -27,7 +27,8 @@ type
   TReserve = (DAI, USDC, USDT);
 
   TReserveHelper = record helper for TReserve
-    function  Symbol: string;
+    function  Symbol  : string;
+    function  Decimals: Extended;
     function  Address(chain: TChain): TAddress;
     function  Scale(amount: Extended): BigInteger;
     function  Unscale(amount: BigInteger): Extended;
@@ -157,6 +158,17 @@ begin
   Result := GetEnumName(TypeInfo(TReserve), Ord(Self));
 end;
 
+function TReserveHelper.Decimals: Extended;
+begin
+  case Self of
+    DAI : Result := 1e18;
+    USDC: Result := 1e6;
+    USDT: Result := 1e6;
+  else
+    raise EWeb3.CreateFmt('%s not implemented', [Self.Symbol]);
+  end;
+end;
+
 function TReserveHelper.Address(chain: TChain): TAddress;
 begin
   Result := RESERVE_ADDRESS[Self][chain];
@@ -164,24 +176,12 @@ end;
 
 function TReserveHelper.Scale(amount: Extended): BigInteger;
 begin
-  case Self of
-    DAI : Result := BigInteger.Create(amount * 1e18);
-    USDC: Result := BigInteger.Create(amount * 1e6);
-    USDT: Result := BigInteger.Create(amount * 1e6);
-  else
-    raise EWeb3.CreateFmt('%s not implemented', [Self.Symbol]);
-  end;
+  Result := BigInteger.Create(amount * Self.Decimals);
 end;
 
 function TReserveHelper.Unscale(amount: BigInteger): Extended;
 begin
-  case Self of
-    DAI : Result := amount.AsExtended / 1e18;
-    USDC: Result := amount.AsExtended / 1e6;
-    USDT: Result := amount.AsExtended / 1e6;
-  else
-    raise EWeb3.CreateFmt('%s not implemented', [Self.Symbol]);
-  end;
+  Result := amount.AsExtended / Self.Decimals;
 end;
 
 procedure TReserveHelper.Balance(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);

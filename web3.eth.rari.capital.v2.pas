@@ -56,7 +56,7 @@ type
     class procedure Balance(
       client  : TWeb3;
       owner   : TAddress;
-      _reserve: TReserve;
+      reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
       client  : TWeb3;
@@ -146,7 +146,7 @@ end;
 
 class function TRari.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (reserve = DAI) and (chain = Mainnet);
+  Result := (reserve = USDC) and (chain = Mainnet);
 end;
 
 class procedure TRari.APY(
@@ -204,7 +204,7 @@ end;
 class procedure TRari.Balance(
   client  : TWeb3;
   owner   : TAddress;
-  _reserve: TReserve;
+  reserve : TReserve;
   callback: TAsyncQuantity);
 var
   manager : TRariFundManager;
@@ -212,7 +212,16 @@ begin
   manager := TRariFundManager.Create(client);
   if Assigned(manager) then
   try
-    manager.BalanceOf(owner, callback);
+    manager.BalanceOf(owner, procedure(usd: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(usd, err)
+      else
+        if reserve.Decimals = 1e18 then
+          callback(usd, err)
+        else
+          callback(reserve.Scale(usd.AsExtended / 1e18), err);
+    end);
   finally
     manager.Free;
   end;

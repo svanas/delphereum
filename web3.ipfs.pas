@@ -66,9 +66,9 @@ uses
 const
   IPFS_HOST: array[TGateway] of string = (
     'ipfs://',
-    'https://gateway.ipfs.io',
-    'https://ipfs.infura.io',
-    'https://cloudflare-ipfs.com');
+    'https://gateway.ipfs.io/',
+    'https://ipfs.infura.io/',
+    'https://cloudflare-ipfs.com/');
 
 { TFile }
 
@@ -115,7 +115,7 @@ end;
 
 function TFile.Endpoint(Gateway: TGateway): string;
 begin
-  Result := IPFS_HOST[Gateway] + '/ipfs/' + TNetEncoding.URL.Encode(Hash);
+  Result := IPFS_HOST[Gateway] + 'ipfs/' + TNetEncoding.URL.Encode(Hash);
 end;
 
 { global functions }
