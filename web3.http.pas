@@ -113,7 +113,7 @@ function get(const URL: string; callback: TAsyncJsonObject): IAsyncResult;
 var
   obj: TJsonObject;
 begin
-  get(URL, procedure(resp: IHttpResponse; err: IError)
+  Result := get(URL, procedure(resp: IHttpResponse; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -136,7 +136,7 @@ function get(const URL: string; callback: TAsyncJsonArray): IAsyncResult;
 var
   arr: TJsonValue;
 begin
-  get(URL, procedure(resp: IHttpResponse; err: IError)
+  Result := get(URL, procedure(resp: IHttpResponse; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -197,7 +197,7 @@ function post(
 var
   obj: TJsonObject;
 begin
-  post(URL, source, headers, procedure(resp: IHttpResponse; err: IError)
+  Result := post(URL, source, headers, procedure(resp: IHttpResponse; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -255,7 +255,7 @@ function post(
 var
   obj: TJsonObject;
 begin
-  post(URL, source, headers, procedure(resp: IHttpResponse; err: IError)
+  Result := post(URL, source, headers, procedure(resp: IHttpResponse; err: IError)
   begin
     if Assigned(err) then
     begin

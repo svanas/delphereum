@@ -141,9 +141,9 @@ uses
 {$ELSE}
   VCL.Dialogs,
 {$ENDIF}
+  web3.coincap,
   web3.eth.types,
-  web3.eth.utils,
-  web3.eth.infura;
+  web3.eth.utils;
 
 function Now: TUnixDateTime;
 begin
@@ -229,7 +229,7 @@ begin
         callback(False, err);
         EXIT;
       end;
-      web3.eth.infura.ticker('ethusd', procedure(ticker: ITicker; err: IError)
+      web3.coincap.ticker('ethereum', procedure(ticker: ITicker; err: IError)
       begin
         if Assigned(err) then
         begin
@@ -241,7 +241,7 @@ begin
 {$WARN SYMBOL_DEPRECATED OFF}
           modalResult := MessageDlg(Format(RS_SIGNATURE_REQUEST, [chainName,
             from, &to, fromWei(gasPrice, gwei, 1), estimatedGas.ToString,
-            EthToFloat(fromWei(estimatedGas * gasPrice, ether)) * ticker.Ask]),
+            EthToFloat(fromWei(estimatedGas * gasPrice, ether)) * ticker.Price]),
             TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
           );
 {$WARN SYMBOL_DEPRECATED DEFAULT}

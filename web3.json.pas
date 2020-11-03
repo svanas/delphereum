@@ -128,7 +128,8 @@ end;
 
 function getPropAsExt(obj: TJsonValue; const name: string; def: Extended): Extended;
 var
-  P: TJsonPair;
+  P : TJsonPair;
+  FS: TFormatSettings;
 begin
   Result := def;
   if not Assigned(obj) then
@@ -142,9 +143,11 @@ begin
         Result := TJsonNumber(P.JsonValue).AsDouble
       else
         if P.JsonValue is TJsonString then
-          Result := StrToFloatDef(TJsonString(P.JsonValue).Value, def)
-        else
-          Result := def;
+        begin
+          FS := TFormatSettings.Create;
+          FS.DecimalSeparator := '.';
+          Result := StrToFloat(TJsonString(P.JsonValue).Value, FS);
+        end;
 end;
 
 function getPropAsBig(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;
