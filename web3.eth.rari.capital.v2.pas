@@ -45,7 +45,7 @@ type
     class procedure APY(
       client  : TWeb3;
       _reserve: TReserve;
-      base    : TPerformance;
+      period  : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
       client  : TWeb3;
@@ -98,7 +98,7 @@ type
     // Get the exchange rate of RSPT in USD (scaled by 1e18).
     procedure GetExchangeRate(const block: string; callback: TAsyncFloat);
     // Returns the annual yield as a percentage.
-    procedure APY(base: TPerformance; callback: TAsyncFloat);
+    procedure APY(period: TPeriod; callback: TAsyncFloat);
   end;
 
   TRariFundToken = class(TERC20)
@@ -110,7 +110,6 @@ implementation
 
 uses
   // Delphi
-  System.DateUtils,
   System.Math,
   System.SysUtils;
 
@@ -152,7 +151,7 @@ end;
 class procedure TRari.APY(
   client  : TWeb3;
   _reserve: TReserve;
-  base    : TPerformance;
+  period  : TPeriod;
   callback: TAsyncFloat);
 var
   manager : TRariFundManager;
@@ -160,15 +159,15 @@ begin
   manager := TRariFundManager.Create(client);
   if Assigned(manager) then
   begin
-    manager.APY(base, procedure(apy: Extended; err: IError)
+    manager.APY(period, procedure(apy: Extended; err: IError)
     begin
       try
-        if Assigned(err) or (not IsNaN(apy)) or (base = Low(TPerformance)) then
+        if Assigned(err) or (not IsNaN(apy)) or (period = Low(TPeriod)) then
         begin
           callback(apy, err);
           EXIT;
         end;
-        Self.APY(client, _reserve, Pred(base), callback);
+        Self.APY(client, _reserve, Pred(period), callback);
       finally
         manager.Free;
       end;
@@ -397,7 +396,7 @@ begin
 end;
 
 // Returns the annual yield as a percentage.
-procedure TRariFundManager.APY(base: TPerformance; callback: TAsyncFloat);
+procedure TRariFundManager.APY(period: TPeriod; callback: TAsyncFloat);
 begin
   Self.GetExchangeRate(BLOCK_LATEST, procedure(currRate: Extended; err: IError)
   begin
@@ -406,7 +405,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    getBlockNumberByTimestamp(client.Chain, DateTimeToUnix(Now, False) - base.Seconds, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
+    getBlockNumberByTimestamp(client.Chain, web3.Now - period.Seconds, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -426,7 +425,7 @@ begin
           if currRate < pastRate then
             callback(0, nil)
           else
-            callback(((currRate / pastRate - 1) * 100) * (365 / base.Days), nil);
+            callback(((currRate / pastRate - 1) * 100) * (365 / period.Days), nil);
       end);
     end);
   end);

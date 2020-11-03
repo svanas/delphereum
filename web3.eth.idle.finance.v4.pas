@@ -54,7 +54,7 @@ type
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
-      _base   : TPerformance;
+      _period : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
       client  : TWeb3;
@@ -235,7 +235,7 @@ end;
 class procedure TIdle.APY(
   client  : TWeb3;
   reserve : TReserve;
-  _base   : TPerformance;
+  _period : TPeriod;
   callback: TAsyncFloat);
 var
   IdleToken: TIdleToken;

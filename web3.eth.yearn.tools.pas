@@ -30,7 +30,7 @@ type
     function Name       : string;
     function Symbol     : string;
     function Description: string;
-    function APY(perform: TPerformance): Extended;
+    function APY(period : TPeriod): Extended;
   end;
 
   TAsyncYearnVault = reference to procedure(apy: IYearnVault; err: IError);
@@ -56,7 +56,7 @@ type
     function Name       : string;
     function Symbol     : string;
     function Description: string;
-    function APY(perform: TPerformance): Extended;
+    function APY(period : TPeriod): Extended;
     constructor Create(aJsonObject: TJsonObject);
     destructor Destroy; override;
   end;
@@ -89,16 +89,16 @@ begin
   Result := getPropAsStr(FJsonObject, 'description');
 end;
 
-function TYearnVault.APY(perform: TPerformance): Extended;
+function TYearnVault.APY(period: TPeriod): Extended;
 const
-  PROP_NAME: array[TPerformance] of string = (
+  PROP_NAME: array[TPeriod] of string = (
     'apyOneDaySample',   // oneDay
     'apyThreeDaySample', // threeDays
     'apyOneWeekSample',  // oneWeek
     'apyOneMonthSample'  // oneMonth
   );
 begin
-  Result := getPropAsExt(FJsonObject, PROP_NAME[perform])
+  Result := getPropAsExt(FJsonObject, PROP_NAME[period])
 end;
 
 function vault(const addr: TAddress; callback: TAsyncYearnVault): IAsyncResult;

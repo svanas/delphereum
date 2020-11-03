@@ -34,7 +34,7 @@ type
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
-      base    : TPerformance;
+      period  : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
       client  : TWeb3;
@@ -100,10 +100,10 @@ end;
 class procedure TyEarnV2.APY(
   client  : TWeb3;
   reserve : TReserve;
-  base    : TPerformance;
+  period  : TPeriod;
   callback: TAsyncFloat);
 begin
-  Self._APY(client, yTokenClass[reserve], base, callback);
+  Self._APY(client, yTokenClass[reserve], period, callback);
 end;
 
 class procedure TyEarnV2.Deposit(

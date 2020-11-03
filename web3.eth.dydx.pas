@@ -54,7 +54,7 @@ type
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
-      _base   : TPerformance;
+      _period : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
       client  : TWeb3;
@@ -254,7 +254,7 @@ end;
 class procedure TdYdX.APY(
   client  : TWeb3;
   reserve : TReserve;
-  _base   : TPerformance;
+  _period : TPeriod;
   callback: TAsyncFloat);
 const
   SECONDS_PER_YEAR = 31536000;

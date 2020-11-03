@@ -126,11 +126,14 @@ type
                                  read FOnSignatureRequest write FOnSignatureRequest;
   end;
 
+function Now: TUnixDateTime;
+
 implementation
 
 // https://www.ideasawakened.com/post/writing-cross-framework-code-in-delphi
 uses
   System.Classes,
+  System.DateUtils,
   System.UITypes,
   System.TypInfo,
 {$IFDEF FMX}
@@ -141,6 +144,11 @@ uses
   web3.eth.types,
   web3.eth.utils,
   web3.eth.infura;
+
+function Now: TUnixDateTime;
+begin
+  Result := DateTimeToUnix(System.SysUtils.Now, False);
+end;
 
 { TError }
 

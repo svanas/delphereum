@@ -35,9 +35,9 @@ type
     procedure BalanceOf(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
   end;
 
-  TPerformance = (oneDay, threeDays, oneWeek, oneMonth);
+  TPeriod = (oneDay, threeDays, oneWeek, oneMonth);
 
-  TPerformanceHelper = record helper for TPerformance
+  TPeriodHelper = record helper for TPeriod
     function Days   : Integer;
     function Hours  : Integer;
     function Minutes: Integer;
@@ -54,7 +54,7 @@ type
     class procedure APY(
       client  : TWeb3;
       reserve : TReserve;
-      base    : TPerformance;
+      period  : TPeriod;
       callback: TAsyncFloat); virtual; abstract;
     // Deposits an underlying asset into the lending pool.
     class procedure Deposit(
@@ -124,9 +124,9 @@ const
   );
 
 
-{ TPerformanceHelper }
+{ TPeriodHelper }
 
-function TPerformanceHelper.Days: Integer;
+function TPeriodHelper.Days: Integer;
 begin
   Result := 1;
   case Self of
@@ -136,17 +136,17 @@ begin
   end;
 end;
 
-function TPerformanceHelper.Hours: Integer;
+function TPeriodHelper.Hours: Integer;
 begin
   Result := Self.Days * 24;
 end;
 
-function TPerformanceHelper.Minutes: Integer;
+function TPeriodHelper.Minutes: Integer;
 begin
   Result := Self.Hours * 60;
 end;
 
-function TPerformanceHelper.Seconds: Integer;
+function TPeriodHelper.Seconds: Integer;
 begin
   Result := Self.Minutes * 60;
 end;

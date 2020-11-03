@@ -57,7 +57,7 @@ type
     class procedure _APY(
       client  : TWeb3;
       yToken  : TyTokenClass;
-      base    : TPerformance;
+      period  : TPeriod;
       callback: TAsyncFloat);
     class procedure _Deposit(
       client  : TWeb3;
@@ -94,7 +94,7 @@ type
     procedure ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
     procedure UnderlyingToToken(amount: BigInteger; callback: TAsyncQuantity);
-    procedure APY(base: TPerformance; callback: TAsyncFloat);
+    procedure APY(period: TPeriod; callback: TAsyncFloat);
     //------- write to contract ------------------------------------------------
     procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
     procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
@@ -104,7 +104,6 @@ implementation
 
 uses
   // Delphi
-  System.DateUtils,
   System.SysUtils;
 
 { TyEarnCustom }
@@ -183,7 +182,7 @@ end;
 class procedure TyEarnCustom._APY(
   client  : TWeb3;
   yToken  : TyTokenClass;
-  base    : TPerformance;
+  period  : TPeriod;
   callback: TAsyncFloat);
 var
   token: TyToken;
@@ -191,7 +190,7 @@ begin
   token := yToken.Create(client);
   if Assigned(token) then
   begin
-    token.APY(base, procedure(apy: Extended; err: IError)
+    token.APY(period, procedure(apy: Extended; err: IError)
     begin
       try
         callback(apy, err);
@@ -408,7 +407,7 @@ begin
   end);
 end;
 
-procedure TyToken.APY(base: TPerformance; callback: TAsyncFloat);
+procedure TyToken.APY(period: TPeriod; callback: TAsyncFloat);
 begin
   Self.GetPricePerFullShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
   begin
@@ -417,7 +416,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    getBlockNumberByTimestamp(client.Chain, DateTimeToUnix(Now, False) - base.Seconds, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
+    getBlockNumberByTimestamp(client.Chain, web3.Now - period.Seconds, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -431,7 +430,7 @@ begin
           callback(0, err);
           EXIT;
         end;
-        callback(((currPrice.AsExtended / pastPrice.AsExtended - 1) * 100) * (365 / base.Days), nil);
+        callback(((currPrice.AsExtended / pastPrice.AsExtended - 1) * 100) * (365 / period.Days), nil);
       end);
     end);
   end);
