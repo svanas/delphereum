@@ -32,7 +32,7 @@ type
     function  Address(chain: TChain): TAddress;
     function  Scale(amount: Extended): BigInteger;
     function  Unscale(amount: BigInteger): Extended;
-    procedure Balance(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
+    procedure BalanceOf(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
   end;
 
   TPerformance = (oneDay, threeDays, oneWeek, oneMonth);
@@ -184,7 +184,7 @@ begin
   Result := amount.AsExtended / Self.Decimals;
 end;
 
-procedure TReserveHelper.Balance(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
+procedure TReserveHelper.BalanceOf(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
 var
   erc20: TERC20;
 begin
