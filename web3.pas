@@ -30,6 +30,7 @@ type
     RSK_main_net,
     RSK_test_net,
     Kovan,
+    xDAI,
     Ganache
   );
 
@@ -42,6 +43,7 @@ const
     30,  // RSK_main_net
     31,  // RSK_test_net
     42,  // Kovan
+    100, // xDAI
     1    // Ganache
   );
 

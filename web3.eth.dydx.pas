@@ -129,7 +129,7 @@ type
   TSoloMargin = class(TCustomContract)
   private
     const
-      deployed: array[TChain] of TAddress = (
+      deployedAt: array[TChain] of TAddress = (
         '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e', // Mainnet
         '',                                           // Ropsten
         '',                                           // Rinkeby
@@ -137,6 +137,7 @@ type
         '',                                           // RSK_main_net
         '',                                           // RSK_test_net
         '0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE', // Kovan
+        '',                                           // xDAI
         '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e'  // Ganache
       );
   protected
@@ -227,7 +228,7 @@ begin
       erc20 := TERC20.Create(client, addr);
       if Assigned(erc20) then
       begin
-        erc20.ApproveEx(from, TSoloMargin.deployed[client.Chain], amount, procedure(rcpt: ITxReceipt; err: IError)
+        erc20.ApproveEx(from, TSoloMargin.deployedAt[client.Chain], amount, procedure(rcpt: ITxReceipt; err: IError)
         begin
           try
             callback(rcpt, err);
@@ -440,7 +441,7 @@ constructor TSoloMargin.Create(aClient: TWeb3);
 var
   addr: TAddress;
 begin
-  addr := TSoloMargin.deployed[aClient.Chain];
+  addr := TSoloMargin.deployedAt[aClient.Chain];
   if addr.IsZero then
     raise EdYdx.CreateFmt('dYdX is not deployed on %s',
           [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);

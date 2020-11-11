@@ -90,6 +90,7 @@ const
     '',                                               // RSK_main_net
     '',                                               // RSK_test_net
     'https://api-kovan.etherscan.io/api?apikey=%s',   // Kovan
+    '',                                               // xDAI
     ''                                                // Ganache
   );
 begin

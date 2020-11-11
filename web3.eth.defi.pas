@@ -92,38 +92,6 @@ uses
   // Delphi
   System.TypInfo;
 
-const
-  RESERVE_ADDRESS: array[TReserve] of array[TChain] of TAddress = (
-    ( // DAI
-      '0x6b175474e89094c44da98b954eedeac495271d0f',  // Mainnet
-      '',                                            // Ropsten
-      '',                                            // Rinkeby
-      '',                                            // Goerli
-      '',                                            // RSK_main_net
-      '',                                            // RSK_test_net
-      '',                                            // Kovan
-      '0x6b175474e89094c44da98b954eedeac495271d0f'), // Ganache
-    ( // USDC
-      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',  // Mainnet
-      '',                                            // Ropsten
-      '',                                            // Rinkeby
-      '',                                            // Goerli
-      '',                                            // RSK_main_net
-      '',                                            // RSK_test_net
-      '',                                            // Kovan
-      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'), // Ganache
-    ( // USDT
-      '0xdac17f958d2ee523a2206206994597c13d831ec7',  // Mainnet
-      '',                                            // Ropsten
-      '',                                            // Rinkeby
-      '',                                            // Goerli
-      '',                                            // RSK_main_net
-      '',                                            // RSK_test_net
-      '',                                            // Kovan
-      '0xdac17f958d2ee523a2206206994597c13d831ec7')  // Ganache
-  );
-
-
 { TPeriodHelper }
 
 function TPeriodHelper.Days: Integer;
@@ -171,7 +139,13 @@ end;
 
 function TReserveHelper.Address(chain: TChain): TAddress;
 begin
-  Result := RESERVE_ADDRESS[Self][chain];
+  case Self of
+    DAI : Result := '0x6b175474e89094c44da98b954eedeac495271d0f';
+    USDC: Result := '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+    USDT: Result := '0xdac17f958d2ee523a2206206994597c13d831ec7';
+  else
+    raise EWeb3.CreateFmt('%s not implemented', [Self.Symbol]);
+  end;
 end;
 
 function TReserveHelper.Scale(amount: Extended): BigInteger;
