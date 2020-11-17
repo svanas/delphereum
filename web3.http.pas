@@ -111,7 +111,7 @@ end;
 
 function get(const URL: string; callback: TAsyncJsonObject): IAsyncResult;
 var
-  obj: TJsonObject;
+  obj: TJsonValue;
 begin
   Result := get(URL, procedure(resp: IHttpResponse; err: IError)
   begin
@@ -123,7 +123,7 @@ begin
     obj := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
     if Assigned(obj) then
     try
-      callback(obj, nil);
+      callback(obj as TJsonObject, nil);
       EXIT;
     finally
       obj.Free;
@@ -195,7 +195,7 @@ function post(
   headers  : TNetHeaders;
   callback : TAsyncJsonObject): IAsyncResult;
 var
-  obj: TJsonObject;
+  obj: TJsonValue;
 begin
   Result := post(URL, source, headers, procedure(resp: IHttpResponse; err: IError)
   begin
@@ -207,7 +207,7 @@ begin
     obj := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
     if Assigned(obj) then
     try
-      callback(obj, nil);
+      callback(obj as TJsonObject, nil);
       EXIT;
     finally
       obj.Free;
@@ -253,7 +253,7 @@ function post(
   headers  : TNetHeaders;
   callback : TAsyncJsonObject): IAsyncResult;
 var
-  obj: TJsonObject;
+  obj: TJsonValue;
 begin
   Result := post(URL, source, headers, procedure(resp: IHttpResponse; err: IError)
   begin
@@ -265,7 +265,7 @@ begin
     obj := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
     if Assigned(obj) then
     try
-      callback(obj, nil);
+      callback(obj as TJsonObject, nil);
       EXIT;
     finally
       obj.Free;
@@ -306,7 +306,7 @@ begin
   Result := post(URL, source, headers, resp);
   if Result then
   begin
-    output := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
+    output := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8)) as TJsonObject;
     Result := Assigned(output);
   end;
 end;

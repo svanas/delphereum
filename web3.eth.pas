@@ -237,7 +237,7 @@ begin
       web3.json.quoteString(string(&to), '"'),
       web3.json.quoteString(abi, '"')
     ]
-  ));
+  )) as TJsonObject;
   try
     // step #3: execute a message call (without creating a transaction on the blockchain)
     web3.json.rpc.send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: IError)

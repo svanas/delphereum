@@ -135,7 +135,7 @@ const
       '',                                            // RSK_main_net
       '',                                            // RSK_test_net
       '0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD',  // Kovan
-      '',                                            // xDAI
+      '',                                            // xDai
       '0x6b175474e89094c44da98b954eedeac495271d0f'), // Ganache
     ( // USDC
       '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',  // Mainnet
@@ -145,7 +145,7 @@ const
       '',                                            // RSK_main_net
       '',                                            // RSK_test_net
       '0xe22da380ee6B445bb8273C81944ADEB6E8450422',  // Kovan
-      '',                                            // xDAI
+      '',                                            // xDai
       '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'), // Ganache
     ( // USDT
       '0xdac17f958d2ee523a2206206994597c13d831ec7',  // Mainnet
@@ -155,7 +155,7 @@ const
       '',                                            // RSK_main_net
       '',                                            // RSK_test_net
       '0x13512979ADE267AB5100878E2e0f485B568328a4',  // Kovan
-      '',                                            // xDAI
+      '',                                            // xDai
       '0xdac17f958d2ee523a2206206994597c13d831ec7')  // Ganache
   );
 

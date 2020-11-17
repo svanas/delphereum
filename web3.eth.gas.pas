@@ -104,7 +104,7 @@ begin
       web3.json.quoteString(string(&to), '"'),
       web3.json.quoteString(data, '"')
     ]
-  ));
+  )) as TJsonObject;
   try
     // estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
     web3.json.rpc.send(client.URL, 'eth_estimateGas', [obj], procedure(resp: TJsonObject; err: IError)

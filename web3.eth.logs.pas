@@ -150,7 +150,7 @@ begin
       web3.json.quoteString(BLOCK_LATEST, '"'),
       web3.json.quoteString(string(address), '"')
     ]
-  ));
+  )) as TJsonObject;
   try
     &out := web3.json.rpc.send(client.URL, 'eth_getLogs', [&in]);
     if Assigned(&out) then

@@ -685,7 +685,7 @@ begin
         web3.json.quoteString(toHex(txn.gasLimit, [zeroAs0x0]), '"'),
         web3.json.quoteString(toHex(txn.gasPrice, [zeroAs0x0]), '"')
       ]
-    ));
+    )) as TJsonObject;
     try
       web3.json.rpc.send(client.URL, 'eth_call', [obj, toHex(txn.blockNumber)], procedure(resp: TJsonObject; err: IError)
       var

@@ -17,6 +17,7 @@ interface
 
 uses
   // Delphi
+  System.JSON,
   System.Types,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
@@ -55,6 +56,25 @@ type
 
   TAsyncErc20TransferEvents = reference to procedure(events: IErc20TransferEvents; err: IError);
 
+  TSymbolType = (UnknownSymbol, &Function, &Constructor, Fallback, Event);
+
+  TStateMutability = (UnknownMutability, Pure, View, NonPayable, Payable);
+
+  IContractSymbol = interface
+    function Name: string;
+    function &Type: TSymbolType;
+    function Inputs: TJsonArray;
+    function Outputs: TJsonArray;
+    function StateMutability: TStateMutability;
+  end;
+
+  IContractABI = interface
+    function Count: Integer;
+    function Item(const Index: Integer): IContractSymbol;
+  end;
+
+  TAsyncContractABI = reference to procedure(abi: IContractABI; err: IError);
+
 function getBlockNumberByTimestamp(
   chain       : TChain;
   timestamp   : TUnixDateTime;
@@ -67,12 +87,18 @@ function getErc20TransferEvents(
   const apiKey: string;
   callback    : TAsyncErc20TransferEvents): IAsyncResult;
 
+// https://github.com/trufflesuite/truffle-contract-schema/blob/develop/spec/abi.spec.json
+function getContractABI(
+  chain       : TChain;
+  contract    : TAddress;
+  const apiKey: string;
+  callback    : TAsyncContractABI): IAsyncResult;
+
 implementation
 
 uses
   // Delphi
   System.Generics.Collections,
-  System.JSON,
   System.NetEncoding,
   System.SysUtils,
   System.TypInfo,
@@ -90,7 +116,7 @@ const
     '',                                               // RSK_main_net
     '',                                               // RSK_test_net
     'https://api-kovan.etherscan.io/api?apikey=%s',   // Kovan
-    '',                                               // xDAI
+    '',                                               // xDai
     ''                                                // Ganache
   );
 begin
@@ -204,6 +230,108 @@ begin
   Result := TErc20TransferEvent.Create(FJsonArray.Items[Index].Clone as TJsonObject);
 end;
 
+{ TContractSymbol }
+
+type
+  TContractSymbol = class(TInterfacedObject, IContractSymbol)
+  private
+    FJsonObject: TJsonObject;
+  public
+    function Name: string;
+    function &Type: TSymbolType;
+    function Inputs: TJsonArray;
+    function Outputs: TJsonArray;
+    function StateMutability: TStateMutability;
+    constructor Create(aJsonObject: TJsonObject);
+    destructor Destroy; override;
+  end;
+
+constructor TContractSymbol.Create(aJsonObject: TJsonObject);
+begin
+  inherited Create;
+  FJsonObject := aJsonObject;
+end;
+
+destructor TContractSymbol.Destroy;
+begin
+  if Assigned(FJsonObject) then
+    FJsonObject.Free;
+  inherited Destroy;
+end;
+
+function TContractSymbol.Name: string;
+begin
+  Result := getPropAsStr(FJsonObject, 'name');
+end;
+
+function TContractSymbol.&Type: TSymbolType;
+var
+  S: string;
+begin
+  S := getPropAsStr(FJsonObject, 'type');
+  for Result := Low(TSymbolType) to High(TSymbolType) do
+    if SameText(GetEnumName(TypeInfo(TSymbolType), Integer(Result)), S) then
+      EXIT;
+  Result := UnknownSymbol;
+end;
+
+function TContractSymbol.Inputs: TJsonArray;
+begin
+  Result := getPropAsArr(FJsonObject, 'inputs');
+end;
+
+function TContractSymbol.Outputs: TJsonArray;
+begin
+  Result := getPropAsArr(FJsonObject, 'outputs');
+end;
+
+function TContractSymbol.StateMutability: TStateMutability;
+var
+  S: string;
+begin
+  S := getPropAsStr(FJsonObject, 'stateMutability');
+  for Result := Low(TStateMutability) to High(TStateMutability) do
+    if SameText(GetEnumName(TypeInfo(TStateMutability), Integer(Result)), S) then
+      EXIT;
+  Result := UnknownMutability;
+end;
+
+{ TContractABI }
+
+type
+  TContractABI = class(TInterfacedObject, IContractABI)
+  private
+    FJsonArray: TJsonArray;
+  public
+    function Count: Integer;
+    function Item(const Index: Integer): IContractSymbol;
+    constructor Create(aJsonArray: TJsonArray);
+    destructor Destroy; override;
+  end;
+
+constructor TContractABI.Create(aJsonArray: TJsonArray);
+begin
+  inherited Create;
+  FJsonArray := aJsonArray;
+end;
+
+destructor TContractABI.Destroy;
+begin
+  if Assigned(FJsonArray) then
+    FJsonArray.Free;
+  inherited Destroy;
+end;
+
+function TContractABI.Count: Integer;
+begin
+  Result := FJsonArray.Count;
+end;
+
+function TContractABI.Item(const Index: Integer): IContractSymbol;
+begin
+  Result := TContractSymbol.Create(FJsonArray.Items[Index].Clone as TJsonObject);
+end;
+
 { global functions }
 
 function getBlockNumberByTimestamp(
@@ -211,13 +339,13 @@ function getBlockNumberByTimestamp(
   timestamp   : TUnixDateTime;
   const apiKey: string;
   callback    : TAsyncQuantity): IAsyncResult;
-var
-  status: Integer;
 begin
   Result := web3.http.get(
     endpoint(chain, TNetEncoding.URL.Encode(apiKey)) +
     Format('&module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
   procedure(resp: TJsonObject; err: IError)
+  var
+    status: Integer;
   begin
     if Assigned(err) then
     begin
@@ -237,14 +365,14 @@ function getErc20TransferEvents(
   address     : TAddress;
   const apiKey: string;
   callback    : TAsyncErc20TransferEvents): IAsyncResult;
-var
-  status: Integer;
-  &array: TJsonArray;
 begin
   Result := web3.http.get(
     endpoint(chain, TNetEncoding.URL.Encode(apiKey)) +
     Format('&module=account&action=tokentx&address=%s&sort=desc', [address]),
   procedure(resp: TJsonObject; err: IError)
+  var
+    status: Integer;
+    &array: TJsonArray;
   begin
     if Assigned(err) then
     begin
@@ -264,6 +392,45 @@ begin
       EXIT;
     end;
     callback(TErc20TransferEvents.Create(&array.Clone as TJsonArray), nil);
+  end);
+end;
+
+function getContractABI(
+  chain       : TChain;
+  contract    : TAddress;
+  const apiKey: string;
+  callback    : TAsyncContractABI): IAsyncResult;
+begin
+  Result := web3.http.get(
+    endpoint(chain, TNetEncoding.URL.Encode(apiKey)) +
+    Format('&module=contract&action=getabi&address=%s', [contract]),
+  procedure(resp: TJsonObject; err: IError)
+  var
+    status : Integer;
+    &result: TJsonValue;
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    status := web3.json.getPropAsInt(resp, 'status');
+    if status = 0 then
+    begin
+      callback(nil, TEtherscanError.Create(status, web3.json.getPropAsStr(resp, 'message')));
+      EXIT;
+    end;
+    &result := unmarshal(web3.json.getPropAsStr(resp, 'result'));
+    if not Assigned(&result) then
+    begin
+      callback(nil, TEtherscanError.Create(status, 'an unknown error occurred'));
+      EXIT;
+    end;
+    try
+      callback(TContractABI.Create(&result.Clone as TJsonArray), nil);
+    finally
+      &result.Free;
+    end;
   end);
 end;
 
