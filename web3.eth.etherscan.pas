@@ -18,7 +18,6 @@ interface
 uses
   // Delphi
   System.JSON,
-  System.Types,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -37,7 +36,7 @@ type
   private
     FStatus: Integer;
   public
-    constructor Create(aStatus: Integer; const aMsg: string);
+    constructor Create(aStatus: Integer; aBody: TJsonObject);
     function Status: Integer;
   end;
 
@@ -75,30 +74,43 @@ type
 
   TAsyncContractABI = reference to procedure(abi: IContractABI; err: IError);
 
-function getBlockNumberByTimestamp(
+procedure getBlockNumberByTimestamp(
+  client      : TWeb3;
+  timestamp   : TUnixDateTime;
+  callback    : TAsyncQuantity); overload;
+procedure getBlockNumberByTimestamp(
   chain       : TChain;
   timestamp   : TUnixDateTime;
   const apiKey: string;
-  callback    : TAsyncQuantity): IAsyncResult;
+  callback    : TAsyncQuantity); overload;
 
-function getErc20TransferEvents(
+procedure getErc20TransferEvents(
+  client      : TWeb3;
+  address     : TAddress;
+  callback    : TAsyncErc20TransferEvents); overload;
+procedure getErc20TransferEvents(
   chain       : TChain;
   address     : TAddress;
   const apiKey: string;
-  callback    : TAsyncErc20TransferEvents): IAsyncResult;
+  callback    : TAsyncErc20TransferEvents); overload;
 
-// https://github.com/trufflesuite/truffle-contract-schema/blob/develop/spec/abi.spec.json
-function getContractABI(
+procedure getContractABI(
+  client      : TWeb3;
+  contract    : TAddress;
+  callback    : TAsyncContractABI); overload;
+procedure getContractABI(
   chain       : TChain;
   contract    : TAddress;
   const apiKey: string;
-  callback    : TAsyncContractABI): IAsyncResult;
+  callback    : TAsyncContractABI); overload;
 
 implementation
 
 uses
   // Delphi
+  System.Classes,
   System.Generics.Collections,
+  System.Math,
   System.NetEncoding,
   System.SysUtils,
   System.TypInfo,
@@ -129,9 +141,21 @@ end;
 
 { TEtherscanError }
 
-constructor TEtherscanError.Create(aStatus: Integer; const aMsg: string);
+constructor TEtherscanError.Create(aStatus: Integer; aBody: TJsonObject);
+
+  function msg: string;
+  begin
+    Result := 'an unknown error occurred';
+    if Assigned(aBody) then
+    begin
+      Result := web3.json.getPropAsStr(aBody, 'message');
+      if Result = 'NOTOK' then
+        Result := web3.json.getPropAsStr(aBody, 'result');
+    end;
+  end;
+
 begin
-  inherited Create(aMsg);
+  inherited Create(msg);
   FStatus := aStatus;
 end;
 
@@ -334,14 +358,78 @@ end;
 
 { global functions }
 
-function getBlockNumberByTimestamp(
+const
+  REQUESTS_PER_SECOND = 5;
+
+type
+  TRequest = record
+    endpoint: string;
+    callback: TAsyncJsonObject;
+    class function New(const aURL: string; aCallback: TAsyncJsonObject): TRequest; static;
+  end;
+
+class function TRequest.New(const aURL: string; aCallback: TAsyncJsonObject): TRequest;
+begin
+  Result.endpoint := aURL;
+  Result.callback := aCallback;
+end;
+
+var
+  Queue: TArray<TRequest>;
+
+procedure get(
+  chain       : TChain;
+  const apiKey: string;
+  const query : string;
+  callback    : TAsyncJsonObject);
+type
+  TGet = reference to procedure(request: TRequest);
+var
+  _get: TGet;
+begin
+  _get := procedure(request: TRequest)
+  begin
+    web3.http.get(request.endpoint, procedure(resp: TJsonObject; err: IError)
+    begin
+      TThread.Synchronize(nil, procedure
+      begin
+        Delete(Queue, 0, 1);
+        if Length(Queue) > 0 then
+        begin
+          TThread.Sleep(Ceil(1000 / REQUESTS_PER_SECOND));
+          _get(Queue[0]);
+        end;
+      end);
+      request.callback(resp, err);
+    end);
+  end;
+  TThread.Synchronize(nil, procedure
+  begin
+    Queue := Queue + [TRequest.New(endpoint(chain, TNetEncoding.URL.Encode(apiKey)) + query, callback)];
+    if Length(Queue) = 1 then
+      _get(Queue[0]);
+  end);
+end;
+
+procedure getBlockNumberByTimestamp(
+  client   : TWeb3;
+  timestamp: TUnixDateTime;
+  callback : TAsyncQuantity);
+begin
+  getBlockNumberByTimestamp(
+    client.Chain,
+    timestamp,
+    client.ETHERSCAN_API_KEY,
+    callback);
+end;
+
+procedure getBlockNumberByTimestamp(
   chain       : TChain;
   timestamp   : TUnixDateTime;
   const apiKey: string;
-  callback    : TAsyncQuantity): IAsyncResult;
+  callback    : TAsyncQuantity);
 begin
-  Result := web3.http.get(
-    endpoint(chain, TNetEncoding.URL.Encode(apiKey)) +
+  get(chain, apiKey,
     Format('&module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
   procedure(resp: TJsonObject; err: IError)
   var
@@ -354,20 +442,31 @@ begin
     end;
     status := web3.json.getPropAsInt(resp, 'status');
     if status = 0 then
-      callback(0, TEtherscanError.Create(status, web3.json.getPropAsStr(resp, 'message')))
+      callback(0, TEtherscanError.Create(status, resp))
     else
       callback(web3.json.getPropAsBig(resp, 'result', 0), nil);
   end);
 end;
 
-function getErc20TransferEvents(
+procedure getErc20TransferEvents(
+  client  : TWeb3;
+  address : TAddress;
+  callback: TAsyncErc20TransferEvents);
+begin
+  getErc20TransferEvents(
+    client.Chain,
+    address,
+    client.ETHERSCAN_API_KEY,
+    callback);
+end;
+
+procedure getErc20TransferEvents(
   chain       : TChain;
   address     : TAddress;
   const apiKey: string;
-  callback    : TAsyncErc20TransferEvents): IAsyncResult;
+  callback    : TAsyncErc20TransferEvents);
 begin
-  Result := web3.http.get(
-    endpoint(chain, TNetEncoding.URL.Encode(apiKey)) +
+  get(chain, apiKey,
     Format('&module=account&action=tokentx&address=%s&sort=desc', [address]),
   procedure(resp: TJsonObject; err: IError)
   var
@@ -382,27 +481,38 @@ begin
     status := web3.json.getPropAsInt(resp, 'status');
     if status = 0 then
     begin
-      callback(nil, TEtherscanError.Create(status, web3.json.getPropAsStr(resp, 'message')));
+      callback(nil, TEtherscanError.Create(status, resp));
       EXIT;
     end;
     &array := web3.json.getPropAsArr(resp, 'result');
     if not Assigned(&array) then
     begin
-      callback(nil, TEtherscanError.Create(status, 'an unknown error occurred'));
+      callback(nil, TEtherscanError.Create(status, nil));
       EXIT;
     end;
     callback(TErc20TransferEvents.Create(&array.Clone as TJsonArray), nil);
   end);
 end;
 
-function getContractABI(
+procedure getContractABI(
+  client  : TWeb3;
+  contract: TAddress;
+  callback: TAsyncContractABI);
+begin
+  getContractABI(
+    client.Chain,
+    contract,
+    client.ETHERSCAN_API_KEY,
+    callback);
+end;
+
+procedure getContractABI(
   chain       : TChain;
   contract    : TAddress;
   const apiKey: string;
-  callback    : TAsyncContractABI): IAsyncResult;
+  callback    : TAsyncContractABI);
 begin
-  Result := web3.http.get(
-    endpoint(chain, TNetEncoding.URL.Encode(apiKey)) +
+  get(chain, apiKey,
     Format('&module=contract&action=getabi&address=%s', [contract]),
   procedure(resp: TJsonObject; err: IError)
   var
@@ -417,13 +527,13 @@ begin
     status := web3.json.getPropAsInt(resp, 'status');
     if status = 0 then
     begin
-      callback(nil, TEtherscanError.Create(status, web3.json.getPropAsStr(resp, 'message')));
+      callback(nil, TEtherscanError.Create(status, resp));
       EXIT;
     end;
     &result := unmarshal(web3.json.getPropAsStr(resp, 'result'));
     if not Assigned(&result) then
     begin
-      callback(nil, TEtherscanError.Create(status, 'an unknown error occurred'));
+      callback(nil, TEtherscanError.Create(status, nil));
       EXIT;
     end;
     try

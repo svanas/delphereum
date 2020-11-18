@@ -405,7 +405,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    getBlockNumberByTimestamp(client.Chain, web3.Now - period.Seconds, client.ETHERSCAN_API_KEY, procedure(bn: BigInteger; err: IError)
+    getBlockNumberByTimestamp(client, web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
     begin
       if Assigned(err) then
       begin
