@@ -24,6 +24,8 @@ uses
 
 type
   IGasPrice = interface
+    function Outbid : TWei;
+    function Fastest: TWei;
     function Fast   : TWei; // expected to be mined in < 2 minutes
     function Average: TWei; // expected to be mined in < 5 minutes
     function SafeLow: TWei; // expected to be mined in < 30 minutes
@@ -53,6 +55,8 @@ type
   private
     FJsonObject: TJsonObject;
   public
+    function Outbid : TWei;
+    function Fastest: TWei;
     function Fast   : TWei;
     function Average: TWei;
     function SafeLow: TWei;
@@ -71,6 +75,16 @@ begin
   if Assigned(FJsonObject) then
     FJsonObject.Free;
   inherited Destroy;
+end;
+
+function TGasPrice.Outbid: TWei;
+begin
+  Result := toWei(FloatToEth(getPropAsExt(FJsonObject, 'fastest') / 8), gwei);
+end;
+
+function TGasPrice.Fastest: TWei;
+begin
+  Result := toWei(FloatToEth(getPropAsExt(FJsonObject, 'fastest') / 10), gwei);
 end;
 
 function TGasPrice.Fast: TWei;

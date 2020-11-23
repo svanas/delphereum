@@ -432,7 +432,7 @@ end;
 
 function TSoloMarket.IsClosing: Boolean;
 begin
-  Result := FTuple[10].toBool;
+  Result := FTuple[10].toBoolean;
 end;
 
 { TSoloMargin }
@@ -453,7 +453,7 @@ begin
   if Length(value) < 2 then
     raise EdYdX.Create('not a valid dYdX integer value');
   Result := value[1].toBigInt;
-  if (not Result.IsZero) and (not value[0].toBool) then
+  if (not Result.IsZero) and (not value[0].toBoolean) then
     Result.Sign := -1;
 end;
 

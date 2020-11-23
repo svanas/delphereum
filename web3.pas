@@ -74,6 +74,8 @@ type
   TOnEtherscanApiKey = reference to procedure(var apiKey: string);
 
   TGasPrice = (
+    Outbid,
+    Fastest,
     Fast,    // expected to be mined in < 2 minutes
     Average, // expected to be mined in < 5 minutes
     SafeLow  // expected to be mined in < 30 minutes

@@ -70,6 +70,8 @@ begin
       callback(0, err)
     else
       case gasInfo.Speed of
+        Outbid : callback(price.Outbid,  nil);
+        Fastest: callback(price.Fastest, nil);
         Fast   : callback(price.Fast,    nil);
         Average: callback(price.Average, nil);
         SafeLow: callback(price.SafeLow, nil);

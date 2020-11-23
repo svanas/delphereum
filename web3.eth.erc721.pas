@@ -215,7 +215,7 @@ begin
         if log.isEvent('ApprovalForAll(address,address,bool)') then
           FOnApprovalForAll(Self,
                             TAddress.New(log.Topic[1]),
-                            TAddress.New(log.Topic[2]), log.Data[0].toBool);
+                            TAddress.New(log.Topic[2]), log.Data[0].toBoolean);
     end);
 end;
 

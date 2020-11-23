@@ -32,10 +32,12 @@ type
   TArg = record
     Bytes: array[0..31] of Byte;
     function toHex(const prefix: string): string;
+    function toInt: Integer;
     function toInt64: Int64;
     function toBigInt: BigInteger;
-    function toBool: Boolean;
+    function toBoolean: Boolean;
     function toString: string;
+    function toDateTime: TUnixDateTime;
   end;
 
 type
@@ -135,6 +137,11 @@ begin
   end;
 end;
 
+function TArg.toInt: Integer;
+begin
+  Result := StrToInt(Self.toHex('$'));
+end;
+
 function TArg.toInt64: Int64;
 begin
   Result := StrToInt64(Self.toHex('$'));
@@ -145,14 +152,19 @@ begin
   Result := Self.toHex('0x');
 end;
 
-function TArg.toBool: Boolean;
+function TArg.toBoolean: Boolean;
 begin
-  Result := Self.toInt64 <> 0;
+  Result := Self.toInt <> 0;
 end;
 
 function TArg.toString: string;
 begin
   Result := TEncoding.UTF8.GetString(Bytes);
+end;
+
+function TArg.toDateTime: TUnixDateTime;
+begin
+  Result := Self.toInt64;
 end;
 
 { TAddressHelper }
