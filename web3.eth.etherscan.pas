@@ -68,8 +68,14 @@ type
   end;
 
   IContractABI = interface
+    function Chain: TChain;
     function Count: Integer;
+    function Contract: TAddress;
     function Item(const Index: Integer): IContractSymbol;
+    function IndexOf(
+      const Name     : string;
+      &Type          : TSymbolType;
+      StateMutability: TStateMutability): Integer;
   end;
 
   TAsyncContractABI = reference to procedure(abi: IContractABI; err: IError);
@@ -139,7 +145,7 @@ begin
     Result := Format(Result, [apiKey]);
 end;
 
-{ TEtherscanError }
+{------------------------------ TEtherscanError -------------------------------}
 
 constructor TEtherscanError.Create(aStatus: Integer; aBody: TJsonObject);
 
@@ -164,7 +170,7 @@ begin
   Result := FStatus;
 end;
 
-{ TErc20TransferEvent }
+{---------------------------- TErc20TransferEvent -----------------------------}
 
 type
   TErc20TransferEvent = class(TInterfacedObject, IErc20TransferEvent)
@@ -218,7 +224,7 @@ begin
   Result := getPropAsBig(FJsonObject, 'value', 0);
 end;
 
-{ TErc20TransferEvents }
+{---------------------------- TErc20TransferEvents ----------------------------}
 
 type
   TErc20TransferEvents = class(TInterfacedObject, IErc20TransferEvents)
@@ -254,7 +260,7 @@ begin
   Result := TErc20TransferEvent.Create(FJsonArray.Items[Index].Clone as TJsonObject);
 end;
 
-{ TContractSymbol }
+{------------------------------ TContractSymbol -------------------------------}
 
 type
   TContractSymbol = class(TInterfacedObject, IContractSymbol)
@@ -320,22 +326,32 @@ begin
   Result := UnknownMutability;
 end;
 
-{ TContractABI }
+{-------------------------------- TContractABI --------------------------------}
 
 type
   TContractABI = class(TInterfacedObject, IContractABI)
   private
+    FChain: TChain;
+    FContract: TAddress;
     FJsonArray: TJsonArray;
   public
+    function Chain: TChain;
     function Count: Integer;
+    function Contract: TAddress;
     function Item(const Index: Integer): IContractSymbol;
-    constructor Create(aJsonArray: TJsonArray);
+    function IndexOf(
+      const Name     : string;
+      &Type          : TSymbolType;
+      StateMutability: TStateMutability): Integer;
+    constructor Create(aChain: TChain; aContract: TAddress; aJsonArray: TJsonArray);
     destructor Destroy; override;
   end;
 
-constructor TContractABI.Create(aJsonArray: TJsonArray);
+constructor TContractABI.Create(aChain: TChain; aContract: TAddress; aJsonArray: TJsonArray);
 begin
   inherited Create;
+  FChain     := aChain;
+  FContract  := aContract;
   FJsonArray := aJsonArray;
 end;
 
@@ -346,9 +362,19 @@ begin
   inherited Destroy;
 end;
 
+function TContractABI.Chain: TChain;
+begin
+  Result := FChain;
+end;
+
 function TContractABI.Count: Integer;
 begin
   Result := FJsonArray.Count;
+end;
+
+function TContractABI.Contract: TAddress;
+begin
+  Result := FContract;
 end;
 
 function TContractABI.Item(const Index: Integer): IContractSymbol;
@@ -356,7 +382,58 @@ begin
   Result := TContractSymbol.Create(FJsonArray.Items[Index].Clone as TJsonObject);
 end;
 
-{ global functions }
+function TContractABI.IndexOf(
+  const Name     : string;
+  &Type          : TSymbolType;
+  StateMutability: TStateMutability): Integer;
+var
+  Item: IContractSymbol;
+begin
+  for Result := 0 to Pred(Count) do
+  begin
+    Item := Self.Item(Result);
+    if  (Item.Name = Name)
+    and (Item.&Type = &Type)
+    and (Item.StateMutability = StateMutability) then
+      EXIT;
+  end;
+  Result := -1;
+end;
+
+{------------------------------- TContractCache -------------------------------}
+
+type
+  TContractCache = class(TInterfaceList)
+  protected
+    function  Get(Index: Integer): IContractABI;
+    procedure Put(Index: Integer; const Item: IContractABI);
+  public
+    function IndexOf(aChain: TChain; aContract: TAddress): Integer;
+    property Items[Index: Integer]: IContractABI read Get write Put; default;
+  end;
+
+function TContractCache.Get(Index: Integer): IContractABI;
+begin
+  Result := IContractABI(inherited Get(Index));
+end;
+
+procedure TContractCache.Put(Index: Integer; const Item: IContractABI);
+begin
+  inherited Put(Index, Item);
+end;
+
+function TContractCache.IndexOf(aChain: TChain; aContract: TAddress): Integer;
+begin
+  for Result := 0 to Pred(Count) do
+    if (Items[Result].Chain = aChain) and (Items[Result].Contract = aContract) then
+      EXIT;
+  Result := -1;
+end;
+
+var
+  ContractCache: TContractCache = nil;
+
+{----------------------- 5 calls per sec/IP rate limit ------------------------}
 
 const
   REQUESTS_PER_SECOND = 5;
@@ -377,13 +454,16 @@ end;
 var
   Queue: TArray<TRequest>;
 
+type
+  TGet = reference to procedure(request: TRequest);
+
+{------------------------------ global functions ------------------------------}
+
 procedure get(
   chain       : TChain;
   const apiKey: string;
   const query : string;
   callback    : TAsyncJsonObject);
-type
-  TGet = reference to procedure(request: TRequest);
 var
   _get: TGet;
 begin
@@ -512,36 +592,63 @@ procedure getContractABI(
   const apiKey: string;
   callback    : TAsyncContractABI);
 begin
-  get(chain, apiKey,
-    Format('&module=contract&action=getabi&address=%s', [contract]),
-  procedure(resp: TJsonObject; err: IError)
+  TThread.Synchronize(nil, procedure
   var
-    status : Integer;
-    &result: TJsonValue;
+    I: Integer;
   begin
-    if Assigned(err) then
+    if Assigned(ContractCache) then
     begin
-      callback(nil, err);
-      EXIT;
+      I := ContractCache.IndexOf(chain, contract);
+      if I > -1 then
+      begin
+        callback(ContractCache[I], nil);
+        EXIT;
+      end;
     end;
-    status := web3.json.getPropAsInt(resp, 'status');
-    if status = 0 then
+    get(chain, apiKey,
+      Format('&module=contract&action=getabi&address=%s', [contract]),
+    procedure(resp: TJsonObject; err: IError)
+    var
+      status : Integer;
+      &result: TJsonValue;
+      abi    : IContractABI;
     begin
-      callback(nil, TEtherscanError.Create(status, resp));
-      EXIT;
-    end;
-    &result := unmarshal(web3.json.getPropAsStr(resp, 'result'));
-    if not Assigned(&result) then
-    begin
-      callback(nil, TEtherscanError.Create(status, nil));
-      EXIT;
-    end;
-    try
-      callback(TContractABI.Create(&result.Clone as TJsonArray), nil);
-    finally
-      &result.Free;
-    end;
+      if Assigned(err) then
+      begin
+        callback(nil, err);
+        EXIT;
+      end;
+      status := web3.json.getPropAsInt(resp, 'status');
+      if status = 0 then
+      begin
+        callback(nil, TEtherscanError.Create(status, resp));
+        EXIT;
+      end;
+      &result := unmarshal(web3.json.getPropAsStr(resp, 'result'));
+      if not Assigned(&result) then
+      begin
+        callback(nil, TEtherscanError.Create(status, nil));
+        EXIT;
+      end;
+      try
+        abi := TContractABI.Create(chain, contract, &result.Clone as TJsonArray);
+        TThread.Synchronize(nil, procedure
+        begin
+          if not Assigned(ContractCache) then
+            ContractCache := TContractCache.Create;
+          ContractCache.Add(abi);
+        end);
+        callback(abi, nil);
+      finally
+        &result.Free;
+      end;
+    end);
   end);
 end;
+
+initialization
+
+finalization
+  if Assigned(ContractCache) then ContractCache.Free;
 
 end.
