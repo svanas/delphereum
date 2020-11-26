@@ -111,7 +111,10 @@ implementation
 uses
   // Delphi
   System.Math,
-  System.SysUtils;
+  System.SysUtils,
+  System.Types,
+  // web3
+  web3.eth.rari.capital.api;
 
 { TRari }
 
@@ -153,26 +156,46 @@ class procedure TRari.APY(
   _reserve: TReserve;
   period  : TPeriod;
   callback: TAsyncFloat);
-var
-  manager : TRariFundManager;
-begin
-  manager := TRariFundManager.Create(client);
-  if Assigned(manager) then
+
+  function getStablePoolAPY(callback: TAsyncFloat): IAsyncResult;
   begin
-    manager.APY(period, procedure(apy: Extended; err: IError)
+    Result := web3.eth.rari.capital.api.stats(procedure(stats: IRariStats; err: IError)
     begin
-      try
-        if Assigned(err) or (not IsNaN(apy)) or (period = Low(TPeriod)) then
-        begin
-          callback(apy, err);
-          EXIT;
-        end;
-        Self.APY(client, _reserve, Pred(period), callback);
-      finally
-        manager.Free;
-      end;
+      if Assigned(err) then
+        callback(0, err)
+      else
+        callback(stats.StablePoolAPY, nil);
     end);
   end;
+
+begin
+  getStablePoolAPY(procedure(apy: Extended; err: IError)
+  var
+    manager: TRariFundManager;
+  begin
+    if (apy > 0) and not Assigned(err) then
+    begin
+      callback(apy, err);
+      EXIT;
+    end;
+    manager := TRariFundManager.Create(client);
+    if Assigned(manager) then
+    begin
+      manager.APY(period, procedure(apy: Extended; err: IError)
+      begin
+        try
+          if Assigned(err) or (not IsNaN(apy)) or (period = Low(TPeriod)) then
+          begin
+            callback(apy, err);
+            EXIT;
+          end;
+          Self.APY(client, _reserve, Pred(period), callback);
+        finally
+          manager.Free;
+        end;
+      end);
+    end;
+  end);
 end;
 
 class procedure TRari.Deposit(
