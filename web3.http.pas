@@ -27,6 +27,19 @@ uses
   web3;
 
 type
+  IHttpError = interface(IError)
+  ['{0E865DA6-C956-4914-909B-DC86E89A16D1}']
+    function StatusCode: Integer;
+  end;
+
+  THttpError = class(TError, IHttpError)
+  private
+    FStatusCode: Integer;
+  public
+    constructor Create(aStatusCode: Integer; const aBody: string);
+    function StatusCode: Integer;
+  end;
+
   TAsyncResponse   = reference to procedure(resp: IHttpResponse; err: IError);
   TAsyncJsonObject = reference to procedure(resp: TJsonObject;   err: IError);
   TAsyncJsonArray  = reference to procedure(resp: TJsonArray;    err: IError);
@@ -80,6 +93,19 @@ uses
   // web3
   web3.json;
 
+{--------------------------------- THttpError ---------------------------------}
+
+constructor THttpError.Create(aStatusCode: Integer; const aBody: string);
+begin
+  inherited Create(aBody);
+  FStatusCode := aStatusCode;
+end;
+
+function THttpError.StatusCode: Integer;
+begin
+  Result := FStatusCode;
+end;
+
 {---------------------------- async function calls ----------------------------}
 
 function get(const URL: string; callback: TAsyncResponse): IAsyncResult;
@@ -98,7 +124,7 @@ begin
           callback(resp, nil);
           EXIT;
         end;
-        callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
+        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
       finally
         client.Free;
       end;
@@ -128,7 +154,7 @@ begin
     finally
       obj.Free;
     end;
-    callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
+    callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
   end);
 end;
 
@@ -154,7 +180,7 @@ begin
     finally
       arr.Free;
     end;
-    callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
+    callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
   end);
 end;
 
@@ -178,7 +204,7 @@ begin
           callback(resp, nil);
           EXIT;
         end;
-        callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
+        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
       finally
         client.Free;
       end;
@@ -212,7 +238,7 @@ begin
     finally
       obj.Free;
     end;
-    callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
+    callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
   end);
 end;
 
@@ -236,7 +262,7 @@ begin
           callback(resp, nil);
           EXIT;
         end;
-        callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
+        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
       finally
         client.Free;
       end;
@@ -270,7 +296,7 @@ begin
     finally
       obj.Free;
     end;
-    callback(nil, TError.Create(resp.ContentAsString(TEncoding.UTF8)));
+    callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
   end);
 end;
 

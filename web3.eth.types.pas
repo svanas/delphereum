@@ -86,6 +86,7 @@ type
     class function  New(const hex: string): TAddress; overload; static;
     class procedure New(client: TWeb3; const name: string; callback: TAsyncAddress); overload; static;
     procedure ToString(client: TWeb3; callback: TAsyncString; abbreviated: Boolean = False);
+    function  Abbreviated: string;
     function  IsZero: Boolean;
   end;
 
@@ -229,11 +230,16 @@ begin
 
     if abbreviated then
       if isHex(output) then
-        while Length(output) > 8 do
-          Delete(output, High(output), 1);
+        output := Copy(output, Low(output), 8);
 
     callback(output, nil);
   end);
+end;
+
+function TAddressHelper.Abbreviated: string;
+begin
+  Result := string(Self);
+  Result := Copy(Result, Low(Result), 8);
 end;
 
 function TAddressHelper.IsZero: Boolean;

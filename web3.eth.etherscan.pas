@@ -471,6 +471,7 @@ begin
   begin
     web3.http.get(request.endpoint, procedure(resp: TJsonObject; err: IError)
     begin
+      request.callback(resp, err);
       TThread.Synchronize(nil, procedure
       begin
         Delete(Queue, 0, 1);
@@ -480,7 +481,6 @@ begin
           _get(Queue[0]);
         end;
       end);
-      request.callback(resp, err);
     end);
   end;
   TThread.Synchronize(nil, procedure
