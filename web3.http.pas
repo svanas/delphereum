@@ -46,31 +46,44 @@ type
 
 {---------------------------- async function calls ----------------------------}
 
-function get(const URL: string; callback: TAsyncResponse)  : IAsyncResult; overload;
-function get(const URL: string; callback: TAsyncJsonObject): IAsyncResult; overload;
-function get(const URL: string; callback: TAsyncJsonArray) : IAsyncResult; overload;
+function get(
+  const URL: string;
+  callback : TAsyncResponse;
+  timeout  : Integer = 60000): IAsyncResult; overload;
+function get(
+  const URL: string;
+  callback : TAsyncJsonObject;
+  timeout  : Integer = 60000): IAsyncResult; overload;
+function get(
+  const URL: string;
+  callback : TAsyncJsonArray;
+  timeout  : Integer = 60000) : IAsyncResult; overload;
 
 function post(
   const URL: string;
   source   : TStream;
   headers  : TNetHeaders;
-  callback : TAsyncResponse): IAsyncResult; overload;
+  callback : TAsyncResponse;
+  timeout  : Integer = 60000): IAsyncResult; overload;
 function post(
   const URL: string;
   source   : TStream;
   headers  : TNetHeaders;
-  callback : TAsyncJsonObject): IAsyncResult; overload;
+  callback : TAsyncJsonObject;
+  timeout  : Integer = 60000): IAsyncResult; overload;
 
 function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
-  callback : TAsyncResponse): IAsyncResult; overload;
+  callback : TAsyncResponse;
+  timeout  : Integer = 60000): IAsyncResult; overload;
 function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
-  callback : TAsyncJsonObject): IAsyncResult; overload;
+  callback : TAsyncJsonObject;
+  timeout  : Integer = 60000): IAsyncResult; overload;
 
 {-------------------------- blocking function calls ---------------------------}
 
@@ -89,9 +102,21 @@ implementation
 
 uses
   // Delphi
+  System.DateUtils,
   System.SysUtils,
+  System.Threading,
   // web3
   web3.json;
+
+var
+  _pool: TThreadPool = nil;
+
+function pool: TThreadPool;
+begin
+  if not Assigned(_pool) then
+    _pool := TThreadPool.Create;
+  Result := _pool;
+end;
 
 {--------------------------------- THttpError ---------------------------------}
 
@@ -108,16 +133,44 @@ end;
 
 {---------------------------- async function calls ----------------------------}
 
-function get(const URL: string; callback: TAsyncResponse): IAsyncResult;
+function get(const URL: string; callback: TAsyncResponse; timeout: Integer): IAsyncResult;
 var
   client: THttpClient;
-  resp  : IHttpResponse;
+  task  : ITask;
 begin
+  task := nil;
   try
     client := THttpClient.Create;
+
+    if timeout > 0 then
+    begin
+      task := TTask.Create(procedure
+      var
+        started: TDatetime;
+      begin
+        started := System.SysUtils.Now;
+        while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
+        begin
+          try
+            TTask.CurrentTask.Wait(500);
+          except end;
+          if  (TTask.CurrentTask.Status <> TTaskStatus.Canceled)
+          and (MilliSecondsBetween(System.SysUtils.Now, started) > timeout) then
+          begin
+            callback(nil, TError.Create('web3.http.get() timed out'));
+            EXIT;
+          end;
+        end;
+      end, pool);
+    end;
+
     Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
+    var
+      resp: IHttpResponse;
     begin
       try
+        if Assigned(task) then
+          task.Cancel;
         resp := THttpClient.EndAsyncHttp(aSyncResult);
         if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
         begin
@@ -129,13 +182,16 @@ begin
         client.Free;
       end;
     end, URL);
+
+    if Assigned(task) then
+      task.Start;
   except
     on E: Exception do
       callback(nil, TError.Create(E.Message));
   end;
 end;
 
-function get(const URL: string; callback: TAsyncJsonObject): IAsyncResult;
+function get(const URL: string; callback: TAsyncJsonObject; timeout: Integer): IAsyncResult;
 var
   obj: TJsonValue;
 begin
@@ -155,10 +211,10 @@ begin
       obj.Free;
     end;
     callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-  end);
+  end, timeout);
 end;
 
-function get(const URL: string; callback: TAsyncJsonArray): IAsyncResult;
+function get(const URL: string; callback: TAsyncJsonArray; timeout: Integer): IAsyncResult;
 var
   arr: TJsonValue;
 begin
@@ -181,23 +237,52 @@ begin
       arr.Free;
     end;
     callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-  end);
+  end, timeout);
 end;
 
 function post(
   const URL: string;
   source   : TStream;
   headers  : TNetHeaders;
-  callback : TAsyncResponse): IAsyncResult;
+  callback : TAsyncResponse;
+  timeout  : Integer): IAsyncResult;
 var
   client: THttpClient;
-  resp  : IHttpResponse;
+  task  : ITask;
 begin
+  task := nil;
   try
     client := THttpClient.Create;
+
+    if timeout > 0 then
+    begin
+      task := TTask.Create(procedure
+      var
+        started: TDatetime;
+      begin
+        started := System.SysUtils.Now;
+        while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
+        begin
+          try
+            TTask.CurrentTask.Wait(500);
+          except end;
+          if  (TTask.CurrentTask.Status <> TTaskStatus.Canceled)
+          and (MilliSecondsBetween(System.SysUtils.Now, started) > timeout) then
+          begin
+            callback(nil, TError.Create('web3.http.post() timed out'));
+            EXIT;
+          end;
+        end;
+      end, pool);
+    end;
+
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
+    var
+      resp: IHttpResponse;
     begin
       try
+        if Assigned(task) then
+          task.Cancel;
         resp := THttpClient.EndAsyncHttp(aSyncResult);
         if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
         begin
@@ -209,6 +294,9 @@ begin
         client.Free;
       end;
     end, URL, source, nil, headers);
+
+    if Assigned(task) then
+      task.Start;
   except
     on E: Exception do
       callback(nil, TError.Create(E.Message));
@@ -219,7 +307,8 @@ function post(
   const URL: string;
   source   : TStream;
   headers  : TNetHeaders;
-  callback : TAsyncJsonObject): IAsyncResult;
+  callback : TAsyncJsonObject;
+  timeout  : Integer): IAsyncResult;
 var
   obj: TJsonValue;
 begin
@@ -239,23 +328,52 @@ begin
       obj.Free;
     end;
     callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-  end);
+  end, timeout);
 end;
 
 function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
-  callback : TAsyncResponse): IAsyncResult;
+  callback : TAsyncResponse;
+  timeout  : Integer): IAsyncResult;
 var
   client: THttpClient;
-  resp  : IHttpResponse;
+  task  : ITask;
 begin
+  task := nil;
   try
     client := THttpClient.Create;
+
+    if timeout > 0 then
+    begin
+      task := TTask.Create(procedure
+      var
+        started: TDatetime;
+      begin
+        started := System.SysUtils.Now;
+        while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
+        begin
+          try
+            TTask.CurrentTask.Wait(500);
+          except end;
+          if  (TTask.CurrentTask.Status <> TTaskStatus.Canceled)
+          and (MilliSecondsBetween(System.SysUtils.Now, started) > timeout) then
+          begin
+            callback(nil, TError.Create('web3.http.post() timed out'));
+            EXIT;
+          end;
+        end;
+      end, pool);
+    end;
+
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
+    var
+      resp: IHttpResponse;
     begin
       try
+        if Assigned(task) then
+          task.Cancel;
         resp := THttpClient.EndAsyncHttp(aSyncResult);
         if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
         begin
@@ -267,6 +385,9 @@ begin
         client.Free;
       end;
     end, URL, source, nil, headers);
+
+    if Assigned(task) then
+      task.Start;
   except
     on E: Exception do
       callback(nil, TError.Create(E.Message));
@@ -277,7 +398,8 @@ function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
-  callback : TAsyncJsonObject): IAsyncResult;
+  callback : TAsyncJsonObject;
+  timeout  : Integer): IAsyncResult;
 var
   obj: TJsonValue;
 begin
@@ -297,7 +419,7 @@ begin
       obj.Free;
     end;
     callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-  end);
+  end, timeout);
 end;
 
 {-------------------------- blocking function calls ---------------------------}
