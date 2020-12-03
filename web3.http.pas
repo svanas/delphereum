@@ -169,25 +169,26 @@ begin
       resp: IHttpResponse;
     begin
       try
-        if Assigned(task) then
-          task.Cancel;
-        resp := THttpClient.EndAsyncHttp(aSyncResult);
-        if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
-        begin
-          callback(resp, nil);
-          EXIT;
+        if Assigned(task) then task.Cancel;
+        try
+          resp := THttpClient.EndAsyncHttp(aSyncResult);
+          if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+          begin
+            callback(resp, nil);
+            EXIT;
+          end;
+          callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+        except
+          on E: Exception do callback(nil, TError.Create(E.Message));
         end;
-        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
       finally
         client.Free;
       end;
     end, URL);
 
-    if Assigned(task) then
-      task.Start;
+    if Assigned(task) then task.Start;
   except
-    on E: Exception do
-      callback(nil, TError.Create(E.Message));
+    on E: Exception do callback(nil, TError.Create(E.Message));
   end;
 end;
 
@@ -281,25 +282,26 @@ begin
       resp: IHttpResponse;
     begin
       try
-        if Assigned(task) then
-          task.Cancel;
-        resp := THttpClient.EndAsyncHttp(aSyncResult);
-        if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
-        begin
-          callback(resp, nil);
-          EXIT;
+        if Assigned(task) then task.Cancel;
+        try
+          resp := THttpClient.EndAsyncHttp(aSyncResult);
+          if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+          begin
+            callback(resp, nil);
+            EXIT;
+          end;
+          callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+        except
+          on E: Exception do callback(nil, TError.Create(E.Message));
         end;
-        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
       finally
         client.Free;
       end;
     end, URL, source, nil, headers);
 
-    if Assigned(task) then
-      task.Start;
+    if Assigned(task) then task.Start;
   except
-    on E: Exception do
-      callback(nil, TError.Create(E.Message));
+    on E: Exception do callback(nil, TError.Create(E.Message));
   end;
 end;
 
@@ -372,25 +374,26 @@ begin
       resp: IHttpResponse;
     begin
       try
-        if Assigned(task) then
-          task.Cancel;
-        resp := THttpClient.EndAsyncHttp(aSyncResult);
-        if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
-        begin
-          callback(resp, nil);
-          EXIT;
+        if Assigned(task) then task.Cancel;
+        try
+          resp := THttpClient.EndAsyncHttp(aSyncResult);
+          if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+          begin
+            callback(resp, nil);
+            EXIT;
+          end;
+          callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+        except
+          on E: Exception do callback(nil, TError.Create(E.Message));
         end;
-        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
       finally
         client.Free;
       end;
     end, URL, source, nil, headers);
 
-    if Assigned(task) then
-      task.Start;
+    if Assigned(task) then task.Start;
   except
-    on E: Exception do
-      callback(nil, TError.Create(E.Message));
+    on E: Exception do callback(nil, TError.Create(E.Message));
   end;
 end;
 
