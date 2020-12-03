@@ -84,21 +84,21 @@ end;
 
 class function TGST1.DeployedAt: TAddress;
 begin
-  Result := TAddress.New('0x88d60255F917e3eb94eaE199d827DAd837fac4cB');
+  Result := TAddress('0x88d60255F917e3eb94eaE199d827DAd837fac4cB');
 end;
 
 { TGST2 }
 
 class function TGST2.DeployedAt: TAddress;
 begin
-  Result := TAddress.New('0x0000000000b3F879cb30FE243b4Dfee438691c04');
+  Result := TAddress('0x0000000000b3F879cb30FE243b4Dfee438691c04');
 end;
 
 { TCHI }
 
 class function TCHI.DeployedAt: TAddress;
 begin
-  Result := TAddress.New('0x0000000000004946c0e9F43F4Dee607b0eF1fA1c');
+  Result := TAddress('0x0000000000004946c0e9F43F4Dee607b0eF1fA1c');
 end;
 
 end.

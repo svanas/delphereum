@@ -356,21 +356,21 @@ end;
 
 class function TyDAI.DeployedAt: TAddress;
 begin
-  Result := TAddress.New('0xACd43E627e64355f1861cEC6d3a6688B31a6F952');
+  Result := TAddress('0xACd43E627e64355f1861cEC6d3a6688B31a6F952');
 end;
 
 { TyUSDC }
 
 class function TyUSDC.DeployedAt: TAddress;
 begin
-  Result := TAddress.New('0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e');
+  Result := TAddress('0x597aD1e0c13Bfe8025993D9e79C69E1c0233522e');
 end;
 
 { TyUSDT }
 
 class function TyUSDT.DeployedAt: TAddress;
 begin
-  Result := TAddress.New('0x2f08119C6f07c006695E079AAFc638b8789FAf18');
+  Result := TAddress('0x2f08119C6f07c006695E079AAFc638b8789FAf18');
 end;
 
 end.

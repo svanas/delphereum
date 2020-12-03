@@ -336,7 +336,7 @@ end;
 // Address where RariFundManager is deployed.
 class function TRariFundManager.DeployedAt: TAddress;
 begin
-  Result := TAddress.New('0xC6BF8C8A55f77686720E0a88e2Fd1fEEF58ddf4a');
+  Result := TAddress('0xC6BF8C8A55f77686720E0a88e2Fd1fEEF58ddf4a');
 end;
 
 // Returns the total balance in USD (scaled by 1e18) supplied by `owner`.

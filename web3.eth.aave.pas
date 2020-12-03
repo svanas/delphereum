@@ -466,7 +466,7 @@ begin
   web3.eth.call(Client, Contract, 'getLendingPool()', [], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback('', err)
+      callback(ADDRESS_ZERO, err)
     else
       callback(TAddress.New(hex), nil);
   end);
@@ -479,7 +479,7 @@ begin
   web3.eth.call(Client, Contract, 'getLendingPoolCore()', [], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback('', err)
+      callback(ADDRESS_ZERO, err)
     else
       callback(TAddress.New(hex), nil);
   end);
@@ -541,7 +541,7 @@ begin
   GetReserveData(reserve, procedure(tup: TTuple; err: IError)
   begin
     if Assigned(err) then
-      callback('', err)
+      callback(ADDRESS_ZERO, err)
     else
       callback(TAddress.New(tup[11]), nil);
   end);

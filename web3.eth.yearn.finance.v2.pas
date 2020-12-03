@@ -148,21 +148,21 @@ end;
 
 class function TyDAIv2.DeployedAt: TAddress;
 begin
-  Result := TAddress.New('0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01');
+  Result := TAddress('0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01');
 end;
 
 { TyUSDCv2 }
 
 class function TyUSDCv2.DeployedAt: TAddress;
 begin
-  Result := TAddress.New('0xd6aD7a6750A7593E092a9B218d66C0A814a3436e');
+  Result := TAddress('0xd6aD7a6750A7593E092a9B218d66C0A814a3436e');
 end;
 
 { TyUSDTv2 }
 
 class function TyUSDTv2.DeployedAt: TAddress;
 begin
-  Result := TAddress.New('0x83f798e925BcD4017Eb265844FDDAbb448f1707D');
+  Result := TAddress('0x83f798e925BcD4017Eb265844FDDAbb448f1707D');
 end;
 
 end.

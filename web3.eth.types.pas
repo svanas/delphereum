@@ -114,6 +114,7 @@ implementation
 uses
   // web3
   web3.crypto,
+  web3.eth,
   web3.eth.ens,
   web3.http,
   web3.utils;
@@ -179,10 +180,11 @@ class function TAddressHelper.New(const hex: string): TAddress;
 var
   buf: TBytes;
 begin
-  if web3.utils.isHex(hex) then
-    // we're good
-  else
-    raise EWeb3.CreateFmt('%s is not a valid address.', [hex]);
+  if not web3.utils.isHex(hex) then
+  begin
+    Result := ADDRESS_ZERO;
+    EXIT;
+  end;
   buf := web3.utils.fromHex(hex);
   if Length(buf) = 20 then
     Result := TAddress(hex)
@@ -275,9 +277,9 @@ begin
     pubKey := web3.crypto.publicKeyFromPrivateKey(Self.Parameters);
     buffer := web3.utils.sha3(pubKey);
     Delete(buffer, 0, 12);
-    callback(TAddress(web3.utils.toHex(buffer)), nil);
+    callback(TAddress.New(web3.utils.toHex(buffer)), nil);
   except
-    callback('', TError.Create('Private key is invalid'));
+    callback(ADDRESS_ZERO, TError.Create('Private key is invalid'));
   end;
 end;
 
