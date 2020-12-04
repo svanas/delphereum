@@ -204,18 +204,21 @@ begin
       if Assigned(FOnTransfer) then
         if log.isEvent('Transfer(address,address,uint256)') then
           FOnTransfer(Self,
-                      TAddress.New(log.Topic[1]),
-                      TAddress.New(log.Topic[2]), log.Topic[3].toBigInt);
+                      log.Topic[1].toAddress, // from
+                      log.Topic[2].toAddress, // to
+                      log.Topic[3].toBigInt); // tokenId
       if Assigned(FOnApproval) then
         if log.isEvent('Approval(address,address,uint256)') then
           FOnApproval(Self,
-                      TAddress.New(log.Topic[1]),
-                      TAddress.New(log.Topic[2]), log.Topic[3].toBigInt);
+                      log.Topic[1].toAddress, // owner
+                      log.Topic[2].toAddress, // spender
+                      log.Topic[3].toBigInt); // tokenId
       if Assigned(FOnApprovalForAll) then
         if log.isEvent('ApprovalForAll(address,address,bool)') then
           FOnApprovalForAll(Self,
-                            TAddress.New(log.Topic[1]),
-                            TAddress.New(log.Topic[2]), log.Data[0].toBoolean);
+                            log.Topic[1].toAddress, // owner
+                            log.Topic[2].toAddress, // operator
+                            log.Data[0].toBoolean); // approved
     end);
 end;
 

@@ -394,7 +394,7 @@ end;
 
 function TSoloMarket.Token: TAddress;
 begin
-  Result := TAddress.New(FTuple[0]);
+  Result := FTuple[0].toAddress;
 end;
 
 function TSoloMarket.TotalPar: TSoloTotalPar;
@@ -412,12 +412,12 @@ end;
 
 function TSoloMarket.PriceOracle: TAddress;
 begin
-  Result := TAddress.New(FTuple[6]);
+  Result := FTuple[6].toAddress;
 end;
 
 function TSoloMarket.InterestSetter: TAddress;
 begin
-  Result := TAddress.New(FTuple[7]);
+  Result := FTuple[7].toAddress;
 end;
 
 function TSoloMarket.MarginPremium: Extended;

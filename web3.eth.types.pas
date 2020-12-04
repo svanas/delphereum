@@ -31,6 +31,7 @@ uses
 type
   TArg = record
     Bytes: array[0..31] of Byte;
+    function toAddress: TAddress;
     function toHex(const prefix: string): string;
     function toInt: Integer;
     function toInt64: Int64;
@@ -68,17 +69,17 @@ type
   end;
 
 type
-  TAsyncString     = reference to procedure(const str: string;   err: IError);
-  TAsyncQuantity   = reference to procedure(qty : BigInteger;    err: IError);
-  TAsyncBoolean    = reference to procedure(bool: Boolean;       err: IError);
-  TAsyncAddress    = reference to procedure(addr: TAddress;      err: IError);
-  TAsyncTuple      = reference to procedure(tup : TTuple;        err: IError);
-  TAsyncTxHash     = reference to procedure(hash: TTxHash;       err: IError);
-  TAsyncTxn        = reference to procedure(txn : ITxn;          err: IError);
-  TAsyncReceipt    = reference to procedure(rcpt: ITxReceipt;    err: IError);
-  TAsyncReceiptEx  = reference to procedure(rcpt: ITxReceipt;
-                                            qty : BigInteger;    err: IError);
-  TAsyncFloat      = reference to procedure(val : Extended;      err: IError);
+  TAsyncString    = reference to procedure(const str: string; err : IError);
+  TAsyncQuantity  = reference to procedure(qty  : BigInteger; err : IError);
+  TAsyncBoolean   = reference to procedure(bool : Boolean;    err : IError);
+  TAsyncAddress   = reference to procedure(addr : TAddress;   err : IError);
+  TAsyncArg       = reference to procedure(arg  : TArg;       next: TProc);
+  TAsyncTuple     = reference to procedure(tup  : TTuple;     err : IError);
+  TAsyncTxHash    = reference to procedure(hash : TTxHash;    err : IError);
+  TAsyncTxn       = reference to procedure(txn  : ITxn;       err : IError);
+  TAsyncReceipt   = reference to procedure(rcpt : ITxReceipt; err : IError);
+  TAsyncReceiptEx = reference to procedure(rcpt : ITxReceipt; qty : BigInteger; err: IError);
+  TAsyncFloat     = reference to procedure(value: Extended;   err : IError);
 
 type
   TAddressHelper = record helper for TAddress
@@ -103,10 +104,12 @@ type
     function Add: PArg;
     function Last: PArg;
     function Empty: Boolean;
-    function &Array: Boolean;
+    function Strings: Boolean;
+    function ToArray: TArray<TArg>;
     function ToString: string;
     function ToStrings: TStrings;
     class function From(const hex: string): TTuple;
+    procedure Enumerate(callback: TAsyncArg; done: TProc);
   end;
 
 implementation
@@ -120,6 +123,11 @@ uses
   web3.utils;
 
 { TArg }
+
+function TArg.toAddress: TAddress;
+begin
+  Result := TAddress.New(Self);
+end;
 
 function TArg.toHex(const prefix: string): string;
 const
@@ -300,12 +308,28 @@ end;
 
 function TTupleHelper.Empty: Boolean;
 begin
-  Result := (Length(Self) < 2) or (Self[1].toInt64 = 0);
+  Result := (Length(Self) < 2) or (Self[1].toInt = 0);
 end;
 
-function TTupleHelper.&Array: Boolean;
+function TTupleHelper.Strings: Boolean;
 begin
-  Result := (not Self.Empty) and (Length(Self) > (Self[1].toInt64 + 2));
+  Result := (not Self.Empty) and (Length(Self) > (Self[1].toInt + 2));
+end;
+
+function TTupleHelper.ToArray: TArray<TArg>;
+var
+  len: Integer;
+  idx: Integer;
+begin
+  Result := [];
+  if Length(Self) < 3 then
+    EXIT;
+  len := Self[1].toInt;
+  if len = 0 then
+    EXIT;
+  for idx := 2 to High(Self) do
+    Result := Result + [Self[idx]];
+  SetLength(Result, len);
 end;
 
 function TTupleHelper.ToString: string;
@@ -319,7 +343,7 @@ begin
   if Self.Empty then
     EXIT;
 
-  if Self.&Array then
+  if Self.Strings then
   begin
     SL := Self.ToStrings;
     if Assigned(SL) then
@@ -333,7 +357,7 @@ begin
 
   if Length(Self) < 3 then
     EXIT;
-  len := Self[1].toInt64;
+  len := Self[1].toInt;
   if len = 0 then
     EXIT;
   for idx := 2 to High(Self) do
@@ -351,14 +375,14 @@ begin
   Result := nil;
   if Length(Self) < 3 then
     EXIT;
-  len := Self[1].toInt64;
+  len := Self[1].toInt;
   if len = 0 then
     EXIT;
   Result := TStringList.Create;
   for idx := 2 to len + 1 do
   begin
-    ndx := Self[idx].toInt64 div SizeOf(TArg) + 2;
-    len := Self[ndx].toInt64;
+    ndx := Self[idx].toInt div SizeOf(TArg) + 2;
+    len := Self[ndx].toInt;
     str := Self[ndx + 1].toString;
     SetLength(str, len);
     Result.Add(str);
@@ -378,6 +402,34 @@ begin
     Delete(buf, 0, 32);
   end;
   Result := tup;
+end;
+
+procedure TTupleHelper.Enumerate(callback: TAsyncArg; done: TProc);
+type
+  TNext = reference to procedure(idx: Integer; arr: TArray<TArg>);
+var
+  Next: TNext;
+begin
+  Next := procedure(idx: Integer; arr: TArray<TArg>)
+  begin
+    if idx >= Length(arr) then
+    begin
+      if Assigned(done) then done;
+      EXIT;
+    end;
+    callback(arr[idx], procedure
+    begin
+      Next(idx + 1, arr);
+    end);
+  end;
+
+  if Self.Empty then
+  begin
+    if Assigned(done) then done;
+    EXIT;
+  end;
+
+  Next(0, Self.ToArray);
 end;
 
 end.

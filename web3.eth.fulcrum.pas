@@ -422,19 +422,19 @@ begin
     if log.isEvent('Mint(address,uint256,uint256,uint256)') then
       // emitted upon a successful Mint
       FOnMint(Self,
-              TAddress.New(log.Topic[1]),
-              log.Data[0].toBigInt,
-              log.Data[1].toBigInt,
-              log.Data[2].toBigInt);
+              log.Topic[1].toAddress, // minter
+              log.Data[0].toBigInt,   // token amount
+              log.Data[1].toBigInt,   // asset amount
+              log.Data[2].toBigInt);  // price
 
   if Assigned(FOnBurn) then
     if log.isEvent('Burn(address,uint256,uint256,uint256)') then
       // emitted upon a successful Burn
       FOnBurn(Self,
-              TAddress.New(log.Topic[1]),
-              log.Data[0].toBigInt,
-              log.Data[1].toBigInt,
-              log.Data[2].toBigInt);
+              log.Topic[1].toAddress, // burner
+              log.Data[0].toBigInt,   // token amount
+              log.Data[1].toBigInt,   // asset amount
+              log.Data[2].toBigInt);  // price
 end;
 
 procedure TiToken.SetOnMint(Value: TOnMint);

@@ -543,7 +543,7 @@ begin
     if Assigned(err) then
       callback(ADDRESS_ZERO, err)
     else
-      callback(TAddress.New(tup[11]), nil);
+      callback(tup[11].toAddress, nil);
   end);
 end;
 

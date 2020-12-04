@@ -75,7 +75,12 @@ type
     function IndexOf(
       const Name     : string;
       &Type          : TSymbolType;
-      StateMutability: TStateMutability): Integer;
+      StateMutability: TStateMutability): Integer; overload;
+    function IndexOf(
+      const Name     : string;
+      &Type          : TSymbolType;
+      InputCount     : Integer;
+      StateMutability: TStateMutability): Integer; overload;
   end;
 
   TAsyncContractABI = reference to procedure(abi: IContractABI; err: IError);
@@ -342,7 +347,12 @@ type
     function IndexOf(
       const Name     : string;
       &Type          : TSymbolType;
-      StateMutability: TStateMutability): Integer;
+      StateMutability: TStateMutability): Integer; overload;
+    function IndexOf(
+      const Name     : string;
+      &Type          : TSymbolType;
+      InputCount     : Integer;
+      StateMutability: TStateMutability): Integer; overload;
     constructor Create(aChain: TChain; aContract: TAddress; aJsonArray: TJsonArray);
     destructor Destroy; override;
   end;
@@ -394,6 +404,26 @@ begin
     Item := Self.Item(Result);
     if  (Item.Name = Name)
     and (Item.&Type = &Type)
+    and (Item.StateMutability = StateMutability) then
+      EXIT;
+  end;
+  Result := -1;
+end;
+
+function TContractABI.IndexOf(
+  const Name     : string;
+  &Type          : TSymbolType;
+  InputCount     : Integer;
+  StateMutability: TStateMutability): Integer;
+var
+  Item: IContractSymbol;
+begin
+  for Result := 0 to Pred(Count) do
+  begin
+    Item := Self.Item(Result);
+    if  (Item.Name = Name)
+    and (Item.&Type = &Type)
+    and (Item.Inputs.Count = InputCount)
     and (Item.StateMutability = StateMutability) then
       EXIT;
   end;
