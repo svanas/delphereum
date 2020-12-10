@@ -127,7 +127,7 @@ class procedure TRari.Approve(
 var
   erc20: TERC20;
 begin
-  erc20 := TERC20.Create(client, reserve.Address(client.Chain));
+  erc20 := TERC20.Create(client, reserve.Address);
   if Assigned(erc20) then
   begin
     erc20.ApproveEx(from, TRariFundManager.DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)

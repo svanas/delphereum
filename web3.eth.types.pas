@@ -29,8 +29,12 @@ uses
   web3;
 
 type
+  TBytes32 = array[0..31] of Byte;
+
+type
   TArg = record
-    Bytes: array[0..31] of Byte;
+    Inner: TBytes32;
+  public
     function toAddress: TAddress;
     function toHex(const prefix: string): string;
     function toInt: Integer;
@@ -135,12 +139,12 @@ const
 var
   I: Integer;
 begin
-  Result := StringOfChar('0', Length(Bytes) * 2);
+  Result := StringOfChar('0', Length(Inner) * 2);
   try
-    for I := 0 to Length(Bytes) - 1 do
+    for I := 0 to Length(Inner) - 1 do
     begin
-      Result[2 * I + 1] := Digits[(Bytes[I] shr 4)  + 1];
-      Result[2 * I + 2] := Digits[(Bytes[I] and $F) + 1];
+      Result[2 * I + 1] := Digits[(Inner[I] shr 4)  + 1];
+      Result[2 * I + 2] := Digits[(Inner[I] and $F) + 1];
     end;
   finally
     Result := prefix + Result;
@@ -169,7 +173,7 @@ end;
 
 function TArg.toString: string;
 begin
-  Result := TEncoding.UTF8.GetString(Bytes);
+  Result := TEncoding.UTF8.GetString(Inner);
 end;
 
 function TArg.toDateTime: TUnixDateTime;
@@ -398,7 +402,7 @@ begin
   while Length(buf) >= 32 do
   begin
     SetLength(tup, Length(tup) + 1);
-    Move(buf[0], tup[High(tup)].Bytes[0], 32);
+    Move(buf[0], tup[High(tup)].Inner[0], 32);
     Delete(buf, 0, 32);
   end;
   Result := tup;

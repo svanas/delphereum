@@ -68,7 +68,7 @@ type
   public
     constructor Create(const Msg: string); overload;
     constructor Create(const Msg: string; const Args: array of const); overload;
-    function Message: string;
+    function Message: string; virtual;
   end;
 
   TOnEtherscanApiKey = reference to procedure(var apiKey: string);

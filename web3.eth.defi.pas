@@ -29,7 +29,7 @@ type
   TReserveHelper = record helper for TReserve
     function  Symbol  : string;
     function  Decimals: Extended;
-    function  Address(chain: TChain): TAddress;
+    function  Address : TAddress;
     function  Scale(amount: Extended): BigInteger;
     function  Unscale(amount: BigInteger): Extended;
     procedure BalanceOf(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
@@ -137,7 +137,7 @@ begin
   end;
 end;
 
-function TReserveHelper.Address(chain: TChain): TAddress;
+function TReserveHelper.Address: TAddress;
 begin
   case Self of
     DAI : Result := '0x6b175474e89094c44da98b954eedeac495271d0f';
@@ -162,7 +162,7 @@ procedure TReserveHelper.BalanceOf(client: TWeb3; owner: TAddress; callback: TAs
 var
   erc20: TERC20;
 begin
-  erc20 := TERC20.Create(client, Address(client.Chain));
+  erc20 := TERC20.Create(client, Self.Address);
   try
     erc20.BalanceOf(owner, callback);
   finally

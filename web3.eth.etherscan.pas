@@ -73,6 +73,10 @@ type
     function Contract: TAddress;
     function Item(const Index: Integer): IContractSymbol;
     function IndexOf(
+      const Name: string;
+      &Type     : TSymbolType;
+      InputCount: Integer): Integer; overload;
+    function IndexOf(
       const Name     : string;
       &Type          : TSymbolType;
       StateMutability: TStateMutability): Integer; overload;
@@ -345,6 +349,10 @@ type
     function Contract: TAddress;
     function Item(const Index: Integer): IContractSymbol;
     function IndexOf(
+      const Name: string;
+      &Type     : TSymbolType;
+      InputCount: Integer): Integer; overload;
+    function IndexOf(
       const Name     : string;
       &Type          : TSymbolType;
       StateMutability: TStateMutability): Integer; overload;
@@ -390,6 +398,24 @@ end;
 function TContractABI.Item(const Index: Integer): IContractSymbol;
 begin
   Result := TContractSymbol.Create(FJsonArray.Items[Index].Clone as TJsonObject);
+end;
+
+function TContractABI.IndexOf(
+  const Name: string;
+  &Type     : TSymbolType;
+  InputCount: Integer): Integer;
+var
+  Item: IContractSymbol;
+begin
+  for Result := 0 to Pred(Count) do
+  begin
+    Item := Self.Item(Result);
+    if  (Item.Name = Name)
+    and (Item.&Type = &Type)
+    and (Item.Inputs.Count = InputCount) then
+      EXIT;
+  end;
+  Result := -1;
 end;
 
 function TContractABI.IndexOf(
