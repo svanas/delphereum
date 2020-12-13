@@ -131,7 +131,8 @@ uses
   System.TypInfo,
   // web3
   web3.http,
-  web3.json;
+  web3.json,
+  web3.sync;
 
 function endpoint(chain: TChain; const apiKey: string): string;
 const
@@ -456,16 +457,24 @@ begin
   Result := -1;
 end;
 
-{------------------------------- TContractCache -------------------------------}
+{------------------------------- ContractCache --------------------------------}
 
 type
-  TContractCache = class(TInterfaceList)
-  protected
+  IContractCache = interface(ICriticalSingleton)
+    function  Get(Index: Integer): IContractABI;
+    procedure Put(Index: Integer; const Item: IContractABI);
+    function  Add(const Item: IContractABI): Integer;
+    function  IndexOf(aChain: TChain; aContract: TAddress): Integer;
+  end;
+
+  TContractCache = class(TCriticalList, IContractCache)
+  strict protected
     function  Get(Index: Integer): IContractABI;
     procedure Put(Index: Integer; const Item: IContractABI);
   public
-    function IndexOf(aChain: TChain; aContract: TAddress): Integer;
-    property Items[Index: Integer]: IContractABI read Get write Put; default;
+    function  Add(const Item: IContractABI): Integer;
+    function  IndexOf(aChain: TChain; aContract: TAddress): Integer;
+    property  Items[Index: Integer]: IContractABI read Get write Put; default;
   end;
 
 function TContractCache.Get(Index: Integer): IContractABI;
@@ -478,6 +487,11 @@ begin
   inherited Put(Index, Item);
 end;
 
+function TContractCache.Add(const Item: IContractABI): Integer;
+begin
+  Result := inherited Add(Item);
+end;
+
 function TContractCache.IndexOf(aChain: TChain; aContract: TAddress): Integer;
 begin
   for Result := 0 to Pred(Count) do
@@ -487,7 +501,14 @@ begin
 end;
 
 var
-  ContractCache: TContractCache = nil;
+  _ContractCache: IContractCache = nil;
+
+function ContractCache: IContractCache;
+begin
+  if not Assigned(_ContractCache) then
+    _ContractCache := TContractCache.Create;
+  Result := _ContractCache;
+end;
 
 {----------------------- 5 calls per sec/IP rate limit ------------------------}
 
@@ -508,7 +529,14 @@ begin
 end;
 
 var
-  Queue: TArray<TRequest>;
+  _Queue: ICriticalQueue<TRequest> = nil;
+
+function Queue: ICriticalQueue<TRequest>;
+begin
+  if not Assigned(_Queue) then
+    _Queue := TCriticalQueue<TRequest>.Create;
+  Result := _Queue;
+end;
 
 type
   TGet = reference to procedure(request: TRequest);
@@ -528,23 +556,27 @@ begin
     web3.http.get(request.endpoint, procedure(resp: TJsonObject; err: IError)
     begin
       request.callback(resp, err);
-      TThread.Synchronize(nil, procedure
-      begin
-        Delete(Queue, 0, 1);
-        if Length(Queue) > 0 then
+      Queue.Enter;
+      try
+        Queue.Delete(0, 1);
+        if Queue.Length > 0 then
         begin
           TThread.Sleep(Ceil(1000 / REQUESTS_PER_SECOND));
-          _get(Queue[0]);
+          _get(Queue.First);
         end;
-      end);
+      finally
+        Queue.Leave;
+      end;
     end);
   end;
-  TThread.Synchronize(nil, procedure
-  begin
-    Queue := Queue + [TRequest.New(endpoint(chain, TNetEncoding.URL.Encode(apiKey)) + query, callback)];
-    if Length(Queue) = 1 then
-      _get(Queue[0]);
-  end);
+  Queue.Enter;
+  try
+    Queue.Add(TRequest.New(endpoint(chain, TNetEncoding.URL.Encode(apiKey)) + query, callback));
+    if Queue.Length = 1 then
+      _get(Queue.First);
+  finally
+    Queue.Leave;
+  end;
 end;
 
 procedure getBlockNumberByTimestamp(
@@ -647,64 +679,58 @@ procedure getContractABI(
   contract    : TAddress;
   const apiKey: string;
   callback    : TAsyncContractABI);
+var
+  I: Integer;
 begin
-  TThread.Synchronize(nil, procedure
-  var
-    I: Integer;
-  begin
-    if Assigned(ContractCache) then
+  ContractCache.Enter;
+  try
+    I := ContractCache.IndexOf(chain, contract);
+    if I > -1 then
     begin
-      I := ContractCache.IndexOf(chain, contract);
-      if I > -1 then
-      begin
-        callback(ContractCache[I], nil);
-        EXIT;
-      end;
+      callback(ContractCache.Get(I), nil);
+      EXIT;
     end;
-    get(chain, apiKey,
-      Format('&module=contract&action=getabi&address=%s', [contract]),
-    procedure(resp: TJsonObject; err: IError)
-    var
-      status : Integer;
-      &result: TJsonValue;
-      abi    : IContractABI;
+  finally
+    ContractCache.Leave;
+  end;
+  get(chain, apiKey,
+    Format('&module=contract&action=getabi&address=%s', [contract]),
+  procedure(resp: TJsonObject; err: IError)
+  var
+    status : Integer;
+    &result: TJsonValue;
+    abi    : IContractABI;
+  begin
+    if Assigned(err) then
     begin
-      if Assigned(err) then
-      begin
-        callback(nil, err);
-        EXIT;
-      end;
-      status := web3.json.getPropAsInt(resp, 'status');
-      if status = 0 then
-      begin
-        callback(nil, TEtherscanError.Create(status, resp));
-        EXIT;
-      end;
-      &result := unmarshal(web3.json.getPropAsStr(resp, 'result'));
-      if not Assigned(&result) then
-      begin
-        callback(nil, TEtherscanError.Create(status, nil));
-        EXIT;
-      end;
+      callback(nil, err);
+      EXIT;
+    end;
+    status := web3.json.getPropAsInt(resp, 'status');
+    if status = 0 then
+    begin
+      callback(nil, TEtherscanError.Create(status, resp));
+      EXIT;
+    end;
+    &result := unmarshal(web3.json.getPropAsStr(resp, 'result'));
+    if not Assigned(&result) then
+    begin
+      callback(nil, TEtherscanError.Create(status, nil));
+      EXIT;
+    end;
+    try
+      abi := TContractABI.Create(chain, contract, &result.Clone as TJsonArray);
+      ContractCache.Enter;
       try
-        abi := TContractABI.Create(chain, contract, &result.Clone as TJsonArray);
-        TThread.Synchronize(nil, procedure
-        begin
-          if not Assigned(ContractCache) then
-            ContractCache := TContractCache.Create;
-          ContractCache.Add(abi);
-        end);
-        callback(abi, nil);
+        ContractCache.Add(abi);
       finally
-        &result.Free;
+        ContractCache.Leave;
       end;
-    end);
+      callback(abi, nil);
+    finally
+      &result.Free;
+    end;
   end);
 end;
-
-initialization
-
-finalization
-  if Assigned(ContractCache) then ContractCache.Free;
 
 end.

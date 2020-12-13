@@ -34,6 +34,7 @@ uses
   web3.json,
   web3.json.rpc,
   web3.rlp,
+  web3.sync,
   web3.utils;
 
 type
@@ -171,18 +172,29 @@ begin
 end;
 
 var
-  gNonce: BigInteger;
+  _Nonce: ICriticalBigInt;
+
+function Nonce: ICriticalBigInt;
+begin
+  if not Assigned(_Nonce) then
+    _Nonce := TCriticalBigInt.Create(-1);
+  Result := _Nonce;
+end;
 
 procedure getNonce(
   client  : TWeb3;
   address : TAddress;
   callback: TAsyncQuantity);
 begin
-  if gNonce > -1 then
-  begin
-    gNonce := BigInteger.Add(gNonce, 1);
-    callback(gNonce, nil);
-    EXIT;
+  Nonce.Enter;
+  try
+    if Nonce.Get > -1 then
+    begin
+      callback(Nonce.Inc, nil);
+      EXIT;
+    end;
+  finally
+    Nonce.Leave;
   end;
   web3.eth.getTransactionCount(client, address, procedure(cnt: BigInteger; err: IError)
   begin
@@ -191,8 +203,13 @@ begin
       callback(0, err);
       EXIT;
     end;
-    gNonce := cnt;
-    callback(gNonce, nil);
+    Nonce.Enter;
+    try
+      Nonce.Put(cnt);
+      callback(Nonce.Get, nil);
+    finally
+      Nonce.Leave;
+    end;
   end);
 end;
 
@@ -722,8 +739,5 @@ begin
     end;
   end);
 end;
-
-initialization
-  gNonce := -1;
 
 end.

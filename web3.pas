@@ -84,8 +84,11 @@ type
   TGasStationInfo = record
     Speed : TGasPrice;
     apiKey: string;
+    Custom: TWei;
+    class function Average: TGasStationInfo; static;
   end;
-  TOnGasStationInfo = reference to procedure(var info: TGasStationInfo);
+  TGasStationInfoResult = reference to procedure(info: TGasStationInfo);
+  TOnGasStationInfo     = reference to procedure(callback: TGasStationInfoResult);
 
   INotImplemented = interface(IError)
   ['{FFB9DA94-0C40-4A7C-9C47-CD790E3435A2}']
@@ -113,7 +116,7 @@ type
     FOnSignatureRequest: TOnSignatureRequest;
   public
     function  ETHERSCAN_API_KEY: string;
-    function  GetGasStationInfo: TGasStationInfo;
+    procedure GetGasStationInfo(callback: TGasStationInfoResult);
     procedure CanSignTransaction(from, &to: TAddress;
       gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
 
@@ -178,6 +181,13 @@ begin
   inherited Create('Not implemented');
 end;
 
+{ TGasStationInfo }
+
+class function TGasStationInfo.Average: TGasStationInfo;
+begin
+  Result.Speed := TGasPrice.Average;
+end;
+
 { TWeb3 }
 
 function TWeb3.ETHERSCAN_API_KEY: string;
@@ -187,11 +197,12 @@ begin
     FOnEtherscanApiKey(Result);
 end;
 
-function TWeb3.GetGasStationInfo: TGasStationInfo;
+procedure TWeb3.GetGasStationInfo(callback: TGasStationInfoResult);
 begin
-  Result.Speed := Average;
   if Assigned(FOnGasStationInfo) then
-    FOnGasStationInfo(Result);
+    FOnGasStationInfo(callback)
+  else
+    callback(TGasStationInfo.Average);
 end;
 
 procedure TWeb3.CanSignTransaction(from, &to: TAddress;

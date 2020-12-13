@@ -64,10 +64,18 @@ uses
   System.Net.URLClient,
   System.SysUtils,
   // web3
-  web3.json;
+  web3.json,
+  web3.sync;
 
 var
-  id: Cardinal;
+  _ID: ICriticalInt64 = nil;
+
+function ID: ICriticalInt64;
+begin
+  if not Assigned(_ID) then
+    _ID := TCriticalInt64.Create(0);
+  Result := _ID;
+end;
 
 { EJsonRpc }
 
@@ -124,10 +132,14 @@ end;
 
 function getPayload(const method: string; args: array of const): string;
 begin
-  Inc(id);
-  Result := Format(
-    '{"jsonrpc": "2.0", "method": %s, "params": %s, "id": %d}'
-    , [web3.json.quoteString(method, '"'), formatArgs(args), id]);
+  ID.Enter;
+  try
+    Result := Format(
+      '{"jsonrpc": "2.0", "method": %s, "params": %s, "id": %d}'
+      , [web3.json.quoteString(method, '"'), formatArgs(args), ID.Inc]);
+  finally
+    ID.Leave;
+  end;
 end;
 
 function send(
