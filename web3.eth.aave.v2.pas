@@ -139,7 +139,7 @@ class procedure TAave.GET_RESERVE_ADDRESS(
   reserve : TReserve;
   callback: TAsyncAddress);
 begin
-  if chain in [Mainnet, Ganache] then
+  if chain = Mainnet then
   begin
     callback(reserve.Address, nil);
     EXIT;
@@ -226,41 +226,34 @@ begin
   if Assigned(AP) then
   try
     AP.GetLendingPool(procedure(pool: TAddress; err: IError)
-    var
-      LP: TAaveLendingPool;
     begin
       if Assigned(err) then
       begin
         callback(nil, err);
         EXIT;
       end;
-      LP := TAaveLendingPool.Create(client, pool);
-      try
-        Self.GET_RESERVE_ADDRESS(client.chain, reserve, procedure(asset: TAddress; err: IError)
-        var
-          underlying: TERC20;
+      Self.GET_RESERVE_ADDRESS(client.chain, reserve, procedure(asset: TAddress; err: IError)
+      var
+        underlying: TERC20;
+      begin
+        if Assigned(err) then
         begin
-          if Assigned(err) then
+          callback(nil, err);
+          EXIT;
+        end;
+        underlying := TERC20.Create(client, asset);
+        if Assigned(underlying) then
+        begin
+          underlying.ApproveEx(from, pool, amount, procedure(rcpt: ITxReceipt; err: IError)
           begin
-            callback(nil, err);
-            EXIT;
-          end;
-          underlying := TERC20.Create(client, asset);
-          if Assigned(underlying) then
-          begin
-            underlying.ApproveEx(from, pool, amount, procedure(rcpt: ITxReceipt; err: IError)
-            begin
-              try
-                callback(rcpt, err);
-              finally
-                underlying.Free;
-              end;
-            end);
-          end;
-        end);
-      finally
-        LP.Free;
-      end;
+            try
+              callback(rcpt, err);
+            finally
+              underlying.Free;
+            end;
+          end);
+        end;
+      end);
     end);
   finally
     AP.Free;
@@ -274,7 +267,7 @@ end;
 
 class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := chain in [Mainnet, Ganache, Kovan];
+  Result := chain in [Mainnet, Kovan];
 end;
 
 class procedure TAave.APY(
@@ -560,7 +553,7 @@ end;
 
 constructor TAaveLendingPoolAddressesProvider.Create(aClient: TWeb3);
 begin
-  if aClient.Chain in [Mainnet, Ganache] then
+  if aClient.Chain = Mainnet then
     inherited Create(aClient, '0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5')
   else
     if aClient.Chain = Kovan then

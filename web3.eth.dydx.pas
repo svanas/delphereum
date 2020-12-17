@@ -128,18 +128,7 @@ type
 
   TSoloMargin = class(TCustomContract)
   private
-    const
-      deployedAt: array[TChain] of TAddress = (
-        '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e', // Mainnet
-        '',                                           // Ropsten
-        '',                                           // Rinkeby
-        '',                                           // Goerli
-        '',                                           // RSK_main_net
-        '',                                           // RSK_test_net
-        '0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE', // Kovan
-        '',                                           // xDai
-        '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e'  // Ganache
-      );
+    class function DeployedAt(chain: TChain): TAddress;
   protected
     class function ToBigInt(value: TTuple): BigInteger;
   public
@@ -228,7 +217,7 @@ begin
       erc20 := TERC20.Create(client, addr);
       if Assigned(erc20) then
       begin
-        erc20.ApproveEx(from, TSoloMargin.deployedAt[client.Chain], amount, procedure(rcpt: ITxReceipt; err: IError)
+        erc20.ApproveEx(from, TSoloMargin.DeployedAt(client.Chain), amount, procedure(rcpt: ITxReceipt; err: IError)
         begin
           try
             callback(rcpt, err);
@@ -248,7 +237,7 @@ end;
 
 class function TdYdX.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain in [Mainnet, Ganache, Kovan]) and (reserve <> USDT);
+  Result := (chain in [Mainnet, Kovan]) and (reserve <> USDT);
 end;
 
 // Returns the annual yield as a percentage.
@@ -438,14 +427,19 @@ end;
 { TSoloMargin }
 
 constructor TSoloMargin.Create(aClient: TWeb3);
-var
-  addr: TAddress;
 begin
-  addr := TSoloMargin.deployedAt[aClient.Chain];
-  if addr.IsZero then
-    raise EdYdx.CreateFmt('dYdX is not deployed on %s',
-          [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
-  inherited Create(aClient, addr);
+  inherited Create(aClient, TSoloMargin.DeployedAt(aClient.Chain));
+end;
+
+class function TSoloMargin.DeployedAt(chain: TChain): TAddress;
+begin
+  if chain = Mainnet then
+    Result := '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e'
+  else
+    if chain = Kovan then
+      Result := '0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE'
+    else
+      raise EdYdx.CreateFmt('dYdX is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(chain))]);
 end;
 
 class function TSoloMargin.ToBigInt(value: TTuple): BigInteger;

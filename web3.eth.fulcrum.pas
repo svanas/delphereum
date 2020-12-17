@@ -143,6 +143,10 @@ type
 
 implementation
 
+uses
+  // Delphi
+  System.TypInfo;
+
 type
   TiTokenClass = class of TiToken;
 
@@ -249,7 +253,7 @@ end;
 
 class function TFulcrum.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := chain in [Mainnet, Ganache, Kovan];
+  Result := chain in [Mainnet, Kovan];
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -516,18 +520,13 @@ end;
 constructor TiDAI.Create(aClient: TWeb3);
 begin
   // https://bzx.network/itokens
-  case aClient.Chain of
-    Mainnet, Ganache:
-      inherited Create(aClient, '0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0');
-    Ropsten:
-      raise EFulcrum.Create('iDAI is not supported on Ropsten');
-    Rinkeby:
-      raise EFulcrum.Create('iDAI is not supported on Rinkeby');
-    Goerli:
-      raise EFulcrum.Create('iDAI is not supported on Goerli');
-    Kovan:
-      inherited Create(aClient, '0x73d0B4834Ba4ADa053d8282c02305eCdAC2304f0');
-  end;
+  if aClient.Chain = Mainnet then
+    inherited Create(aClient, '0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0')
+  else
+    if aClient.Chain = Kovan then
+      inherited Create(aClient, '0x73d0B4834Ba4ADa053d8282c02305eCdAC2304f0')
+    else
+      raise EFulcrum.CreateFmt('iDAI is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
 end;
 
 { TiUSDC }
@@ -535,18 +534,13 @@ end;
 constructor TiUSDC.Create(aClient: TWeb3);
 begin
   // https://bzx.network/itokens
-  case aClient.Chain of
-    Mainnet, Ganache:
-      inherited Create(aClient, '0x32e4c68b3a4a813b710595aeba7f6b7604ab9c15');
-    Ropsten:
-      raise EFulcrum.Create('iUSDC is not supported on Ropsten');
-    Rinkeby:
-      raise EFulcrum.Create('iUSDC is not supported on Rinkeby');
-    Goerli:
-      raise EFulcrum.Create('iUSDC is not supported on Goerli');
-    Kovan:
-      inherited Create(aClient, '0xaaC9822F31e5Aefb32bC228DcF259F23B49B9855');
-  end;
+  if aClient.Chain = Mainnet then
+    inherited Create(aClient, '0x32e4c68b3a4a813b710595aeba7f6b7604ab9c15')
+  else
+    if aClient.Chain = Kovan then
+      inherited Create(aClient, '0xaaC9822F31e5Aefb32bC228DcF259F23B49B9855')
+    else
+      raise EFulcrum.CreateFmt('iUSDC is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
 end;
 
 { TiUSDT }
@@ -554,18 +548,13 @@ end;
 constructor TiUSDT.Create(aClient: TWeb3);
 begin
   // https://bzx.network/itokens
-  case aClient.Chain of
-    Mainnet, Ganache:
-      inherited Create(aClient, '0x7e9997a38a439b2be7ed9c9c4628391d3e055d48');
-    Ropsten:
-      raise EFulcrum.Create('iUSDT is not supported on Ropsten');
-    Rinkeby:
-      raise EFulcrum.Create('iUSDT is not supported on Rinkeby');
-    Goerli:
-      raise EFulcrum.Create('iUSDT is not supported on Goerli');
-    Kovan:
-      inherited Create(aClient, '0x6b9F03e05423cC8D00617497890C0872FF33d4E8');
-  end;
+  if aClient.Chain = Mainnet then
+    inherited Create(aClient, '0x7e9997a38a439b2be7ed9c9c4628391d3e055d48')
+  else
+    if aClient.Chain = Kovan then
+      inherited Create(aClient, '0x6b9F03e05423cC8D00617497890C0872FF33d4E8')
+    else
+      raise EFulcrum.CreateFmt('iUSDT is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
 end;
 
 end.

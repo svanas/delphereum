@@ -30,21 +30,19 @@ type
     RSK_main_net,
     RSK_test_net,
     Kovan,
-    xDai,
-    Ganache
+    xDai
   );
 
 const
   chainId: array[TChain] of Integer = (
-    1,   // Mainnet
-    3,   // Ropsten
-    4,   // Rinkeby
-    5,   // Goerli
-    30,  // RSK_main_net
-    31,  // RSK_test_net
-    42,  // Kovan
-    100, // xDai
-    1    // Ganache
+    1,  // Mainnet
+    3,  // Ropsten
+    4,  // Rinkeby
+    5,  // Goerli
+    30, // RSK_main_net
+    31, // RSK_test_net
+    42, // Kovan
+    100 // xDai
   );
 
 type

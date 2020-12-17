@@ -39,8 +39,8 @@ type
   // Global helper functions
   TAave = class(TLendingProtocol)
   protected
-    class procedure UnderlyingAddress(
-      client  : TWeb3;
+    class procedure UNDERLYING_ADDRESS(
+      chain   : TChain;
       reserve : TReserve;
       callback: TAsyncAddress);
     class procedure Approve(
@@ -125,55 +125,37 @@ implementation
 
 { TAave }
 
-const
-  UNDERLYING_ADDRESS: array[TReserve] of array[TChain] of TAddress = (
-    ( // DAI
-      '0x6b175474e89094c44da98b954eedeac495271d0f',  // Mainnet
-      '0xf80A32A835F79D7787E8a8ee5721D0fEaFd78108',  // Ropsten
-      '',                                            // Rinkeby
-      '',                                            // Goerli
-      '',                                            // RSK_main_net
-      '',                                            // RSK_test_net
-      '0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD',  // Kovan
-      '',                                            // xDai
-      '0x6b175474e89094c44da98b954eedeac495271d0f'), // Ganache
-    ( // USDC
-      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',  // Mainnet
-      '0x851dEf71f0e6A903375C1e536Bd9ff1684BAD802',  // Ropsten
-      '',                                            // Rinkeby
-      '',                                            // Goerli
-      '',                                            // RSK_main_net
-      '',                                            // RSK_test_net
-      '0xe22da380ee6B445bb8273C81944ADEB6E8450422',  // Kovan
-      '',                                            // xDai
-      '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'), // Ganache
-    ( // USDT
-      '0xdac17f958d2ee523a2206206994597c13d831ec7',  // Mainnet
-      '0xB404c51BBC10dcBE948077F18a4B8E553D160084',  // Ropsten
-      '',                                            // Rinkeby
-      '',                                            // Goerli
-      '',                                            // RSK_main_net
-      '',                                            // RSK_test_net
-      '0x13512979ADE267AB5100878E2e0f485B568328a4',  // Kovan
-      '',                                            // xDai
-      '0xdac17f958d2ee523a2206206994597c13d831ec7')  // Ganache
-  );
-
 // Returns the ERC-20 contract address of the underlying asset.
-class procedure TAave.UnderlyingAddress(client: TWeb3; reserve: TReserve; callback: TAsyncAddress);
-var
-  addr: TAddress;
+class procedure TAave.UNDERLYING_ADDRESS(chain: TChain; reserve: TReserve; callback: TAsyncAddress);
 begin
-  addr := UNDERLYING_ADDRESS[reserve][client.Chain];
-  if addr <> '' then
-    callback(addr, nil)
-  else
-    callback('',
-      TError.Create('%s is not supported on %s', [
-        GetEnumName(TypeInfo(TReserve), Ord(reserve)),
-        GetEnumName(TypeInfo(TChain), Ord(client.Chain))
-      ])
-    );
+  if chain = Mainnet then
+  begin
+    callback(reserve.Address, nil);
+    EXIT;
+  end;
+  if chain = Kovan then
+  begin
+    case reserve of
+      DAI : callback('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD', nil);
+      USDC: callback('0xe22da380ee6B445bb8273C81944ADEB6E8450422', nil);
+      USDT: callback('0x13512979ADE267AB5100878E2e0f485B568328a4', nil);
+    end;
+    EXIT;
+  end;
+  if chain = Ropsten then
+  begin
+    case reserve of
+      DAI : callback('0xf80A32A835F79D7787E8a8ee5721D0fEaFd78108', nil);
+      USDC: callback('0x851dEf71f0e6A903375C1e536Bd9ff1684BAD802', nil);
+      USDT: callback('0xB404c51BBC10dcBE948077F18a4B8E553D160084', nil);
+    end;
+    EXIT;
+  end;
+  callback(ADDRESS_ZERO,
+    TError.Create('%s is not supported on %s', [
+      GetEnumName(TypeInfo(TReserve), Ord(reserve)), GetEnumName(TypeInfo(TChain), Ord(chain))
+    ])
+  );
 end;
 
 // Approve the LendingPoolCore contract to move your asset.
@@ -195,7 +177,7 @@ begin
       if Assigned(err) then
         callback(nil, err)
       else
-        UnderlyingAddress(client, reserve, procedure(addr: TAddress; err: IError)
+        UNDERLYING_ADDRESS(client.Chain, reserve, procedure(addr: TAddress; err: IError)
         begin
           if Assigned(err) then
             callback(nil, err)
@@ -228,7 +210,7 @@ end;
 
 class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := chain in [Mainnet, Ganache, Ropsten, Kovan];
+  Result := chain in [Mainnet, Ropsten, Kovan];
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -445,18 +427,16 @@ end;
 constructor TAaveAddressesProvider.Create(aClient: TWeb3);
 begin
   // https://docs.aave.com/developers/developing-on-aave/deployed-contract-instances
-  case aClient.Chain of
-    Mainnet, Ganache:
-      inherited Create(aClient, '0x24a42fD28C976A61Df5D00D0599C34c4f90748c8');
-    Ropsten:
-      inherited Create(aClient, '0x1c8756FD2B28e9426CDBDcC7E3c4d64fa9A54728');
-    Rinkeby:
-      raise EAave.Create('Aave is not deployed on Rinkeby');
-    Goerli:
-      raise EAave.Create('Aave is not deployed on Goerli');
-    Kovan:
-      inherited Create(aClient, '0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5');
-  end;
+  if aClient.Chain = Mainnet then
+    inherited Create(aClient, '0x24a42fD28C976A61Df5D00D0599C34c4f90748c8')
+  else
+    if aClient.Chain = Kovan then
+      inherited Create(aClient, '0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5')
+    else
+      if aClient.Chain = Ropsten then
+        inherited Create(aClient, '0x1c8756FD2B28e9426CDBDcC7E3c4d64fa9A54728')
+      else
+        raise EAave.CreateFmt('Aave is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
 end;
 
 // Fetch the address of the latest implementation of the LendingPool contract.
@@ -498,7 +478,7 @@ procedure TAaveLendingPool.Deposit(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  TAave.UnderlyingAddress(Client, reserve, procedure(addr: TAddress; err: IError)
+  TAave.UNDERLYING_ADDRESS(Client.Chain, reserve, procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
@@ -513,7 +493,7 @@ end;
 // https://docs.aave.com/developers/developing-on-aave/the-protocol/lendingpool#getreservedata
 procedure TAaveLendingPool.GetReserveData(reserve: TReserve; callback: TAsyncTuple);
 begin
-  TAave.UnderlyingAddress(Client, reserve, procedure(addr: TAddress; err: IError)
+  TAave.UNDERLYING_ADDRESS(Client.Chain, reserve, procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)

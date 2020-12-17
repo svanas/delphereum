@@ -41,8 +41,7 @@ const
     '',                                        // RSK_main_net
     '',                                        // RSK_test_net
     'https://eth-kovan.alchemyapi.io/v2/%s',   // Kovan
-    '',                                        // xDai
-    ''                                         // Ganache
+    ''                                         // xDai
   );
 begin
   Result := ENDPOINT[chain];
