@@ -60,6 +60,7 @@ Distributed under the [Creative Commons NonCommercial](https://github.com/svanas
 
 ## Sponsors
 
+* [eSeGeCe WebSockets](https://www.esegece.com/websockets)
 * [IPWorks WebSockets](https://www.nsoftware.com/ipworks/ws/)
 
 ## Commercial support and training
