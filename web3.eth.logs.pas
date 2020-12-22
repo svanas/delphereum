@@ -152,7 +152,7 @@ begin
     ]
   )) as TJsonObject;
   try
-    &out := web3.json.rpc.send(client.URL, 'eth_getLogs', [&in]);
+    &out := client.JsonRpc.Send(client.URL, client.Security, 'eth_getLogs', [&in]);
     if Assigned(&out) then
     try
       arr := web3.json.getPropAsArr(&out, 'result');

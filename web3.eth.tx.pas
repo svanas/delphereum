@@ -305,7 +305,7 @@ end;
 // send raw (aka signed) transaction.
 procedure sendTransaction(client: TWeb3; const raw: string; callback: TAsyncTxHash);
 begin
-  web3.json.rpc.send(client.URL, 'eth_sendRawTransaction', [raw], procedure(resp: TJsonObject; err: IError)
+  client.JsonRpc.Send(client.URL, client.Security, 'eth_sendRawTransaction', [raw], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
@@ -563,7 +563,7 @@ end;
 // returns the information about a transaction requested by transaction hash.
 procedure getTransaction(client: TWeb3; hash: TTxHash; callback: TAsyncTxn);
 begin
-  web3.json.rpc.send(client.URL, 'eth_getTransactionByHash', [hash], procedure(resp: TJsonObject; err: IError)
+  client.JsonRpc.Send(client.URL, client.Security, 'eth_getTransactionByHash', [hash], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(nil, TTxError.Create(hash, err.Message))
@@ -639,7 +639,7 @@ end;
 // returns the receipt of a transaction by transaction hash.
 procedure getTransactionReceipt(client: TWeb3; hash: TTxHash; callback: TAsyncReceipt);
 begin
-  web3.json.rpc.send(client.URL, 'eth_getTransactionReceipt', [hash], procedure(resp: TJsonObject; err: IError)
+  client.JsonRpc.Send(client.URL, client.Security, 'eth_getTransactionReceipt', [hash], procedure(resp: TJsonObject; err: IError)
   var
     rcpt: TJsonObject;
   begin
@@ -704,7 +704,7 @@ begin
       ]
     )) as TJsonObject;
     try
-      web3.json.rpc.send(client.URL, 'eth_call', [obj, toHex(txn.blockNumber)], procedure(resp: TJsonObject; err: IError)
+      client.JsonRpc.Send(client.URL, client.Security, 'eth_call', [obj, toHex(txn.blockNumber)], procedure(resp: TJsonObject; err: IError)
       var
         len: Int64;
         decoded,

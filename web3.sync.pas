@@ -20,6 +20,7 @@ uses
   System.Generics.Collections,
   System.RTLConsts,
   System.SyncObjs,
+  System.Threading,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers;
 
@@ -110,7 +111,19 @@ type
     destructor Destroy; override;
   end;
 
+function ThreadPool: TThreadPool;
+
 implementation
+
+var
+  _ThreadPool: TThreadPool = nil;
+
+function ThreadPool: TThreadPool;
+begin
+  if not Assigned(_ThreadPool) then
+    _ThreadPool := TThreadPool.Create;
+  Result := _ThreadPool;
+end;
 
 { TCriticalSingleton }
 

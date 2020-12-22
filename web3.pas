@@ -17,6 +17,7 @@ interface
 
 uses
   // Delphi
+  System.JSON,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers;
@@ -52,6 +53,8 @@ type
   TWei          = BigInteger;
   TTxHash       = string[66];
   TUnixDateTime = Int64;
+  TProtocol     = (HTTPS, WebSockets);
+  TSecurity     = (Automatic, TLS_10, TLS_11, TLS_12, TLS_13);
 
   EWeb3 = class(Exception);
 
@@ -96,6 +99,42 @@ type
     constructor Create;
   end;
 
+  TOnError         = reference to procedure(err : IError);
+  TAsyncJsonObject = reference to procedure(resp: TJsonObject; err: IError);
+  TAsyncJsonArray  = reference to procedure(resp: TJsonArray;  err: IError);
+
+  IProtocol = interface
+  ['{DC851A2E-D172-415C-9FD0-34977FD8F232}']
+  end;
+
+  IJsonRpc = interface(IProtocol)
+  ['{79B99FD7-3000-4839-96B4-6C779C25AD0C}']
+    function Send(
+      const URL   : string;
+      security    : TSecurity;
+      const method: string;
+      args        : array of const): TJsonObject; overload;
+    procedure Send(
+      const URL   : string;
+      security    : TSecurity;
+      const method: string;
+      args        : array of const;
+      callback    : TAsyncJsonObject); overload;
+  end;
+
+  IPubSub = interface(IJsonRpc)
+  ['{D63B43A1-60E4-4107-8B14-925399A4850A}']
+    procedure Subscribe(const subscription: string; callback: TAsyncJsonObject);
+    procedure Unsubscribe(const subscription: string);
+    procedure Disconnect;
+
+    procedure SetOnError(Value: TOnError);
+    procedure SetOnDisconnect(Value: TProc);
+
+    property OnError: TOnError write SetOnError;
+    property OnDisconnect: TProc write SetOnDisconnect;
+  end;
+
   ISignatureDenied = interface(IError)
   ['{AFFFBC21-3686-44A8-9034-2B38B3001B02}']
   end;
@@ -107,28 +146,47 @@ type
 
   TWeb3 = record
   private
-    FChain: TChain;
-    FURL  : string;
+    FChain   : TChain;
+    FURL     : string;
+    FProtocol: IProtocol;
+    FSecurity: TSecurity;
     FOnGasStationInfo  : TOnGasStationInfo;
     FOnEtherscanApiKey : TOnEtherscanApiKey;
     FOnSignatureRequest: TOnSignatureRequest;
+    function GetJsonRpc: IJsonRpc;
+    function GetPubSub : IPubSub;
   public
     function  ETHERSCAN_API_KEY: string;
     procedure GetGasStationInfo(callback: TGasStationInfoResult);
     procedure CanSignTransaction(from, &to: TAddress;
       gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
 
-    class function New(const aURL: string): TWeb3; overload; static;
-    class function New(aChain: TChain; const aURL: string): TWeb3; overload; static;
+    constructor Create(
+      const aURL: string;
+      aSecurity : TSecurity = TSecurity.Automatic); overload;
+    constructor Create(
+      aChain    : TChain;
+      const aURL: string;
+      aSecurity : TSecurity = TSecurity.Automatic); overload;
+    constructor Create(
+      const aURL: string;
+      aJsonRpc  : IJsonRpc;
+      aSecurity : TSecurity = TSecurity.Automatic); overload;
+    constructor Create(
+      aChain    : TChain;
+      const aURL: string;
+      aProtocol : IProtocol;
+      aSecurity : TSecurity = TSecurity.Automatic); overload;
 
-    property URL  : string read FURL;
-    property Chain: TChain read FChain;
-    property OnGasStationInfo: TOnGasStationInfo
-                               read FOnGasStationInfo write FOnGasStationInfo;
-    property OnEtherscanApiKey: TOnEtherscanApiKey
-                                read FOnEtherscanApiKey write FOnEtherscanApiKey;
-    property OnSignatureRequest: TOnSignatureRequest
-                                 read FOnSignatureRequest write FOnSignatureRequest;
+    property Chain   : TChain    read FChain;
+    property URL     : string    read FURL;
+    property JsonRpc : IJsonRpc  read GetJsonRpc;
+    property PubSub  : IPubSub   read GetPubSub;
+    property Security: TSecurity read FSecurity;
+
+    property OnGasStationInfo  : TOnGasStationInfo   read FOnGasStationInfo   write FOnGasStationInfo;
+    property OnEtherscanApiKey : TOnEtherscanApiKey  read FOnEtherscanApiKey  write FOnEtherscanApiKey;
+    property OnSignatureRequest: TOnSignatureRequest read FOnSignatureRequest write FOnSignatureRequest;
   end;
 
 function Now: TUnixDateTime;
@@ -139,8 +197,8 @@ implementation
 uses
   System.Classes,
   System.DateUtils,
-  System.UITypes,
   System.TypInfo,
+  System.UITypes,
 {$IFDEF FMX}
   FMX.Dialogs,
 {$ELSE}
@@ -148,7 +206,8 @@ uses
 {$ENDIF}
   web3.coincap,
   web3.eth.types,
-  web3.eth.utils;
+  web3.eth.utils,
+  web3.json.rpc.https;
 
 function Now: TUnixDateTime;
 begin
@@ -265,15 +324,47 @@ begin
   end, True);
 end;
 
-class function TWeb3.New(const aURL: string): TWeb3;
+constructor TWeb3.Create(const aURL: string; aSecurity: TSecurity);
 begin
-  Result := New(Mainnet, aURL);
+  Self.Create(Mainnet, aURL, aSecurity);
 end;
 
-class function TWeb3.New(aChain: TChain; const aURL: string): TWeb3;
+constructor TWeb3.Create(aChain: TChain; const aURL: string; aSecurity: TSecurity);
 begin
-  Result.FChain := aChain;
-  Result.FURL   := aURL;
+  Self.Create(aChain, aURL, TJsonRpcHttps.Create, aSecurity);
+end;
+
+constructor TWeb3.Create(const aURL: string; aJsonRpc: IJsonRpc; aSecurity: TSecurity);
+begin
+  Self.Create(Mainnet, aURL, aJsonRpc, aSecurity);
+end;
+
+constructor TWeb3.Create(
+  aChain    : TChain;
+  const aURL: string;
+  aProtocol : IProtocol;
+  aSecurity : TSecurity);
+begin
+  Self.FChain    := aChain;
+  Self.FURL      := aURL;
+  Self.FProtocol := aProtocol;
+  Self.FSecurity := aSecurity;
+end;
+
+function TWeb3.GetJsonRpc: IJsonRpc;
+begin
+  Result := nil;
+  if Assigned(FProtocol) then
+    if not Supports(FProtocol, IJsonRpc, Result) then
+      Result := nil;
+end;
+
+function TWeb3.GetPubSub: IPubSub;
+begin
+  Result := nil;
+  if Assigned(FProtocol) then
+    if not Supports(FProtocol, IPubSub, Result) then
+      Result := nil;
 end;
 
 end.

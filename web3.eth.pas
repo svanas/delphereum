@@ -155,7 +155,7 @@ function blockNumber(client: TWeb3): BigInteger;
 var
   obj: TJsonObject;
 begin
-  obj := web3.json.rpc.send(client.URL, 'eth_blockNumber', []);
+  obj := client.JsonRpc.Send(client.URL, client.Security, 'eth_blockNumber', []);
   if Assigned(obj) then
   try
     Result := web3.json.getPropAsStr(obj, 'result');
@@ -166,7 +166,7 @@ end;
 
 procedure blockNumber(client: TWeb3; callback: TAsyncQuantity);
 begin
-  web3.json.rpc.send(client.URL, 'eth_blockNumber', [], procedure(resp: TJsonObject; err: IError)
+  client.JsonRpc.Send(client.URL, client.Security, 'eth_blockNumber', [], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -182,7 +182,7 @@ end;
 
 procedure getBalance(client: TWeb3; address: TAddress; const block: string; callback: TAsyncQuantity);
 begin
-  web3.json.rpc.send(client.URL, 'eth_getBalance', [address, block], procedure(resp: TJsonObject; err: IError)
+  client.JsonRpc.Send(client.URL, client.Security, 'eth_getBalance', [address, block], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -199,7 +199,7 @@ end;
 // returns the number of transations *sent* from an address
 procedure getTransactionCount(client: TWeb3; address: TAddress; const block: string; callback: TAsyncQuantity);
 begin
-  web3.json.rpc.send(client.URL, 'eth_getTransactionCount', [address, block], procedure(resp: TJsonObject; err: IError)
+  client.JsonRpc.Send(client.URL, client.Security, 'eth_getTransactionCount', [address, block], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -240,7 +240,7 @@ begin
   )) as TJsonObject;
   try
     // step #3: execute a message call (without creating a transaction on the blockchain)
-    web3.json.rpc.send(client.URL, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: IError)
+    client.JsonRpc.Send(client.URL, client.Security, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: IError)
     begin
       if Assigned(err) then
         callback('', err)

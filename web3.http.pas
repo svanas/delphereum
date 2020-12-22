@@ -40,9 +40,7 @@ type
     function StatusCode: Integer;
   end;
 
-  TAsyncResponse   = reference to procedure(resp: IHttpResponse; err: IError);
-  TAsyncJsonObject = reference to procedure(resp: TJsonObject;   err: IError);
-  TAsyncJsonArray  = reference to procedure(resp: TJsonArray;    err: IError);
+  TAsyncResponse = reference to procedure(resp: IHttpResponse; err: IError);
 
 {---------------------------- async function calls ----------------------------}
 
@@ -96,7 +94,7 @@ function post(
   const URL : string;
   source    : TStream;
   headers   : TNetHeaders;
-  out output: TJsonObject): Boolean; overload;
+  out output: TJsonValue): Boolean; overload;
 
 implementation
 
@@ -106,17 +104,8 @@ uses
   System.SysUtils,
   System.Threading,
   // web3
-  web3.json;
-
-var
-  _pool: TThreadPool = nil;
-
-function pool: TThreadPool;
-begin
-  if not Assigned(_pool) then
-    _pool := TThreadPool.Create;
-  Result := _pool;
-end;
+  web3.json,
+  web3.sync;
 
 {--------------------------------- THttpError ---------------------------------}
 
@@ -161,7 +150,7 @@ begin
             EXIT;
           end;
         end;
-      end, pool);
+      end, web3.sync.ThreadPool);
     end;
 
     Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
@@ -274,7 +263,7 @@ begin
             EXIT;
           end;
         end;
-      end, pool);
+      end, web3.sync.ThreadPool);
     end;
 
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
@@ -366,7 +355,7 @@ begin
             EXIT;
           end;
         end;
-      end, pool);
+      end, web3.sync.ThreadPool);
     end;
 
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
@@ -449,7 +438,7 @@ function post(
   const URL : string;
   source    : TStream;
   headers   : TNetHeaders;
-  out output: TJsonObject): Boolean;
+  out output: TJsonValue): Boolean;
 var
   resp: IHttpResponse;
 begin

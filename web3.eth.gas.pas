@@ -58,7 +58,7 @@ begin
 
     if (gasInfo.apiKey = '') and (gasInfo.Speed = Average) then
     begin
-      web3.json.rpc.send(client.URL, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
+      client.JsonRpc.Send(client.URL, client.Security, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
       begin
         if Assigned(err) then
           callback(0, err)
@@ -114,7 +114,7 @@ begin
   )) as TJsonObject;
   try
     // estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
-    web3.json.rpc.send(client.URL, 'eth_estimateGas', [obj], procedure(resp: TJsonObject; err: IError)
+    client.JsonRpc.Send(client.URL, client.Security, 'eth_estimateGas', [obj], procedure(resp: TJsonObject; err: IError)
     begin
       if Assigned(err) then
       begin
