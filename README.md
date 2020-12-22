@@ -58,6 +58,10 @@ You can download Bankless [for Windows](https://www.microsoft.com/store/productI
 
 Distributed under the [Creative Commons NonCommercial](https://github.com/svanas/delphereum/blob/master/LICENSE.md) (aka CC BY-NC) license.
 
+## Sponsors
+
+* [IPWorks WebSockets](https://www.nsoftware.com/ipworks/ws/)
+
 ## Commercial support and training
 
 Commercial support and training is available from [Stefan van As](https://stackoverflow.com/story/svanas).
