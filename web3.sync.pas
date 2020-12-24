@@ -25,12 +25,12 @@ uses
   Velthuis.BigIntegers;
 
 type
-  ICriticalSingleton = interface
+  ICriticalThing = interface
     procedure Enter;
     procedure Leave;
   end;
 
-  TCriticalSingleton = class abstract(TInterfacedObject, ICriticalSingleton)
+  TCriticalThing = class abstract(TInterfacedObject, ICriticalThing)
   strict private
     Inner: TCriticalSection;
   public
@@ -41,13 +41,13 @@ type
   end;
 
 type
-  ICriticalInt64 = interface(ICriticalSingleton)
+  ICriticalInt64 = interface(ICriticalThing)
     function  Inc: Int64;
     function  Get: Int64;
     procedure Put(Value: Int64);
   end;
 
-  TCriticalInt64 = class(TCriticalSingleton, ICriticalInt64)
+  TCriticalInt64 = class(TCriticalThing, ICriticalInt64)
   strict private
     Inner: Int64;
   public
@@ -58,13 +58,13 @@ type
   end;
 
 type
-  ICriticalBigInt = interface(ICriticalSingleton)
+  ICriticalBigInt = interface(ICriticalThing)
     function  Inc: BigInteger;
     function  Get: BigInteger;
     procedure Put(Value: BigInteger);
   end;
 
-  TCriticalBigInt = class(TCriticalSingleton, ICriticalBigInt)
+  TCriticalBigInt = class(TCriticalThing, ICriticalBigInt)
   strict private
     Inner: BigInteger;
   public
@@ -75,7 +75,7 @@ type
   end;
 
 type
-  ICriticalQueue<T> = interface(ICriticalSingleton)
+  ICriticalQueue<T> = interface(ICriticalThing)
     function  Length: Integer;
     procedure Add(const Item: T);
     function  First: T;
@@ -83,7 +83,7 @@ type
     procedure Delete(Index, Count: Integer);
   end;
 
-  TCriticalQueue<T> = class(TCriticalSingleton, ICriticalQueue<T>)
+  TCriticalQueue<T> = class(TCriticalThing, ICriticalQueue<T>)
   strict private
     Inner: TArray<T>;
   public
@@ -95,7 +95,7 @@ type
   end;
 
 type
-  TCriticalList = class abstract(TCriticalSingleton)
+  TCriticalList = class abstract(TCriticalThing)
   strict private
     Inner: TList<IInterface>;
   strict protected
@@ -108,6 +108,16 @@ type
     function  Count: Integer;
   public
     constructor Create; override;
+    destructor Destroy; override;
+  end;
+
+type
+  TCriticalDictionary<TKey,TValue> = class(TDictionary<TKey,TValue>)
+  strict private
+    Inner: TCriticalSection;
+  public
+    procedure Enter;
+    procedure Leave;
     destructor Destroy; override;
   end;
 
@@ -125,26 +135,26 @@ begin
   Result := _ThreadPool;
 end;
 
-{ TCriticalSingleton }
+{ TCriticalThing }
 
-constructor TCriticalSingleton.Create;
+constructor TCriticalThing.Create;
 begin
   inherited Create;
   Inner := TCriticalSection.Create;
 end;
 
-destructor TCriticalSingleton.Destroy;
+destructor TCriticalThing.Destroy;
 begin
   if Assigned(Inner) then Inner.Free;
   inherited Destroy;
 end;
 
-procedure TCriticalSingleton.Enter;
+procedure TCriticalThing.Enter;
 begin
   Inner.Enter;
 end;
 
-procedure TCriticalSingleton.Leave;
+procedure TCriticalThing.Leave;
 begin
   Inner.Leave;
 end;
@@ -287,6 +297,26 @@ begin
   if (Index < 0) or (Index >= Count) then
     Inner.Error(SListIndexError, Index);
   Inner[Index] := Item;
+end;
+
+{ TCriticalDictionary }
+
+destructor TCriticalDictionary<TKey,TValue>.Destroy;
+begin
+  if Assigned(Inner) then Inner.Free;
+  inherited Destroy;
+end;
+
+procedure TCriticalDictionary<TKey,TValue>.Enter;
+begin
+  if not Assigned(Inner) then
+    Inner := TCriticalSection.Create;
+  Inner.Enter;
+end;
+
+procedure TCriticalDictionary<TKey,TValue>.Leave;
+begin
+  if Assigned(Inner) then Inner.Leave;
 end;
 
 end.

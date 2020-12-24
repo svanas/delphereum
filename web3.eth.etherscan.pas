@@ -459,7 +459,7 @@ end;
 {------------------------------- ContractCache --------------------------------}
 
 type
-  IContractCache = interface(ICriticalSingleton)
+  IContractCache = interface(ICriticalThing)
     function  Get(Index: Integer): IContractABI;
     procedure Put(Index: Integer; const Item: IContractABI);
     function  Add(const Item: IContractABI): Integer;

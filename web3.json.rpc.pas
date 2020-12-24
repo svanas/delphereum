@@ -51,9 +51,6 @@ type
     class var
       _ID: ICriticalInt64;
   strict protected
-    class procedure Enter;
-    class procedure Leave;
-
     class function ID: ICriticalInt64;
     class function FormatArgs(args: array of const): string;
 
@@ -102,16 +99,6 @@ begin
 end;
 
 { TCustomJsonRpc }
-
-class procedure TCustomJsonRpc.Enter;
-begin
-  Self.ID.Enter;
-end;
-
-class procedure TCustomJsonRpc.Leave;
-begin
-  Self.ID.Leave;
-end;
 
 class function TCustomJsonRpc.ID: ICriticalInt64;
 begin

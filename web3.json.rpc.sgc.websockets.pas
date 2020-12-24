@@ -17,7 +17,6 @@ interface
 
 uses
   // Delphi
-  System.Generics.Collections,
   System.JSON,
   System.SysUtils,
   // SgcWebSockets
@@ -26,11 +25,12 @@ uses
   sgcWebSocket_Types,
   // web3
   web3,
-  web3.json.rpc.websockets;
+  web3.json.rpc.websockets,
+  web3.sync;
 
 type
-  TCallbacks     = TDictionary<Int64, TAsyncJsonObject>;
-  TSubscriptions = TDictionary<string, TAsyncJsonObject>;
+  TCallbacks     = TCriticalDictionary<Int64, TAsyncJsonObject>;
+  TSubscriptions = TCriticalDictionary<string, TAsyncJsonObject>;
 
   TJsonRpcSgcWebSockets = class(TJsonRpcWebSockets)
   strict private
@@ -81,6 +81,7 @@ begin
   if not Assigned(FClient) then
   begin
     FClient := TsgcWebSocketClient.Create(nil);
+    FClient.NotifyEvents := neNoSync;
 
     FClient.OnMessage    := DoMessage;
     FClient.OnError      := DoError;
@@ -169,21 +170,33 @@ begin
     if not Result then
       EXIT;
 
-    Result := Callbacks.TryGetValue(web3.json.getPropAsInt(response, 'id'), callback);
-    if Result then
-    begin
-      callback(nil, TJsonRpcError.Create(
-        web3.json.getPropAsInt(error, 'code'),
-        web3.json.getPropAsStr(error, 'message')
-      ));
-      Callbacks.Remove(web3.json.getPropAsInt(response, 'id'));
-      EXIT;
+    Callbacks.Enter;
+    try
+      // do we have an attr named "id"? if yes, then this is a JSON-RPC error.
+      Result := Callbacks.TryGetValue(web3.json.getPropAsInt(response, 'id'), callback);
+      if Result then
+      begin
+        Callbacks.Remove(web3.json.getPropAsInt(response, 'id'));
+        callback(nil, TJsonRpcError.Create(
+          web3.json.getPropAsInt(error, 'code'),
+          web3.json.getPropAsStr(error, 'message')
+        ));
+        EXIT;
+      end;
+    finally
+      Callbacks.Leave;
     end;
 
+    // otherwise, do we have an attr named "params"? if yes, then this is a PubSub error.
     params := web3.json.getPropAsObj(response, 'params');
     if Assigned(params) then
     begin
-      Result := Subscriptions.TryGetValue(web3.json.getPropAsStr(params, 'subscription'), callback);
+      Subscriptions.Enter;
+      try
+        Result := Subscriptions.TryGetValue(web3.json.getPropAsStr(params, 'subscription'), callback);
+      finally
+        Subscriptions.Leave;
+      end;
       if Result then
         callback(nil, TJsonRpcError.Create(
           web3.json.getPropAsInt(error, 'code'),
@@ -201,71 +214,57 @@ var
   callback: TAsyncJsonObject;
   params  : TJsonObject;
 begin
-  Self.Enter;
+  if TryJsonRpcError(Text) then
+    EXIT;
+
+  response := web3.json.unmarshal(Text);
+
+  if not Assigned(response) then
+  begin
+    if Assigned(OnError) then OnError(TError.Create(Text));
+    EXIT;
+  end;
+
   try
-    if TryJsonRpcError(Text) then
-      EXIT;
-
-    response := web3.json.unmarshal(Text);
-
-    if not Assigned(response) then
-    begin
-      if Assigned(OnError) then OnError(TError.Create(Text));
-      EXIT;
-    end;
-
+    Callbacks.Enter;
     try
+      // do we have an attr named "id"? if yes, then this is a JSON-RPC response.
       if Callbacks.TryGetValue(web3.json.getPropAsInt(response, 'id'), callback) then
       begin
-        callback(response.Clone as TJsonObject, nil);
         Callbacks.Remove(web3.json.getPropAsInt(response, 'id'));
+        callback(response.Clone as TJsonObject, nil);
         EXIT;
       end;
-
-      params := web3.json.getPropAsObj(response, 'params');
-      if Assigned(params) then
-        if Subscriptions.TryGetValue(web3.json.getPropAsStr(params, 'subscription'), callback) then
-          callback(response.Clone as TJsonObject, nil);
     finally
-      response.Free;
+      Callbacks.Leave;
     end;
+    // otherwise, do we have an attr named "params"? if yes, then this is a PubSub notification.
+    params := web3.json.getPropAsObj(response, 'params');
+    if Assigned(params) then
+      if Subscriptions.TryGetValue(web3.json.getPropAsStr(params, 'subscription'), callback) then
+        callback(response.Clone as TJsonObject, nil);
   finally
-    Self.Leave;
+    response.Free;
   end;
 end;
 
 procedure TJsonRpcSgcWebSockets.DoError(Conn: TsgcWsConnection; const Error: string);
 begin
-  Self.Enter;
-  try
-    if TryJsonRpcError(Error) then
-      EXIT;
-    if Assigned(OnError) then OnError(TError.Create(Error));
-  finally
-    Self.Leave;
-  end;
+  if TryJsonRpcError(Error) then
+    EXIT;
+  if Assigned(OnError) then OnError(TError.Create(Error));
 end;
 
 procedure TJsonRpcSgcWebSockets.DoException(Conn: TsgcWsConnection; E: Exception);
 begin
-  Self.Enter;
-  try
-    if TryJsonRpcError(E.Message) then
-      EXIT;
-    if Assigned(OnError) then OnError(TError.Create(E.Message));
-  finally
-    Self.Leave;
-  end;
+  if TryJsonRpcError(E.Message) then
+    EXIT;
+  if Assigned(OnError) then OnError(TError.Create(E.Message));
 end;
 
 procedure TJsonRpcSgcWebSockets.DoDisconnect(Conn: TsgcWsConnection; Code: Integer);
 begin
-  Self.Enter;
-  try
-    if Assigned(OnDisconnect) then OnDisconnect;
-  finally
-    Self.Leave;
-  end;
+  if Assigned(OnDisconnect) then OnDisconnect;
 end;
 
 function TJsonRpcSgcWebSockets.Send(
@@ -302,34 +301,36 @@ procedure TJsonRpcSgcWebSockets.Send(
   callback    : TAsyncJsonObject);
 var
   ID: Int64;
+  PL: string;
 begin
   Self.ID.Enter;
   try
     ID := Self.ID.Inc;
     Callbacks.Add(ID, callback);
-    Client[URL, security].WriteData(GetPayload(ID, method, args));
+    PL := GetPayload(ID, method, args);
   finally
     Self.ID.Leave;
   end;
+  Client[URL, security].WriteData(PL);
 end;
 
 procedure TJsonRpcSgcWebSockets.Subscribe(const subscription: string; callback: TAsyncJsonObject);
 begin
-  Self.Enter;
+  Subscriptions.Enter;
   try
     Subscriptions.AddOrSetValue(subscription, callback);
   finally
-    Self.Leave;
+    Subscriptions.Leave;
   end;
 end;
 
 procedure TJsonRpcSgcWebSockets.Unsubscribe(const subscription: string);
 begin
-  Self.Enter;
+  Subscriptions.Enter;
   try
     Subscriptions.Remove(subscription);
   finally
-    Self.Leave;
+    Subscriptions.Leave;
   end;
 end;
 
