@@ -107,7 +107,8 @@ begin
     FClient.URL := URL;
   end;
 
-  if not FClient.Active then FClient.Connect;
+  if not FClient.Active then
+    repeat until FClient.Connect;
 
   Result := FClient;
 end;
@@ -306,7 +307,12 @@ begin
   Self.ID.Enter;
   try
     ID := Self.ID.Inc;
-    Callbacks.Add(ID, callback);
+    Callbacks.Enter;
+    try
+      Callbacks.Add(ID, callback);
+    finally
+      Callbacks.Leave;
+    end;
     PL := GetPayload(ID, method, args);
   finally
     Self.ID.Leave;
