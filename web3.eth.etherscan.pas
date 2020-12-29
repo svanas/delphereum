@@ -123,14 +123,11 @@ implementation
 
 uses
   // Delphi
-  System.Classes,
-  System.Generics.Collections,
-  System.Math,
   System.NetEncoding,
   System.SysUtils,
   System.TypInfo,
   // web3
-  web3.http,
+  web3.http.throttler,
   web3.json,
   web3.sync;
 
@@ -509,74 +506,49 @@ begin
   Result := _ContractCache;
 end;
 
-{----------------------- 5 calls per sec/IP rate limit ------------------------}
-
-const
-  REQUESTS_PER_SECOND = 5;
+{------------------------ 5 calls per sec/IP throttler ------------------------}
 
 type
-  TRequest = record
-    endpoint: string;
-    callback: TAsyncJsonObject;
-    class function New(const aURL: string; aCallback: TAsyncJsonObject): TRequest; static;
+  IEtherscan = interface
+    procedure Get(
+      chain       : TChain;
+      const apiKey: string;
+      const query : string;
+      callback    : TAsyncJsonObject);
   end;
 
-class function TRequest.New(const aURL: string; aCallback: TAsyncJsonObject): TRequest;
-begin
-  Result.endpoint := aURL;
-  Result.callback := aCallback;
-end;
-
-var
-  _Queue: ICriticalQueue<TRequest> = nil;
-
-function Queue: ICriticalQueue<TRequest>;
-begin
-  if not Assigned(_Queue) then
-    _Queue := TCriticalQueue<TRequest>.Create;
-  Result := _Queue;
-end;
-
 type
-  TGet = reference to procedure(request: TRequest);
+  TEtherscan = class(TGetter, IEtherscan)
+  public
+    procedure Get(
+      chain       : TChain;
+      const apiKey: string;
+      const query : string;
+      callback    : TAsyncJsonObject);
+  end;
 
-{------------------------------ global functions ------------------------------}
-
-procedure get(
+procedure TEtherscan.Get(
   chain       : TChain;
   const apiKey: string;
   const query : string;
   callback    : TAsyncJsonObject);
-var
-  _get: TGet;
 begin
-  _get := procedure(request: TRequest)
-  begin
-    web3.http.get(request.endpoint, procedure(resp: TJsonObject; err: IError)
-    begin
-      request.callback(resp, err);
-      Queue.Enter;
-      try
-        Queue.Delete(0, 1);
-        if Queue.Length > 0 then
-        begin
-          TThread.Sleep(Ceil(1000 / REQUESTS_PER_SECOND));
-          _get(Queue.First);
-        end;
-      finally
-        Queue.Leave;
-      end;
-    end);
-  end;
-  Queue.Enter;
-  try
-    Queue.Add(TRequest.New(endpoint(chain, TNetEncoding.URL.Encode(apiKey)) + query, callback));
-    if Queue.Length = 1 then
-      _get(Queue.First);
-  finally
-    Queue.Leave;
-  end;
+  inherited Get(TGet.Create(endpoint(chain, TNetEncoding.URL.Encode(apiKey)) + query, callback));
 end;
+
+var
+  _Etherscan: IEtherscan = nil;
+
+function Etherscan: IEtherscan;
+const
+  REQUESTS_PER_SECOND = 5;
+begin
+  if not Assigned(_Etherscan) then
+    _Etherscan := TEtherscan.Create(REQUESTS_PER_SECOND);
+  Result := _Etherscan;
+end;
+
+{------------------------------ global functions ------------------------------}
 
 procedure getBlockNumberByTimestamp(
   client   : TWeb3;
@@ -596,7 +568,7 @@ procedure getBlockNumberByTimestamp(
   const apiKey: string;
   callback    : TAsyncQuantity);
 begin
-  get(chain, apiKey,
+  Etherscan.Get(chain, apiKey,
     Format('&module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
   procedure(resp: TJsonObject; err: IError)
   var
@@ -633,7 +605,7 @@ procedure getErc20TransferEvents(
   const apiKey: string;
   callback    : TAsyncErc20TransferEvents);
 begin
-  get(chain, apiKey,
+  Etherscan.Get(chain, apiKey,
     Format('&module=account&action=tokentx&address=%s&sort=desc', [address]),
   procedure(resp: TJsonObject; err: IError)
   var
@@ -692,7 +664,7 @@ begin
   finally
     ContractCache.Leave;
   end;
-  get(chain, apiKey,
+  Etherscan.Get(chain, apiKey,
     Format('&module=contract&action=getabi&address=%s', [contract]),
   procedure(resp: TJsonObject; err: IError)
   var

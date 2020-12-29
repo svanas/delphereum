@@ -20,10 +20,13 @@ uses
   System.JSON,
   // web3
   web3,
+  web3.http.throttler,
   web3.json.rpc;
 
 type
   TJsonRpcHttps = class(TCustomJsonRpc)
+  strict private
+    FThrottler: IThrottler;
   public
     function Send(
       const URL   : string;
@@ -36,6 +39,8 @@ type
       const method: string;
       args        : array of const;
       callback    : TAsyncJsonObject); overload; override;
+    constructor Create; overload;
+    constructor Create(const throttler: IThrottler); overload;
   end;
 
 implementation
@@ -49,6 +54,17 @@ uses
   web3.json;
 
 { TJsonRpcHttps }
+
+constructor TJsonRpcHttps.Create;
+begin
+  inherited Create;
+end;
+
+constructor TJsonRpcHttps.Create(const throttler: IThrottler);
+begin
+  inherited Create;
+  FThrottler := throttler;
+end;
 
 function TJsonRpcHttps.Send(
   const URL   : string;
@@ -94,33 +110,46 @@ procedure TJsonRpcHttps.Send(
   args        : array of const;
   callback    : TAsyncJsonObject);
 var
-  source: TStream;
+  handler: TAsyncJsonObject;
+  payload: string;
+  headers: TNetHeaders;
+  source : TStream;
 begin
-  source := TStringStream.Create(GetPayload(method, args));
-  web3.http.post(
-    URL,
-    source,
-    [TNetHeader.Create('Content-Type', 'application/json')],
-    procedure(resp: TJsonObject; err: IError)
+  handler := procedure(resp: TJsonObject; err: IError)
   var
     error: TJsonObject;
   begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    // did we receive an error?
+    error := web3.json.getPropAsObj(resp, 'error');
+    if Assigned(error) then
+      callback(resp, TJsonRpcError.Create(
+        web3.json.getPropAsInt(error, 'code'),
+        web3.json.getPropAsStr(error, 'message')
+      ))
+    else
+      // if we reached this far, then we have a valid response object
+      callback(resp, nil);
+  end;
+
+  payload := GetPayload(method, args);
+  headers := [TNetHeader.Create('Content-Type', 'application/json')];
+
+  if Assigned(FThrottler) then
+  begin
+    FThrottler.Post(TPost.Create(URL, payload, headers, handler));
+    EXIT;
+  end;
+
+  source := TStringStream.Create(payload);
+  web3.http.post(URL, source, headers, procedure(resp: TJsonObject; err: IError)
+  begin
     try
-      if Assigned(err) then
-      begin
-        callback(nil, err);
-        EXIT;
-      end;
-      // did we receive an error?
-      error := web3.json.getPropAsObj(resp, 'error');
-      if Assigned(error) then
-        callback(resp, TJsonRpcError.Create(
-          web3.json.getPropAsInt(error, 'code'),
-          web3.json.getPropAsStr(error, 'message')
-        ))
-      else
-        // if we reached this far, then we have a valid response object
-        callback(resp, nil);
+      handler(resp, err);
     finally
       source.Free;
     end;
