@@ -123,6 +123,7 @@ implementation
 
 uses
   // Delphi
+  System.Generics.Collections,
   System.NetEncoding,
   System.SysUtils,
   System.TypInfo,

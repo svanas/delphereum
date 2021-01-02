@@ -108,8 +108,10 @@ var
   _get: TProc<TGet>;
 begin
   _get := procedure(request: TGet)
+  var
+    wait: Integer;
   begin
-    web3.http.get(request.endpoint, procedure(resp: TJsonObject; err: IError)
+    web3.http.get(request.endpoint, procedure(resp: TJsonObject; elapsed: Int64; err: IError)
     begin
       request.callback(resp, err);
       Queue.Enter;
@@ -117,7 +119,9 @@ begin
         Queue.Delete(0, 1);
         if Queue.Length > 0 then
         begin
-          TThread.Sleep(Ceil(1000 / FReqPerSec));
+          wait := Ceil(1000 / FReqPerSec);
+          if elapsed < wait then
+            TThread.Sleep(wait - elapsed);
           _get(Queue.First);
         end;
       finally
@@ -166,22 +170,25 @@ var
 begin
   _post := procedure(request: TPost)
   var
-    source: TStream;
+    src : TStream;
+    wait: Integer;
   begin
-    source := TStringStream.Create(request.body);
-    web3.http.post(request.endpoint, source, request.headers, procedure(resp: TJsonObject; err: IError)
+    src := TStringStream.Create(request.body);
+    web3.http.post(request.endpoint, src, request.headers, procedure(resp: TJsonObject; elapsed: Int64; err: IError)
     begin
       try
         request.callback(resp, err);
       finally
-        source.Free;
+        src.Free;
       end;
       Queue.Enter;
       try
         Queue.Delete(0, 1);
         if Queue.Length > 0 then
         begin
-          TThread.Sleep(Ceil(1000 / FReqPerSec));
+          wait := Ceil(1000 / FReqPerSec);
+          if elapsed < wait then
+            TThread.Sleep(wait - elapsed);
           _post(Queue.First);
         end;
       finally

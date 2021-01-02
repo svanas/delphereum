@@ -41,37 +41,38 @@ type
   end;
 
 type
-  ICriticalInt64 = interface(ICriticalThing)
-    function  Inc: Int64;
-    function  Get: Int64;
-    procedure Put(Value: Int64);
+  ICriticalGeneric<T> = interface(ICriticalThing)
+    function Get: T;
+    procedure Put(const Value: T);
   end;
 
-  TCriticalInt64 = class(TCriticalThing, ICriticalInt64)
-  strict private
-    Inner: Int64;
+  TCriticalGeneric<T> = class(TCriticalThing, ICriticalGeneric<T>)
+  strict protected
+    Inner: T;
   public
-    function  Inc: Int64;
-    function  Get: Int64;
-    procedure Put(Value: Int64);
-    constructor Create(Value: Int64); reintroduce;
+    function Get: T;
+    procedure Put(const Value: T);
+    constructor Create(const Value: T); reintroduce;
   end;
 
 type
-  ICriticalBigInt = interface(ICriticalThing)
-    function  Inc: BigInteger;
-    function  Get: BigInteger;
-    procedure Put(Value: BigInteger);
+  ICriticalInt64 = interface(ICriticalGeneric<Int64>)
+    function Inc: Int64;
   end;
 
-  TCriticalBigInt = class(TCriticalThing, ICriticalBigInt)
-  strict private
-    Inner: BigInteger;
+  TCriticalInt64 = class(TCriticalGeneric<Int64>, ICriticalInt64)
   public
-    function  Inc: BigInteger;
-    function  Get: BigInteger;
-    procedure Put(Value: BigInteger);
-    constructor Create(Value: BigInteger); reintroduce;
+    function Inc: Int64;
+  end;
+
+type
+  ICriticalBigInt = interface(ICriticalGeneric<BigInteger>)
+    function Inc: BigInteger;
+  end;
+
+  TCriticalBigInt = class(TCriticalGeneric<BigInteger>, ICriticalBigInt)
+  public
+    function Inc: BigInteger;
   end;
 
 type
@@ -159,13 +160,25 @@ begin
   Inner.Leave;
 end;
 
-{ TCriticalInt64 }
+{ TCriticalGeneric }
 
-constructor TCriticalInt64.Create(Value: Int64);
+constructor TCriticalGeneric<T>.Create(const Value: T);
 begin
   inherited Create;
   Inner := Value;
 end;
+
+function TCriticalGeneric<T>.Get: T;
+begin
+  Result := Inner;
+end;
+
+procedure TCriticalGeneric<T>.Put(const Value: T);
+begin
+  Inner := Value;
+end;
+
+{ TCriticalInt64 }
 
 function TCriticalInt64.Inc: Int64;
 begin
@@ -173,38 +186,12 @@ begin
   Result := Inner;
 end;
 
-function TCriticalInt64.Get: Int64;
-begin
-  Result := Inner;
-end;
-
-procedure TCriticalInt64.Put(Value: Int64);
-begin
-  Inner := Value;
-end;
-
 { TCriticalBigInt }
-
-constructor TCriticalBigInt.Create(Value: BigInteger);
-begin
-  inherited Create;
-  Inner := Value;
-end;
 
 function TCriticalBigInt.Inc: BigInteger;
 begin
   Inner  := Inner + 1;
   Result := Inner;
-end;
-
-function TCriticalBigInt.Get: BigInteger;
-begin
-  Result := Inner;
-end;
-
-procedure TCriticalBigInt.Put(Value: BigInteger);
-begin
-  Inner := Value;
 end;
 
 { TCriticalQueue<T> }

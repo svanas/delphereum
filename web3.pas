@@ -88,8 +88,7 @@ type
     Custom: TWei;
     class function Average: TGasStationInfo; static;
   end;
-  TGasStationInfoResult = reference to procedure(info: TGasStationInfo);
-  TOnGasStationInfo     = reference to procedure(callback: TGasStationInfoResult);
+  TOnGasStationInfo = reference to procedure(var info: TGasStationInfo);
 
   INotImplemented = interface(IError)
   ['{FFB9DA94-0C40-4A7C-9C47-CD790E3435A2}']
@@ -157,7 +156,7 @@ type
     function GetPubSub : IPubSub;
   public
     function  ETHERSCAN_API_KEY: string;
-    procedure GetGasStationInfo(callback: TGasStationInfoResult);
+    function  GetGasStationInfo: TGasStationInfo;
     procedure CanSignTransaction(from, &to: TAddress;
       gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
 
@@ -204,7 +203,7 @@ uses
 {$ELSE}
   VCL.Dialogs,
 {$ENDIF}
-  web3.coincap,
+  web3.eth.chainlink,
   web3.eth.types,
   web3.eth.utils,
   web3.json.rpc.https;
@@ -254,12 +253,11 @@ begin
     FOnEtherscanApiKey(Result);
 end;
 
-procedure TWeb3.GetGasStationInfo(callback: TGasStationInfoResult);
+function TWeb3.GetGasStationInfo: TGasStationInfo;
 begin
+  Result := TGasStationInfo.Average;
   if Assigned(FOnGasStationInfo) then
-    FOnGasStationInfo(callback)
-  else
-    callback(TGasStationInfo.Average);
+    FOnGasStationInfo(Result);
 end;
 
 procedure TWeb3.CanSignTransaction(from, &to: TAddress;
@@ -301,7 +299,7 @@ begin
         callback(False, err);
         EXIT;
       end;
-      web3.coincap.ticker('ethereum', procedure(ticker: ITicker; err: IError)
+      web3.eth.chainlink.eth_usd(client, procedure(price: Extended; err: IError)
       begin
         if Assigned(err) then
         begin
@@ -311,9 +309,16 @@ begin
         TThread.Synchronize(nil, procedure
         begin
 {$WARN SYMBOL_DEPRECATED OFF}
-          modalResult := MessageDlg(Format(RS_SIGNATURE_REQUEST, [chainName,
-            from, &to, fromWei(gasPrice, gwei, 1), estimatedGas.ToString,
-            EthToFloat(fromWei(estimatedGas * gasPrice, ether)) * ticker.Price]),
+          modalResult := MessageDlg(Format(
+            RS_SIGNATURE_REQUEST,
+            [
+              chainName,                                                  // Network
+              from,                                                       // From
+              &to,                                                        // To
+              fromWei(gasPrice, gwei, 1),                                 // Gas price (gwei)
+              estimatedGas.ToString,                                      // Estimated gas (units)
+              EthToFloat(fromWei(estimatedGas * gasPrice, ether)) * price // Gas fee
+            ]),
             TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
           );
 {$WARN SYMBOL_DEPRECATED DEFAULT}

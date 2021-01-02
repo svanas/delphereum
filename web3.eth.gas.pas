@@ -47,40 +47,41 @@ procedure estimateGas(
 implementation
 
 procedure getGasPrice(client: TWeb3; callback: TAsyncQuantity);
+var
+  info: TGasStationInfo;
 begin
-  client.GetGasStationInfo(procedure(gasInfo: TGasStationInfo)
+  info := client.GetGasStationInfo;
+
+  if info.Custom > 0 then
   begin
-    if gasInfo.Custom > 0 then
-    begin
-      callback(gasInfo.Custom, nil);
-      EXIT;
-    end;
+    callback(info.Custom, nil);
+    EXIT;
+  end;
 
-    if (gasInfo.apiKey = '') and (gasInfo.Speed = Average) then
-    begin
-      client.JsonRpc.Send(client.URL, client.Security, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
-      begin
-        if Assigned(err) then
-          callback(0, err)
-        else
-          callback(web3.json.getPropAsStr(resp, 'result'), nil);
-      end);
-      EXIT;
-    end;
-
-    web3.eth.gas.station.getGasPrice(gasInfo.apiKey, procedure(price: IGasPrice; err: IError)
+  if (info.apiKey = '') and (info.Speed = Average) then
+  begin
+    client.JsonRpc.Send(client.URL, client.Security, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
     begin
       if Assigned(err) then
         callback(0, err)
       else
-        case gasInfo.Speed of
-          Outbid : callback(price.Outbid,  nil);
-          Fastest: callback(price.Fastest, nil);
-          Fast   : callback(price.Fast,    nil);
-          Average: callback(price.Average, nil);
-          SafeLow: callback(price.SafeLow, nil);
-        end;
+        callback(web3.json.getPropAsStr(resp, 'result'), nil);
     end);
+    EXIT;
+  end;
+
+  web3.eth.gas.station.getGasPrice(info.apiKey, procedure(price: IGasPrice; err: IError)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      case info.Speed of
+        Outbid : callback(price.Outbid,  nil);
+        Fastest: callback(price.Fastest, nil);
+        Fast   : callback(price.Fast,    nil);
+        Average: callback(price.Average, nil);
+        SafeLow: callback(price.SafeLow, nil);
+      end;
   end);
 end;
 
