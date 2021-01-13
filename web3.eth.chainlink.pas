@@ -41,22 +41,36 @@ uses
   // Delphi
   System.Math,
   // Velthuis' BigNumbers
-  Velthuis.BigIntegers;
+  Velthuis.BigIntegers,
+  // web3
+  web3.coincap;
 
 procedure eth_usd(client: TWeb3; callback: TAsyncFloat);
 var
   EthUsd: TEthUsd;
 begin
-  EthUsd := TEthUsd.Create(client);
-  if Assigned(EthUsd) then
-    EthUsd.Price(procedure(price: Extended; err: IError)
+  // Ethereum price feed is available on Mainnet and Rinkeby and Kovan only.
+  if client.Chain in [Mainnet, Rinkeby, Kovan] then
+  begin
+    EthUsd := TEthUsd.Create(client);
+    if Assigned(EthUsd) then
     begin
-      try
-        callback(price, err);
-      finally
-        EthUsd.Free;
-      end;
-    end);
+      EthUsd.Price(procedure(price: Extended; err: IError)
+      begin
+        try
+          callback(price, err);
+        finally
+          EthUsd.Free;
+        end;
+      end);
+      EXIT;
+    end;
+  end;
+  // Not on Mainnet or Rinkeby or Kovan? Fall back on api.coincap.io
+  web3.coincap.ticker('ethereum', procedure(ticker: ITicker; err: IError)
+  begin
+    callback(ticker.Price, err);
+  end);
 end;
 
 { TAggregatorV3 }
@@ -96,7 +110,14 @@ end;
 
 constructor TEthUsd.Create(aClient: TWeb3);
 begin
-  inherited Create(aClient, '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419');
+  case aClient.Chain of
+    Mainnet:
+      inherited Create(aClient, '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419');
+    Rinkeby:
+      inherited Create(aClient, '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e');
+    Kovan:
+      inherited Create(aClient, '0x9326BFA02ADD2366b30bacB125260Af641031331');
+  end;
 end;
 
 end.
