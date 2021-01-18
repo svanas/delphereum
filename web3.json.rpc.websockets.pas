@@ -25,12 +25,12 @@ uses
 type
   TJsonRpcWebSockets = class abstract(TCustomJsonRpc, IPubSub)
   strict private
-    FOnError: TOnError;
+    FOnError: TAsyncError;
     FOnDisconnect: TProc;
-    procedure SetOnError(Value: TOnError);
+    procedure SetOnError(Value: TAsyncError);
     procedure SetOnDisconnect(Value: TProc);
   strict protected
-    property OnError: TOnError read FOnError write SetOnError;
+    property OnError: TAsyncError read FOnError write SetOnError;
     property OnDisconnect: TProc read FOnDisconnect write SetOnDisconnect;
   public
     procedure Subscribe(const subscription: string; callback: TAsyncJsonObject); virtual; abstract;
@@ -40,7 +40,7 @@ type
 
 implementation
 
-procedure TJsonRpcWebSockets.SetOnError(Value: TOnError);
+procedure TJsonRpcWebSockets.SetOnError(Value: TAsyncError);
 begin
   FOnError := Value;
 end;

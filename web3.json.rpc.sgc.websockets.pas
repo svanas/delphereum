@@ -107,8 +107,7 @@ begin
     FClient.URL := URL;
   end;
 
-  if not FClient.Active then
-    repeat until FClient.Connect;
+  if not FClient.Active then repeat until FClient.Connect;
 
   Result := FClient;
 end;
@@ -342,8 +341,7 @@ end;
 
 procedure TJsonRpcSgcWebSockets.Disconnect;
 begin
-  if Assigned(FClient) then
-    if FClient.Active then FClient.Disconnect;
+  if Assigned(FClient) and FClient.Active then FClient.Disconnect;
 end;
 
 end.

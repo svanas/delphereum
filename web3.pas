@@ -98,7 +98,7 @@ type
     constructor Create;
   end;
 
-  TOnError         = reference to procedure(err : IError);
+  TAsyncError      = reference to procedure(err : IError);
   TAsyncJsonObject = reference to procedure(resp: TJsonObject; err: IError);
   TAsyncJsonArray  = reference to procedure(resp: TJsonArray;  err: IError);
 
@@ -127,10 +127,10 @@ type
     procedure Unsubscribe(const subscription: string);
     procedure Disconnect;
 
-    procedure SetOnError(Value: TOnError);
+    procedure SetOnError(Value: TAsyncError);
     procedure SetOnDisconnect(Value: TProc);
 
-    property OnError: TOnError write SetOnError;
+    property OnError: TAsyncError write SetOnError;
     property OnDisconnect: TProc write SetOnDisconnect;
   end;
 

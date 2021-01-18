@@ -40,7 +40,7 @@ procedure subscribe(
   subscription: TSubscription;
   callback    : TAsyncString;     // one-time callback (subscribed, or a JSON-RPC error)
   notification: TAsyncJsonObject; // continuous notifications (or a JSON-RPC error)
-  onError     : TOnError;         // non-JSON-RPC-error handler (probably a socket error)
+  onError     : TAsyncError;      // non-JSON-RPC-error handler (probably a socket error)
   onDisconnect: TProc);           // connection closed
 
 procedure unsubscribe(
@@ -78,7 +78,7 @@ procedure subscribe(
   subscription: TSubscription;
   callback    : TAsyncString;
   notification: TAsyncJsonObject;
-  onError     : TOnError;
+  onError     : TAsyncError;
   onDisconnect: TProc);
 var
   pubSub: IPubSub;
