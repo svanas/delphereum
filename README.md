@@ -45,6 +45,7 @@ Please note there are NO runtime dependencies. Delphereum is lightweight and sel
 8. [A 3-minute Smart Contract and Delphi - Part 1](https://medium.com/@svanas/a-3-minute-smart-contract-and-delphi-61d998571d)
 9. [A 3-minute Smart Contract and Delphi - Part 2](https://medium.com/@svanas/a-3-minute-smart-contract-and-delphi-part-2-446925faa47b)
 10. [QuikNode, Ethereum and Delphi](https://medium.com/@svanas/quiknode-ethereum-and-delphi-f7bfc9671c23)
+11. [Delphi and the Ethereum dark forest](https://svanas.medium.com/delphi-and-the-ethereum-dark-forest-5b430da3ad93)
 
 ## Case study
 
@@ -62,6 +63,7 @@ Distributed under the [Creative Commons NonCommercial](https://github.com/svanas
 
 * [eSeGeCe WebSockets](https://www.esegece.com/websockets)
 * [IPWorks WebSockets](https://www.nsoftware.com/ipworks/ws/)
+* [Blocknative Mempool Explorer](https://www.blocknative.com/explorer)
 
 ## Commercial support and training
 
