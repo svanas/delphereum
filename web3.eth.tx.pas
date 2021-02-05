@@ -156,6 +156,21 @@ procedure getTransactionRevertReason(
   rcpt    : ITxReceipt;
   callback: TAsyncString);
 
+// cancel a pending transaction
+procedure cancelTransaction(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  nonce   : BigInteger;
+  callback: TAsyncTxHash); overload;
+
+// cancel a pending transaction
+procedure cancelTransaction(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  nonce   : BigInteger;
+  gasPrice: TWei;
+  callback: TAsyncTxHash); overload;
+
 implementation
 
 { TTxError }
@@ -737,6 +752,44 @@ begin
     finally
       obj.Free;
     end;
+  end);
+end;
+
+procedure cancelTransaction(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  nonce   : BigInteger;
+  callback: TAsyncTxHash);
+begin
+  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      cancelTransaction(client, from, nonce, gasPrice, callback);
+  end);
+end;
+
+procedure cancelTransaction(
+  client  : TWeb3;
+  from    : TPrivateKey;
+  nonce   : BigInteger;
+  gasPrice: TWei;
+  callback: TAsyncTxHash);
+begin
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      signTransaction(client, nonce, from, addr, 0, '', gasPrice, 21000, 21000,
+      procedure(const sig: string; err: IError)
+      begin
+        if Assigned(err) then
+          callback('', err)
+        else
+          sendTransaction(client, sig, callback);
+      end);
   end);
 end;
 
