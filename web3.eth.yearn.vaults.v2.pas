@@ -106,6 +106,8 @@ type
 implementation
 
 uses
+  // Delphi
+  System.Math,
   // web3
   web3.eth,
   web3.eth.etherscan,
@@ -238,7 +240,14 @@ begin
       yVaultToken.APY(period, procedure(apy: Extended; err: IError)
       begin
         try
-          callback(apy, err);
+          if Assigned(err)
+          or (period = Low(TPeriod))
+          or (not(IsNaN(apy) or IsInfinite(apy))) then
+          begin
+            callback(apy, err);
+            EXIT;
+          end;
+          Self.APY(client, reserve, Pred(period), callback);
         finally
           yVaultToken.Free;
         end;
@@ -478,7 +487,10 @@ begin
           callback(0, err);
           EXIT;
         end;
-        callback(((currPrice.AsExtended / pastPrice.AsExtended - 1) * 100) * (365 / period.Days), nil);
+        if IsNaN(currPrice.AsExtended) or IsNaN(pastPrice.AsExtended) then
+          callback(NaN, nil)
+        else
+          callback(((currPrice.AsExtended / pastPrice.AsExtended - 1) * 100) * (365 / period.Days), nil);
       end);
     end);
   end);
