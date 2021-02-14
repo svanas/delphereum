@@ -448,7 +448,7 @@ begin
           if currRate < pastRate then
             callback(0, nil)
           else
-            callback(((currRate / pastRate - 1) * 100) * (365 / period.Days), nil);
+            callback(period.ToYear(currRate / pastRate - 1) * 100, nil);
       end);
     end);
   end);

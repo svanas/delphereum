@@ -321,7 +321,7 @@ begin
           callback(0, err);
           EXIT;
         end;
-        callback((((1 / curr.AsExtended) / (1 / past.AsExtended) - 1) * 100) * (365 / period.Days), nil);
+        callback(period.ToYear((1 / curr.AsExtended) / (1 / past.AsExtended) - 1) * 100, nil);
       end);
     end);
   end);

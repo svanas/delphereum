@@ -38,10 +38,11 @@ type
   TPeriod = (oneDay, threeDays, oneWeek, oneMonth);
 
   TPeriodHelper = record helper for TPeriod
-    function Days   : Integer;
-    function Hours  : Integer;
+    function Days   : Extended;
+    function Hours  : Extended;
     function Minutes: Integer;
     function Seconds: Integer;
+    function ToYear(value: Extended): Extended;
   end;
 
   TLendingProtocol = class abstract
@@ -94,29 +95,34 @@ uses
 
 { TPeriodHelper }
 
-function TPeriodHelper.Days: Integer;
+function TPeriodHelper.Days: Extended;
 begin
   Result := 1;
   case Self of
     threeDays: Result := 3;
     oneWeek  : Result := 7;
-    oneMonth : Result := 30;
+    oneMonth : Result := 365.25 / 12;
   end;
 end;
 
-function TPeriodHelper.Hours: Integer;
+function TPeriodHelper.Hours: Extended;
 begin
   Result := Self.Days * 24;
 end;
 
 function TPeriodHelper.Minutes: Integer;
 begin
-  Result := Self.Hours * 60;
+  Result := Round(Self.Hours * 60);
 end;
 
 function TPeriodHelper.Seconds: Integer;
 begin
   Result := Self.Minutes * 60;
+end;
+
+function TPeriodHelper.ToYear(value: Extended): Extended;
+begin
+  Result := value * (365.25 / Self.Days);
 end;
 
 { TReserveHelper }

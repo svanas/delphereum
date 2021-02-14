@@ -490,7 +490,7 @@ begin
         if IsNaN(currPrice.AsExtended) or IsNaN(pastPrice.AsExtended) then
           callback(NaN, nil)
         else
-          callback(((currPrice.AsExtended / pastPrice.AsExtended - 1) * 100) * (365 / period.Days), nil);
+          callback(period.ToYear((currPrice.AsExtended / pastPrice.AsExtended - 1) * 100), nil);
       end);
     end);
   end);
