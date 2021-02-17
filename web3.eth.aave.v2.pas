@@ -187,7 +187,10 @@ begin
             callback(ADDRESS_ZERO, err);
             EXIT;
           end;
-          callback(tup[0].toAddress, nil);
+          if Length(tup) = 0 then
+            callback(ADDRESS_ZERO, nil)
+          else
+            callback(tup[0].toAddress, nil);
         end);
       finally
         dp.Free;
