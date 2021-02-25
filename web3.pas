@@ -31,22 +31,16 @@ type
     RSK_main_net,
     RSK_test_net,
     Kovan,
+    BinanceSmartChain,
+    BinanceSmartChainTestNet,
     xDai
   );
 
-const
-  chainId: array[TChain] of Integer = (
-    1,  // Mainnet
-    3,  // Ropsten
-    4,  // Rinkeby
-    5,  // Goerli
-    30, // RSK_main_net
-    31, // RSK_test_net
-    42, // Kovan
-    100 // xDai
-  );
+  TChainHelper = record helper for TCHain
+    function Id: Integer;
+    function BlockExplorerURL: string;
+  end;
 
-type
   TAddress      = string[42];
   TPrivateKey   = string[64];
   TSignature    = string[132];
@@ -211,6 +205,44 @@ uses
 function Now: TUnixDateTime;
 begin
   Result := DateTimeToUnix(System.SysUtils.Now, False);
+end;
+
+{ TChainHelper }
+
+function TChainHelper.Id: Integer;
+const
+  CHAIN_ID: array[TChain] of Integer = (
+    1,  // Mainnet
+    3,  // Ropsten
+    4,  // Rinkeby
+    5,  // Goerli
+    30, // RSK_main_net
+    31, // RSK_test_net
+    42, // Kovan
+    56, // BinanceSmartChain
+    97, // BinanceSmartChainTestNet
+    100 // xDai
+  );
+begin
+  Result := CHAIN_ID[Self];
+end;
+
+function TChainHelper.BlockExplorerURL: string;
+const
+  BLOCK_EXPLORER_URL: array[TChain] of string = (
+    'https://etherscan.io',            // Mainnet
+    'https://ropsten.etherscan.io',    // Ropsten
+    'https://rinkeby.etherscan.io',    // Rinkeby
+    'https://goerli.etherscan.io',     // Goerli
+    'https://explorer.rsk.co',         // RSK_main_net
+    'https://explorer.testnet.rsk.co', // RSK_test_net
+    'https://kovan.etherscan.io',      // Kovan
+    'https://bscscan.com',             // BinanceSmartChain
+    'https://testnet.bscscan.com',     // BinanceSmartChainTestNet
+    'https://blockscout.com/poa/xdai'  // xDai
+  );
+begin
+  Result := BLOCK_EXPLORER_URL[Self];
 end;
 
 { TError }

@@ -47,6 +47,8 @@ const
     ('', ''),                                                                                // RSK_main_net
     ('', ''),                                                                                // RSK_test_net
     ('https://eth-kovan.alchemyapi.io/v2/%s',   'wss://eth-kovan.ws.alchemyapi.io/v2/%s'),   // Kovan
+    ('', ''),                                                                                // BinanceSmartChain
+    ('', ''),                                                                                // BinanceSmartChainTestNet
     ('', '')                                                                                 // xDai
   );
 begin

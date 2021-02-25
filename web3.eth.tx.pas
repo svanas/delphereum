@@ -287,7 +287,7 @@ begin
           &to,                                     // to
           web3.utils.toHex(value, [padToEven]),    // value
           data,                                    // data
-          chainId[chain],                          // v
+          chain.Id,                                // v
           0,                                       // r
           0                                        // s
         ])
@@ -296,7 +296,7 @@ begin
 
     r := Signature.r;
     s := Signature.s;
-    v := Signature.rec.Add(TBigInteger.ValueOf(chainId[chain] * 2 + 35));
+    v := Signature.rec.Add(TBigInteger.ValueOf(chain.Id * 2 + 35));
 
     Result :=
       web3.utils.toHex(

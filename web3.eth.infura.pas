@@ -47,6 +47,8 @@ const
     ('', ''),                                                                // RSK_main_net
     ('', ''),                                                                // RSK_test_net
     ('https://kovan.infura.io/v3/%s',   'wss://kovan.infura.io/ws/v3/%s'),   // Kovan
+    ('', ''),                                                                // BinanceSmartChain
+    ('', ''),                                                                // BinanceSmartChainTestNet
     ('', '')                                                                 // xDai
   );
 begin
