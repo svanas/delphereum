@@ -94,6 +94,7 @@ type
   public
     //------- read from contract -----------------------------------------------
     procedure PricePerShare(const block: string; callback: TAsyncQuantity);
+    procedure PricePerShareEx(const block: string; callback: TAsyncFloat);
     //------- helpers ----------------------------------------------------------
     procedure TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
     procedure UnderlyingToToken(amount: BigInteger; callback: TAsyncQuantity);
@@ -162,10 +163,15 @@ begin
       EXIT;
     end;
     yVaultToken := TyVaultToken.Create(client, addr);
-    try
-      yVaultToken.TokenToUnderlying(amount, callback);
-    finally
-      yVaultToken.Free;
+    begin
+      yVaultToken.TokenToUnderlying(amount, procedure(result: BigInteger; err: IError)
+      begin
+        try
+          callback(result, err);
+        finally
+          yVaultToken.Free;
+        end;
+      end);
     end;
   end);
 end;
@@ -186,10 +192,15 @@ begin
       EXIT;
     end;
     yVaultToken := TyVaultToken.Create(client, addr);
-    try
-      yVaultToken.UnderlyingToToken(amount, callback);
-    finally
-      yVaultToken.Free;
+    begin
+      yVaultToken.UnderlyingToToken(amount, procedure(result: BigInteger; err: IError)
+      begin
+        try
+          callback(result, err);
+        finally
+          yVaultToken.Free;
+        end;
+      end);
     end;
   end);
 end;
@@ -442,25 +453,44 @@ begin
   web3.eth.call(Client, Contract, 'pricePerShare()', block, [], callback);
 end;
 
+procedure TyVaultToken.PricePerShareEx(const block: string; callback: TAsyncFloat);
+begin
+  Self.PricePerShare(block, procedure(price: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(0, err);
+      EXIT;
+    end;
+    Self.Decimals(procedure(decimals: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(0, err)
+      else
+        callback(price.AsExtended / Power(10, decimals.AsInteger), nil);
+    end);
+  end);
+end;
+
 procedure TyVaultToken.TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
 begin
-  Self.PricePerShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
+  Self.PricePerShareEx(BLOCK_LATEST, procedure(price: Extended; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(BigInteger.Create(amount.AsExtended * (price.AsExtended / 1e18)), nil);
+      callback(BigInteger.Create(amount.AsExtended * price), nil);
   end);
 end;
 
 procedure TyVaultToken.UnderlyingToToken(amount: BIgInteger; callback: TAsyncQuantity);
 begin
-  Self.PricePerShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
+  Self.PricePerShareEx(BLOCK_LATEST, procedure(price: Extended; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(BigInteger.Create(amount.AsExtended / (price.AsExtended / 1e18)), nil);
+      callback(BigInteger.Create(amount.AsExtended / price), nil);
   end);
 end;
 

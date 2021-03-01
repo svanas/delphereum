@@ -38,6 +38,7 @@ type
 
   TChainHelper = record helper for TCHain
     function Id: Integer;
+    function Ethereum: Boolean;
     function BlockExplorerURL: string;
   end;
 
@@ -225,6 +226,11 @@ const
   );
 begin
   Result := CHAIN_ID[Self];
+end;
+
+function TChainHelper.Ethereum: Boolean;
+begin
+  Result := Self in [Mainnet, Ropsten, Rinkeby, Goerli, Kovan];
 end;
 
 function TChainHelper.BlockExplorerURL: string;

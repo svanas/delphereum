@@ -53,7 +53,7 @@ type
     class procedure Balance(
       client  : TWeb3;
       owner   : TAddress;
-      _reserve : TReserve;
+      reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
       client  : TWeb3;
@@ -185,14 +185,23 @@ end;
 class procedure TOrigin.Balance(
   client  : TWeb3;
   owner   : TAddress;
-  _reserve : TReserve;
+  reserve : TReserve;
   callback: TAsyncQuantity);
 var
   ousd: TOriginDollar;
 begin
   ousd := TOriginDollar.Create(client);
   try
-    ousd.BalanceOf(owner, callback);
+    ousd.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(balance, err)
+      else
+        if reserve.Decimals = 1e18 then
+          callback(balance, err)
+        else
+          callback(reserve.Scale(balance.AsExtended / 1e18), err);
+    end);
   finally
     ousd.Free;
   end;
