@@ -44,6 +44,7 @@ const
     ('https://eth-ropsten.alchemyapi.io/v2/%s', 'wss://eth-ropsten.ws.alchemyapi.io/v2/%s'), // Ropsten
     ('https://eth-rinkeby.alchemyapi.io/v2/%s', 'wss://eth-rinkeby.ws.alchemyapi.io/v2/%s'), // Rinkeby
     ('https://eth-goerli.alchemyapi.io/v2/%s',  'wss://eth-goerli.ws.alchemyapi.io/v2/%s'),  // Goerli
+    ('', ''),                                                                                // Optimism
     ('', ''),                                                                                // RSK_main_net
     ('', ''),                                                                                // RSK_test_net
     ('https://eth-kovan.alchemyapi.io/v2/%s',   'wss://eth-kovan.ws.alchemyapi.io/v2/%s'),   // Kovan

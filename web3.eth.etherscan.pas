@@ -139,6 +139,7 @@ const
     'https://api-ropsten.etherscan.io/api?apikey=%s', // Ropsten
     'https://api-rinkeby.etherscan.io/api?apikey=%s', // Rinkeby
     'https://api-goerli.etherscan.io/api?apikey=%s',  // Goerli
+    '',                                               // Optimism
     '',                                               // RSK_main_net
     '',                                               // RSK_test_net
     'https://api-kovan.etherscan.io/api?apikey=%s',   // Kovan

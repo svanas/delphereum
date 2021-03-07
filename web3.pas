@@ -28,6 +28,7 @@ type
     Ropsten,
     Rinkeby,
     Goerli,
+    Optimism,
     RSK_main_net,
     RSK_test_net,
     Kovan,
@@ -212,11 +213,13 @@ end;
 
 function TChainHelper.Id: Integer;
 const
+  // https://chainid.network/
   CHAIN_ID: array[TChain] of Integer = (
     1,  // Mainnet
     3,  // Ropsten
     4,  // Rinkeby
     5,  // Goerli
+    10, // Optimism
     30, // RSK_main_net
     31, // RSK_test_net
     42, // Kovan
@@ -240,6 +243,7 @@ const
     'https://ropsten.etherscan.io',    // Ropsten
     'https://rinkeby.etherscan.io',    // Rinkeby
     'https://goerli.etherscan.io',     // Goerli
+    'https://mainnet.optimism.io',     // Optimism
     'https://explorer.rsk.co',         // RSK_main_net
     'https://explorer.testnet.rsk.co', // RSK_test_net
     'https://kovan.etherscan.io',      // Kovan
