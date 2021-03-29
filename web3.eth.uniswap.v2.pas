@@ -62,6 +62,14 @@ type
       &to         : TAddress;      // Recipient of the ETH.
       deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
       callback    : TAsyncReceipt); overload;
+    procedure SwapExactETHForTokens(
+      from        : TPrivateKey;   // Sender of ETH.
+      amountIn    : BigInteger;    // The amount of ETH to send.
+      amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
+      token       : TAddress;      // The token address.
+      &to         : TAddress;      // Recipient of the output tokens.
+      deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
+      callback    : TAsyncReceipt); overload;
   public
     constructor Create(aClient: TWeb3); reintroduce;
     procedure WETH(callback: TAsyncAddress);
@@ -77,6 +85,13 @@ type
       amountIn    : BigInteger;  // The amount of input tokens to send.
       amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
       token       : TAddress;    // The address of the token you wish to swap.
+      minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
+      callback    : TAsyncReceipt); overload;
+    procedure SwapExactETHForTokens(
+      owner       : TPrivateKey; // Sender of ETH.
+      amountIn    : BigInteger;  // The amount of ETH to send.
+      amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
+      token       : TAddress;    // The token address.
       minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
       callback    : TAsyncReceipt); overload;
   end;
@@ -199,6 +214,33 @@ begin
   end;
 end;
 
+procedure TRouter02.SwapExactETHForTokens(
+  from        : TPrivateKey;   // Sender of ETH.
+  amountIn    : BigInteger;    // The amount of ETH to send.
+  amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
+  token       : TAddress;      // The token address.
+  &to         : TAddress;      // Recipient of the output tokens.
+  deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
+  callback    : TAsyncReceipt);
+begin
+  Self.WETH(procedure(WETH: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    web3.eth.write(Client, from, Contract, amountIn,
+      'swapExactETHForTokens(uint,address[],address, uint deadline)',
+      [
+        web3.utils.toHex(amountOutMin),
+        &array([WETH, token]),
+        &to,
+        deadline
+      ], callback);
+  end);
+end;
+
 // Estimate the number of gas units needed for a Swap
 procedure TRouter02.EstimateExactTokensForETH(
   owner       : TAddress;   // Sender of the token, and recipient of the ETH.
@@ -256,6 +298,33 @@ begin
             callback
           );
       end);
+  end);
+end;
+
+procedure TRouter02.SwapExactETHForTokens(
+  owner       : TPrivateKey; // Sender of ETH.
+  amountIn    : BigInteger;  // The amount of ETH to send.
+  amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
+  token       : TAddress;    // The token address.
+  minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
+  callback    : TAsyncReceipt);
+begin
+  owner.Address(procedure(&to: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    Self.SwapExactETHForTokens(
+      owner,
+      amountIn,
+      amountOutMin,
+      token,
+      &to,
+      DateTimeToUnix(IncMinute(System.SysUtils.Now, minutes), False),
+      callback
+    );
   end);
 end;
 
