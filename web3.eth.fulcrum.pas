@@ -145,6 +145,7 @@ implementation
 
 uses
   // Delphi
+  System.Math,
   System.TypInfo;
 
 type
@@ -216,7 +217,7 @@ begin
       if Assigned(err) then
         callback(0, err)
       else
-        callback(reserve.Scale(reserve.Unscale(amount) * (price.AsExtended / 1e18)), nil);
+        callback(BigInteger.Create(amount.AsExtended * (price.AsExtended / 1e18)), nil);
     end);
   finally
     iToken.Free;
@@ -239,7 +240,7 @@ begin
       if Assigned(err) then
         callback(0, err)
       else
-        callback(reserve.Scale(reserve.Unscale(amount) / (price.AsExtended / 1e18)), nil);
+        callback(BigInteger.Create(amount.AsExtended / (price.AsExtended / 1e18)), nil);
     end);
   finally
     iToken.Free;
@@ -253,7 +254,7 @@ end;
 
 class function TFulcrum.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := chain in [Mainnet, Kovan];
+  Result := (chain in [Mainnet, Kovan]) or ((chain = BSC_main_net) and (reserve = USDT));
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -312,15 +313,47 @@ class procedure TFulcrum.Balance(
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
-var
-  iToken: TiToken;
 begin
-  iToken := iTokenClass[reserve].Create(client);
-  try
-    iToken.AssetBalanceOf(owner, callback);
-  finally
-    iToken.Free;
+  var BalanceOf := procedure(callback: TAsyncQuantity)
+  begin
+    var iToken := iTokenClass[reserve].Create(client);
+    try
+      iToken.AssetBalanceOf(owner, callback);
+    finally
+      iToken.Free;
+    end;
   end;
+
+  var Decimals := procedure(callback: TAsyncQuantity)
+  begin
+    var iToken := iTokenClass[reserve].Create(client);
+    try
+      iToken.Decimals(callback);
+    finally
+      iToken.Free;
+    end;
+  end;
+
+  BalanceOf(procedure(balance: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(balance, err);
+      EXIT;
+    end;
+    Decimals(procedure(decimals: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        callback(balance, err);
+        EXIT;
+      end;
+      if reserve.Decimals = Power(10, decimals.AsInteger) then
+        callback(balance, err)
+      else
+        callback(reserve.Scale(balance.AsExtended / Power(10, decimals.AsInteger)), err);
+    end);
+  end);
 end;
 
 // Redeems your balance of iTokens for the underlying asset.
@@ -554,7 +587,10 @@ begin
     if aClient.Chain = Kovan then
       inherited Create(aClient, '0x6b9F03e05423cC8D00617497890C0872FF33d4E8')
     else
-      raise EFulcrum.CreateFmt('iUSDT is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
+      if aClient.Chain = BSC_main_net then
+        inherited Create(aClient, '0xf326b42a237086f1de4e7d68f2d2456fc787bc01')
+      else
+        raise EFulcrum.CreateFmt('iUSDT is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
 end;
 
 end.

@@ -32,13 +32,15 @@ type
     RSK_main_net,
     RSK_test_net,
     Kovan,
-    BinanceSmartChain,
-    BinanceSmartChainTestNet,
+    BSC_main_net,
+    BSC_test_net,
     xDai
   );
 
-  TChainHelper = record helper for TCHain
+  TChainHelper = record helper for TChain
     function Id: Integer;
+    function Name: string;
+    function Testnet: Boolean;
     function Ethereum: Boolean;
     function BlockExplorerURL: string;
   end;
@@ -223,12 +225,22 @@ const
     30, // RSK_main_net
     31, // RSK_test_net
     42, // Kovan
-    56, // BinanceSmartChain
-    97, // BinanceSmartChainTestNet
+    56, // BSC_main_net
+    97, // BSC_test_net
     100 // xDai
   );
 begin
   Result := CHAIN_ID[Self];
+end;
+
+function TChainHelper.Name: string;
+begin
+  Result := GetEnumName(TypeInfo(TChain), Integer(Self)).Replace('_', ' ');
+end;
+
+function TChainHelper.Testnet: Boolean;
+begin
+  Result := Self in [Ropsten, Rinkeby, Goerli, RSK_test_net, Kovan, BSC_test_net];
 end;
 
 function TChainHelper.Ethereum: Boolean;
@@ -247,8 +259,8 @@ const
     'https://explorer.rsk.co',         // RSK_main_net
     'https://explorer.testnet.rsk.co', // RSK_test_net
     'https://kovan.etherscan.io',      // Kovan
-    'https://bscscan.com',             // BinanceSmartChain
-    'https://testnet.bscscan.com',     // BinanceSmartChainTestNet
+    'https://bscscan.com',             // BSC_main_net
+    'https://testnet.bscscan.com',     // BSC_test_net
     'https://blockscout.com/poa/xdai'  // xDai
   );
 begin

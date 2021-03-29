@@ -30,7 +30,9 @@ implementation
 uses
   // Delphi
   System.SysUtils,
-  System.TypInfo;
+  System.TypInfo,
+  // web3
+  web3.eth.binance;
 
 function endpoint(chain: TChain; const projectId: string): string;
 begin
@@ -48,16 +50,23 @@ const
     ('', ''),                                                                                // RSK_main_net
     ('', ''),                                                                                // RSK_test_net
     ('https://eth-kovan.alchemyapi.io/v2/%s',   'wss://eth-kovan.ws.alchemyapi.io/v2/%s'),   // Kovan
-    ('', ''),                                                                                // BinanceSmartChain
-    ('', ''),                                                                                // BinanceSmartChainTestNet
+    ('', ''),                                                                                // BSC_main_net
+    ('', ''),                                                                                // BSC_test_net
     ('', '')                                                                                 // xDai
   );
 begin
   Result := ENDPOINT[chain][protocol];
-  if Result = '' then
-    raise EAlchemy.CreateFmt('%s not supported', [GetEnumName(TypeInfo(TChain), Ord(chain))])
-  else
+  if Result <> '' then
+  begin
     Result := Format(Result, [projectId]);
+    EXIT;
+  end;
+  if chain in [BSC_main_net, BSC_test_net] then
+  begin
+    Result := web3.eth.binance.endpoint(chain);
+    EXIT;
+  end;
+  raise EAlchemy.CreateFmt('%s not supported', [GetEnumName(TypeInfo(TChain), Ord(chain))]);
 end;
 
 end.

@@ -32,9 +32,9 @@ uses
 
 function endpoint(chain: TChain): string;
 begin
-  if chain = BinanceSmartChain then
+  if chain = BSC_main_net then
     Result := 'https://bsc-dataseed.binance.org/'
-  else if chain = BinanceSmartChainTestNet then
+  else if chain = BSC_test_net then
     Result := 'https://data-seed-prebsc-1-s1.binance.org:8545/'
   else
     raise EBinance.CreateFmt('%s not supported', [GetEnumName(TypeInfo(TChain), Ord(chain))]);

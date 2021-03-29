@@ -144,8 +144,8 @@ const
     '',                                               // RSK_main_net
     '',                                               // RSK_test_net
     'https://api-kovan.etherscan.io/api?apikey=%s',   // Kovan
-    '',                                               // BinanceSmartChain
-    '',                                               // BinanceSmartChainTestNet
+    '',                                               // BSC_main_net
+    '',                                               // BSC_test_net
     ''                                                // xDai
   );
 begin
