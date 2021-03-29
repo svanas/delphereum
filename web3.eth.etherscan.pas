@@ -71,6 +71,7 @@ type
     function Chain: TChain;
     function Count: Integer;
     function Contract: TAddress;
+    function AsArray: TJsonArray;
     function Item(const Index: Integer): IContractSymbol;
     function IndexOf(
       const Name: string;
@@ -348,6 +349,7 @@ type
     function Chain: TChain;
     function Count: Integer;
     function Contract: TAddress;
+    function AsArray: TJsonArray;
     function Item(const Index: Integer): IContractSymbol;
     function IndexOf(
       const Name: string;
@@ -394,6 +396,11 @@ end;
 function TContractABI.Contract: TAddress;
 begin
   Result := FContract;
+end;
+
+function TContractABI.AsArray: TJSONArray;
+begin
+  Result := Self.FJsonArray.Clone as TJsonArray;
 end;
 
 function TContractABI.Item(const Index: Integer): IContractSymbol;

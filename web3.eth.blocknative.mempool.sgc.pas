@@ -61,15 +61,7 @@ type
       const chain  : TChain;
       const apiKey : string;
       const address: TAddress;
-      const method : string;
-      onEvent      : TAsyncJsonObject;
-      onError      : TAsyncError;
-      onDisconnect : TProc): IMempool; overload; override;
-    class function Subscribe(
-      const chain  : TChain;
-      const apiKey : string;
-      const address: TAddress;
-      const filters: TJsonArray;
+      const filters: IFilters;
       const abi    : TJsonArray;
       onEvent      : TAsyncJsonObject;
       onError      : TAsyncError;
@@ -77,6 +69,7 @@ type
     procedure Unsubscribe(const address: TAddress);
     procedure Initialize;
     procedure Disconnect;
+    function  Connected: Boolean;
   end;
 
 implementation
@@ -216,7 +209,7 @@ begin
 
   &output.Initialize;
 
-  payload := unmarshal(&output.GetPayload('accountAddress', 'watch')) as TJsonObject;
+  payload := unmarshal(&output.CreatePayload('accountAddress', 'watch')) as TJsonObject;
   if Assigned(payload) then
   try
     payload.AddPair('account', unmarshal(Format('{"address":"%s"}', [address])));
@@ -232,28 +225,7 @@ class function TSgcMempool.Subscribe(
   const chain  : TChain;
   const apiKey : string;
   const address: TAddress;
-  const method : string;
-  onEvent      : TAsyncJsonObject;
-  onError      : TAsyncError;
-  onDisconnect : TProc): IMempool;
-begin
-  Result := TSgcMempool.Subscribe(
-    chain,
-    apiKey,
-    address,
-    unmarshal(Format('[{"contractCall.methodName":"%s"}]', [method])) as TJsonArray,
-    nil,
-    onEvent,
-    onError,
-    onDisconnect
-  );
-end;
-
-class function TSgcMempool.Subscribe(
-  const chain  : TChain;
-  const apiKey : string;
-  const address: TAddress;
-  const filters: TJsonArray;
+  const filters: IFilters;
   const abi    : TJsonArray;
   onEvent      : TAsyncJsonObject;
   onError      : TAsyncError;
@@ -273,14 +245,14 @@ begin
 
   &output.Initialize;
 
-  payload := unmarshal(&output.GetPayload('configs', 'put')) as TJsonObject;
+  payload := unmarshal(&output.CreatePayload('configs', 'put')) as TJsonObject;
   if Assigned(payload) then
   try
     config := unmarshal(Format('{"scope":"%s","watchAddress":true}', [address])) as TJsonObject;
     if Assigned(config) then
     begin
       if Assigned(filters) then
-        config.AddPair('filters', filters);
+        config.AddPair('filters', filters.AsArray);
       if Assigned(abi) then
         config.AddPair('abi', abi);
       payload.AddPair('config', config);
@@ -297,7 +269,7 @@ procedure TSgcMempool.Unsubscribe(const address: TAddress);
 var
   payload: TJsonObject;
 begin
-  payload := unmarshal(GetPayload('accountAddress', 'unwatch')) as TJsonObject;
+  payload := unmarshal(CreatePayload('accountAddress', 'unwatch')) as TJsonObject;
   if Assigned(payload) then
   try
     payload.AddPair('account', unmarshal(Format('{"address":"%s"}', [address])));
@@ -309,12 +281,17 @@ end;
 
 procedure TSgcMempool.Initialize;
 begin
-  Client.WriteData(GetPayload('initialize', 'checkDappId'));
+  Client.WriteData(CreatePayload('initialize', 'checkDappId'));
 end;
 
 procedure TSgcMempool.Disconnect;
 begin
-  if Assigned(FClient) and FClient.Active then FClient.Disconnect;
+  if Self.Connected then FClient.Disconnect;
+end;
+
+function TSgcMempool.Connected: Boolean;
+begin
+  Result := Assigned(FClient) and FClient.Active;
 end;
 
 end.
