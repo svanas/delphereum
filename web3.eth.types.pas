@@ -260,6 +260,7 @@ function TAddressHelper.IsZero: Boolean;
 begin
   Result := (Self = '')
          or (Self = '0x')
+         or (Self = '0x0')
          or (Self = '0x0000000000000000000000000000000000000000');
 end;
 

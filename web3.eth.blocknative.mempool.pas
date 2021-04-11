@@ -30,6 +30,7 @@ const
 type
   TEventCode = (
     ecUnknown,
+    ecInitialize,
     ecWatch,
     ecUnwatch,
     txSent,      // Transaction has been sent to the network
@@ -122,6 +123,7 @@ function getEventCode(const event: TJsonObject): TEventCode;
 const
   EVENT_CODE: array[TEventCode] of string = (
     '',            // Unknown
+    'checkDappId', // Initialize
     'watch',       // Watch
     'unwatch',     // Unwatch
     'txSent',      // Transaction has been sent to the network
@@ -233,7 +235,7 @@ begin
   Result := Self;
 end;
 
-function TFilters.AsArray: TJSONArray;
+function TFilters.AsArray: TJsonArray;
 const
   STATUS: array[TStatus] of string = (
     '',          // None,
