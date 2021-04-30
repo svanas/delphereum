@@ -44,15 +44,6 @@ type
 
   TRouter02 = class(TCustomContract)
   private
-    procedure EstimateExactTokensForETH(
-      from        : TAddress;      // Sender of the token.
-      amountIn    : BigInteger;    // The amount of input tokens to send.
-      amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
-      token0      : TAddress;      // The address of the pair token with the lower sort order.
-      token1      : TAddress;      // The address of the pair token with the higher sort order.
-      &to         : TAddress;      // Recipient of the ETH.
-      deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
-      callback    : TAsyncQuantity); overload;
     procedure SwapExactTokensForETH(
       from        : TPrivateKey;   // Sender of the token.
       amountIn    : BigInteger;    // The amount of input tokens to send.
@@ -73,13 +64,6 @@ type
   public
     constructor Create(aClient: TWeb3); reintroduce;
     procedure WETH(callback: TAsyncAddress);
-    procedure EstimateExactTokensForETH(
-      owner       : TAddress;    // Sender of the token, and recipient of the ETH.
-      amountIn    : BigInteger;  // The amount of input tokens to send.
-      amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
-      token       : TAddress;    // The address of the token you wish to swap.
-      minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
-      callback    : TAsyncQuantity); overload;
     procedure SwapExactTokensForETH(
       owner       : TPrivateKey; // Sender of the token, and recipient of the ETH.
       amountIn    : BigInteger;  // The amount of input tokens to send.
@@ -157,28 +141,6 @@ begin
   end);
 end;
 
-// Estimate the number of gas units needed for a Swap
-procedure TRouter02.EstimateExactTokensForETH(
-  from        : TAddress;      // Sender of the token.
-  amountIn    : BigInteger;    // The amount of input tokens to send.
-  amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
-  token0      : TAddress;      // The address of the pair token with the lower sort order.
-  token1      : TAddress;      // The address of the pair token with the higher sort order.
-  &to         : TAddress;      // Recipient of the ETH.
-  deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
-  callback    : TAsyncQuantity);
-begin
-  estimateGas(Client, from, Contract,
-    'swapExactTokensForETH(uint256,uint256,address[],address,uint256)',
-    [
-      web3.utils.toHex(amountIn),
-      web3.utils.toHex(amountOutMin),
-      &array([token0, token1]),
-      &to,
-      deadline
-    ], 0, callback);
-end;
-
 // Swaps an exact amount of tokens for as much ETH as possible.
 procedure TRouter02.SwapExactTokensForETH(
   from        : TPrivateKey;   // Sender of the token.
@@ -231,40 +193,13 @@ begin
       EXIT;
     end;
     web3.eth.write(Client, from, Contract, amountIn,
-      'swapExactETHForTokens(uint,address[],address, uint deadline)',
+      'swapExactETHForTokens(uint256,address[],address,uint256)',
       [
         web3.utils.toHex(amountOutMin),
         &array([WETH, token]),
         &to,
         deadline
       ], callback);
-  end);
-end;
-
-// Estimate the number of gas units needed for a Swap
-procedure TRouter02.EstimateExactTokensForETH(
-  owner       : TAddress;   // Sender of the token, and recipient of the ETH.
-  amountIn    : BigInteger; // The amount of input tokens to send.
-  amountOutMin: BigInteger; // The minimum amount of output tokens that must be received for the transaction not to revert.
-  token       : TAddress;   // The address of the token you wish to swap.
-  minutes     : Int64;      // Your transaction will revert if it is pending for more than this long.
-  callback    : TAsyncQuantity);
-begin
-  Self.WETH(procedure(WETH: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback(0, err)
-    else
-      Self.EstimateExactTokensForETH(
-        owner,
-        amountIn,
-        amountOutMin,
-        token,
-        WETH,
-        owner,
-        DateTimeToUnix(IncMinute(System.SysUtils.Now, minutes), False),
-        callback
-      );
   end);
 end;
 
