@@ -8,19 +8,27 @@ Delphereum is a Delphi interface to the Ethereum blockchain that allows for deve
 
 ## What is Ethereum?
 
-[Ethereum](https://www.ethereum.org/) is a blockchain-based distributed computing platform and operating system featuring Smart Contracts.
+[Ethereum](https://www.ethereum.org/) is a blockchain-based distributed computing platform and operating system featuring smart contracts.
 
-## What is a Smart Contract?
+## What is a smart contract?
 
-A Smart Contract is a computation that takes place on a blockchain or distributed ledger. You can think of a Smart Contract as a microservice that runs trustless on the backend of your application.
+A smart contract is a computation that takes place on a blockchain or distributed ledger. You can think of a smart contract as a microservice that runs trustless on the backend of your application.
 
-Smart Contracts can have many applications, ranging from sports betting to online voting. But the true power of Smart Contracts is in managing assets that have value and are scarce.
+Smart contracts can have many applications, ranging from sports betting to online voting. But the true power of smart contracts is in managing assets that have value and are scarce.
 
-Once added to the blockchain, a Smart Contract becomes public and cannot be modified or removed. This assures your users that the rules are transparent and will never change.
+Once added to the blockchain, a smart contract becomes public and cannot be modified or removed. This assures your users that the rules are transparent and will never change.
 
 ## What is a dapp?
 
 A [dapp](https://en.wikipedia.org/wiki/Decentralized_application) is an application whose backend runs on a decentralised network with trustless protocols. Dapps aren’t owned by anyone, cannot be shut down, and have zero downtime.
+
+## What other blockchains does this thing support?
+
+Delphereum supports [every EVM-compatible blockchain](https://chainlist.org/), including (but not limited to)
+* [Optimism](https://optimism.io/)
+* [RSK](https://www.rsk.co/)
+* [xDai](https://www.xdaichain.com/)
+* [Binance Smart Chain](https://bscscan.com/)
 
 ## Dependencies
 
@@ -37,15 +45,15 @@ Please note there are NO runtime dependencies. Delphereum is lightweight and sel
 
 1. [Connecting Delphi to a local (in-memory) blockchain](https://medium.com/@svanas/connecting-delphi-to-a-local-in-memory-blockchain-9a1512d6c5b0)
 2. [Connecting Delphi to the Ethereum main net](https://medium.com/@svanas/connecting-delphi-to-the-ethereum-main-net-5faf1feffd83)
-3. [Connecting Delphi to Smart Contracts](https://medium.com/@svanas/connecting-delphi-to-smart-contracts-3146b12803a1)
+3. [Connecting Delphi to smart contracts](https://medium.com/@svanas/connecting-delphi-to-smart-contracts-3146b12803a1)
 4. [Generating an Ethereum-signed message signature in Delphi](https://medium.com/@svanas/generating-an-ethereum-signed-message-signature-in-delphi-75661ce5031b)
-5. [Transferring Ether with Delphi](https://medium.com/@svanas/transferring-ether-with-delphi-b5f24b1a98a4)
+5. [Transferring ether with Delphi](https://medium.com/@svanas/transferring-ether-with-delphi-b5f24b1a98a4)
 6. [Transferring ERC-20 tokens with Delphi](https://medium.com/@svanas/transferring-erc-20-tokens-with-delphi-bb44c05b295d)
 7. [Delphi and Ethereum Name Service (ENS)](https://medium.com/@svanas/delphi-and-ethereum-name-service-ens-4443cd278af7)
 8. [A 3-minute Smart Contract and Delphi - Part 1](https://medium.com/@svanas/a-3-minute-smart-contract-and-delphi-61d998571d)
 9. [A 3-minute Smart Contract and Delphi - Part 2](https://medium.com/@svanas/a-3-minute-smart-contract-and-delphi-part-2-446925faa47b)
 10. [QuikNode, Ethereum and Delphi](https://medium.com/@svanas/quiknode-ethereum-and-delphi-f7bfc9671c23)
-11. [Delphi and the Ethereum dark forest](https://svanas.medium.com/delphi-and-the-ethereum-dark-forest-5b430da3ad93)
+11. [Delphi and the Ethereum Dark Forest](https://svanas.medium.com/delphi-and-the-ethereum-dark-forest-5b430da3ad93)
 
 ## Case study
 
