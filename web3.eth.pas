@@ -32,6 +32,7 @@ const
 
 const
   ADDRESS_ZERO: TAddress = '0x0000000000000000000000000000000000000000';
+  BYTES_ZERO  : TBytes32 = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
 function  blockNumber(client: TWeb3): BigInteger; overload;               // blocking
 procedure blockNumber(client: TWeb3; callback: TAsyncQuantity); overload; // async
@@ -56,6 +57,11 @@ procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of 
 procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean); overload;
 procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean); overload;
 procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean); overload;
+
+procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes); overload;
+procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes); overload;
+procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes); overload;
+procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes); overload;
 
 procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple); overload;
 procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple); overload;
@@ -314,9 +320,47 @@ begin
       callback(False, err)
     else
     begin
-      buf := fromHex(hex);
+      buf := web3.utils.fromHex(hex);
       callback((Length(buf) > 0) and (buf[High(buf)] <> 0), nil);
     end;
+  end);
+end;
+
+procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes);
+begin
+  call(client, ADDRESS_ZERO, &to, func, args, callback);
+end;
+
+procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes);
+begin
+  call(client, from, &to, func, BLOCK_LATEST, args, callback);
+end;
+
+procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes);
+begin
+  call(client, ADDRESS_ZERO, &to, func, block, args, callback);
+end;
+
+procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes);
+begin
+  call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
+  var
+    buffer: TBytes;
+    result: TBytes32;
+  begin
+    if Assigned(err) then
+    begin
+      callback(BYTES_ZERO, err);
+      EXIT;
+    end;
+    buffer := web3.utils.fromHex(hex);
+    if Length(buffer) < 32 then
+    begin
+      callback(BYTES_ZERO, nil);
+      EXIT;
+    end;
+    Move(buffer[0], result[0], 32);
+    callback(result, nil);
   end);
 end;
 

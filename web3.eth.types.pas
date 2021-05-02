@@ -77,6 +77,7 @@ type
   TAsyncQuantity  = reference to procedure(qty  : BigInteger; err : IError);
   TAsyncBoolean   = reference to procedure(bool : Boolean;    err : IError);
   TAsyncAddress   = reference to procedure(addr : TAddress;   err : IError);
+  TAsyncBytes     = reference to procedure(bytes: TBytes32;   err : IError);
   TAsyncArg       = reference to procedure(arg  : TArg;       next: TProc);
   TAsyncTuple     = reference to procedure(tup  : TTuple;     err : IError);
   TAsyncTxHash    = reference to procedure(hash : TTxHash;    err : IError);

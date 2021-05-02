@@ -199,6 +199,9 @@ begin
     bn := web3.eth.blockNumber(client);
     while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
     begin
+      try
+        TTask.CurrentTask.Wait(500);
+      except end;
       logs := web3.eth.logs.getAsLog(client, bn, address);
       for log in logs do
       begin

@@ -17,13 +17,21 @@ interface
 
 uses
   // Delphi
-  System.Generics.Collections;
+  System.Generics.Collections,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
+  // web3
+  web3;
 
 type
   TContractArray = TList<Variant>;
 
 function  tuple(args: array of Variant): Variant;
-function &array(args: array of Variant): TContractArray;
+
+function &array(args: array of Variant): TContractArray; overload;
+function &array(args: array of TAddress): TContractArray; overload;
+function &array(args: array of BigInteger): TContractArray; overload;
+
 function encode(const func: string; args: array of const): string;
 
 implementation
@@ -49,6 +57,22 @@ var
 begin
   Result := TContractArray.Create;
   for arg in args do Result.Add(arg);
+end;
+
+function &array(args: array of TAddress): TContractArray;
+var
+  arg: TAddress;
+begin
+  Result := TContractArray.Create;
+  for arg in args do Result.Add(arg);
+end;
+
+function &array(args: array of BigInteger): TContractArray;
+var
+  arg: BigInteger;
+begin
+  Result := TContractArray.Create;
+  for arg in args do Result.Add(web3.utils.toHex(arg));
 end;
 
 function encode(const func: string; args: array of const): string;
