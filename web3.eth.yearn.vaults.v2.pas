@@ -83,9 +83,13 @@ type
   end;
 
 type
+  TyVaultRegistry = class;
+
+  TAsyncRegistry = reference to procedure(reg: TyVaultRegistry; err: IError);
+
   TyVaultRegistry = class(TCustomContract)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    class procedure Create(client: TWeb3; callback: TAsyncRegistry); reintroduce;
     procedure LatestVault(reserve: TAddress; callback: TAsyncAddress);
   end;
 
@@ -209,15 +213,18 @@ class procedure TyVaultV2.UnderlyingToTokenAddress(
   client  : TWeb3;
   reserve : TReserve;
   callback: TAsyncAddress);
-var
-  registry: TyVaultRegistry;
 begin
-  registry := TyVaultRegistry.Create(client);
-  try
-    registry.LatestVault(reserve.Address, callback);
-  finally
-    registry.Free;
-  end;
+  TyVaultRegistry.Create(client, procedure(reg: TyVaultRegistry; err: IError)
+  begin
+    if Assigned(reg) then
+    try
+      reg.LatestVault(reserve.Address, callback);
+      EXIT;
+    finally
+      reg.Free;
+    end;
+    callback(ADDRESS_ZERO, err);
+  end);
 end;
 
 class function TyVaultV2.Name: string;
@@ -227,7 +234,7 @@ end;
 
 class function TyVaultV2.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (reserve in [DAI, USDC]);
+  Result := (chain = Mainnet) and (reserve in [DAI, USDC, USDT]);
 end;
 
 class procedure TyVaultV2.APY(
@@ -430,9 +437,15 @@ end;
 
 { TyVaultRegistry }
 
-constructor TyVaultRegistry.Create(aClient: TWeb3);
+class procedure TyVaultRegistry.Create(client: TWeb3; callback: TAsyncRegistry);
 begin
-  inherited Create(aClient, '0xE15461B18EE31b7379019Dc523231C57d1Cbc18c');
+  TAddress.New(client, 'v2.registry.ychad.eth', procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      callback(inherited Create(client, addr), nil);
+  end);
 end;
 
 procedure TyVaultRegistry.LatestVault(reserve: TAddress; callback: TAsyncAddress);

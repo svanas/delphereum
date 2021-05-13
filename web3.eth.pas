@@ -32,7 +32,7 @@ const
 
 const
   ADDRESS_ZERO: TAddress = '0x0000000000000000000000000000000000000000';
-  BYTES_ZERO  : TBytes32 = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+  BYTES32_ZERO: TBytes32 = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
 function  blockNumber(client: TWeb3): BigInteger; overload;               // blocking
 procedure blockNumber(client: TWeb3; callback: TAsyncQuantity); overload; // async
@@ -350,13 +350,13 @@ begin
   begin
     if Assigned(err) then
     begin
-      callback(BYTES_ZERO, err);
+      callback(BYTES32_ZERO, err);
       EXIT;
     end;
     buffer := web3.utils.fromHex(hex);
     if Length(buffer) < 32 then
     begin
-      callback(BYTES_ZERO, nil);
+      callback(BYTES32_ZERO, nil);
       EXIT;
     end;
     Move(buffer[0], result[0], 32);
