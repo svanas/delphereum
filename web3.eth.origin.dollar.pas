@@ -58,7 +58,7 @@ type
     class procedure Withdraw(
       client  : TWeb3;
       from    : TPrivateKey;
-      _reserve: TReserve;
+      reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
       client  : TWeb3;
@@ -108,10 +108,8 @@ class procedure TOrigin.Approve(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  underlying: TERC20;
 begin
-  underlying := TERC20.Create(client, reserve.Address);
+  var underlying := TERC20.Create(client, reserve.Address);
   if Assigned(underlying) then
   begin
     underlying.ApproveEx(from, TOriginVault.DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -140,10 +138,8 @@ class procedure TOrigin.APY(
   _reserve: TReserve;
   period  : TPeriod;
   callback: TAsyncFloat);
-var
-  ousd: TOriginDollar;
 begin
-  ousd := TOriginDollar.Create(client);
+  var ousd := TOriginDollar.Create(client);
   if Assigned(ousd) then
   begin
     ousd.APY(period, procedure(apy: Extended; err: IError)
@@ -165,15 +161,13 @@ class procedure TOrigin.Deposit(
   callback: TAsyncReceipt);
 begin
   Self.Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
-  var
-    vault: TOriginVault;
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    vault := TOriginVault.Create(client);
+    var vault := TOriginVault.Create(client);
     try
       vault.Mint(from, reserve, amount, callback);
     finally
@@ -187,10 +181,8 @@ class procedure TOrigin.Balance(
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
-var
-  ousd: TOriginDollar;
 begin
-  ousd := TOriginDollar.Create(client);
+  var ousd := TOriginDollar.Create(client);
   try
     ousd.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
     begin
@@ -210,15 +202,15 @@ end;
 class procedure TOrigin.Withdraw(
   client  : TWeb3;
   from    : TPrivateKey;
-  _reserve: TReserve;
+  reserve : TReserve;
   callback: TAsyncReceiptEx);
 begin
-  Self.Balance(client, from, _reserve, procedure(balance: BigInteger; err: IError)
+  Self.Balance(client, from, reserve, procedure(balance: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(nil, 0, err)
     else
-      Self.WithdrawEx(client, from, _reserve, balance, callback);
+      Self.WithdrawEx(client, from, reserve, balance, callback);
   end)
 end;
 
@@ -228,10 +220,8 @@ class procedure TOrigin.WithdrawEx(
   _reserve: TReserve;
   amount  : BigInteger;
   callback: TAsyncReceiptEx);
-var
-  vault: TOriginVault;
 begin
-  vault := TOriginVault.Create(client);
+  var vault := TOriginVault.Create(client);
   try
     vault.Redeem(from, amount, procedure(rcpt: ITxReceipt; err: IError)
     begin

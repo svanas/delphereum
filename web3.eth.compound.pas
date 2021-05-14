@@ -155,7 +155,8 @@ const
   cTokenClass: array[TReserve] of TcTokenClass = (
     TcDAI,
     TcUSDC,
-    TcUSDT
+    TcUSDT,
+    nil
   );
 
 { TCompound }
@@ -167,32 +168,29 @@ class procedure TCompound.Approve(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  erc20 : TERC20;
-  cToken: TcToken;
 begin
-  cToken := cTokenClass[reserve].Create(client);
+  var cToken := cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
   begin
     cToken.Underlying(procedure(addr: TAddress; err: IError)
     begin
       try
         if Assigned(err) then
-          callback(nil, err)
-        else
         begin
-          erc20 := TERC20.Create(client, addr);
-          if Assigned(erc20) then
+          callback(nil, err);
+          EXIT;
+        end;
+        var erc20 := TERC20.Create(client, addr);
+        if Assigned(erc20) then
+        begin
+          erc20.ApproveEx(from, cToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
           begin
-            erc20.ApproveEx(from, cToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
-            begin
-              try
-                callback(rcpt, err);
-              finally
-                erc20.Free;
-              end;
-            end);
-          end;
+            try
+              callback(rcpt, err);
+            finally
+              erc20.Free;
+            end;
+          end);
         end;
       finally
         cToken.Free;
@@ -208,10 +206,11 @@ end;
 
 class function TCompound.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  if reserve = USDT then
-    Result := chain in [Mainnet, Ropsten, Rinkeby, Kovan]
-  else
-    Result := chain in [Mainnet, Ropsten, Rinkeby, Goerli, Kovan];
+  Result := (
+    (reserve = USDT) and (chain in [Mainnet, Ropsten, Rinkeby, Kovan])
+  ) or (
+    (reserve in [DAI, USDC]) and (chain in [Mainnet, Ropsten, Rinkeby, Goerli, Kovan])
+  );
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -220,10 +219,9 @@ class procedure TCompound.APY(
   reserve : TReserve;
   _period : TPeriod;
   callback: TAsyncFloat);
-var
-  cToken: TcToken;
 begin
-  cToken := cTokenClass[reserve].Create(client);
+  var cToken := cTokenClass[reserve].Create(client);
+  if Assigned(cToken) then
   try
     cToken.APY(procedure(value: BigInteger; err: IError)
     begin
@@ -244,22 +242,21 @@ class procedure TCompound.Deposit(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  cToken: TcToken;
 begin
   // Before supplying an asset, we must first approve the cToken.
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
-    else
     begin
-      cToken := cTokenClass[reserve].Create(client);
-      try
-        cToken.Mint(from, amount, callback);
-      finally
-        cToken.Free;
-      end;
+      callback(nil, err);
+      EXIT;
+    end;
+    var cToken := cTokenClass[reserve].Create(client);
+    if Assigned(cToken) then
+    try
+      cToken.Mint(from, amount, callback);
+    finally
+      cToken.Free;
     end;
   end);
 end;
@@ -270,10 +267,9 @@ class procedure TCompound.Balance(
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
-var
-  cToken: TcToken;
 begin
-  cToken := cTokenClass[reserve].Create(client);
+  var cToken := cTokenClass[reserve].Create(client);
+  if Assigned(cToken) then
   try
     cToken.BalanceOfUnderlying(owner, callback);
   finally
@@ -287,8 +283,6 @@ class procedure TCompound.Withdraw(
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
-var
-  cToken: TcToken;
 begin
   Balance(client, from, reserve, procedure(amount_underlying: BigInteger; err: IError)
   begin
@@ -304,7 +298,7 @@ begin
         callback(nil, 0, err);
         EXIT;
       end;
-      cToken := cTokenClass[reserve].Create(client);
+      var cToken := cTokenClass[reserve].Create(client);
       if Assigned(cToken) then
       begin
         cToken.BalanceOf(addr, procedure(amount_ctoken: BigInteger; err: IError)
@@ -337,10 +331,8 @@ class procedure TCompound.WithdrawEx(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceiptEx);
-var
-  cToken: TcToken;
 begin
-  cToken := cTokenClass[reserve].Create(client);
+  var cToken := cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
   try
     cToken.RedeemUnderlying(from, amount, procedure(rcpt: ITxReceipt; err: IError)

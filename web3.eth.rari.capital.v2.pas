@@ -44,7 +44,7 @@ type
       reserve: TReserve): Boolean; override;
     class procedure APY(
       client  : TWeb3;
-      _reserve: TReserve;
+      reserve : TReserve;
       period  : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
@@ -124,10 +124,8 @@ class procedure TRari.Approve(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  erc20: TERC20;
 begin
-  erc20 := TERC20.Create(client, reserve.Address);
+  var erc20 := TERC20.Create(client, reserve.Address);
   if Assigned(erc20) then
   begin
     erc20.ApproveEx(from, TRariFundManager.DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -148,12 +146,12 @@ end;
 
 class function TRari.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (reserve = USDC) and (chain = Mainnet);
+  Result := (chain = Mainnet) and (reserve = USDC);
 end;
 
 class procedure TRari.APY(
   client  : TWeb3;
-  _reserve: TReserve;
+  reserve : TReserve;
   period  : TPeriod;
   callback: TAsyncFloat);
 
@@ -170,15 +168,13 @@ class procedure TRari.APY(
 
 begin
   getStablePoolAPY(procedure(apy: Extended; err: IError)
-  var
-    manager: TRariFundManager;
   begin
     if (apy > 0) and not Assigned(err) then
     begin
       callback(apy, err);
       EXIT;
     end;
-    manager := TRariFundManager.Create(client);
+    var manager := TRariFundManager.Create(client);
     if Assigned(manager) then
     begin
       manager.APY(period, procedure(apy: Extended; err: IError)
@@ -189,7 +185,7 @@ begin
             callback(apy, err);
             EXIT;
           end;
-          Self.APY(client, _reserve, Pred(period), callback);
+          Self.APY(client, reserve, Pred(period), callback);
         finally
           manager.Free;
         end;
@@ -204,21 +200,19 @@ class procedure TRari.Deposit(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  manager : TRariFundManager;
 begin
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
-    else
     begin
-      manager := TRariFundManager.Create(client);
-      try
-        manager.Deposit(from, reserve.Symbol, amount, callback);
-      finally
-        manager.Free;
-      end;
+      callback(nil, err);
+      EXIT;
+    end;
+    var manager := TRariFundManager.Create(client);
+    try
+      manager.Deposit(from, reserve.Symbol, amount, callback);
+    finally
+      manager.Free;
     end;
   end);
 end;
@@ -228,10 +222,8 @@ class procedure TRari.Balance(
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
-var
-  manager : TRariFundManager;
 begin
-  manager := TRariFundManager.Create(client);
+  var manager := TRariFundManager.Create(client);
   if Assigned(manager) then
   try
     manager.BalanceOf(owner, procedure(usd: BigInteger; err: IError)
@@ -254,9 +246,6 @@ class procedure TRari.Withdraw(
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
-var
-  RSPT: TRariFundToken;
-  mngr: TRariFundManager;
 begin
   from.Address(procedure(owner: TAddress; err: IError)
   begin
@@ -265,7 +254,7 @@ begin
       callback(nil, 0, err);
       EXIT;
     end;
-    RSPT := TRariFundToken.Create(client);
+    var RSPT := TRariFundToken.Create(client);
     if Assigned(RSPT) then
     begin
       // step #1: get the RSPT balance
@@ -293,7 +282,7 @@ begin
                 callback(nil, 0, err);
                 EXIT;
               end;
-              mngr := TRariFundManager.Create(client);
+              var mngr := TRariFundManager.Create(client);
               try
                 // step #4: withdraws funds from the pool in exchange for RSPT
                 mngr.Withdraw(from, reserve.Symbol, input, procedure(rcpt: ITxReceipt; err: IError)
@@ -388,10 +377,8 @@ end;
 procedure TRariFundManager.GetExchangeRate(
   const block: string;
   callback   : TAsyncFloat);
-var
-  client: TWeb3;
 begin
-  client := Self.Client;
+  var client := Self.Client;
   Self.GetFundBalance(block, procedure(balance: BigInteger; err: IError)
   var
     RSPT: TRariFundToken;

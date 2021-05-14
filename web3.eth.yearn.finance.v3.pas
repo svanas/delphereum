@@ -82,7 +82,8 @@ const
   yTokenClass: array[TReserve] of TyTokenClass = (
     TyDAIv3,  // DAI
     TyUSDCv3, // USDC
-    TyUSDTv3  // USDT
+    TyUSDTv3, // USDT
+    nil       // mUSD
   );
 
 { TyEarnV3 }
@@ -94,7 +95,7 @@ end;
 
 class function TyEarnV3.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := chain = Mainnet;
+  Result := (chain = Mainnet) and (reserve in [DAI, USDC, USDT]);
 end;
 
 class procedure TyEarnV3.APY(

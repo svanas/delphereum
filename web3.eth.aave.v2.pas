@@ -144,7 +144,7 @@ begin
     callback(reserve.Address, nil);
     EXIT;
   end;
-  if chain = Kovan then
+  if (chain = Kovan) and (reserve in [DAI, USDC, USDT]) then
   begin
     case reserve of
       DAI : callback('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD', nil);
@@ -164,21 +164,17 @@ class procedure TAave.UNDERLYING_TO_TOKEN(
   client  : TWeb3;
   reserve : TReserve;
   callback: TAsyncAddress);
-var
-  ap: TAaveLendingPoolAddressesProvider;
 begin
-  ap := TAaveLendingPoolAddressesProvider.Create(client);
+  var ap := TAaveLendingPoolAddressesProvider.Create(client);
   try
     ap.GetProtocolDataProvider(procedure(addr: TAddress; err: IError)
-    var
-      dp: TAaveProtocolDataProvider;
     begin
       if Assigned(err) then
       begin
         callback(ADDRESS_ZERO, err);
         EXIT;
       end;
-      dp := TAaveProtocolDataProvider.Create(client, addr);
+      var dp := TAaveProtocolDataProvider.Create(client, addr);
       try
         dp.GetReserveTokensAddresses(reserve, procedure(tup: TTuple; err: IError)
         begin
@@ -205,10 +201,8 @@ class procedure TAave.TOKEN_TO_UNDERLYING(
   client  : TWeb3;
   atoken  : TAddress;
   callback: TAsyncAddress);
-var
-  erc20: TaToken;
 begin
-  erc20 := TaToken.Create(client, atoken);
+  var erc20 := TaToken.Create(client, atoken);
   try
     erc20.UNDERLYING_ASSET_ADDRESS(callback);
   finally
@@ -222,10 +216,8 @@ class procedure TAave.Approve(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  AP: TAaveLendingPoolAddressesProvider;
 begin
-  AP := TAaveLendingPoolAddressesProvider.Create(client);
+  var AP := TAaveLendingPoolAddressesProvider.Create(client);
   if Assigned(AP) then
   try
     AP.GetLendingPool(procedure(pool: TAddress; err: IError)
@@ -236,15 +228,13 @@ begin
         EXIT;
       end;
       Self.GET_RESERVE_ADDRESS(client.chain, reserve, procedure(asset: TAddress; err: IError)
-      var
-        underlying: TERC20;
       begin
         if Assigned(err) then
         begin
           callback(nil, err);
           EXIT;
         end;
-        underlying := TERC20.Create(client, asset);
+        var underlying := TERC20.Create(client, asset);
         if Assigned(underlying) then
         begin
           underlying.ApproveEx(from, pool, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -270,7 +260,7 @@ end;
 
 class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := chain in [Mainnet, Kovan];
+  Result := (chain in [Mainnet, Kovan]) and (reserve in [DAI, USDC, USDT]);
 end;
 
 class procedure TAave.APY(
@@ -278,22 +268,18 @@ class procedure TAave.APY(
   reserve : TReserve;
   _period : TPeriod;
   callback: TAsyncFloat);
-var
-  AP: TAaveLendingPoolAddressesProvider;
 begin
-  AP := TAaveLendingPoolAddressesProvider.Create(client);
+  var AP := TAaveLendingPoolAddressesProvider.Create(client);
   if Assigned(AP) then
   try
     AP.GetLendingPool(procedure(pool: TAddress; err: IError)
-    var
-      LP: TAaveLendingPool;
     begin
       if Assigned(err) then
       begin
         callback(0, err);
         EXIT;
       end;
-      LP := TAaveLendingPool.Create(client, pool);
+      var LP := TAaveLendingPool.Create(client, pool);
       if Assigned(LP) then
       try
         LP.CurrentLiquidityRate(reserve, procedure(qty: BigInteger; err: IError)
@@ -323,27 +309,23 @@ class procedure TAave.Deposit(
 begin
   // Before supplying an asset, we must first approve the LendingPool contract.
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
-  var
-    AP: TAaveLendingPoolAddressesProvider;
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    AP := TAaveLendingPoolAddressesProvider.Create(client);
+    var AP := TAaveLendingPoolAddressesProvider.Create(client);
     if Assigned(AP) then
     try
       AP.GetLendingPool(procedure(pool: TAddress; err: IError)
-      var
-        LP: TAaveLendingPool;
       begin
         if Assigned(err) then
         begin
           callback(nil, err);
           EXIT;
         end;
-        LP := TAaveLendingPool.Create(client, pool);
+        var LP := TAaveLendingPool.Create(client, pool);
         if Assigned(LP) then
         try
           LP.Deposit(from, reserve, amount, callback);
@@ -364,15 +346,13 @@ class procedure TAave.Balance(
   callback: TAsyncQuantity);
 begin
   Self.UNDERLYING_TO_TOKEN(client, reserve, procedure(atoken: TAddress; err: IError)
-  var
-    erc20: TERC20;
   begin
     if Assigned(err) then
     begin
       callback(0, err);
       EXIT;
     end;
-    erc20 := TaToken.Create(client, atoken);
+    var erc20 := TaToken.Create(client, atoken);
     if Assigned(erc20) then
     try
       erc20.BalanceOf(owner, callback);
@@ -413,22 +393,18 @@ class procedure TAave.WithdrawEx(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceiptEx);
-var
-  AP: TAaveLendingPoolAddressesProvider;
 begin
-  AP := TAaveLendingPoolAddressesProvider.Create(client);
+  var AP := TAaveLendingPoolAddressesProvider.Create(client);
   if Assigned(AP) then
   try
     AP.GetLendingPool(procedure(pool: TAddress; err: IError)
-    var
-      LP: TAaveLendingPool;
     begin
       if Assigned(err) then
       begin
         callback(nil, 0, err);
         EXIT;
       end;
-      LP := TAaveLendingPool.Create(client, pool);
+      var LP := TAaveLendingPool.Create(client, pool);
       if Assigned(LP) then
       try
         LP.Withdraw(from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)

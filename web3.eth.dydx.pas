@@ -134,9 +134,10 @@ type
   public
     const
       marketId: array[TReserve] of Integer = (
-        3, // DAI
-        2, // USDC
-        -1 // USDT
+        3,  // DAI
+        2,  // USDC
+        -1, // USDT
+        -1  // mUSD
       );
     constructor Create(aClient: TWeb3); reintroduce;
     procedure GetAccountWei(owner: TAddress; marketId: Integer; callback: TAsyncQuantity);
@@ -180,10 +181,8 @@ class procedure TdYdX.TokenAddress(
   client  : TWeb3;
   reserve : TReserve;
   callback: TAsyncAddress);
-var
-  dYdX: TSoloMargin;
 begin
-  dYdX := TSoloMargin.Create(client);
+  var dYdX := TSoloMargin.Create(client);
   if Assigned(dYdX) then
   try
     dYdX.GetMarket(TSoloMargin.marketId[reserve], procedure(market: ISoloMarket; err: IError)
@@ -205,27 +204,25 @@ class procedure TdYdX.Approve(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  erc20: TERC20;
 begin
   TokenAddress(client, reserve, procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
-    else
     begin
-      erc20 := TERC20.Create(client, addr);
-      if Assigned(erc20) then
+      callback(nil, err);
+      EXIT;
+    end;
+    var erc20 := TERC20.Create(client, addr);
+    if Assigned(erc20) then
+    begin
+      erc20.ApproveEx(from, TSoloMargin.DeployedAt(client.Chain), amount, procedure(rcpt: ITxReceipt; err: IError)
       begin
-        erc20.ApproveEx(from, TSoloMargin.DeployedAt(client.Chain), amount, procedure(rcpt: ITxReceipt; err: IError)
-        begin
-          try
-            callback(rcpt, err);
-          finally
-            erc20.Free;
-          end;
-        end);
-      end;
+        try
+          callback(rcpt, err);
+        finally
+          erc20.Free;
+        end;
+      end);
     end;
   end);
 end;
@@ -237,7 +234,7 @@ end;
 
 class function TdYdX.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain in [Mainnet, Kovan]) and (reserve <> USDT);
+  Result := (chain in [Mainnet, Kovan]) and (reserve in [DAI, USDC]);
 end;
 
 // Returns the annual yield as a percentage.
@@ -248,10 +245,8 @@ class procedure TdYdX.APY(
   callback: TAsyncFloat);
 const
   SECONDS_PER_YEAR = 31536000;
-var
-  dYdX: TSoloMargin;
 begin
-  dYdX := TSoloMargin.Create(client);
+  var dYdX := TSoloMargin.Create(client);
   if Assigned(dYdX) then
   begin
     dYdX.GetMarketSupplyInterestRate(TSoloMargin.marketId[reserve], procedure(qty: Extended; err: IError)
@@ -274,23 +269,21 @@ class procedure TdYdX.Deposit(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  dYdX: TSoloMargin;
 begin
   // Before moving tokens, we must first approve the Solo contract.
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
-    else
     begin
-      dYdX := TSoloMargin.Create(client);
-      if Assigned(dYdX) then
-      try
-        dYdX.Deposit(from, TSoloMargin.marketId[reserve], amount, callback);
-      finally
-        dYdX.Free;
-      end;
+      callback(nil, err);
+      EXIT;
+    end;
+    var dYdX := TSoloMargin.Create(client);
+    if Assigned(dYdX) then
+    try
+      dYdX.Deposit(from, TSoloMargin.marketId[reserve], amount, callback);
+    finally
+      dYdX.Free;
     end;
   end);
 end;
@@ -300,10 +293,8 @@ class procedure TdYdX.Balance(
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
-var
-  dYdX: TSoloMargin;
 begin
-  dYdX := TSoloMargin.Create(client);
+  var dYdX := TSoloMargin.Create(client);
   if Assigned(dYdX) then
   try
     dYdX.GetAccountWei(owner, TSoloMargin.marketId[reserve], callback);
@@ -321,15 +312,17 @@ begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, 0, err)
-    else
-      Balance(client, addr, reserve, procedure(amount: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
-          callback(nil, 0, err)
-        else
-          WithdrawEx(client, from, reserve, amount, callback);
-      end);
+    begin
+      callback(nil, 0, err);
+      EXIT;
+    end;
+    Balance(client, addr, reserve, procedure(amount: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, 0, err)
+      else
+        WithdrawEx(client, from, reserve, amount, callback);
+    end);
   end);
 end;
 
@@ -339,10 +332,8 @@ class procedure TdYdX.WithdrawEx(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceiptEx);
-var
-  dYdX: TSoloMargin;
 begin
-  dYdX := TSoloMargin.Create(client);
+  var dYdX := TSoloMargin.Create(client);
   if Assigned(dYdX) then
   try
     dYdX.Withdraw(from, TSoloMargin.marketId[reserve], amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -512,21 +503,25 @@ begin
   GetEarningsRate(procedure(earningsRate: Extended; err: IError)
   begin
     if Assigned(err) then
-      callback(0, err)
-    else
-      GetMarketInterestRate(marketId, procedure(borrowInterestRate: Extended; err: IError)
+    begin
+      callback(0, err);
+      EXIT;
+    end;
+    GetMarketInterestRate(marketId, procedure(borrowInterestRate: Extended; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        callback(0, err);
+        EXIT;
+      end;
+      GetMarketUtilization(marketId, procedure(utilization: Extended; err: IError)
       begin
         if Assigned(err) then
           callback(0, err)
         else
-          GetMarketUtilization(marketId, procedure(utilization: Extended; err: IError)
-          begin
-            if Assigned(err) then
-              callback(0, err)
-            else
-              callback(borrowInterestRate * earningsRate * utilization, nil);
-          end);
+          callback(borrowInterestRate * earningsRate * utilization, nil);
       end);
+    end);
   end);
 end;
 
@@ -534,18 +529,15 @@ end;
 procedure TSoloMargin.GetMarketUtilization(marketId: Integer; callback: TAsyncFloat);
 begin
   GetMarket(marketId, procedure(market: ISoloMarket; err: IError)
-  var
-    totalSupply: Extended;
-    totalBorrow: Extended;
   begin
     if Assigned(err) then
-      callback(0, err)
-    else
     begin
-      totalSupply := market.TotalPar.Supply.AsExtended * market.Index.Supply;
-      totalBorrow := market.TotalPar.Borrow.AsExtended * market.Index.Borrow;
-      callback(totalBorrow / totalSupply, nil);
+      callback(0, err);
+      EXIT;
     end;
+    var totalSupply := market.TotalPar.Supply.AsExtended * market.Index.Supply;
+    var totalBorrow := market.TotalPar.Borrow.AsExtended * market.Index.Borrow;
+    callback(totalBorrow / totalSupply, nil);
   end);
 end;
 
@@ -565,39 +557,41 @@ begin
   owner.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
-    else
-      web3.eth.write(Client, owner, Contract,
-        'operate(' +
-          '(address,uint256)[],' +           // accountOwner, accountNumber
-          '(' +
-            'uint8,uint256,' +               // actionType, accountId
-            '(bool,uint8,uint8,uint256),' +  // sign, denomination, reference, value
-            'uint256,' +                     // primaryMarketId
-            'uint256,' +                     // secondaryMarketId
-            'address,' +                     // otherAddress
-            'uint256,' +                     // otherAccountId
-            'bytes' +                        // arbitrary data
-          ')[]' +
-        ')',
-        [
-          &array([tuple([addr, 0])]),        // accountOwner, accountNumber
-          &array([tuple([actionType, 0,      // actionType, accountId
-            tuple([
-              not(amount.Negative),          // sign
-              denomination,                  // denomination
-              reference,                     // reference
-              web3.utils.toHex(amount.Abs)   // value
-            ]),
-            primaryMarketId,
-            secondaryMarketId,
-            otherAddress,
-            otherAccountId,
-            ''
-          ])])
-        ],
-        callback
-      );
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    web3.eth.write(Client, owner, Contract,
+      'operate(' +
+        '(address,uint256)[],' +           // accountOwner, accountNumber
+        '(' +
+          'uint8,uint256,' +               // actionType, accountId
+          '(bool,uint8,uint8,uint256),' +  // sign, denomination, reference, value
+          'uint256,' +                     // primaryMarketId
+          'uint256,' +                     // secondaryMarketId
+          'address,' +                     // otherAddress
+          'uint256,' +                     // otherAccountId
+          'bytes' +                        // arbitrary data
+        ')[]' +
+      ')',
+      [
+        &array([tuple([addr, 0])]),        // accountOwner, accountNumber
+        &array([tuple([actionType, 0,      // actionType, accountId
+          tuple([
+            not(amount.Negative),          // sign
+            denomination,                  // denomination
+            reference,                     // reference
+            web3.utils.toHex(amount.Abs)   // value
+          ]),
+          primaryMarketId,
+          secondaryMarketId,
+          otherAddress,
+          otherAccountId,
+          ''
+        ])])
+      ],
+      callback
+    );
   end);
 end;
 
@@ -612,19 +606,21 @@ begin
   owner.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
-    else
-      Operate(
-        owner,                    // owner
-        TSoloActionType.Deposit,  // actionType
-        amount,                   // amount
-        TSoloDenomination.Wei,    // denomination
-        TSoloReference.Delta,     // reference
-        marketId,                 // primaryMarketId
-        0,                        // secondaryMarketId (ignored)
-        addr,                     // otherAddress
-        0,                        // otherAccountId (ignored)
-        callback);
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    Operate(
+      owner,                    // owner
+      TSoloActionType.Deposit,  // actionType
+      amount,                   // amount
+      TSoloDenomination.Wei,    // denomination
+      TSoloReference.Delta,     // reference
+      marketId,                 // primaryMarketId
+      0,                        // secondaryMarketId (ignored)
+      addr,                     // otherAddress
+      0,                        // otherAccountId (ignored)
+      callback);
   end);
 end;
 
@@ -641,19 +637,21 @@ begin
   owner.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
-    else
-      Operate(
-        owner,                     // owner
-        TSoloActionType.Withdraw,  // actionType
-        amount,                    // amount
-        TSoloDenomination.Wei,     // denomination
-        TSoloReference.Delta,      // reference
-        marketId,                  // primaryMarketId
-        0,                         // secondaryMarketId (ignored)
-        addr,                      // otherAddress
-        0,                         // otherAccountId (ignored)
-        callback);
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    Operate(
+      owner,                     // owner
+      TSoloActionType.Withdraw,  // actionType
+      amount,                    // amount
+      TSoloDenomination.Wei,     // denomination
+      TSoloReference.Delta,      // reference
+      marketId,                  // primaryMarketId
+      0,                         // secondaryMarketId (ignored)
+      addr,                      // otherAddress
+      0,                         // otherAccountId (ignored)
+      callback);
   end);
 end;
 

@@ -13,7 +13,7 @@
 {                                                                              }
 {******************************************************************************}
 
-unit web3.eth.aave;
+unit web3.eth.aave.v1;
 
 {$I web3.inc}
 
@@ -133,7 +133,7 @@ begin
     callback(reserve.Address, nil);
     EXIT;
   end;
-  if chain = Kovan then
+  if (chain = Kovan) and (reserve in [DAI, USDC, USDT]) then
   begin
     case reserve of
       DAI : callback('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD', nil);
@@ -142,7 +142,7 @@ begin
     end;
     EXIT;
   end;
-  if chain = Ropsten then
+  if (chain = Ropsten) and (reserve in [DAI, USDC, USDT]) then
   begin
     case reserve of
       DAI : callback('0xf80A32A835F79D7787E8a8ee5721D0fEaFd78108', nil);
@@ -165,38 +165,37 @@ class procedure TAave.Approve(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  aap  : TAaveAddressesProvider;
-  erc20: TERC20;
 begin
-  aap := TAaveAddressesProvider.Create(client);
+  var aap := TAaveAddressesProvider.Create(client);
   if Assigned(aap) then
   try
     aap.GetLendingPoolCore(procedure(core: TAddress; err: IError)
     begin
       if Assigned(err) then
-        callback(nil, err)
-      else
-        UNDERLYING_ADDRESS(client.Chain, reserve, procedure(addr: TAddress; err: IError)
+      begin
+        callback(nil, err);
+        EXIT;
+      end;
+      UNDERLYING_ADDRESS(client.Chain, reserve, procedure(addr: TAddress; err: IError)
+      begin
+        if Assigned(err) then
         begin
-          if Assigned(err) then
-            callback(nil, err)
-          else
+          callback(nil, err);
+          EXIT;
+        end;
+        var erc20 := TERC20.Create(client, addr);
+        if Assigned(erc20) then
+        begin
+          erc20.ApproveEx(from, core, amount, procedure(rcpt: ITxReceipt; err: IError)
           begin
-            erc20 := TERC20.Create(client, addr);
-            if Assigned(erc20) then
-            begin
-              erc20.ApproveEx(from, core, amount, procedure(rcpt: ITxReceipt; err: IError)
-              begin
-                try
-                  callback(rcpt, err);
-                finally
-                  erc20.Free;
-                end;
-              end);
+            try
+              callback(rcpt, err);
+            finally
+              erc20.Free;
             end;
-          end;
-        end);
+          end);
+        end;
+      end);
     end);
   finally
     aap.Free;
@@ -210,7 +209,7 @@ end;
 
 class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := chain in [Mainnet, Ropsten, Kovan];
+  Result := (chain in [Mainnet, Ropsten, Kovan]) and (reserve in [DAI, USDC, USDT]);
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -219,32 +218,29 @@ class procedure TAave.APY(
   reserve : TReserve;
   _period : TPeriod;
   callback: TAsyncFloat);
-var
-  aap : TAaveAddressesProvider;
-  pool: TAaveLendingPool;
 begin
-  aap := TAaveAddressesProvider.Create(client);
+  var aap := TAaveAddressesProvider.Create(client);
   if Assigned(aap) then
   try
     aap.GetLendingPool(procedure(addr: TAddress; err: IError)
     begin
       if Assigned(err) then
-        callback(0, err)
-      else
       begin
-        pool := TAaveLendingPool.Create(client, addr);
-        if Assigned(pool) then
-        try
-          pool.LiquidityRate(reserve, procedure(qty: BigInteger; err: IError)
-          begin
-            if Assigned(err) then
-              callback(0, err)
-            else
-              callback(BigInteger.Divide(qty, BigInteger.Create(1e21)).AsInt64 / 1e4, nil);
-          end);
-        finally
-          pool.Free;
-        end;
+        callback(0, err);
+        EXIT;
+      end;
+      var pool := TAaveLendingPool.Create(client, addr);
+      if Assigned(pool) then
+      try
+        pool.LiquidityRate(reserve, procedure(qty: BigInteger; err: IError)
+        begin
+          if Assigned(err) then
+            callback(0, err)
+          else
+            callback(BigInteger.Divide(qty, BigInteger.Create(1e21)).AsInt64 / 1e4, nil);
+        end);
+      finally
+        pool.Free;
       end;
     end);
   finally
@@ -259,38 +255,35 @@ class procedure TAave.Deposit(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  aap : TAaveAddressesProvider;
-  pool: TAaveLendingPool;
 begin
   // Before supplying an asset, we must first approve the LendingPoolCore contract.
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, err)
-    else
     begin
-      aap := TAaveAddressesProvider.Create(client);
-      if Assigned(aap) then
-      try
-        aap.GetLendingPool(procedure(addr: TAddress; err: IError)
+      callback(nil, err);
+      EXIT;
+    end;
+    var aap := TAaveAddressesProvider.Create(client);
+    if Assigned(aap) then
+    try
+      aap.GetLendingPool(procedure(addr: TAddress; err: IError)
+      begin
+        if Assigned(err) then
         begin
-          if Assigned(err) then
-            callback(nil, err)
-          else
-          begin
-            pool := TAaveLendingPool.Create(client, addr);
-            if Assigned(pool) then
-            try
-              pool.Deposit(from, reserve, amount, callback);
-            finally
-              pool.Free;
-            end;
-          end;
-        end);
-      finally
-        aap.Free;
-      end;
+          callback(nil, err);
+          EXIT;
+        end;
+        var pool := TAaveLendingPool.Create(client, addr);
+        if Assigned(pool) then
+        try
+          pool.Deposit(from, reserve, amount, callback);
+        finally
+          pool.Free;
+        end;
+      end);
+    finally
+      aap.Free;
     end;
   end);
 end;
@@ -301,41 +294,37 @@ class procedure TAave.Balance(
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
-var
-  aAp   : TAaveAddressesProvider;
-  aPool : TAaveLendingPool;
-  aToken: TaToken;
 begin
-  aAp := TAaveAddressesProvider.Create(client);
+  var aAp := TAaveAddressesProvider.Create(client);
   if Assigned(aAp) then
   try
     aAp.GetLendingPool(procedure(addr: TAddress; err: IError)
     begin
       if Assigned(err) then
-        callback(0, err)
-      else
       begin
-        aPool := TAaveLendingPool.Create(client, addr);
-        if Assigned(aPool) then
-        try
-          aPool.aTokenAddress(reserve, procedure(addr: TAddress; err: IError)
+        callback(0, err);
+        EXIT;
+      end;
+      var aPool := TAaveLendingPool.Create(client, addr);
+      if Assigned(aPool) then
+      try
+        aPool.aTokenAddress(reserve, procedure(addr: TAddress; err: IError)
+        begin
+          if Assigned(err) then
           begin
-            if Assigned(err) then
-              callback(0, err)
-            else
-            begin
-              aToken := TaToken.Create(client, addr);
-              if Assigned(aToken) then
-              try
-                aToken.BalanceOf(owner, callback);
-              finally
-                aToken.Free;
-              end;
-            end;
-          end);
-        finally
-          aPool.Free;
-        end;
+            callback(0, err);
+            EXIT;
+          end;
+          var aToken := TaToken.Create(client, addr);
+          if Assigned(aToken) then
+          try
+            aToken.BalanceOf(owner, callback);
+          finally
+            aToken.Free;
+          end;
+        end);
+      finally
+        aPool.Free;
       end;
     end);
   finally
@@ -353,15 +342,17 @@ begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
-      callback(nil, 0, err)
-    else
-      Balance(client, addr, reserve, procedure(amount: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
-          callback(nil, 0, err)
-        else
-          WithdrawEx(client, from, reserve, amount, callback);
-      end);
+    begin
+      callback(nil, 0, err);
+      EXIT;
+    end;
+    Balance(client, addr, reserve, procedure(amount: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, 0, err)
+      else
+        WithdrawEx(client, from, reserve, amount, callback);
+    end);
   end);
 end;
 
@@ -371,50 +362,48 @@ class procedure TAave.WithdrawEx(
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncReceiptEx);
-var
-  aAp   : TAaveAddressesProvider;
-  aPool : TAaveLendingPool;
-  aToken: TaToken;
 begin
-  aAp := TAaveAddressesProvider.Create(client);
+  var aAp := TAaveAddressesProvider.Create(client);
   if Assigned(aAp) then
   try
     aAp.GetLendingPool(procedure(addr: TAddress; err: IError)
     begin
       if Assigned(err) then
-        callback(nil, 0, err)
-      else
       begin
-        aPool := TAaveLendingPool.Create(client, addr);
-        if Assigned(aPool) then
-        try
-          aPool.aTokenAddress(reserve, procedure(addr: TAddress; err: IError)
+        callback(nil, 0, err);
+        EXIT;
+      end;
+      var aPool := TAaveLendingPool.Create(client, addr);
+      if Assigned(aPool) then
+      try
+        aPool.aTokenAddress(reserve, procedure(addr: TAddress; err: IError)
+        begin
+          if Assigned(err) then
           begin
+            callback(nil, 0, err);
+            EXIT;
+          end;
+          var aToken := TaToken.Create(client, addr);
+          if Assigned(aToken) then
+          try
             if Assigned(err) then
-              callback(nil, 0, err)
-            else
             begin
-              aToken := TaToken.Create(client, addr);
-              if Assigned(aToken) then
-              try
-                if Assigned(err) then
-                  callback(nil, 0, err)
-                else
-                  aToken.Redeem(from, amount, procedure(rcpt: ITxReceipt; err: IError)
-                  begin
-                    if Assigned(err) then
-                      callback(nil, 0, err)
-                    else
-                      callback(rcpt, amount, nil);
-                  end);
-              finally
-                aToken.Free;
-              end;
+              callback(nil, 0, err);
+              EXIT;
             end;
-          end);
-        finally
-          aPool.Free;
-        end;
+            aToken.Redeem(from, amount, procedure(rcpt: ITxReceipt; err: IError)
+            begin
+              if Assigned(err) then
+                callback(nil, 0, err)
+              else
+                callback(rcpt, amount, nil);
+            end);
+          finally
+            aToken.Free;
+          end;
+        end);
+      finally
+        aPool.Free;
       end;
     end);
   finally
