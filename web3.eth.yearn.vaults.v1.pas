@@ -79,11 +79,8 @@ type
 implementation
 
 uses
-  // Delphi
-  System.Types,
   // web3
-  web3.eth.yearn.finance,
-  web3.eth.yearn.tools;
+  web3.eth.yearn.finance;
 
 type
   TyDAI = class(TyToken)
@@ -185,39 +182,19 @@ class procedure TyVaultV1.APY(
   reserve : TReserve;
   period  : TPeriod;
   callback: TAsyncFloat);
-
-  function getAPY(addr: TAddress; period: TPeriod; callback: TAsyncFloat): IAsyncResult;
+begin
+  var yToken := yTokenClass[reserve].Create(client);
+  if Assigned(yToken) then
   begin
-    Result := web3.eth.yearn.tools.vault(addr, procedure(vault: IYearnVault; err: IError)
+    yToken.APY(period, procedure(apy: Extended; err: IError)
     begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(vault.APY(period), nil);
+      try
+        callback(apy, err);
+      finally
+        yToken.Free;
+      end;
     end);
   end;
-
-begin
-  getAPY(yTokenClass[reserve].DeployedAt, period, procedure(apy: Extended; err: IError)
-  begin
-    if (apy > 0) and not Assigned(err) then
-    begin
-      callback(apy, err);
-      EXIT;
-    end;
-    var yToken := yTokenClass[reserve].Create(client);
-    if Assigned(yToken) then
-    begin
-      yToken.APY(period, procedure(apy: Extended; err: IError)
-      begin
-        try
-          callback(apy, err);
-        finally
-          yToken.Free;
-        end;
-      end);
-    end;
-  end);
 end;
 
 class procedure TyVaultV1.Deposit(
