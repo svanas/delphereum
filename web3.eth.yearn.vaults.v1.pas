@@ -24,7 +24,7 @@ uses
   web3.eth.types;
 
 type
-  TyVault = class(TLendingProtocol)
+  TyVaultV1 = class(TLendingProtocol)
   protected
     class procedure Approve(
       client  : TWeb3;
@@ -117,9 +117,9 @@ const
     TyMUSD
   );
 
-{ TyVault }
+{ TyVaultV1 }
 
-class procedure TyVault.Approve(
+class procedure TyVaultV1.Approve(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
@@ -140,7 +140,7 @@ begin
   end;
 end;
 
-class procedure TyVault.TokenToUnderlying(
+class procedure TyVaultV1.TokenToUnderlying(
   client  : TWeb3;
   reserve : TReserve;
   amount  : BigInteger;
@@ -155,7 +155,7 @@ begin
   end;
 end;
 
-class procedure TyVault.UnderlyingToToken(
+class procedure TyVaultV1.UnderlyingToToken(
   client  : TWeb3;
   reserve : TReserve;
   amount  : BIgInteger;
@@ -170,17 +170,17 @@ begin
   end;
 end;
 
-class function TyVault.Name: string;
+class function TyVaultV1.Name: string;
 begin
-  Result := 'yVault';
+  Result := 'yVault v1';
 end;
 
-class function TyVault.Supports(chain: TChain; reserve: TReserve): Boolean;
+class function TyVaultV1.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
   Result := (chain = Mainnet) and (Reserve in [DAI, USDC, USDT, mUSD]);
 end;
 
-class procedure TyVault.APY(
+class procedure TyVaultV1.APY(
   client  : TWeb3;
   reserve : TReserve;
   period  : TPeriod;
@@ -220,7 +220,7 @@ begin
   end);
 end;
 
-class procedure TyVault.Deposit(
+class procedure TyVaultV1.Deposit(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
@@ -244,7 +244,7 @@ begin
   end);
 end;
 
-class procedure TyVault.Balance(
+class procedure TyVaultV1.Balance(
   client  : TWeb3;
   owner   : TAddress;
   reserve : TReserve;
@@ -275,7 +275,7 @@ begin
   end;
 end;
 
-class procedure TyVault.Withdraw(
+class procedure TyVaultV1.Withdraw(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
@@ -317,7 +317,7 @@ begin
   end;
 end;
 
-class procedure TyVault.WithdrawEx(
+class procedure TyVaultV1.WithdrawEx(
   client  : TWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
