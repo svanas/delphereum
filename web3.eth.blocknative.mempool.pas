@@ -166,17 +166,18 @@ function TCustomMempool.CreatePayload(
   const eventCode   : string): string;
 const
   NETWORK: array[TChain] of string = (
-    'main',    // Mainnet,
-    'ropsten', // Ropsten
-    'rinkeby', // Rinkeby
-    'goerli',  // Goerli
-    '',        // Optimism
-    '',        // RSK_main_net
-    '',        // RSK_test_net
-    'kovan',   // Kovan
-    '',        // BSC_main_net
-    '',        // BSC_test_net
-    'xdai'     // xDai
+    'main',     // Mainnet,
+    'ropsten',  // Ropsten
+    'rinkeby',  // Rinkeby
+    'kovan',    // Kovan
+    'goerli',   // Goerli
+    '',         // Optimism
+    '',         // Optimism_test_net
+    '',         // RSK_main_net
+    '',         // RSK_test_net
+    'bsc-main', // BSC_main_net
+    '',         // BSC_test_net
+    'xdai'      // xDai
   );
 begin
   Result := Format('{' +

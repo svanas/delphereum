@@ -45,11 +45,12 @@ const
     ('https://eth-mainnet.alchemyapi.io/v2/%s', 'wss://eth-mainnet.ws.alchemyapi.io/v2/%s'), // Mainnet
     ('https://eth-ropsten.alchemyapi.io/v2/%s', 'wss://eth-ropsten.ws.alchemyapi.io/v2/%s'), // Ropsten
     ('https://eth-rinkeby.alchemyapi.io/v2/%s', 'wss://eth-rinkeby.ws.alchemyapi.io/v2/%s'), // Rinkeby
+    ('https://eth-kovan.alchemyapi.io/v2/%s',   'wss://eth-kovan.ws.alchemyapi.io/v2/%s'),   // Kovan
     ('https://eth-goerli.alchemyapi.io/v2/%s',  'wss://eth-goerli.ws.alchemyapi.io/v2/%s'),  // Goerli
     ('', ''),                                                                                // Optimism
+    ('', ''),                                                                                // Optimism_test_net
     ('', ''),                                                                                // RSK_main_net
     ('', ''),                                                                                // RSK_test_net
-    ('https://eth-kovan.alchemyapi.io/v2/%s',   'wss://eth-kovan.ws.alchemyapi.io/v2/%s'),   // Kovan
     ('', ''),                                                                                // BSC_main_net
     ('', ''),                                                                                // BSC_test_net
     ('', '')                                                                                 // xDai

@@ -27,11 +27,12 @@ type
     Mainnet,
     Ropsten,
     Rinkeby,
+    Kovan,
     Goerli,
     Optimism,
+    Optimism_test_net,
     RSK_main_net,
     RSK_test_net,
-    Kovan,
     BSC_main_net,
     BSC_test_net,
     xDai
@@ -220,11 +221,12 @@ const
     1,  // Mainnet
     3,  // Ropsten
     4,  // Rinkeby
+    42, // Kovan
     5,  // Goerli
     10, // Optimism
+    69, // Optimism_test_net
     30, // RSK_main_net
     31, // RSK_test_net
-    42, // Kovan
     56, // BSC_main_net
     97, // BSC_test_net
     100 // xDai
@@ -251,17 +253,18 @@ end;
 function TChainHelper.BlockExplorerURL: string;
 const
   BLOCK_EXPLORER_URL: array[TChain] of string = (
-    'https://etherscan.io',            // Mainnet
-    'https://ropsten.etherscan.io',    // Ropsten
-    'https://rinkeby.etherscan.io',    // Rinkeby
-    'https://goerli.etherscan.io',     // Goerli
-    'https://mainnet.optimism.io',     // Optimism
-    'https://explorer.rsk.co',         // RSK_main_net
-    'https://explorer.testnet.rsk.co', // RSK_test_net
-    'https://kovan.etherscan.io',      // Kovan
-    'https://bscscan.com',             // BSC_main_net
-    'https://testnet.bscscan.com',     // BSC_test_net
-    'https://blockscout.com/poa/xdai'  // xDai
+    'https://etherscan.io',                  // Mainnet
+    'https://ropsten.etherscan.io',          // Ropsten
+    'https://rinkeby.etherscan.io',          // Rinkeby
+    'https://kovan.etherscan.io',            // Kovan
+    'https://goerli.etherscan.io',           // Goerli
+    'https://optimistic.etherscan.io',       // Optimism
+    'https://kovan-optimistic.etherscan.io', // Optimism_test_net
+    'https://explorer.rsk.co',               // RSK_main_net
+    'https://explorer.testnet.rsk.co',       // RSK_test_net
+    'https://bscscan.com',                   // BSC_main_net
+    'https://testnet.bscscan.com',           // BSC_test_net
+    'https://blockscout.com/poa/xdai'        // xDai
   );
 begin
   Result := BLOCK_EXPLORER_URL[Self];
