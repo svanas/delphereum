@@ -24,10 +24,10 @@ uses
 
 type
   IRariStats = interface
-    function TVL          : Extended;
     function StablePoolAPY: Extended;
     function EthPoolAPY   : Extended;
     function YieldPoolAPY : Extended;
+    function DaiPoolAPY   : Extended;
   end;
 
   TAsyncRariStats = reference to procedure(stats: IRariStats; err: IError);
@@ -50,10 +50,10 @@ type
   private
     FJsonObject: TJsonObject;
   public
-    function TVL          : Extended;
     function StablePoolAPY: Extended;
     function EthPoolAPY   : Extended;
     function YieldPoolAPY : Extended;
+    function DaiPoolAPY   : Extended;
     constructor Create(aJsonObject: TJsonObject);
     destructor Destroy; override;
   end;
@@ -71,11 +71,6 @@ begin
   inherited Destroy;
 end;
 
-function TRariStats.TVL: Extended;
-begin
-  Result := getPropAsExt(FJsonObject, 'tvl');
-end;
-
 function TRariStats.StablePoolAPY: Extended;
 begin
   Result := getPropAsExt(FJsonObject, 'stablePoolAPY');
@@ -89,6 +84,11 @@ end;
 function TRariStats.YieldPoolAPY: Extended;
 begin
   Result := getPropAsExt(FJsonObject, 'yieldPoolAPY');
+end;
+
+function TRariStats.DaiPoolAPY: Extended;
+begin
+  Result := getPropAsExt(FJsonObject, 'daiPoolAPY');
 end;
 
 {------------------------------ global functions ------------------------------}
