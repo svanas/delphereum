@@ -22,9 +22,9 @@ Once added to the blockchain, a smart contract becomes public and cannot be modi
 
 A [dapp](https://en.wikipedia.org/wiki/Decentralized_application) is an application whose backend runs on a decentralised network with trustless protocols. Dapps aren’t owned by anyone, cannot be shut down, and have zero downtime.
 
-## What other blockchains does this thing support?
+## What other networks does this thing support?
 
-Delphereum supports [every EVM-compatible blockchain](https://chainlist.org/), including (but not limited to)
+Delphereum supports [every EVM-compatible chain](https://chainlist.org/), including (but not limited to)
 * [Optimism](https://optimism.io/)
 * [RSK](https://www.rsk.co/)
 * [xDai](https://www.xdaichain.com/)
