@@ -36,7 +36,7 @@ type
   TCompound = class(TLendingProtocol)
   protected
     class procedure Approve(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -47,28 +47,28 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       _period : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -96,7 +96,7 @@ type
     function  ListenForLatestBlock: Boolean; override;
     procedure OnLatestBlockMined(log: TLog); override;
   public
-    constructor Create(aClient: TWeb3); reintroduce; overload; virtual; abstract;
+    constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
     procedure APY(callback: TAsyncQuantity);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
@@ -114,17 +114,17 @@ type
 
   TcDAI = class(TcToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    constructor Create(aClient: IWeb3); override;
   end;
 
   TcUSDC = class(TcToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    constructor Create(aClient: IWeb3); override;
   end;
 
   TcUSDT = class(TcToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    constructor Create(aClient: IWeb3); override;
   end;
 
 const
@@ -163,7 +163,7 @@ const
 
 // Approve the cToken contract to move your underlying asset.
 class procedure TCompound.Approve(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -215,7 +215,7 @@ end;
 
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TCompound.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   _period : TPeriod;
   callback: TAsyncFloat);
@@ -237,7 +237,7 @@ end;
 
 // Deposits an underlying asset into the lending pool.
 class procedure TCompound.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -263,7 +263,7 @@ end;
 
 // Returns how much underlying assets you are entitled to.
 class procedure TCompound.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
@@ -279,7 +279,7 @@ end;
 
 // Redeems your balance of cTokens for the underlying asset.
 class procedure TCompound.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -326,7 +326,7 @@ begin
 end;
 
 class procedure TCompound.WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -480,7 +480,7 @@ end;
 
 { TcDAI }
 
-constructor TcDAI.Create(aClient: TWeb3);
+constructor TcDAI.Create(aClient: IWeb3);
 begin
   // https://compound.finance/docs#networks
   case aClient.Chain of
@@ -499,7 +499,7 @@ end;
 
 { TcUSDC }
 
-constructor TcUSDC.Create(aClient: TWeb3);
+constructor TcUSDC.Create(aClient: IWeb3);
 begin
   // https://compound.finance/docs#networks
   case aClient.Chain of
@@ -518,7 +518,7 @@ end;
 
 { TcUSDT }
 
-constructor TcUSDT.Create(aClient: TWeb3);
+constructor TcUSDT.Create(aClient: IWeb3);
 begin
   // https://compound.finance/docs#networks
   case aClient.Chain of

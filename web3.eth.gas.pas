@@ -28,17 +28,17 @@ uses
   web3.json,
   web3.json.rpc;
 
-procedure getGasPrice(client: TWeb3; callback: TAsyncQuantity);
+procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity);
 
 procedure estimateGas(
-  client    : TWeb3;
+  client    : IWeb3;
   from, &to : TAddress;
   const func: string;
   args      : array of const;
   default   : TWei;
   callback  : TAsyncQuantity); overload;
 procedure estimateGas(
-  client    : TWeb3;
+  client    : IWeb3;
   from, &to : TAddress;
   const data: string;
   default   : TWei;
@@ -46,7 +46,7 @@ procedure estimateGas(
 
 implementation
 
-procedure getGasPrice(client: TWeb3; callback: TAsyncQuantity);
+procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity);
 var
   info: TGasStationInfo;
 begin
@@ -60,7 +60,7 @@ begin
 
   if (info.apiKey = '') and (info.Speed = Average) then
   begin
-    client.JsonRpc.Send(client.URL, client.Security, 'eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
+    client.Call('eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
     begin
       if Assigned(err) then
         callback(0, err)
@@ -86,7 +86,7 @@ begin
 end;
 
 procedure estimateGas(
-  client    : TWeb3;
+  client    : IWeb3;
   from, &to : TAddress;
   const func: string;
   args      : array of const;
@@ -97,7 +97,7 @@ begin
 end;
 
 procedure estimateGas(
-  client    : TWeb3;
+  client    : IWeb3;
   from, &to : TAddress;
   const data: string;
   default   : TWei;
@@ -115,7 +115,7 @@ begin
   )) as TJsonObject;
   try
     // estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
-    client.JsonRpc.Send(client.URL, client.Security, 'eth_estimateGas', [obj], procedure(resp: TJsonObject; err: IError)
+    client.Call('eth_estimateGas', [obj], procedure(resp: TJsonObject; err: IError)
     begin
       if Assigned(err) then
       begin

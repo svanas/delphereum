@@ -36,15 +36,15 @@ type
       reserve : TReserve;
       callback: TAsyncAddress);
     class procedure UNDERLYING_TO_TOKEN(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       callback: TAsyncAddress);
     class procedure TOKEN_TO_UNDERLYING(
-      client  : TWeb3;
+      client  : IWeb3;
       atoken  : TAddress;
       callback: TAsyncAddress);
     class procedure Approve(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -55,28 +55,28 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       _period : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -111,7 +111,7 @@ type
 type
   TAaveLendingPoolAddressesProvider = class(TCustomContract)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     procedure GetLendingPool(callback: TAsyncAddress);
     procedure GetAddress(id: TBytes32; callback: TAsyncAddress);
     procedure GetProtocolDataProvider(callback: TAsyncAddress);
@@ -161,7 +161,7 @@ begin
 end;
 
 class procedure TAave.UNDERLYING_TO_TOKEN(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   callback: TAsyncAddress);
 begin
@@ -198,7 +198,7 @@ begin
 end;
 
 class procedure TAave.TOKEN_TO_UNDERLYING(
-  client  : TWeb3;
+  client  : IWeb3;
   atoken  : TAddress;
   callback: TAsyncAddress);
 begin
@@ -211,7 +211,7 @@ begin
 end;
 
 class procedure TAave.Approve(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -264,7 +264,7 @@ begin
 end;
 
 class procedure TAave.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   _period : TPeriod;
   callback: TAsyncFloat);
@@ -301,7 +301,7 @@ begin
 end;
 
 class procedure TAave.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -340,7 +340,7 @@ begin
 end;
 
 class procedure TAave.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
@@ -363,7 +363,7 @@ begin
 end;
 
 class procedure TAave.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -388,7 +388,7 @@ begin
 end;
 
 class procedure TAave.WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -530,7 +530,7 @@ end;
 
 { TAaveLendingPoolAddressesProvider }
 
-constructor TAaveLendingPoolAddressesProvider.Create(aClient: TWeb3);
+constructor TAaveLendingPoolAddressesProvider.Create(aClient: IWeb3);
 begin
   if aClient.Chain = Mainnet then
     inherited Create(aClient, '0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5')

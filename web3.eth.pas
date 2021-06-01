@@ -34,39 +34,39 @@ const
   ADDRESS_ZERO: TAddress = '0x0000000000000000000000000000000000000000';
   BYTES32_ZERO: TBytes32 = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
-function  blockNumber(client: TWeb3): BigInteger; overload;               // blocking
-procedure blockNumber(client: TWeb3; callback: TAsyncQuantity); overload; // async
+function  blockNumber(client: IWeb3): BigInteger; overload;               // blocking
+procedure blockNumber(client: IWeb3; callback: TAsyncQuantity); overload; // async
 
-procedure getBalance(client: TWeb3; address: TAddress; callback: TAsyncQuantity); overload;
-procedure getBalance(client: TWeb3; address: TAddress; const block: string; callback: TAsyncQuantity); overload;
+procedure getBalance(client: IWeb3; address: TAddress; callback: TAsyncQuantity); overload;
+procedure getBalance(client: IWeb3; address: TAddress; const block: string; callback: TAsyncQuantity); overload;
 
-procedure getTransactionCount(client: TWeb3; address: TAddress; callback: TAsyncQuantity); overload;
-procedure getTransactionCount(client: TWeb3; address: TAddress; const block: string; callback: TAsyncQuantity); overload;
+procedure getTransactionCount(client: IWeb3; address: TAddress; callback: TAsyncQuantity); overload;
+procedure getTransactionCount(client: IWeb3; address: TAddress; const block: string; callback: TAsyncQuantity); overload;
 
-procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncString); overload;
-procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncString); overload;
-procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString); overload;
-procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString); overload;
+procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncString); overload;
+procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncString); overload;
+procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString); overload;
+procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString); overload;
 
-procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity); overload;
-procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity); overload;
-procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity); overload;
-procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity); overload;
+procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity); overload;
+procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity); overload;
+procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity); overload;
+procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity); overload;
 
-procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean); overload;
-procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean); overload;
-procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean); overload;
-procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean); overload;
+procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean); overload;
+procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean); overload;
+procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean); overload;
+procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean); overload;
 
-procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes32); overload;
-procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes32); overload;
-procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32); overload;
-procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32); overload;
+procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes32); overload;
+procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes32); overload;
+procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32); overload;
+procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32); overload;
 
-procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple); overload;
-procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple); overload;
-procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple); overload;
-procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple); overload;
+procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple); overload;
+procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple); overload;
+procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple); overload;
+procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple); overload;
 
 function sign(privateKey: TPrivateKey; const msg: string): TSignature;
 
@@ -74,7 +74,7 @@ function sign(privateKey: TPrivateKey; const msg: string): TSignature;
 // default to the median gas price from the latest blocks.
 // default to a 600,000 gas limit.
 procedure write(
-  client    : TWeb3;
+  client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   const func: string;
@@ -84,7 +84,7 @@ procedure write(
 // transact with a non-payable function.
 // default to the median gas price from the latest blocks.
 procedure write(
-  client    : TWeb3;
+  client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   const func: string;
@@ -96,7 +96,7 @@ procedure write(
 // default to the median gas price from the latest blocks.
 // default to a 600,000 gas limit.
 procedure write(
-  client    : TWeb3;
+  client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   value     : TWei;
@@ -107,7 +107,7 @@ procedure write(
 // transact with a payable function.
 // default to the median gas price from the latest blocks.
 procedure write(
-  client    : TWeb3;
+  client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   value     : TWei;
@@ -117,7 +117,7 @@ procedure write(
   callback  : TAsyncReceipt); overload;
 
 procedure write(
-  client    : TWeb3;
+  client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   value     : TWei;
@@ -128,7 +128,7 @@ procedure write(
   callback  : TAsyncReceipt); overload;
 
 procedure write(
-  client      : TWeb3;
+  client      : IWeb3;
   from        : TPrivateKey;
   &to         : TAddress;
   value       : TWei;
@@ -157,11 +157,11 @@ uses
   web3.json.rpc,
   web3.utils;
 
-function blockNumber(client: TWeb3): BigInteger;
+function blockNumber(client: IWeb3): BigInteger;
 var
   obj: TJsonObject;
 begin
-  obj := client.JsonRpc.Send(client.URL, client.Security, 'eth_blockNumber', []);
+  obj := client.Call('eth_blockNumber', []);
   if Assigned(obj) then
   try
     Result := web3.json.getPropAsStr(obj, 'result');
@@ -170,9 +170,9 @@ begin
   end;
 end;
 
-procedure blockNumber(client: TWeb3; callback: TAsyncQuantity);
+procedure blockNumber(client: IWeb3; callback: TAsyncQuantity);
 begin
-  client.JsonRpc.Send(client.URL, client.Security, 'eth_blockNumber', [], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_blockNumber', [], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -181,14 +181,14 @@ begin
   end);
 end;
 
-procedure getBalance(client: TWeb3; address: TAddress; callback: TAsyncQuantity);
+procedure getBalance(client: IWeb3; address: TAddress; callback: TAsyncQuantity);
 begin
   getBalance(client, address, BLOCK_LATEST, callback);
 end;
 
-procedure getBalance(client: TWeb3; address: TAddress; const block: string; callback: TAsyncQuantity);
+procedure getBalance(client: IWeb3; address: TAddress; const block: string; callback: TAsyncQuantity);
 begin
-  client.JsonRpc.Send(client.URL, client.Security, 'eth_getBalance', [address, block], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_getBalance', [address, block], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -197,15 +197,15 @@ begin
   end);
 end;
 
-procedure getTransactionCount(client: TWeb3; address: TAddress; callback: TAsyncQuantity);
+procedure getTransactionCount(client: IWeb3; address: TAddress; callback: TAsyncQuantity);
 begin
   getTransactionCount(client, address, BLOCK_LATEST, callback);
 end;
 
 // returns the number of transations *sent* from an address
-procedure getTransactionCount(client: TWeb3; address: TAddress; const block: string; callback: TAsyncQuantity);
+procedure getTransactionCount(client: IWeb3; address: TAddress; const block: string; callback: TAsyncQuantity);
 begin
-  client.JsonRpc.Send(client.URL, client.Security, 'eth_getTransactionCount', [address, block], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_getTransactionCount', [address, block], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
@@ -214,22 +214,22 @@ begin
   end);
 end;
 
-procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncString);
+procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncString);
 begin
   call(client, ADDRESS_ZERO, &to, func, args, callback);
 end;
 
-procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncString);
+procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncString);
 begin
   call(client, from, &to, func, BLOCK_LATEST, args, callback);
 end;
 
-procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString);
+procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString);
 begin
   call(client, ADDRESS_ZERO, &to, func, block, args, callback);
 end;
 
-procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString);
+procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString);
 var
   abi: string;
   obj: TJsonObject;
@@ -246,7 +246,7 @@ begin
   )) as TJsonObject;
   try
     // step #3: execute a message call (without creating a transaction on the blockchain)
-    client.JsonRpc.Send(client.URL, client.Security, 'eth_call', [obj, block], procedure(resp: TJsonObject; err: IError)
+    client.Call('eth_call', [obj, block], procedure(resp: TJsonObject; err: IError)
     begin
       if Assigned(err) then
         callback('', err)
@@ -258,22 +258,22 @@ begin
   end;
 end;
 
-procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
+procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
 begin
   call(client, ADDRESS_ZERO, &to, func, args, callback);
 end;
 
-procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
+procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
 begin
   call(client, from, &to, func, BLOCK_LATEST, args, callback);
 end;
 
-procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity);
+procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity);
 begin
   call(client, ADDRESS_ZERO, &to, func, block, args, callback);
 end;
 
-procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity);
+procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity);
 begin
   call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
   var
@@ -295,22 +295,22 @@ begin
   end);
 end;
 
-procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean);
+procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean);
 begin
   call(client, ADDRESS_ZERO, &to, func, args, callback);
 end;
 
-procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean);
+procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean);
 begin
   call(client, from, &to, func, BLOCK_LATEST, args, callback);
 end;
 
-procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean);
+procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean);
 begin
   call(client, ADDRESS_ZERO, &to, func, block, args, callback);
 end;
 
-procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean);
+procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean);
 begin
   call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
   var
@@ -326,22 +326,22 @@ begin
   end);
 end;
 
-procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes32);
+procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes32);
 begin
   call(client, ADDRESS_ZERO, &to, func, args, callback);
 end;
 
-procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes32);
+procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes32);
 begin
   call(client, from, &to, func, BLOCK_LATEST, args, callback);
 end;
 
-procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32);
+procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32);
 begin
   call(client, ADDRESS_ZERO, &to, func, block, args, callback);
 end;
 
-procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32);
+procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32);
 begin
   call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
   var
@@ -364,22 +364,22 @@ begin
   end);
 end;
 
-procedure call(client: TWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple);
+procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple);
 begin
   call(client, ADDRESS_ZERO, &to, func, args, callback);
 end;
 
-procedure call(client: TWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple);
+procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple);
 begin
   call(client, from, &to, func, BLOCK_LATEST, args, callback);
 end;
 
-procedure call(client: TWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple);
+procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple);
 begin
   call(client, ADDRESS_ZERO, &to, func, block, args, callback);
 end;
 
-procedure call(client: TWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple);
+procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple);
 begin
   call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
   begin
@@ -420,7 +420,7 @@ begin
 end;
 
 procedure write(
-  client    : TWeb3;
+  client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   const func: string;
@@ -431,7 +431,7 @@ begin
 end;
 
 procedure write(
-  client    : TWeb3;
+  client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   const func: string;
@@ -443,7 +443,7 @@ begin
 end;
 
 procedure write(
-  client    : TWeb3;
+  client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   value     : TWei;
@@ -455,7 +455,7 @@ begin
 end;
 
 procedure write(
-  client    : TWeb3;
+  client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   value     : TWei;
@@ -491,7 +491,7 @@ begin
 end;
 
 procedure write(
-  client    : TWeb3;
+  client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   value     : TWei;
@@ -522,7 +522,7 @@ begin
 end;
 
 procedure write(
-  client      : TWeb3;
+  client      : IWeb3;
   from        : TPrivateKey;
   &to         : TAddress;
   value       : TWei;

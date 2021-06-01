@@ -17,37 +17,50 @@ interface
 
 uses
   // Delphi
+  System.JSON,
   System.SysUtils,
   // web3
   web3,
   web3.json.rpc;
 
 type
-  TJsonRpcWebSockets = class abstract(TCustomJsonRpc, IPubSub)
-  strict private
+  TJsonRpcWebSocket = class abstract(TCustomJsonRpc, IPubSub)
+  strict protected
     FOnError: TAsyncError;
     FOnDisconnect: TProc;
-    procedure SetOnError(Value: TAsyncError);
-    procedure SetOnDisconnect(Value: TProc);
-  strict protected
-    property OnError: TAsyncError read FOnError write SetOnError;
-    property OnDisconnect: TProc read FOnDisconnect write SetOnDisconnect;
   public
+    function Call(
+      const URL   : string;
+      security    : TSecurity;
+      const method: string;
+      args        : array of const): TJsonObject; overload; virtual; abstract;
+    procedure Call(
+      const URL   : string;
+      security    : TSecurity;
+      const method: string;
+      args        : array of const;
+      callback    : TAsyncJsonObject); overload; virtual; abstract;
+
     procedure Subscribe(const subscription: string; callback: TAsyncJsonObject); virtual; abstract;
     procedure Unsubscribe(const subscription: string); virtual; abstract;
     procedure Disconnect; virtual; abstract;
+
+    function OnError(Value: TAsyncError): IPubSub;
+    function OnDisconnect(Value: TProc): IPubSub;
   end;
 
 implementation
 
-procedure TJsonRpcWebSockets.SetOnError(Value: TAsyncError);
+function TJsonRpcWebSocket.OnError(Value: TAsyncError): IPubSub;
 begin
-  FOnError := Value;
+  Self.FOnError := Value;
+  Result := Self;
 end;
 
-procedure TJsonRpcWebSockets.SetOnDisconnect(Value: TProc);
+function TJsonRpcWebSocket.OnDisconnect(Value: TProc): IPubSub;
 begin
-  FOnDisconnect := Value;
+  Self.FOnDisconnect := Value;
+  Result := Self;
 end;
 
 end.

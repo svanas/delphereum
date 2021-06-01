@@ -32,7 +32,7 @@ type
   TCallbacks     = TCriticalDictionary<Int64, TAsyncJsonObject>;
   TSubscriptions = TCriticalDictionary<string, TAsyncJsonObject>;
 
-  TJsonRpcSgcWebSockets = class(TJsonRpcWebSockets)
+  TJsonRpcSgcWebSocket = class(TJsonRpcWebSocket)
   strict private
     FClient        : TsgcWebSocketClient;
     FCallbacks     : TCallbacks;
@@ -51,12 +51,12 @@ type
     property Subscriptions: TSubscriptions read GetSubscriptions;
   public
     destructor Destroy; override;
-    function Send(
+    function Call(
       const URL   : string;
       security    : TSecurity;
       const method: string;
       args        : array of const): TJsonObject; overload; override;
-    procedure Send(
+    procedure Call(
       const URL   : string;
       security    : TSecurity;
       const method: string;
@@ -74,9 +74,9 @@ uses
   web3.json,
   web3.json.rpc;
 
-{ TJsonRpcSgcWebSockets }
+{ TJsonRpcSgcWebSocket }
 
-function TJsonRpcSgcWebSockets.GetClient(const URL: string; Security: TSecurity): TsgcWebSocketClient;
+function TJsonRpcSgcWebSocket.GetClient(const URL: string; Security: TSecurity): TsgcWebSocketClient;
 begin
   if not Assigned(FClient) then
   begin
@@ -112,19 +112,19 @@ begin
   Result := FClient;
 end;
 
-function TJsonRpcSgcWebSockets.GetCallbacks: TCallbacks;
+function TJsonRpcSgcWebSocket.GetCallbacks: TCallbacks;
 begin
   if not Assigned(FCallbacks) then FCallbacks := TCallbacks.Create;
   Result := FCallbacks;
 end;
 
-function TJsonRpcSgcWebSockets.GetSubscriptions: TSubscriptions;
+function TJsonRpcSgcWebSocket.GetSubscriptions: TSubscriptions;
 begin
   if not Assigned(FSubscriptions) then FSubscriptions := TSubscriptions.Create;
   Result := FSubscriptions;
 end;
 
-destructor TJsonRpcSgcWebSockets.Destroy;
+destructor TJsonRpcSgcWebSocket.Destroy;
 begin
   if Assigned(FSubscriptions) then
   try
@@ -150,7 +150,7 @@ begin
   inherited Destroy;
 end;
 
-function TJsonRpcSgcWebSockets.TryJsonRpcError(const Text: string): Boolean;
+function TJsonRpcSgcWebSocket.TryJsonRpcError(const Text: string): Boolean;
 var
   response: TJsonValue;
   error   : TJsonObject;
@@ -208,7 +208,7 @@ begin
   end;
 end;
 
-procedure TJsonRpcSgcWebSockets.DoMessage(Conn: TsgcWsConnection; const Text: string);
+procedure TJsonRpcSgcWebSocket.DoMessage(Conn: TsgcWsConnection; const Text: string);
 var
   response: TJsonValue;
   callback: TAsyncJsonObject;
@@ -221,7 +221,7 @@ begin
 
   if not Assigned(response) then
   begin
-    if Assigned(OnError) then OnError(TError.Create(Text));
+    if Assigned(FOnError) then FOnError(TError.Create(Text));
     EXIT;
   end;
 
@@ -248,26 +248,26 @@ begin
   end;
 end;
 
-procedure TJsonRpcSgcWebSockets.DoError(Conn: TsgcWsConnection; const Error: string);
+procedure TJsonRpcSgcWebSocket.DoError(Conn: TsgcWsConnection; const Error: string);
 begin
   if TryJsonRpcError(Error) then
     EXIT;
-  if Assigned(OnError) then OnError(TError.Create(Error));
+  if Assigned(FOnError) then FOnError(TError.Create(Error));
 end;
 
-procedure TJsonRpcSgcWebSockets.DoException(Conn: TsgcWsConnection; E: Exception);
+procedure TJsonRpcSgcWebSocket.DoException(Conn: TsgcWsConnection; E: Exception);
 begin
   if TryJsonRpcError(E.Message) then
     EXIT;
-  if Assigned(OnError) then OnError(TError.Create(E.Message));
+  if Assigned(FOnError) then FOnError(TError.Create(E.Message));
 end;
 
-procedure TJsonRpcSgcWebSockets.DoDisconnect(Conn: TsgcWsConnection; Code: Integer);
+procedure TJsonRpcSgcWebSocket.DoDisconnect(Conn: TsgcWsConnection; Code: Integer);
 begin
-  if Assigned(OnDisconnect) then OnDisconnect;
+  if Assigned(FOnDisconnect) then FOnDisconnect;
 end;
 
-function TJsonRpcSgcWebSockets.Send(
+function TJsonRpcSgcWebSocket.Call(
   const URL   : string;
   security    : TSecurity;
   const method: string;
@@ -277,7 +277,7 @@ var
   error: TJsonObject;
 begin
   Result := nil;
-  resp := web3.json.unmarshal(Client[URL, security].WriteAndWaitData(GetPayload(method, args)));
+  resp := web3.json.unmarshal(Client[URL, security].WriteAndWaitData(CreatePayload(method, args)));
   if Assigned(resp) then
   try
     // did we receive an error? then translate that into an exception
@@ -293,7 +293,7 @@ begin
   end;
 end;
 
-procedure TJsonRpcSgcWebSockets.Send(
+procedure TJsonRpcSgcWebSocket.Call(
   const URL   : string;
   security    : TSecurity;
   const method: string;
@@ -312,14 +312,14 @@ begin
     finally
       Callbacks.Leave;
     end;
-    PL := GetPayload(ID, method, args);
+    PL := CreatePayload(ID, method, args);
   finally
     Self.ID.Leave;
   end;
   Client[URL, security].WriteData(PL);
 end;
 
-procedure TJsonRpcSgcWebSockets.Subscribe(const subscription: string; callback: TAsyncJsonObject);
+procedure TJsonRpcSgcWebSocket.Subscribe(const subscription: string; callback: TAsyncJsonObject);
 begin
   Subscriptions.Enter;
   try
@@ -329,7 +329,7 @@ begin
   end;
 end;
 
-procedure TJsonRpcSgcWebSockets.Unsubscribe(const subscription: string);
+procedure TJsonRpcSgcWebSocket.Unsubscribe(const subscription: string);
 begin
   Subscriptions.Enter;
   try
@@ -339,7 +339,7 @@ begin
   end;
 end;
 
-procedure TJsonRpcSgcWebSockets.Disconnect;
+procedure TJsonRpcSgcWebSocket.Disconnect;
 begin
   if Assigned(FClient) and FClient.Active then FClient.Disconnect;
 end;

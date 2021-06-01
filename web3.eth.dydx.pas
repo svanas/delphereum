@@ -37,11 +37,11 @@ type
   TdYdX = class(TLendingProtocol)
   protected
     class procedure TokenAddress(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       callback: TAsyncAddress);
     class procedure Approve(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -52,28 +52,28 @@ type
       chain   : TChain;
       reserve : TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       _period : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -139,7 +139,7 @@ type
         -1, // USDT
         -1  // mUSD
       );
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     procedure GetAccountWei(owner: TAddress; marketId: Integer; callback: TAsyncQuantity);
     procedure GetEarningsRate(callback: TAsyncFloat);
     procedure GetMarket(marketId: Integer; callback: TAsyncSoloMarket);
@@ -178,7 +178,7 @@ const
 
 // Returns contract address of the associated ERC20 token
 class procedure TdYdX.TokenAddress(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   callback: TAsyncAddress);
 begin
@@ -199,7 +199,7 @@ end;
 
 // Approve the Solo contract to move your tokens.
 class procedure TdYdX.Approve(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -239,7 +239,7 @@ end;
 
 // Returns the annual yield as a percentage.
 class procedure TdYdX.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   _period : TPeriod;
   callback: TAsyncFloat);
@@ -264,7 +264,7 @@ begin
 end;
 
 class procedure TdYdX.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -289,7 +289,7 @@ begin
 end;
 
 class procedure TdYdX.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
@@ -304,7 +304,7 @@ begin
 end;
 
 class procedure TdYdX.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -327,7 +327,7 @@ begin
 end;
 
 class procedure TdYdX.WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -417,7 +417,7 @@ end;
 
 { TSoloMargin }
 
-constructor TSoloMargin.Create(aClient: TWeb3);
+constructor TSoloMargin.Create(aClient: IWeb3);
 begin
   inherited Create(aClient, TSoloMargin.DeployedAt(aClient.Chain));
 end;

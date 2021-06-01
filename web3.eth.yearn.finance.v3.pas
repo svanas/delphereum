@@ -32,28 +32,28 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       period  : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -99,7 +99,7 @@ begin
 end;
 
 class procedure TyEarnV3.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   period  : TPeriod;
   callback: TAsyncFloat);
@@ -108,7 +108,7 @@ begin
 end;
 
 class procedure TyEarnV3.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -118,7 +118,7 @@ begin
 end;
 
 class procedure TyEarnV3.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
@@ -127,7 +127,7 @@ begin
 end;
 
 class procedure TyEarnV3.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -136,7 +136,7 @@ begin
 end;
 
 class procedure TyEarnV3.WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;

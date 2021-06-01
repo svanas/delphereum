@@ -79,7 +79,7 @@ type
     function  ListenForLatestBlock: Boolean; virtual;
     procedure OnLatestBlockMined(log: TLog); virtual;
   public
-    constructor Create(aClient: TWeb3; aContract: TAddress); override;
+    constructor Create(aClient: IWeb3; aContract: TAddress); override;
     destructor  Destroy; override;
 
     //------- read from contract -----------------------------------------------
@@ -121,7 +121,7 @@ implementation
 
 { TERC20 }
 
-constructor TERC20.Create(aClient: TWeb3; aContract: TAddress);
+constructor TERC20.Create(aClient: IWeb3; aContract: TAddress);
 begin
   inherited Create(aClient, aContract);
   FTask := web3.eth.logs.get(aClient, aContract, OnLatestBlockMined);

@@ -36,7 +36,7 @@ type
   );
 
 procedure subscribe(
-  client      : TWeb3;
+  client      : IWeb3Ex;
   subscription: TSubscription;
   callback    : TAsyncString;     // one-time callback (subscribed, or a JSON-RPC error)
   notification: TAsyncJsonObject; // continuous notifications (or a JSON-RPC error)
@@ -44,9 +44,9 @@ procedure subscribe(
   onDisconnect: TProc);           // connection closed
 
 procedure unsubscribe(
-  client            : TWeb3;
-  const subscription: string;         // as returned by the eth_subscribe callback
-  callback          : TAsyncBoolean); // true if successful, otherwise false
+  client   : IWeb3Ex;
+  const sub: string;         // as returned by the eth_subscribe callback
+  callback : TAsyncBoolean); // true if successful, otherwise false
 
 function blockNumber(notification: TJsonObject): BigInteger;
 
@@ -74,27 +74,19 @@ end;
 {---------------------------------- globals -----------------------------------}
 
 procedure subscribe(
-  client      : TWeb3;
+  client      : IWeb3Ex;
   subscription: TSubscription;
   callback    : TAsyncString;
   notification: TAsyncJsonObject;
   onError     : TAsyncError;
   onDisconnect: TProc);
 var
-  pubSub: IPubSub;
   result: string;
 begin
-  pubSub := client.PubSub;
-  if not Assigned(pubSub) then
-  begin
-    callback('', TError.Create('not a WebSocket'));
-    EXIT;
-  end;
+  client.OnError(onError);
+  client.OnDisconnect(onDisconnect);
 
-  pubSub.OnError      := onError;
-  pubSub.OnDisconnect := onDisconnect;
-
-  client.JsonRpc.Send(client.URL, client.Security, 'eth_subscribe', [subscription.ToString], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_subscribe', [subscription.ToString], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -105,18 +97,18 @@ begin
     result := web3.json.getPropAsStr(resp, 'result');
     callback(result, nil);
 
-    pubSub.Subscribe(result, notification);
+    client.Subscribe(result, notification);
   end);
 end;
 
 procedure unsubscribe(
-  client            : TWeb3;
-  const subscription: string;
-  callback          : TAsyncBoolean);
+  client   : IWeb3Ex;
+  const sub: string;
+  callback : TAsyncBoolean);
 var
   result: Boolean;
 begin
-  client.JsonRpc.Send(client.URL, client.Security, 'eth_unsubscribe', [subscription], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_unsubscribe', [sub], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -128,7 +120,7 @@ begin
     callback(result, nil);
 
     if result then
-      client.PubSub.Unsubscribe(subscription);
+      client.Unsubscribe(sub);
   end);
 end;
 

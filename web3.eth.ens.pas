@@ -21,9 +21,9 @@ uses
   web3.eth.types;
 
 function  namehash(const name: string): string;
-procedure resolver(client: TWeb3; const name: string; callback: TAsyncAddress);
-procedure addr    (client: TWeb3; const name: string; callback: TAsyncAddress);
-procedure reverse (client: TWeb3; addr: TAddress; callback: TAsyncString);
+procedure resolver(client: IWeb3; const name: string; callback: TAsyncAddress);
+procedure addr    (client: IWeb3; const name: string; callback: TAsyncAddress);
+procedure reverse (client: IWeb3; addr: TAddress; callback: TAsyncString);
 
 implementation
 
@@ -65,7 +65,7 @@ begin
   Result := web3.utils.toHex(node);
 end;
 
-procedure resolver(client: TWeb3; const name: string; callback: TAsyncAddress);
+procedure resolver(client: IWeb3; const name: string; callback: TAsyncAddress);
 begin
   web3.eth.call(client, ENS_REGISTRY, 'resolver(bytes32)', [namehash(name)], procedure(const hex: string; err: IError)
   begin
@@ -76,7 +76,7 @@ begin
   end);
 end;
 
-procedure addr(client: TWeb3; const name: string; callback: TAsyncAddress);
+procedure addr(client: IWeb3; const name: string; callback: TAsyncAddress);
 begin
   resolver(client, name, procedure(resolver: TAddress; err: IError)
   begin
@@ -93,7 +93,7 @@ begin
   end);
 end;
 
-procedure reverse(client: TWeb3; addr: TAddress; callback: TAsyncString);
+procedure reverse(client: IWeb3; addr: TAddress; callback: TAsyncString);
 var
   name: string;
 begin

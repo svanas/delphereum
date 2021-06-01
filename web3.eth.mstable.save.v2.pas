@@ -32,28 +32,28 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       _reserve: TReserve;
       period  : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       _reserve: TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -63,7 +63,7 @@ type
 type
   TimUSD = class(TERC20)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     procedure APY(period: TPeriod; callback: TAsyncFloat);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
     procedure ExchangeRate(const block: string; callback: TAsyncQuantity);
@@ -90,7 +90,7 @@ begin
 end;
 
 class procedure TmStable.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   _reserve: TReserve;
   period  : TPeriod;
   callback: TAsyncFloat);
@@ -110,7 +110,7 @@ begin
 end;
 
 class procedure TmStable.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -120,7 +120,7 @@ begin
 end;
 
 class procedure TmStable.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   _reserve: TReserve;
   callback: TAsyncQuantity);
@@ -134,7 +134,7 @@ begin
 end;
 
 class procedure TmStable.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -143,7 +143,7 @@ begin
 end;
 
 class procedure TmStable.WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -154,7 +154,7 @@ end;
 
 { TimUSD }
 
-constructor TimUSD.Create(aClient: TWeb3);
+constructor TimUSD.Create(aClient: IWeb3);
 begin
   inherited Create(aClient, '0x30647a72dc82d7fbb1123ea74716ab8a317eac19');
 end;

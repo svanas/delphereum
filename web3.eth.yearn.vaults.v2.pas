@@ -29,23 +29,23 @@ type
   TyVaultV2 = class(TLendingProtocol)
   protected
     class procedure Approve(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt);
     class procedure TokenToUnderlyingAmount(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncQuantity);
     class procedure UnderlyingToTokenAmount(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncQuantity);
     class procedure UnderlyingToTokenAddress(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       callback: TAsyncAddress);
   public
@@ -54,28 +54,28 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       period  : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -89,7 +89,7 @@ type
 
   TyVaultRegistry = class(TCustomContract)
   public
-    class procedure Create(client: TWeb3; callback: TAsyncRegistry); reintroduce;
+    class procedure Create(client: IWeb3; callback: TAsyncRegistry); reintroduce;
     procedure LatestVault(reserve: TAddress; callback: TAsyncAddress);
   end;
 
@@ -121,7 +121,7 @@ uses
 { TyVaultV2 }
 
 class procedure TyVaultV2.Approve(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -150,7 +150,7 @@ begin
 end;
 
 class procedure TyVaultV2.TokenToUnderlyingAmount(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncQuantity);
@@ -177,7 +177,7 @@ begin
 end;
 
 class procedure TyVaultV2.UnderlyingToTokenAmount(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   amount  : BIgInteger;
   callback: TAsyncQuantity);
@@ -204,7 +204,7 @@ begin
 end;
 
 class procedure TyVaultV2.UnderlyingToTokenAddress(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   callback: TAsyncAddress);
 begin
@@ -232,7 +232,7 @@ begin
 end;
 
 class procedure TyVaultV2.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   period  : TPeriod;
   callback: TAsyncFloat);
@@ -267,7 +267,7 @@ begin
 end;
 
 class procedure TyVaultV2.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -298,7 +298,7 @@ begin
 end;
 
 class procedure TyVaultV2.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
@@ -336,7 +336,7 @@ begin
 end;
 
 class procedure TyVaultV2.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -386,7 +386,7 @@ begin
 end;
 
 class procedure TyVaultV2.WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -427,7 +427,7 @@ end;
 
 { TyVaultRegistry }
 
-class procedure TyVaultRegistry.Create(client: TWeb3; callback: TAsyncRegistry);
+class procedure TyVaultRegistry.Create(client: IWeb3; callback: TAsyncRegistry);
 begin
   TAddress.New(client, 'v2.registry.ychad.eth', procedure(addr: TAddress; err: IError)
   begin

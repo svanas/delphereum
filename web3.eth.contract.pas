@@ -21,17 +21,17 @@ uses
 
 type
   ICustomContract = interface
-    function Client  : TWeb3;
+    function Client  : IWeb3;
     function Contract: TAddress;
   end;
 
   TCustomContract = class abstract(TInterfacedObject, ICustomContract)
   strict private
-    FClient  : TWeb3;
+    FClient  : IWeb3;
     FContract: TAddress;
   public
-    constructor Create(aClient: TWeb3; aContract: TAddress); virtual;
-    function Client  : TWeb3;
+    constructor Create(aClient: IWeb3; aContract: TAddress); virtual;
+    function Client  : IWeb3;
     function Contract: TAddress;
   end;
 
@@ -39,14 +39,14 @@ implementation
 
 { TCustomContract }
 
-constructor TCustomContract.Create(aClient: TWeb3; aContract: TAddress);
+constructor TCustomContract.Create(aClient: IWeb3; aContract: TAddress);
 begin
   inherited Create;
   FClient   := aClient;
   FContract := aContract;
 end;
 
-function TCustomContract.Client: TWeb3;
+function TCustomContract.Client: IWeb3;
 begin
   Result := FClient;
 end;

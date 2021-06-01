@@ -29,7 +29,7 @@ uses
 type
   TGasToken = class abstract(TERC20)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     // Address on mainnet where this token is deployed
     class function DeployedAt: TAddress; virtual; abstract;
     // Estimate the number of gas units needed for Mint
@@ -59,7 +59,7 @@ implementation
 
 { TGasToken }
 
-constructor TGasToken.Create(aClient: TWeb3);
+constructor TGasToken.Create(aClient: IWeb3);
 begin
   inherited Create(aClient, Self.DeployedAt);
 end;

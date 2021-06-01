@@ -27,18 +27,18 @@ type
   TyVaultV1 = class(TLendingProtocol)
   protected
     class procedure Approve(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt);
     class procedure TokenToUnderlying(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncQuantity);
     class procedure UnderlyingToToken(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncQuantity);
@@ -48,28 +48,28 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       period  : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -117,7 +117,7 @@ const
 { TyVaultV1 }
 
 class procedure TyVaultV1.Approve(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -138,7 +138,7 @@ begin
 end;
 
 class procedure TyVaultV1.TokenToUnderlying(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncQuantity);
@@ -153,7 +153,7 @@ begin
 end;
 
 class procedure TyVaultV1.UnderlyingToToken(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   amount  : BIgInteger;
   callback: TAsyncQuantity);
@@ -178,7 +178,7 @@ begin
 end;
 
 class procedure TyVaultV1.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   period  : TPeriod;
   callback: TAsyncFloat);
@@ -198,7 +198,7 @@ begin
 end;
 
 class procedure TyVaultV1.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -222,7 +222,7 @@ begin
 end;
 
 class procedure TyVaultV1.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
@@ -253,7 +253,7 @@ begin
 end;
 
 class procedure TyVaultV1.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -295,7 +295,7 @@ begin
 end;
 
 class procedure TyVaultV1.WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;

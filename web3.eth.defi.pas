@@ -32,7 +32,7 @@ type
     function  Address : TAddress;
     function  Scale(amount: Extended): BigInteger;
     function  Unscale(amount: BigInteger): Extended;
-    procedure BalanceOf(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
+    procedure BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
   end;
 
   TPeriod = (oneDay, threeDays, oneWeek, oneMonth);
@@ -53,31 +53,31 @@ type
       reserve: TReserve): Boolean; virtual; abstract;
     // Returns the annual yield as a percentage with 4 decimals.
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       period  : TPeriod;
       callback: TAsyncFloat); virtual; abstract;
     // Deposits an underlying asset into the lending pool.
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); virtual; abstract;
     // Returns how much underlying assets you are entitled to.
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); virtual; abstract;
     // Withdraws your underlying asset from the lending pool.
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); virtual; abstract;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -166,7 +166,7 @@ begin
   Result := amount.AsExtended / Self.Decimals;
 end;
 
-procedure TReserveHelper.BalanceOf(client: TWeb3; owner: TAddress; callback: TAsyncQuantity);
+procedure TReserveHelper.BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
 var
   erc20: TERC20;
 begin

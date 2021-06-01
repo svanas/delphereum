@@ -38,7 +38,7 @@ uses
 type
   TFactory = class(TCustomContract)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     procedure GetPair(tokenA, tokenB: TAddress; callback: TAsyncAddress);
   end;
 
@@ -62,7 +62,7 @@ type
       deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
       callback    : TAsyncReceipt); overload;
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     procedure WETH(callback: TAsyncAddress);
     procedure SwapExactTokensForETH(
       owner       : TPrivateKey; // Sender of the token, and recipient of the ETH.
@@ -95,7 +95,7 @@ implementation
 
 { TFactory }
 
-constructor TFactory.Create(aClient: TWeb3);
+constructor TFactory.Create(aClient: IWeb3);
 begin
   inherited Create(aClient, '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f');
 end;
@@ -124,7 +124,7 @@ end;
 
 { TRouter02 }
 
-constructor TRouter02.Create(aClient: TWeb3);
+constructor TRouter02.Create(aClient: IWeb3);
 begin
   inherited Create(aClient, '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D');
 end;

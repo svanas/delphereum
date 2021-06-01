@@ -46,7 +46,7 @@ type
 type
   TAsyncLog = reference to procedure(log: TLog);
 
-function get(client: TWeb3; address: TAddress; callback: TAsyncLog): ITask;
+function get(client: IWeb3; address: TAddress; callback: TAsyncLog): ITask;
 
 implementation
 
@@ -137,7 +137,7 @@ end;
 
 { private functions }
 
-function getAsArr(client: TWeb3; fromBlock: BigInteger; address: TAddress): TJsonArray;
+function getAsArr(client: IWeb3; fromBlock: BigInteger; address: TAddress): TJsonArray;
 var
   &in : TJsonObject;
   &out: TJsonObject;
@@ -152,7 +152,7 @@ begin
     ]
   )) as TJsonObject;
   try
-    &out := client.JsonRpc.Send(client.URL, client.Security, 'eth_getLogs', [&in]);
+    &out := client.Call('eth_getLogs', [&in]);
     if Assigned(&out) then
     try
       arr := web3.json.getPropAsArr(&out, 'result');
@@ -166,7 +166,7 @@ begin
   end;
 end;
 
-function getAsLog(client: TWeb3; fromBlock: BigInteger; address: TAddress): TLogs;
+function getAsLog(client: IWeb3; fromBlock: BigInteger; address: TAddress): TLogs;
 var
   arr : TJsonArray;
   itm : TJsonValue;
@@ -188,7 +188,7 @@ end;
 
 { public functions }
 
-function get(client: TWeb3; address: TAddress; callback: TAsyncLog): ITask;
+function get(client: IWeb3; address: TAddress; callback: TAsyncLog): ITask;
 begin
   Result := TTask.Create(procedure
   var

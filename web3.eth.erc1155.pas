@@ -126,7 +126,7 @@ type
   protected
     procedure WatchOrStop; virtual;
   public
-    constructor Create(aClient: TWeb3; aContract: TAddress); override;
+    constructor Create(aClient: IWeb3; aContract: TAddress); override;
     destructor  Destroy; override;
     // Transfers `value` amount of an `id` from the `owner` address to the `to` address specified (with safety call).
     procedure SafeTransferFrom(
@@ -198,7 +198,7 @@ uses
 
 { TERC1155}
 
-constructor TERC1155.Create(aClient: TWeb3; aContract: TAddress);
+constructor TERC1155.Create(aClient: IWeb3; aContract: TAddress);
 begin
   inherited Create(aClient, aContract);
 

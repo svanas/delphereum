@@ -29,7 +29,7 @@ type
   TOrigin = class(TLendingProtocol)
   protected
     class procedure Approve(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -40,28 +40,28 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       _reserve: TReserve;
       period  : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       _reserve: TReserve;
       amount  : BigInteger;
@@ -71,7 +71,7 @@ type
 type
   TOriginVault = class(TCustomContract)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     class function DeployedAt: TAddress;
     procedure Mint(
       from    : TPrivateKey;
@@ -87,7 +87,7 @@ type
 type
   TOriginDollar = class(TERC20)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     procedure RebasingCreditsPerToken(const block: string; callback: TAsyncQuantity);
     procedure APY(period: TPeriod; callback: TAsyncFloat);
   end;
@@ -103,7 +103,7 @@ uses
 { TOrigin }
 
 class procedure TOrigin.Approve(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -134,7 +134,7 @@ begin
 end;
 
 class procedure TOrigin.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   _reserve: TReserve;
   period  : TPeriod;
   callback: TAsyncFloat);
@@ -154,7 +154,7 @@ begin
 end;
 
 class procedure TOrigin.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -177,7 +177,7 @@ begin
 end;
 
 class procedure TOrigin.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
@@ -200,7 +200,7 @@ begin
 end;
 
 class procedure TOrigin.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -215,7 +215,7 @@ begin
 end;
 
 class procedure TOrigin.WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   _reserve: TReserve;
   amount  : BigInteger;
@@ -237,7 +237,7 @@ end;
 
 { TOriginVault }
 
-constructor TOriginVault.Create(aClient: TWeb3);
+constructor TOriginVault.Create(aClient: IWeb3);
 begin
   inherited Create(aClient, Self.DeployedAt);
 end;
@@ -287,7 +287,7 @@ end;
 
 { TOriginDollar }
 
-constructor TOriginDollar.Create(aClient: TWeb3);
+constructor TOriginDollar.Create(aClient: IWeb3);
 begin
   inherited Create(aClient, '0x2A8e1E676Ec238d8A992307B495b45B3fEAa5e86');
 end;

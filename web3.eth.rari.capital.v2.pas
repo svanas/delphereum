@@ -32,7 +32,7 @@ type
   TRari = class(TLendingProtocol)
   protected
     class procedure Approve(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -43,28 +43,28 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       period  : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      _client : TWeb3;
+      _client : IWeb3;
       _from   : TPrivateKey;
       _reserve: TReserve;
       _amount : BigInteger;
@@ -73,7 +73,7 @@ type
 
   TCustomRariPoolManager = class abstract(TCustomContract)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     // Address where this manager is deployed.
     class function DeployedAt: TAddress; virtual; abstract;
     // Address where the pool token is deployed.
@@ -143,7 +143,7 @@ const
 { TRari }
 
 class procedure TRari.Approve(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -174,7 +174,7 @@ begin
 end;
 
 class procedure TRari.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   period  : TPeriod;
   callback: TAsyncFloat);
@@ -222,7 +222,7 @@ begin
 end;
 
 class procedure TRari.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -245,7 +245,7 @@ begin
 end;
 
 class procedure TRari.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
@@ -269,7 +269,7 @@ begin
 end;
 
 class procedure TRari.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -333,7 +333,7 @@ begin
 end;
 
 class procedure TRari.WithdrawEx(
-  _client : TWeb3;
+  _client : IWeb3;
   _from   : TPrivateKey;
   _reserve: TReserve;
   _amount : BigInteger;
@@ -344,7 +344,7 @@ end;
 
 { TCustomRariPoolManager }
 
-constructor TCustomRariPoolManager.Create(aClient: TWeb3);
+constructor TCustomRariPoolManager.Create(aClient: IWeb3);
 begin
   inherited Create(aClient, Self.DeployedAt);
 end;

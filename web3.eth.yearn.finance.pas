@@ -33,50 +33,50 @@ type
   TyEarnCustom = class abstract(TLendingProtocol)
   strict private
     class procedure Approve(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       yToken  : TyTokenClass;
       amount  : BigInteger;
       callback: TAsyncReceipt);
     class procedure BalanceOf(
-      client  : TWeb3;
+      client  : IWeb3;
       yToken  : TyTokenClass;
       owner   : TAddress;
       callback: TAsyncQuantity);
     class procedure TokenToUnderlying(
-      client  : TWeb3;
+      client  : IWeb3;
       yToken  : TyTokenClass;
       amount  : BigInteger;
       callback: TAsyncQuantity);
     class procedure UnderlyingToToken(
-      client  : TWeb3;
+      client  : IWeb3;
       yToken  : TyTokenClass;
       amount  : BigInteger;
       callback: TAsyncQuantity);
   strict protected
     class procedure _APY(
-      client  : TWeb3;
+      client  : IWeb3;
       yToken  : TyTokenClass;
       period  : TPeriod;
       callback: TAsyncFloat);
     class procedure _Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       yToken  : TyTokenClass;
       amount  : BigInteger;
       callback: TAsyncReceipt);
     class procedure _Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       yToken  : TyTokenClass;
       callback: TAsyncQuantity);
     class procedure _Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       yToken  : TyTokenClass;
       callback: TAsyncReceiptEx);
     class procedure _WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       yToken  : TyTokenClass;
       amount  : BigInteger;
@@ -85,7 +85,7 @@ type
 
   TyToken = class abstract(TERC20)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     //------- read from contract -----------------------------------------------
     procedure Token(callback: TAsyncAddress);
     procedure GetPricePerFullShare(const block: string; callback: TAsyncQuantity);
@@ -109,7 +109,7 @@ uses
 { TyEarnCustom }
 
 class procedure TyEarnCustom.Approve(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   yToken  : TyTokenClass;
   amount  : BigInteger;
@@ -132,7 +132,7 @@ begin
 end;
 
 class procedure TyEarnCustom.BalanceOf(
-  client  : TWeb3;
+  client  : IWeb3;
   yToken  : TyTokenClass;
   owner   : TAddress;
   callback: TAsyncQuantity);
@@ -148,7 +148,7 @@ begin
 end;
 
 class procedure TyEarnCustom.TokenToUnderlying(
-  client  : TWeb3;
+  client  : IWeb3;
   yToken  : TyTokenClass;
   amount  : BigInteger;
   callback: TAsyncQuantity);
@@ -164,7 +164,7 @@ begin
 end;
 
 class procedure TyEarnCustom.UnderlyingToToken(
-  client  : TWeb3;
+  client  : IWeb3;
   yToken  : TyTokenClass;
   amount  : BIgInteger;
   callback: TAsyncQuantity);
@@ -180,7 +180,7 @@ begin
 end;
 
 class procedure TyEarnCustom._APY(
-  client  : TWeb3;
+  client  : IWeb3;
   yToken  : TyTokenClass;
   period  : TPeriod;
   callback: TAsyncFloat);
@@ -202,7 +202,7 @@ begin
 end;
 
 class procedure TyEarnCustom._Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   yToken  : TyTokenClass;
   amount  : BigInteger;
@@ -227,7 +227,7 @@ begin
 end;
 
 class procedure TyEarnCustom._Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   yToken  : TyTokenClass;
   callback: TAsyncQuantity);
@@ -257,7 +257,7 @@ begin
 end;
 
 class procedure TyEarnCustom._Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   yToken  : TyTokenClass;
   callback: TAsyncReceiptEx);
@@ -302,7 +302,7 @@ begin
 end;
 
 class procedure TyEarnCustom._WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   yToken  : TyTokenClass;
   amount  : BigInteger;
@@ -336,7 +336,7 @@ end;
 
 { TyToken }
 
-constructor TyToken.Create(aClient: TWeb3);
+constructor TyToken.Create(aClient: IWeb3);
 begin
   inherited Create(aClient, Self.DeployedAt);
 end;

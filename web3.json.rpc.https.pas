@@ -24,21 +24,19 @@ uses
   web3.json.rpc;
 
 type
-  TJsonRpcHttps = class(TCustomJsonRpc)
+  TJsonRpcHttps = class(TCustomJsonRpc, IJsonRpc)
   strict private
     FThrottler: IThrottler;
   public
-    function Send(
+    function Call(
       const URL   : string;
-      security    : TSecurity;
       const method: string;
-      args        : array of const): TJsonObject; overload; override;
-    procedure Send(
+      args        : array of const): TJsonObject; overload;
+    procedure Call(
       const URL   : string;
-      security    : TSecurity;
       const method: string;
       args        : array of const;
-      callback    : TAsyncJsonObject); overload; override;
+      callback    : TAsyncJsonObject); overload;
     constructor Create; overload;
     constructor Create(const throttler: IThrottler); overload;
   end;
@@ -66,9 +64,8 @@ begin
   FThrottler := throttler;
 end;
 
-function TJsonRpcHttps.Send(
+function TJsonRpcHttps.Call(
   const URL   : string;
-  security    : TSecurity;
   const method: string;
   args        : array of const): TJsonObject;
 var
@@ -77,7 +74,7 @@ var
   error : TJsonObject;
 begin
   Result := nil;
-  source := TStringStream.Create(GetPayload(method, args));
+  source := TStringStream.Create(CreatePayload(method, args));
   try
     web3.http.post(
       URL,
@@ -103,9 +100,8 @@ begin
   end;
 end;
 
-procedure TJsonRpcHttps.Send(
+procedure TJsonRpcHttps.Call(
   const URL   : string;
-  security    : TSecurity;
   const method: string;
   args        : array of const;
   callback    : TAsyncJsonObject);
@@ -136,7 +132,7 @@ begin
       callback(resp, nil);
   end;
 
-  payload := GetPayload(method, args);
+  payload := CreatePayload(method, args);
   headers := [TNetHeader.Create('Content-Type', 'application/json')];
 
   if Assigned(FThrottler) then

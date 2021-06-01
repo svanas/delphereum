@@ -30,10 +30,10 @@ type
 
   TEthUsd = class(TAggregatorV3)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
   end;
 
-procedure eth_usd(client: TWeb3; callback: TAsyncFloat);
+procedure eth_usd(client: IWeb3; callback: TAsyncFloat);
 
 implementation
 
@@ -45,7 +45,7 @@ uses
   // web3
   web3.coincap;
 
-procedure eth_usd(client: TWeb3; callback: TAsyncFloat);
+procedure eth_usd(client: IWeb3; callback: TAsyncFloat);
 var
   EthUsd: TEthUsd;
 begin
@@ -108,7 +108,7 @@ end;
 
 { TEthUsd}
 
-constructor TEthUsd.Create(aClient: TWeb3);
+constructor TEthUsd.Create(aClient: IWeb3);
 begin
   case aClient.Chain of
     Mainnet:

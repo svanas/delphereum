@@ -40,18 +40,18 @@ type
   TFulcrum = class(TLendingProtocol)
   protected
     class procedure Approve(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt);
     class procedure TokenToUnderlying(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncQuantity);
     class procedure UnderlyingToToken(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncQuantity);
@@ -61,28 +61,28 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       _period : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -112,7 +112,7 @@ type
     function  ListenForLatestBlock: Boolean; override;
     procedure OnLatestBlockMined(log: TLog); override;
   public
-    constructor Create(aClient: TWeb3); reintroduce; overload; virtual; abstract;
+    constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
     procedure AssetBalanceOf(owner: TAddress; callback: TAsyncQuantity);
     procedure LoanTokenAddress(callback: TAsyncAddress);
@@ -128,17 +128,17 @@ type
 
   TiDAI = class(TiToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    constructor Create(aClient: IWeb3); override;
   end;
 
   TiUSDC = class(TiToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    constructor Create(aClient: IWeb3); override;
   end;
 
   TiUSDT = class(TiToken)
   public
-    constructor Create(aClient: TWeb3); override;
+    constructor Create(aClient: IWeb3); override;
   end;
 
 implementation
@@ -163,7 +163,7 @@ const
 
 // Approve the iToken contract to move your underlying asset.
 class procedure TFulcrum.Approve(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -200,7 +200,7 @@ begin
 end;
 
 class procedure TFulcrum.TokenToUnderlying(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   amount  : BigInteger;
   callback: TAsyncQuantity);
@@ -221,7 +221,7 @@ begin
 end;
 
 class procedure TFulcrum.UnderlyingToToken(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   amount  : BIgInteger;
   callback: TAsyncQuantity);
@@ -253,7 +253,7 @@ end;
 
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TFulcrum.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   _period : TPeriod;
   callback: TAsyncFloat);
@@ -275,7 +275,7 @@ end;
 
 // Deposits an underlying asset into the lending pool.
 class procedure TFulcrum.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -301,7 +301,7 @@ end;
 
 // Returns how much underlying assets you are entitled to.
 class procedure TFulcrum.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
@@ -352,7 +352,7 @@ end;
 
 // Redeems your balance of iTokens for the underlying asset.
 class procedure TFulcrum.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -401,7 +401,7 @@ begin
 end;
 
 class procedure TFulcrum.WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -540,7 +540,7 @@ end;
 
 { TiDAI }
 
-constructor TiDAI.Create(aClient: TWeb3);
+constructor TiDAI.Create(aClient: IWeb3);
 begin
   // https://bzx.network/itokens
   if aClient.Chain = Mainnet then
@@ -554,7 +554,7 @@ end;
 
 { TiUSDC }
 
-constructor TiUSDC.Create(aClient: TWeb3);
+constructor TiUSDC.Create(aClient: IWeb3);
 begin
   // https://bzx.network/itokens
   if aClient.Chain = Mainnet then
@@ -568,7 +568,7 @@ end;
 
 { TiUSDT }
 
-constructor TiUSDT.Create(aClient: TWeb3);
+constructor TiUSDT.Create(aClient: IWeb3);
 begin
   // https://bzx.network/itokens
   if aClient.Chain = Mainnet then

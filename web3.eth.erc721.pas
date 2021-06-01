@@ -140,7 +140,7 @@ type
   protected
     procedure WatchOrStop; virtual;
   public
-    constructor Create(aClient: TWeb3; aContract: TAddress); override;
+    constructor Create(aClient: IWeb3; aContract: TAddress); override;
     destructor  Destroy; override;
     // IERC721
     procedure BalanceOf(
@@ -194,7 +194,7 @@ implementation
 
 { TERC721}
 
-constructor TERC721.Create(aClient: TWeb3; aContract: TAddress);
+constructor TERC721.Create(aClient: IWeb3; aContract: TAddress);
 begin
   inherited Create(aClient, aContract);
 

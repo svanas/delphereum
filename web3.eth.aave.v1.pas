@@ -44,7 +44,7 @@ type
       reserve : TReserve;
       callback: TAsyncAddress);
     class procedure Approve(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -55,28 +55,28 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : TWeb3;
+      client  : IWeb3;
       reserve : TReserve;
       _period : TPeriod;
       callback: TAsyncFloat); override;
     class procedure Deposit(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
       callback: TAsyncReceipt); override;
     class procedure Balance(
-      client  : TWeb3;
+      client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
       callback: TAsyncQuantity); override;
     class procedure Withdraw(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       callback: TAsyncReceiptEx); override;
     class procedure WithdrawEx(
-      client  : TWeb3;
+      client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
@@ -86,7 +86,7 @@ type
   // Global addresses register of the protocol. This contract is immutable and the address will never change.
   TAaveAddressesProvider = class(TCustomContract)
   public
-    constructor Create(aClient: TWeb3); reintroduce;
+    constructor Create(aClient: IWeb3); reintroduce;
     procedure GetLendingPool(callback: TAsyncAddress);
     procedure GetLendingPoolCore(callback: TAsyncAddress);
   end;
@@ -160,7 +160,7 @@ end;
 
 // Approve the LendingPoolCore contract to move your asset.
 class procedure TAave.Approve(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -214,7 +214,7 @@ end;
 
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TAave.APY(
-  client  : TWeb3;
+  client  : IWeb3;
   reserve : TReserve;
   _period : TPeriod;
   callback: TAsyncFloat);
@@ -250,7 +250,7 @@ end;
 
 // Global helper function that deposits an underlying asset into the reserve.
 class procedure TAave.Deposit(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -290,7 +290,7 @@ end;
 
 // Returns how much underlying assets you are entitled to.
 class procedure TAave.Balance(
-  client  : TWeb3;
+  client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
   callback: TAsyncQuantity);
@@ -334,7 +334,7 @@ end;
 
 // Global helper function that redeems your balance of aTokens for the underlying asset.
 class procedure TAave.Withdraw(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   callback: TAsyncReceiptEx);
@@ -357,7 +357,7 @@ begin
 end;
 
 class procedure TAave.WithdrawEx(
-  client  : TWeb3;
+  client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
@@ -413,7 +413,7 @@ end;
 
 { TAaveAddressesProvider }
 
-constructor TAaveAddressesProvider.Create(aClient: TWeb3);
+constructor TAaveAddressesProvider.Create(aClient: IWeb3);
 begin
   // https://docs.aave.com/developers/developing-on-aave/deployed-contract-instances
   if aClient.Chain = Mainnet then

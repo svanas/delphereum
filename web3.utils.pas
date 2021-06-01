@@ -52,7 +52,7 @@ function fromHex(hex: string): TBytes;
 
 function  sha3(const hex: string): TBytes; overload;
 function  sha3(const buf: TBytes): TBytes; overload;
-procedure sha3(client: TWeb3; const hex: string; callback: TAsyncString); overload;
+procedure sha3(client: IWeb3; const hex: string; callback: TAsyncString); overload;
 
 implementation
 
@@ -223,9 +223,9 @@ begin
   end;
 end;
 
-procedure sha3(client: TWeb3; const hex: string; callback: TAsyncString);
+procedure sha3(client: IWeb3; const hex: string; callback: TAsyncString);
 begin
-  client.JsonRpc.Send(client.URL, client.Security, 'web3_sha3', [hex], procedure(resp: TJsonObject; err: IError)
+  client.Call('web3_sha3', [hex], procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback('', err)

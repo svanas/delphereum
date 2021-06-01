@@ -91,7 +91,7 @@ type
   TAsyncContractABI = reference to procedure(abi: IContractABI; err: IError);
 
 procedure getBlockNumberByTimestamp(
-  client      : TWeb3;
+  client      : IWeb3;
   timestamp   : TUnixDateTime;
   callback    : TAsyncQuantity); overload;
 procedure getBlockNumberByTimestamp(
@@ -101,7 +101,7 @@ procedure getBlockNumberByTimestamp(
   callback    : TAsyncQuantity); overload;
 
 procedure getErc20TransferEvents(
-  client      : TWeb3;
+  client      : IWeb3;
   address     : TAddress;
   callback    : TAsyncErc20TransferEvents); overload;
 procedure getErc20TransferEvents(
@@ -111,7 +111,7 @@ procedure getErc20TransferEvents(
   callback    : TAsyncErc20TransferEvents); overload;
 
 procedure getContractABI(
-  client      : TWeb3;
+  client      : IWeb3;
   contract    : TAddress;
   callback    : TAsyncContractABI); overload;
 procedure getContractABI(
@@ -563,7 +563,7 @@ end;
 {------------------------------ global functions ------------------------------}
 
 procedure getBlockNumberByTimestamp(
-  client   : TWeb3;
+  client   : IWeb3;
   timestamp: TUnixDateTime;
   callback : TAsyncQuantity);
 begin
@@ -600,7 +600,7 @@ begin
 end;
 
 procedure getErc20TransferEvents(
-  client  : TWeb3;
+  client  : IWeb3;
   address : TAddress;
   callback: TAsyncErc20TransferEvents);
 begin
@@ -646,7 +646,7 @@ begin
 end;
 
 procedure getContractABI(
-  client  : TWeb3;
+  client  : IWeb3;
   contract: TAddress;
   callback: TAsyncContractABI);
 begin

@@ -46,7 +46,7 @@ type
     function Code: Integer;
   end;
 
-  TCustomJsonRpc = class abstract(TInterfacedObject, IProtocol, IJsonRpc)
+  TCustomJsonRpc = class abstract(TInterfacedObject)
   strict private
     class var
       _ID: ICriticalInt64;
@@ -54,25 +54,13 @@ type
     class function ID: ICriticalInt64;
     class function FormatArgs(args: array of const): string;
 
-    class function GetPayload(
+    class function CreatePayload(
       const method: string;
       args        : array of const): string; overload;
-    class function GetPayload(
+    class function CreatePayload(
       ID          : Int64;
       const method: string;
       args        : array of const): string; overload;
-  public
-    function Send(
-      const URL   : string;
-      security    : TSecurity;
-      const method: string;
-      args        : array of const): TJsonObject; overload; virtual; abstract;
-    procedure Send(
-      const URL   : string;
-      security    : TSecurity;
-      const method: string;
-      args        : array of const;
-      callback    : TAsyncJsonObject); overload; virtual; abstract;
   end;
 
 implementation
@@ -137,17 +125,17 @@ begin
   end;
 end;
 
-class function TCustomJsonRpc.GetPayload(const method: string; args: array of const): string;
+class function TCustomJsonRpc.CreatePayload(const method: string; args: array of const): string;
 begin
   ID.Enter;
   try
-    Result := GetPayload(ID.Inc, method, args);
+    Result := CreatePayload(ID.Inc, method, args);
   finally
     ID.Leave;
   end;
 end;
 
-class function TCustomJsonRpc.GetPayload(ID: Int64; const method: string; args: array of const): string;
+class function TCustomJsonRpc.CreatePayload(ID: Int64; const method: string; args: array of const): string;
 begin
   Result := Format(
     '{"jsonrpc": "2.0", "method": %s, "params": %s, "id": %d}',
