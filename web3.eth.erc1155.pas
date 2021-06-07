@@ -68,18 +68,18 @@ type
   IERC1155TokenReceiver = interface
     // Handle the receipt of a single ERC1155 token type.
     procedure OnERC1155Received(
-      &operator: TAddress;     // The address which initiated the transfer (i.e. msg.sender)
-      from     : TAddress;     // The address which previously owned the token
-      id       : BigInteger;   // The ID of the token being transferred
-      value    : BigInteger;   // The amount of tokens being transferred
-      callback : TAsyncBytes); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
+      &operator: TAddress;       // The address which initiated the transfer (i.e. msg.sender)
+      from     : TAddress;       // The address which previously owned the token
+      id       : BigInteger;     // The ID of the token being transferred
+      value    : BigInteger;     // The amount of tokens being transferred
+      callback : TAsyncBytes32); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
     // Handle the receipt of multiple ERC1155 token types.
     procedure OnERC1155BatchReceived(
       &operator: TAddress;            // The address which initiated the batch transfer (i.e. msg.sender)
       from     : TAddress;            // The address which previously owned the token
       IDs      : array of BigInteger; // An array containing ids of each token being transferred (order and length must match _values array)
       values   : array of BigInteger; // An array containing amounts of each token being transferred (order and length must match _ids array)
-      callback : TAsyncBytes);        // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
+      callback : TAsyncBytes32);      // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
   end;
 
   IERC1155Metadata_URI = interface
@@ -165,18 +165,18 @@ type
       callback : TAsyncBoolean); // True if the operator is approved, False if not
     // Handle the receipt of a single ERC1155 token type.
     procedure OnERC1155Received(
-      &operator: TAddress;     // The address which initiated the transfer (i.e. msg.sender)
-      from     : TAddress;     // The address which previously owned the token
-      id       : BigInteger;   // The ID of the token being transferred
-      value    : BigInteger;   // The amount of tokens being transferred
-      callback : TAsyncBytes); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
+      &operator: TAddress;       // The address which initiated the transfer (i.e. msg.sender)
+      from     : TAddress;       // The address which previously owned the token
+      id       : BigInteger;     // The ID of the token being transferred
+      value    : BigInteger;     // The amount of tokens being transferred
+      callback : TAsyncBytes32); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
     // Handle the receipt of multiple ERC1155 token types.
     procedure OnERC1155BatchReceived(
       &operator: TAddress;            // The address which initiated the batch transfer (i.e. msg.sender)
       from     : TAddress;            // The address which previously owned the token
       IDs      : array of BigInteger; // An array containing ids of each token being transferred (order and length must match _values array)
       values   : array of BigInteger; // An array containing amounts of each token being transferred (order and length must match _ids array)
-      callback : TAsyncBytes);        // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
+      callback : TAsyncBytes32);      // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
     // A distinct Uniform Resource Identifier (URI) for a given token.
     procedure URI(
       id      : BigInteger;    // ID of the token
@@ -386,11 +386,11 @@ end;
 
 // Handle the receipt of a single ERC1155 token type.
 procedure TERC1155.OnERC1155Received(
-  &operator: TAddress;     // The address which initiated the transfer (i.e. msg.sender)
-  from     : TAddress;     // The address which previously owned the token
-  id       : BigInteger;   // The ID of the token being transferred
-  value    : BigInteger;   // The amount of tokens being transferred
-  callback : TAsyncBytes); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
+  &operator: TAddress;       // The address which initiated the transfer (i.e. msg.sender)
+  from     : TAddress;       // The address which previously owned the token
+  id       : BigInteger;     // The ID of the token being transferred
+  value    : BigInteger;     // The amount of tokens being transferred
+  callback : TAsyncBytes32); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
 begin
   web3.eth.call(
     Self.Client,
@@ -407,7 +407,7 @@ procedure TERC1155.OnERC1155BatchReceived(
   from     : TAddress;            // The address which previously owned the token
   IDs      : array of BigInteger; // An array containing ids of each token being transferred (order and length must match _values array)
   values   : array of BigInteger; // An array containing amounts of each token being transferred (order and length must match _ids array)
-  callback : TAsyncBytes);        // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
+  callback : TAsyncBytes32);      // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
 begin
   web3.eth.call(
     Self.Client,

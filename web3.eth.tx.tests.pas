@@ -16,20 +16,29 @@ unit web3.eth.tx.tests;
 interface
 
 uses
+  // DUnitX
+  DUnitX.TestFramework;
+
+type
+  [TestFixture]
+  TTests = class
+  public
+    [Test]
+    procedure TestCase1;
+  end;
+
+implementation
+
+uses
   // Delphi
   System.SysUtils,
   // web3
   web3,
-  web3.eth.tx,
-  web3.utils;
+  web3.eth.tx;
 
-function testCase1: Boolean;
-
-implementation
-
-function testCase1: Boolean;
+procedure TTests.TestCase1;
 begin
-  Result :=
+  Assert.AreEqual(
     web3.eth.tx.signTransaction(
       Mainnet,
       9,
@@ -39,7 +48,12 @@ begin
       '',
       20000000000,
       21000
-    ).ToLower = '0xf86c098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a76400008025a028ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa636276a067cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83';
+    ).ToLower,
+    '0xf86c098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a76400008025a028ef61340bd939bc2195fe537567866003e1a15d3c71ff63e1590620aa636276a067cbe9d8997f761aecb703304b3800ccf555c9f3dc64214b297fb1966a3b6d83'
+  );
 end;
+
+initialization
+  TDUnitX.RegisterTestFixture(TTests);
 
 end.
