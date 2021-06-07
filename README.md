@@ -24,7 +24,8 @@ A [dapp](https://en.wikipedia.org/wiki/Decentralized_application) is an applicat
 
 ## What other networks does this thing support?
 
-Delphereum supports [every EVM-compatible chain](https://chainlist.org/), including (but not limited to)
+Delphereum supports [every EVM-compatible network](https://chainlist.org/), including (but not limited to)
+* [Arbitrum](https://arbitrum.io/)
 * [Optimism](https://optimism.io/)
 * [RSK](https://www.rsk.co/)
 * [xDai](https://www.xdaichain.com/)
