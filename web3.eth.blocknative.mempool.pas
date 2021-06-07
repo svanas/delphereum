@@ -177,7 +177,8 @@ const
     '',         // RSK_test_net
     'bsc-main', // BSC_main_net
     '',         // BSC_test_net
-    'xdai'      // xDai
+    'xdai',     // xDai
+    ''          // Arbitrum
   );
 begin
   Result := Format('{' +

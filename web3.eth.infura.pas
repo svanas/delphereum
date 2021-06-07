@@ -53,7 +53,8 @@ const
     ('', ''),                                                                // RSK_test_net
     ('', ''),                                                                // BSC_main_net
     ('', ''),                                                                // BSC_test_net
-    ('', '')                                                                 // xDai
+    ('', ''),                                                                // xDai
+    ('', '')                                                                 // Arbitrum
   );
 begin
   Result := ENDPOINT[chain][protocol];

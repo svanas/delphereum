@@ -147,7 +147,8 @@ const
     '',                                                        // RSK_test_net
     'https://api.bscscan.com/api?apikey=%s',                   // BSC_main_net
     'https://api-testnet.bscscan.com/api?apikey=%s',           // BSC_test_net
-    ''                                                         // xDai
+    '',                                                        // xDai
+    ''                                                         // Arbitrum
   );
 begin
   Result := ENDPOINT[chain];
