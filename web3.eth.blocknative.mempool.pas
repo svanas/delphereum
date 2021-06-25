@@ -173,12 +173,13 @@ const
     'goerli',   // Goerli
     '',         // Optimism
     '',         // Optimism_test_net
-    '',         // RSK_main_net
+    '',         // RSK
     '',         // RSK_test_net
-    'bsc-main', // BSC_main_net
+    'bsc-main', // BSC
     '',         // BSC_test_net
     'xdai',     // xDai
-    ''          // Arbitrum
+    '',         // Arbitrum
+    ''          // Arbitrum_test_net
   );
 begin
   Result := Format('{' +

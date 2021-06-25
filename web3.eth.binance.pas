@@ -32,7 +32,7 @@ uses
 
 function endpoint(chain: TChain): string;
 begin
-  if chain = BSC_main_net then
+  if chain = BSC then
     Result := 'https://bsc-dataseed.binance.org/'
   else if chain = BSC_test_net then
     Result := 'https://data-seed-prebsc-1-s1.binance.org:8545/'

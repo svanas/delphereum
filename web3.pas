@@ -31,12 +31,13 @@ type
     Goerli,
     Optimism,
     Optimism_test_net,
-    RSK_main_net,
+    RSK,
     RSK_test_net,
-    BSC_main_net,
+    BSC,
     BSC_test_net,
     xDai,
-    Arbitrum
+    Arbitrum,
+    Arbitrum_test_net
   );
 
   TChainHelper = record helper for TChain
@@ -260,19 +261,20 @@ function TChainHelper.Id: Integer;
 const
   // https://chainid.network/
   CHAIN_ID: array[TChain] of Integer = (
-    1,    // Mainnet
-    3,    // Ropsten
-    4,    // Rinkeby
-    42,   // Kovan
-    5,    // Goerli
-    10,   // Optimism
-    69,   // Optimism_test_net
-    30,   // RSK_main_net
-    31,   // RSK_test_net
-    56,   // BSC_main_net
-    97,   // BSC_test_net
-    100,  // xDai
-    42161 // Arbitrum
+    1,     // Mainnet
+    3,     // Ropsten
+    4,     // Rinkeby
+    42,    // Kovan
+    5,     // Goerli
+    10,    // Optimism
+    69,    // Optimism_test_net
+    30,    // RSK
+    31,    // RSK_test_net
+    56,    // BSC
+    97,    // BSC_test_net
+    100,   // xDai
+    42161, // Arbitrum
+    421611 // Arbitrum_test_net
   );
 begin
   Result := CHAIN_ID[Self];
@@ -298,12 +300,13 @@ const
     'https://goerli.etherscan.io',           // Goerli
     'https://optimistic.etherscan.io',       // Optimism
     'https://kovan-optimistic.etherscan.io', // Optimism_test_net
-    'https://explorer.rsk.co',               // RSK_main_net
+    'https://explorer.rsk.co',               // RSK
     'https://explorer.testnet.rsk.co',       // RSK_test_net
-    'https://bscscan.com',                   // BSC_main_net
+    'https://bscscan.com',                   // BSC
     'https://testnet.bscscan.com',           // BSC_test_net
     'https://blockscout.com/poa/xdai',       // xDai
-    'https://explorer.arbitrum.io'           // Arbitrum
+    'https://explorer.arbitrum.io',          // Arbitrum
+    'https://rinkeby-explorer.arbitrum.io'   // Arbitrum_test_net
   );
 begin
   Result := BLOCK_EXPLORER_URL[Self];

@@ -47,14 +47,15 @@ const
     ('https://rinkeby.infura.io/v3/%s', 'wss://rinkeby.infura.io/ws/v3/%s'), // Rinkeby
     ('https://kovan.infura.io/v3/%s',   'wss://kovan.infura.io/ws/v3/%s'),   // Kovan
     ('https://goerli.infura.io/v3/%s',  'wss://goerli.infura.io/ws/v3/%s'),  // Goerli
-    ('', ''),                                                                // Optimism
-    ('', ''),                                                                // Optimism_test_net
-    ('', ''),                                                                // RSK_main_net
-    ('', ''),                                                                // RSK_test_net
-    ('', ''),                                                                // BSC_main_net
-    ('', ''),                                                                // BSC_test_net
-    ('', ''),                                                                // xDai
-    ('', '')                                                                 // Arbitrum
+    ('https://optimism-mainnet.infura.io/v3/%s', ''), // Optimism
+    ('https://optimism-kovan.infura.io/v3/%s',   ''), // Optimism_test_net
+    ('', ''),                                         // RSK
+    ('', ''),                                         // RSK_test_net
+    ('', ''),                                         // BSC
+    ('', ''),                                         // BSC_test_net
+    ('', ''),                                         // xDai
+    ('', ''),                                         // Arbitrum
+    ('', '')                                          // Arbitrum_test_net
   );
 begin
   Result := ENDPOINT[chain][protocol];
@@ -63,7 +64,7 @@ begin
     Result := Format(Result, [projectId]);
     EXIT;
   end;
-  if chain in [BSC_main_net, BSC_test_net] then
+  if chain in [BSC, BSC_test_net] then
   begin
     Result := web3.eth.binance.endpoint(chain);
     EXIT;

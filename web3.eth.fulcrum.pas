@@ -577,7 +577,7 @@ begin
     if aClient.Chain = Kovan then
       inherited Create(aClient, '0x6b9F03e05423cC8D00617497890C0872FF33d4E8')
     else
-      if aClient.Chain = BSC_main_net then
+      if aClient.Chain = BSC then
         inherited Create(aClient, '0xf326b42a237086f1de4e7d68f2d2456fc787bc01')
       else
         raise EFulcrum.CreateFmt('iUSDT is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);

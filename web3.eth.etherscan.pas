@@ -143,12 +143,13 @@ const
     'https://api-goerli.etherscan.io/api?apikey=%s',           // Goerli
     'https://api-optimistic.etherscan.io/api?apikey=%s',       // Optimism
     'https://api-kovan-optimistic.etherscan.io/api?apikey=%s', // Optimism_test_net
-    '',                                                        // RSK_main_net
+    '',                                                        // RSK
     '',                                                        // RSK_test_net
-    'https://api.bscscan.com/api?apikey=%s',                   // BSC_main_net
+    'https://api.bscscan.com/api?apikey=%s',                   // BSC
     'https://api-testnet.bscscan.com/api?apikey=%s',           // BSC_test_net
     '',                                                        // xDai
-    ''                                                         // Arbitrum
+    '',                                                        // Arbitrum
+    ''                                                         // Arbitrum_test_net
   );
 begin
   Result := ENDPOINT[chain];
