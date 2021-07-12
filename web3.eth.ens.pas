@@ -20,10 +20,13 @@ uses
   web3,
   web3.eth.types;
 
-function  namehash(const name: string): string;
-procedure resolver(client: IWeb3; const name: string; callback: TAsyncAddress);
-procedure addr    (client: IWeb3; const name: string; callback: TAsyncAddress);
-procedure reverse (client: IWeb3; addr: TAddress; callback: TAsyncString);
+function namehash(const name: string): string;
+// resolve a name to an Ethereum address
+procedure addr(client: IWeb3; const name: string; callback: TAsyncAddress);
+// retrieves text metadata for a name
+procedure text(client: IWeb3; const name, key: string; callback: TAsyncTuple);
+// reverse resolution maps from an address back to a name
+procedure reverse(client: IWeb3; addr: TAddress; callback: TAsyncString);
 
 implementation
 
@@ -76,6 +79,7 @@ begin
   end);
 end;
 
+// resolve a name to an Ethereum address
 procedure addr(client: IWeb3; const name: string; callback: TAsyncAddress);
 begin
   resolver(client, name, procedure(resolver: TAddress; err: IError)
@@ -93,6 +97,21 @@ begin
   end);
 end;
 
+// retrieves text metadata for a name.
+// each name may have multiple pieces of metadata, identified by a unique string key.
+// if no text data exists for node with the key key, the empty string is returned.
+procedure text(client: IWeb3; const name, key: string; callback: TAsyncTuple);
+begin
+  resolver(client, name, procedure(resolver: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      web3.eth.call(client, resolver, 'text(bytes32,string)', [namehash(name), key], callback);
+  end);
+end;
+
+// reverse resolution maps from an address back to a name
 procedure reverse(client: IWeb3; addr: TAddress; callback: TAsyncString);
 var
   name: string;

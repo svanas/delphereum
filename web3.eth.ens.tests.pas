@@ -29,6 +29,8 @@ type
     procedure TestCase2;
     [Test]
     procedure TestCase3;
+    [Test]
+    procedure TestCase4;
   end;
 
 implementation
@@ -60,6 +62,14 @@ begin
   Assert.AreEqual(
     web3.eth.ens.namehash('foo.eth').ToLower,
     '0xde9b09fd7c5f901e23a3f19fecc54828e9c848539801e86591bd9801b019f84f'
+  );
+end;
+
+procedure TTests.TestCase4;
+begin
+  Assert.AreEqual(
+    web3.eth.ens.namehash('alice.eth').ToLower,
+    '0x787192fc5378cc32aa956ddfdedbf26b24e8d78e40109add0eea2c1a012c3dec'
   );
 end;
 
