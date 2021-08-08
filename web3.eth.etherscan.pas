@@ -313,7 +313,7 @@ var
   S: string;
 begin
   S := getPropAsStr(FJsonObject, 'type');
-  for Result := Low(TSymbolType) to High(TSymbolType) do
+  for Result := System.Low(TSymbolType) to High(TSymbolType) do
     if SameText(GetEnumName(TypeInfo(TSymbolType), Integer(Result)), S) then
       EXIT;
   Result := UnknownSymbol;
@@ -334,7 +334,7 @@ var
   S: string;
 begin
   S := getPropAsStr(FJsonObject, 'stateMutability');
-  for Result := Low(TStateMutability) to High(TStateMutability) do
+  for Result := System.Low(TStateMutability) to High(TStateMutability) do
     if SameText(GetEnumName(TypeInfo(TStateMutability), Integer(Result)), S) then
       EXIT;
   Result := UnknownMutability;

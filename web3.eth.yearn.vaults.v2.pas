@@ -251,7 +251,7 @@ begin
       begin
         try
           if Assigned(err)
-          or (period = Low(TPeriod))
+          or (period = System.Low(TPeriod))
           or (not(IsNaN(apy) or IsInfinite(apy))) then
           begin
             callback(apy, err);

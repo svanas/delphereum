@@ -207,7 +207,7 @@ begin
       manager.APY(period, procedure(apy: Extended; err: IError)
       begin
         try
-          if Assigned(err) or (not IsNaN(apy)) or (period = Low(TPeriod)) then
+          if Assigned(err) or (not IsNaN(apy)) or (period = System.Low(TPeriod)) then
           begin
             callback(apy, err);
             EXIT;

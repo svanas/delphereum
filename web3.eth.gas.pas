@@ -58,7 +58,7 @@ begin
     EXIT;
   end;
 
-  if (info.apiKey = '') and (info.Speed = Average) then
+  if (info.apiKey = '') and (info.Speed = Medium) then
   begin
     client.Call('eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
     begin
@@ -76,11 +76,10 @@ begin
       callback(0, err)
     else
       case info.Speed of
-        Outbid : callback(price.Outbid,  nil);
         Fastest: callback(price.Fastest, nil);
         Fast   : callback(price.Fast,    nil);
-        Average: callback(price.Average, nil);
-        SafeLow: callback(price.SafeLow, nil);
+        Medium : callback(price.Average, nil);
+        Low    : callback(price.SafeLow, nil);
       end;
   end);
 end;

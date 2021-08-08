@@ -181,9 +181,9 @@ begin
   Result := Length(str) > 1;
   if Result then
   begin
-    Result := Copy(str, Low(str), Length(prefix)) = prefix;
+    Result := Copy(str, System.Low(str), Length(prefix)) = prefix;
     if Result then
-      for I := Low(str) + Length(prefix) to High(str) do
+      for I := System.Low(str) + Length(prefix) to High(str) do
       begin
         Result := CharInSet(str[I], ['0'..'9', 'a'..'f', 'A'..'F']);
         if not Result then
@@ -197,12 +197,12 @@ var
   I: Integer;
 begin
   hex := Trim(hex);
-  while Copy(hex, Low(hex), 2) = '0x' do
-    Delete(hex, Low(hex), 2);
+  while Copy(hex, System.Low(hex), 2) = '0x' do
+    Delete(hex, System.Low(hex), 2);
   if hex.Length mod 2 > 0 then
     hex := '0' + hex; // pad to even
   SetLength(Result, Length(hex) div 2);
-  for I := Low(hex) to Length(hex) div 2 do
+  for I := System.Low(hex) to Length(hex) div 2 do
     Result[I - 1] := StrToInt('$' + Copy(hex, (I - 1) * 2 + 1, 2));
 end;
 

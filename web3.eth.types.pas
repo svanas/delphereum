@@ -245,7 +245,7 @@ begin
 
     if abbreviated then
       if isHex(output) then
-        output := Copy(output, Low(output), 8);
+        output := Copy(output, System.Low(output), 8);
 
     callback(output, nil);
   end);
@@ -254,7 +254,7 @@ end;
 function TAddressHelper.Abbreviated: string;
 begin
   Result := string(Self);
-  Result := Copy(Result, Low(Result), 8);
+  Result := Copy(Result, System.Low(Result), 8);
 end;
 
 function TAddressHelper.IsZero: Boolean;

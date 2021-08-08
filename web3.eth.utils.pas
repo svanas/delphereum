@@ -131,9 +131,9 @@ begin
   base := UnitToWei[&unit];
   baseLen := UnitToWei[&unit].Length;
   // is it negative?
-  negative := (input.Length > 0) and (input[Low(input)] = '-');
+  negative := (input.Length > 0) and (input[System.Low(input)] = '-');
   if negative then
-    Delete(input, Low(input), 1);
+    Delete(input, System.Low(input), 1);
   if (input = '') or (input = '.') then
     raise EWeb3.CreateFmt('Error while converting %s to wei. Invalid value.', [input]);
   // split it into a whole and fractional part

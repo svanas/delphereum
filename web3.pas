@@ -75,11 +75,10 @@ type
   TOnEtherscanApiKey = reference to procedure(var apiKey: string);
 
   TGasPrice = (
-    Outbid,
     Fastest,
     Fast,    // expected to be mined in < 2 minutes
-    Average, // expected to be mined in < 5 minutes
-    SafeLow  // expected to be mined in < 30 minutes
+    Medium,  // expected to be mined in < 5 minutes
+    Low      // expected to be mined in < 30 minutes
   );
 
   TGasStationInfo = record
@@ -340,7 +339,7 @@ end;
 
 class function TGasStationInfo.Average: TGasStationInfo;
 begin
-  Result.Speed := TGasPrice.Average;
+  Result.Speed := TGasPrice.Medium;
 end;
 
 { TCustomWeb3 }

@@ -117,8 +117,8 @@ var
   name: string;
 begin
   name := string(addr).ToLower + '.addr.reverse';
-  while Copy(name, Low(name), 2) = '0x' do
-    Delete(name, Low(name), 2);
+  while Copy(name, System.Low(name), 2) = '0x' do
+    Delete(name, System.Low(name), 2);
   resolver(client, name, procedure(resolver: TAddress; err: IError)
   begin
     if Assigned(err) then

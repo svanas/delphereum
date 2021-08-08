@@ -734,16 +734,16 @@ begin
         // parse the reason from the response
         encoded := web3.json.getPropAsStr(resp, 'result');
         // trim the 0x prefix
-        Delete(encoded, Low(encoded), 2);
+        Delete(encoded, System.Low(encoded), 2);
         if encoded.Length = 0 then
         begin
           callback(TX_UNKNOWN_ERROR, nil);
           EXIT;
         end;
         // get the length of the revert reason
-        len := StrToInt64('$' + Copy(encoded, Low(encoded) + 8 + 64, 64));
+        len := StrToInt64('$' + Copy(encoded, System.Low(encoded) + 8 + 64, 64));
         // using the length and known offset, extract the revert reason
-        encoded := Copy(encoded, Low(encoded) + 8 + 128, len * 2);
+        encoded := Copy(encoded, System.Low(encoded) + 8 + 128, len * 2);
         // convert reason from hex to string
         decoded := TEncoding.UTF8.GetString(fromHex(encoded));
 

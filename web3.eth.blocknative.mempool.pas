@@ -140,7 +140,7 @@ var
 begin
   eventCode := getPropAsStr(event, 'eventCode');
   if eventCode <> '' then
-    for Result := Low(TEventCode) to High(TEventCode) do
+    for Result := System.Low(TEventCode) to High(TEventCode) do
       if EVENT_CODE[Result] = eventCode then
         EXIT;
   Result := ecUnknown;
