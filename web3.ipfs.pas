@@ -140,14 +140,8 @@ begin
     apiHost + '/api/v0/add',
     source,
     [TNetHeader.Create('Content-Type', source.MimeTypeHeader)],
-    procedure(resp: TJsonObject; err: IError)
-  begin
-    try
-      callback(resp, err);
-    finally
-      source.Free;
-    end;
-  end);
+    callback
+  );
 end;
 
 function add(const apiHost, fileName: string; callback: TAsyncFile): IAsyncResult;

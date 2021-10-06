@@ -69,34 +69,28 @@ function TJsonRpcHttps.Call(
   const method: string;
   args        : array of const): TJsonObject;
 var
-  source: TStream;
   resp  : TJsonValue;
   error : TJsonObject;
 begin
   Result := nil;
-  source := TStringStream.Create(CreatePayload(method, args));
+  web3.http.post(
+    URL,
+    CreatePayload(method, args),
+    [TNetHeader.Create('Content-Type', 'application/json')],
+    resp
+  );
+  if Assigned(resp) then
   try
-    web3.http.post(
-      URL,
-      source,
-      [TNetHeader.Create('Content-Type', 'application/json')],
-      resp
-    );
-    if Assigned(resp) then
-    try
-      // did we receive an error? then translate that into an exception
-      error := web3.json.getPropAsObj(resp, 'error');
-      if Assigned(error) then
-        raise EJsonRpc.Create(
-          web3.json.getPropAsInt(error, 'code'),
-          web3.json.getPropAsStr(error, 'message')
-        );
-      Result := resp.Clone as TJsonObject;
-    finally
-      resp.Free;
-    end;
+    // did we receive an error? then translate that into an exception
+    error := web3.json.getPropAsObj(resp, 'error');
+    if Assigned(error) then
+      raise EJsonRpc.Create(
+        web3.json.getPropAsInt(error, 'code'),
+        web3.json.getPropAsStr(error, 'message')
+      );
+    Result := resp.Clone as TJsonObject;
   finally
-    source.Free;
+    resp.Free;
   end;
 end;
 
@@ -109,7 +103,6 @@ var
   handler: TAsyncJsonObject;
   payload: string;
   headers: TNetHeaders;
-  source : TStream;
 begin
   handler := procedure(resp: TJsonObject; err: IError)
   var
@@ -141,15 +134,7 @@ begin
     EXIT;
   end;
 
-  source := TStringStream.Create(payload);
-  web3.http.post(URL, source, headers, procedure(resp: TJsonObject; err: IError)
-  begin
-    try
-      handler(resp, err);
-    finally
-      source.Free;
-    end;
-  end);
+  web3.http.post(URL, payload, headers, handler);
 end;
 
 end.

@@ -166,14 +166,9 @@ var
 begin
   _post := procedure(request: TPost)
   begin
-    var src := TStringStream.Create(request.body);
-    web3.http.post(request.endpoint, src, request.headers, procedure(resp: TJsonObject; err: IError)
+    web3.http.post(request.endpoint, request.body, request.headers, procedure(resp: TJsonObject; err: IError)
     begin
-      try
-        request.callback(resp, err);
-      finally
-        src.Free;
-      end;
+      request.callback(resp, err);
       Queue.Enter;
       try
         Queue.Delete(0, 1);
