@@ -195,7 +195,7 @@ var
 begin
   if not web3.utils.isHex(hex) then
   begin
-    Result := ADDRESS_ZERO;
+    Result := EMPTY_ADDRESS;
     EXIT;
   end;
   buf := web3.utils.fromHex(hex);
@@ -293,7 +293,7 @@ begin
     Delete(buffer, 0, 12);
     callback(TAddress.New(web3.utils.toHex(buffer)), nil);
   except
-    callback(ADDRESS_ZERO, TError.Create('Private key is invalid'));
+    callback(EMPTY_ADDRESS, TError.Create('Private key is invalid'));
   end;
 end;
 

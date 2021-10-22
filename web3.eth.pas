@@ -31,8 +31,8 @@ const
   BLOCKS_PER_DAY = 5760; // 4 * 60 * 24
 
 const
-  ADDRESS_ZERO: TAddress = '0x0000000000000000000000000000000000000000';
-  BYTES32_ZERO: TBytes32 = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+  EMPTY_ADDRESS: TAddress = '0x0000000000000000000000000000000000000000';
+  EMPTY_BYTES32: TBytes32 = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
 function  blockNumber(client: IWeb3): BigInteger; overload;               // blocking
 procedure blockNumber(client: IWeb3; callback: TAsyncQuantity); overload; // async
@@ -216,7 +216,7 @@ end;
 
 procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncString);
 begin
-  call(client, ADDRESS_ZERO, &to, func, args, callback);
+  call(client, EMPTY_ADDRESS, &to, func, args, callback);
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncString);
@@ -226,7 +226,7 @@ end;
 
 procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString);
 begin
-  call(client, ADDRESS_ZERO, &to, func, block, args, callback);
+  call(client, EMPTY_ADDRESS, &to, func, block, args, callback);
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString);
@@ -260,7 +260,7 @@ end;
 
 procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
 begin
-  call(client, ADDRESS_ZERO, &to, func, args, callback);
+  call(client, EMPTY_ADDRESS, &to, func, args, callback);
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncQuantity);
@@ -270,7 +270,7 @@ end;
 
 procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity);
 begin
-  call(client, ADDRESS_ZERO, &to, func, block, args, callback);
+  call(client, EMPTY_ADDRESS, &to, func, block, args, callback);
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity);
@@ -297,7 +297,7 @@ end;
 
 procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean);
 begin
-  call(client, ADDRESS_ZERO, &to, func, args, callback);
+  call(client, EMPTY_ADDRESS, &to, func, args, callback);
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBoolean);
@@ -307,7 +307,7 @@ end;
 
 procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean);
 begin
-  call(client, ADDRESS_ZERO, &to, func, block, args, callback);
+  call(client, EMPTY_ADDRESS, &to, func, block, args, callback);
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean);
@@ -328,7 +328,7 @@ end;
 
 procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes32);
 begin
-  call(client, ADDRESS_ZERO, &to, func, args, callback);
+  call(client, EMPTY_ADDRESS, &to, func, args, callback);
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncBytes32);
@@ -338,7 +338,7 @@ end;
 
 procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32);
 begin
-  call(client, ADDRESS_ZERO, &to, func, block, args, callback);
+  call(client, EMPTY_ADDRESS, &to, func, block, args, callback);
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32);
@@ -350,13 +350,13 @@ begin
   begin
     if Assigned(err) then
     begin
-      callback(BYTES32_ZERO, err);
+      callback(EMPTY_BYTES32, err);
       EXIT;
     end;
     buffer := web3.utils.fromHex(hex);
     if Length(buffer) < 32 then
     begin
-      callback(BYTES32_ZERO, nil);
+      callback(EMPTY_BYTES32, nil);
       EXIT;
     end;
     Move(buffer[0], result[0], 32);
@@ -366,7 +366,7 @@ end;
 
 procedure call(client: IWeb3; &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple);
 begin
-  call(client, ADDRESS_ZERO, &to, func, args, callback);
+  call(client, EMPTY_ADDRESS, &to, func, args, callback);
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: array of const; callback: TAsyncTuple);
@@ -376,7 +376,7 @@ end;
 
 procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple);
 begin
-  call(client, ADDRESS_ZERO, &to, func, block, args, callback);
+  call(client, EMPTY_ADDRESS, &to, func, block, args, callback);
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple);

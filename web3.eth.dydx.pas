@@ -188,7 +188,7 @@ begin
     dYdX.GetMarket(TSoloMargin.marketId[reserve], procedure(market: ISoloMarket; err: IError)
     begin
       if Assigned(err) then
-        callback(ADDRESS_ZERO, err)
+        callback(EMPTY_ADDRESS, err)
       else
         callback(market.Token, nil);
     end);

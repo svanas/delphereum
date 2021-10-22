@@ -153,7 +153,7 @@ begin
     end;
     EXIT;
   end;
-  callback(ADDRESS_ZERO,
+  callback(EMPTY_ADDRESS,
     TError.Create('%s is not supported on %s', [
       GetEnumName(TypeInfo(TReserve), Ord(reserve)), GetEnumName(TypeInfo(TChain), Ord(chain))
     ])
@@ -171,7 +171,7 @@ begin
     begin
       if Assigned(err) then
       begin
-        callback(ADDRESS_ZERO, err);
+        callback(EMPTY_ADDRESS, err);
         EXIT;
       end;
       var dp := TAaveProtocolDataProvider.Create(client, addr);
@@ -180,11 +180,11 @@ begin
         begin
           if Assigned(err) then
           begin
-            callback(ADDRESS_ZERO, err);
+            callback(EMPTY_ADDRESS, err);
             EXIT;
           end;
           if Length(tup) = 0 then
-            callback(ADDRESS_ZERO, nil)
+            callback(EMPTY_ADDRESS, nil)
           else
             callback(tup[0].toAddress, nil);
         end);
@@ -546,7 +546,7 @@ begin
   web3.eth.call(Client, Contract, 'getLendingPool()', [], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);
@@ -557,7 +557,7 @@ begin
   web3.eth.call(Client, Contract, 'getAddress(bytes32)', [web3.utils.toHex(id)], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);
@@ -577,7 +577,7 @@ begin
   web3.eth.call(Client, Contract, 'UNDERLYING_ASSET_ADDRESS()', [], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);

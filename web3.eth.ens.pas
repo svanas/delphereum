@@ -73,7 +73,7 @@ begin
   web3.eth.call(client, ENS_REGISTRY, 'resolver(bytes32)', [namehash(name)], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);
@@ -85,12 +85,12 @@ begin
   resolver(client, name, procedure(resolver: TAddress; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       web3.eth.call(client, resolver, 'addr(bytes32)', [namehash(name)], procedure(const hex: string; err: IError)
       begin
         if Assigned(err) then
-          callback(ADDRESS_ZERO, err)
+          callback(EMPTY_ADDRESS, err)
         else
           callback(TAddress.New(hex), nil);
       end);

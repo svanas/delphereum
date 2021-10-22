@@ -263,7 +263,7 @@ begin
     var IdleToken := IdleTokenClass[reserve].Create(client);
     if Assigned(IdleToken) then
     try
-      IdleToken.MintIdleToken(from, amount, True, ADDRESS_ZERO, callback);
+      IdleToken.MintIdleToken(from, amount, True, EMPTY_ADDRESS, callback);
     finally
       IdleToken.Free;
     end;
@@ -394,7 +394,7 @@ begin
   web3.eth.call(Client, Contract, 'token()', [], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);

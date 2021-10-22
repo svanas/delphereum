@@ -109,13 +109,13 @@ begin
   begin
     if Assigned(err) then
     begin
-      callback(ADDRESS_ZERO, err);
+      callback(EMPTY_ADDRESS, err);
       EXIT;
     end;
     pair := TAddress.New(hex);
     if pair.IsZero then
     begin
-      callback(ADDRESS_ZERO, TError.Create('%s does not exist', [tokenA]));
+      callback(EMPTY_ADDRESS, TError.Create('%s does not exist', [tokenA]));
       EXIT;
     end;
     callback(pair, nil)
@@ -135,7 +135,7 @@ begin
   call(Client, Contract, 'WETH()', [], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);
@@ -271,7 +271,7 @@ begin
   call(Client, Contract, 'token0()', [], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);
@@ -283,7 +283,7 @@ begin
   call(Client, Contract, 'token1()', [], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);

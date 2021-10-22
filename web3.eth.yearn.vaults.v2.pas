@@ -217,7 +217,7 @@ begin
     finally
       reg.Free;
     end;
-    callback(ADDRESS_ZERO, err);
+    callback(EMPTY_ADDRESS, err);
   end);
 end;
 
@@ -443,7 +443,7 @@ begin
   web3.eth.call(Client, Contract, 'latestVault(address)', [reserve], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);

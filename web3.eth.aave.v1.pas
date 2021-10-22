@@ -151,7 +151,7 @@ begin
     end;
     EXIT;
   end;
-  callback(ADDRESS_ZERO,
+  callback(EMPTY_ADDRESS,
     TError.Create('%s is not supported on %s', [
       GetEnumName(TypeInfo(TReserve), Ord(reserve)), GetEnumName(TypeInfo(TChain), Ord(chain))
     ])
@@ -435,7 +435,7 @@ begin
   web3.eth.call(Client, Contract, 'getLendingPool()', [], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);
@@ -448,7 +448,7 @@ begin
   web3.eth.call(Client, Contract, 'getLendingPoolCore()', [], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(TAddress.New(hex), nil);
   end);
@@ -510,7 +510,7 @@ begin
   GetReserveData(reserve, procedure(tup: TTuple; err: IError)
   begin
     if Assigned(err) then
-      callback(ADDRESS_ZERO, err)
+      callback(EMPTY_ADDRESS, err)
     else
       callback(tup[11].toAddress, nil);
   end);
