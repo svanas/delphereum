@@ -46,35 +46,27 @@ uses
   web3.json;
 
 function execute(const URL, query: string; callback: TAsyncJsonObject): IAsyncResult;
-var
-  source: TStream;
-  errors: TJsonArray;
 begin
-  source := TStringStream.Create(query);
   web3.http.post(
     URL,
-    source,
+    query,
     [TNetHeader.Create('Content-Type', 'application/graphql')],
     procedure(resp: TJsonObject; err: IError)
     begin
-      try
-        if Assigned(err) then
-        begin
-          callback(nil, err);
-          EXIT;
-        end;
-        // did we receive an error?
-        errors := web3.json.getPropAsArr(resp, 'errors');
-        if Assigned(errors) and (errors.Count > 0) then
-        begin
-          callback(resp, TGraphError.Create(web3.json.getPropAsStr(errors.Items[0], 'message')));
-          EXIT;
-        end;
-        // if we reached this far, then we have a valid response object
-        callback(resp, nil);
-      finally
-        source.Free;
+      if Assigned(err) then
+      begin
+        callback(nil, err);
+        EXIT;
       end;
+      // did we receive an error?
+      var errors := web3.json.getPropAsArr(resp, 'errors');
+      if Assigned(errors) and (errors.Count > 0) then
+      begin
+        callback(resp, TGraphError.Create(web3.json.getPropAsStr(errors.Items[0], 'message')));
+        EXIT;
+      end;
+      // if we reached this far, then we have a valid response object
+      callback(resp, nil);
     end
   );
 end;

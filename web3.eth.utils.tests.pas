@@ -106,7 +106,7 @@ const
 var
   I: Integer;
 begin
-  for I := Low(ethers) to High(ethers) do
+  for I := System.Low(ethers) to System.High(ethers) do
     Assert.AreEqual(web3.eth.utils.fromWei(web3.eth.utils.toWei(ethers[I], ether), ether), ethers[I]);
 end;
 
