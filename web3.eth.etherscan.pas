@@ -148,8 +148,8 @@ const
     'https://api.bscscan.com/api?apikey=%s',                   // BSC
     'https://api-testnet.bscscan.com/api?apikey=%s',           // BSC_test_net
     '',                                                        // xDai
-    '',                                                        // Arbitrum
-    ''                                                         // Arbitrum_test_net
+    'https://api.arbiscan.io/api?apikey=%s',                   // Arbitrum
+    'https://api-testnet.arbiscan.io/api?apikey=%s'            // Arbitrum_test_net
   );
 begin
   Result := ENDPOINT[chain];
