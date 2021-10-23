@@ -29,6 +29,7 @@ uses
   web3.json.rpc;
 
 procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity);
+procedure getBaseFeePerGas(client: IWeb3; callback: TAsyncQuantity);
 
 procedure estimateGas(
   client    : IWeb3;
@@ -47,10 +48,8 @@ procedure estimateGas(
 implementation
 
 procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity);
-var
-  info: TGasStationInfo;
 begin
-  info := client.GetGasStationInfo;
+  var info := client.GetGasStationInfo;
 
   if info.Custom > 0 then
   begin
@@ -81,6 +80,17 @@ begin
         Medium : callback(price.Average, nil);
         Low    : callback(price.SafeLow, nil);
       end;
+  end);
+end;
+
+procedure getBaseFeePerGas(client: IWeb3; callback: TAsyncQuantity);
+begin
+  web3.eth.getBlockByNumber(client, procedure(block: IBlock; err: IError)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      callback(block.baseFeePerGas, nil);
   end);
 end;
 

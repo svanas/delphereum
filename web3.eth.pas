@@ -37,6 +37,9 @@ const
 function  blockNumber(client: IWeb3): BigInteger; overload;               // blocking
 procedure blockNumber(client: IWeb3; callback: TAsyncQuantity); overload; // async
 
+procedure getBlockByNumber(client: IWeb3; callback: TAsyncBlock); overload;
+procedure getBlockByNumber(client: IWeb3; const block: string; callback: TAsyncBlock); overload;
+
 procedure getBalance(client: IWeb3; address: TAddress; callback: TAsyncQuantity); overload;
 procedure getBalance(client: IWeb3; address: TAddress; const block: string; callback: TAsyncQuantity); overload;
 
@@ -178,6 +181,55 @@ begin
       callback(0, err)
     else
       callback(web3.json.getPropAsStr(resp, 'result'), nil);
+  end);
+end;
+
+type
+  TBlock = class(TInterfacedObject, IBlock)
+  private
+    FJsonObject: TJsonObject;
+  public
+    constructor Create(aJsonObject: TJsonObject);
+    destructor Destroy; override;
+    function ToString: string; override;
+    function baseFeePerGas: TWei;
+  end;
+
+constructor TBlock.Create(aJsonObject: TJsonObject);
+begin
+  inherited Create;
+  FJsonObject := aJsonObject.Clone as TJsonObject;
+end;
+
+destructor TBlock.Destroy;
+begin
+  if Assigned(FJsonObject) then FJsonObject.Free;
+  inherited Destroy;
+end;
+
+function TBlock.ToString: string;
+begin
+  Result := web3.json.marshal(FJsonObject);
+end;
+
+function TBlock.baseFeePerGas: TWei;
+begin
+  Result := getPropAsStr(FJsonObject, 'baseFeePerGas', '0x0');
+end;
+
+procedure getBlockByNumber(client: IWeb3; callback: TAsyncBlock);
+begin
+  getBlockByNumber(client, BLOCK_PENDING, callback);
+end;
+
+procedure getBlockByNumber(client: IWeb3; const block: string; callback: TAsyncBlock);
+begin
+  client.Call('eth_getBlockByNumber', [block, False], procedure(resp: TJsonObject; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      callback(TBlock.Create(web3.json.getPropAsObj(resp, 'result')), nil);
   end);
 end;
 

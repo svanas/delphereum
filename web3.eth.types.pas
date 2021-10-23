@@ -51,6 +51,11 @@ type
   TTopics = array[0..3] of TArg;
 
 type
+  IBlock = interface
+    function ToString: string;
+    function baseFeePerGas: TWei;
+  end;
+
   ITxn = interface
     function ToString: string;
     function blockNumber: BigInteger; // block number where this transaction was in. null when its pending.
@@ -81,6 +86,7 @@ type
   TAsyncArg       = reference to procedure(arg  : TArg;       next: TProc);
   TAsyncTuple     = reference to procedure(tup  : TTuple;     err : IError);
   TAsyncTxHash    = reference to procedure(hash : TTxHash;    err : IError);
+  TAsyncBlock     = reference to procedure(block: IBlock;     err : IError);
   TAsyncTxn       = reference to procedure(txn  : ITxn;       err : IError);
   TAsyncReceipt   = reference to procedure(rcpt : ITxReceipt; err : IError);
   TAsyncReceiptEx = reference to procedure(rcpt : ITxReceipt; qty : BigInteger; err: IError);

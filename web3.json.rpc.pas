@@ -108,6 +108,11 @@ begin
       case arg.VType of
         vtInteger:
           Result := Result + '0x' + IntToHex(arg.VInteger, 0);
+        vtBoolean:
+          if arg.VBoolean then
+            Result := Result + 'true'
+          else
+            Result := Result + 'false';
         vtString:
           Result := Result + quoteString(UnicodeString(PShortString(arg.VAnsiString)^), '"');
         vtObject:
