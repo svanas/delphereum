@@ -30,6 +30,7 @@ uses
 
 procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity);
 procedure getBaseFeePerGas(client: IWeb3; callback: TAsyncQuantity);
+procedure getMaxPriorityFeePerGas(client: IWeb3; callback: TAsyncQuantity);
 
 procedure estimateGas(
   client    : IWeb3;
@@ -47,6 +48,17 @@ procedure estimateGas(
 
 implementation
 
+procedure eth_gasPrice(client: IWeb3; callback: TAsyncQuantity);
+begin
+  client.Call('eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      callback(web3.json.getPropAsStr(resp, 'result'), nil);
+  end);
+end;
+
 procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity);
 begin
   var info := client.GetGasStationInfo;
@@ -59,13 +71,7 @@ begin
 
   if (info.apiKey = '') and (info.Speed = Medium) then
   begin
-    client.Call('eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
-    begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(web3.json.getPropAsStr(resp, 'result'), nil);
-    end);
+    eth_gasPrice(client, callback);
     EXIT;
   end;
 
@@ -91,6 +97,31 @@ begin
       callback(0, err)
     else
       callback(block.baseFeePerGas, nil);
+  end);
+end;
+
+procedure getMaxPriorityFeePerGas(client: IWeb3; callback: TAsyncQuantity);
+begin
+  client.Call('eth_maxPriorityFeePerGas', [], procedure(resp: TJsonObject; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      eth_gasPrice(client, procedure(gasPrice: TWei; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          getBaseFeePerGas(client, procedure(baseFee: TWei; err: IError)
+          begin
+            if Assigned(err) then
+              callback(0, err)
+            else
+              callback(TWei.Max(1000000000, gasPrice - baseFee), nil);
+          end);
+      end);
+      EXIT;
+    end;
+    callback(web3.json.getPropAsStr(resp, 'result'), nil);
   end);
 end;
 
