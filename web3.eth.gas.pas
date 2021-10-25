@@ -31,6 +31,7 @@ uses
 procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity);
 procedure getBaseFeePerGas(client: IWeb3; callback: TAsyncQuantity);
 procedure getMaxPriorityFeePerGas(client: IWeb3; callback: TAsyncQuantity);
+procedure getMaxFeePerGas(client: IWeb3; callback: TAsyncQuantity);
 
 procedure estimateGas(
   client    : IWeb3;
@@ -122,6 +123,23 @@ begin
       EXIT;
     end;
     callback(web3.json.getPropAsStr(resp, 'result'), nil);
+  end);
+end;
+
+procedure getMaxFeePerGas(client: IWeb3; callback: TAsyncQuantity);
+begin
+  getBaseFeePerGas(client, procedure(baseFee: TWei; err: IError)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      getMaxPriorityFeePerGas(client, procedure(tip: TWei; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          callback((2 * baseFee) + tip, nil);
+      end);
   end);
 end;
 
