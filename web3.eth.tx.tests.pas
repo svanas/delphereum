@@ -39,7 +39,7 @@ uses
 procedure TTests.TestCase1;
 begin
   Assert.AreEqual(
-    web3.eth.tx.signTransaction(
+    web3.eth.tx.signTransactionLegacy(
       Mainnet,
       9,
       '4646464646464646464646464646464646464646464646464646464646464646',

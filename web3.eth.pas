@@ -92,7 +92,7 @@ procedure write(
   &to       : TAddress;
   const func: string;
   args      : array of const;
-  gasLimit  : TWei;
+  gasLimit  : BigInteger;
   callback  : TAsyncReceipt); overload;
 
 // transact with a payable function.
@@ -116,18 +116,7 @@ procedure write(
   value     : TWei;
   const func: string;
   args      : array of const;
-  gasLimit  : TWei;
-  callback  : TAsyncReceipt); overload;
-
-procedure write(
-  client    : IWeb3;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  value     : TWei;
-  const func: string;
-  args      : array of const;
-  gasPrice  : TWei;
-  gasLimit  : TWei;
+  gasLimit  : BigInteger;
   callback  : TAsyncReceipt); overload;
 
 procedure write(
@@ -136,9 +125,8 @@ procedure write(
   &to         : TAddress;
   value       : TWei;
   const data  : string;
-  gasPrice    : TWei;
-  gasLimit    : TWei;
-  estimatedGas: TWei;
+  gasLimit    : BigInteger;
+  estimatedGas: BigInteger;
   callback    : TAsyncReceipt); overload;
 
 implementation
@@ -488,7 +476,7 @@ procedure write(
   &to       : TAddress;
   const func: string;
   args      : array of const;
-  gasLimit  : TWei;
+  gasLimit  : BigInteger;
   callback  : TAsyncReceipt);
 begin
   write(client, from, &to, 0, func, args, gasLimit, callback);
@@ -513,62 +501,21 @@ procedure write(
   value     : TWei;
   const func: string;
   args      : array of const;
-  gasLimit  : TWei;
+  gasLimit  : BigInteger;
   callback  : TAsyncReceipt);
-var
-  data: string;
 begin
-  data := web3.eth.abi.encode(func, args);
-  web3.eth.gas.getGasPrice(client, procedure(gasPrice: BigInteger; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, err)
-    else
-      from.Address(procedure(addr: TAddress; err: IError)
-      begin
-        if Assigned(err) then
-          callback(nil, err)
-        else
-          web3.eth.gas.estimateGas(
-            client, addr, &to, data, gasLimit,
-          procedure(estimatedGas: BigInteger; err: IError)
-          begin
-            if Assigned(err) then
-              callback(nil, err)
-            else
-              write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback);
-          end);
-      end);
-  end);
-end;
-
-procedure write(
-  client    : IWeb3;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  value     : TWei;
-  const func: string;
-  args      : array of const;
-  gasPrice  : TWei;
-  gasLimit  : TWei;
-  callback  : TAsyncReceipt);
-var
-  data: string;
-begin
-  data := web3.eth.abi.encode(func, args);
+  var data := web3.eth.abi.encode(func, args);
   from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
     else
-      web3.eth.gas.estimateGas(
-        client, addr, &to, data, gasLimit,
-      procedure(estimatedGas: BigInteger; err: IError)
+      web3.eth.gas.estimateGas(client, addr, &to, data, gasLimit, procedure(estimatedGas: BigInteger; err: IError)
       begin
         if Assigned(err) then
           callback(nil, err)
         else
-          write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback);
+          write(client, from, &to, value, data, gasLimit, estimatedGas, callback);
       end);
   end);
 end;
@@ -579,9 +526,8 @@ procedure write(
   &to         : TAddress;
   value       : TWei;
   const data  : string;
-  gasPrice    : TWei;
-  gasLimit    : TWei;
-  estimatedGas: TWei;
+  gasLimit    : BigInteger;
+  estimatedGas: BigInteger;
   callback    : TAsyncReceipt);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
@@ -594,20 +540,19 @@ begin
         if Assigned(err) then
           callback(nil, err)
         else
-          signTransaction(client, nonce, from, &to, value, data, gasPrice, gasLimit, estimatedGas,
-            procedure(const sig: string; err: IError)
-            begin
-              if Assigned(err) then
-                callback(nil, err)
-              else
-                sendTransactionEx(client, sig, procedure(rcpt: ITxReceipt; err: IError)
-                begin
-                  if Assigned(err) and (err.Message = 'nonce too low') then
-                    write(client, from, &to, value, data, gasPrice, gasLimit, estimatedGas, callback)
-                  else
-                    callback(rcpt, err);
-                end);
-            end);
+          signTransaction(client, nonce, from, &to, value, data, gasLimit, estimatedGas, procedure(const sig: string; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, err)
+            else
+              sendTransactionEx(client, sig, procedure(rcpt: ITxReceipt; err: IError)
+              begin
+                if Assigned(err) and (err.Message = 'nonce too low') then
+                  write(client, from, &to, value, data, gasLimit, estimatedGas, callback)
+                else
+                  callback(rcpt, err);
+              end);
+          end);
       end);
   end);
 end;

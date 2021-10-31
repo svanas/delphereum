@@ -60,7 +60,7 @@ type
     function ToString: string;
     function blockNumber: BigInteger; // block number where this transaction was in. null when its pending.
     function from: TAddress;          // address of the sender.
-    function gasLimit: TWei;          // gas provided by the sender.
+    function gasLimit: BigInteger;    // gas provided by the sender.
     function gasPrice: TWei;          // gas price provided by the sender in Wei.
     function input: string;           // the data send along with the transaction.
     function &to: TAddress;           // address of the receiver. null when its a contract creation transaction.
