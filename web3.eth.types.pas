@@ -73,11 +73,12 @@ type
 type
   ITxReceipt = interface
     function ToString: string;
-    function txHash: TTxHash; // hash of the transaction.
-    function from: TAddress;  // address of the sender.
-    function &to: TAddress;   // address of the receiver. null when it's a contract creation transaction.
-    function gasUsed: TWei;   // the amount of gas used by this specific transaction.
-    function status: Boolean; // success or failure.
+    function txHash: TTxHash;         // hash of the transaction.
+    function from: TAddress;          // address of the sender.
+    function &to: TAddress;           // address of the receiver. null when it's a contract creation transaction.
+    function gasUsed: BigInteger;     // the amount of gas used by this specific transaction.
+    function status: Boolean;         // success or failure.
+    function effectiveGasPrice: TWei; // eip-1559-only
   end;
 
 type

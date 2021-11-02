@@ -692,11 +692,12 @@ type
     constructor Create(aJsonObject: TJsonObject);
     destructor Destroy; override;
     function ToString: string; override;
-    function txHash: TTxHash; // hash of the transaction.
-    function from: TAddress;  // address of the sender.
-    function &to: TAddress;   // address of the receiver. null when it's a contract creation transaction.
-    function gasUsed: TWei;   // the amount of gas used by this specific transaction.
-    function status: Boolean; // success or failure.
+    function txHash: TTxHash;         // hash of the transaction.
+    function from: TAddress;          // address of the sender.
+    function &to: TAddress;           // address of the receiver. null when it's a contract creation transaction.
+    function gasUsed: BigInteger;     // the amount of gas used by this specific transaction.
+    function status: Boolean;         // success or failure.
+    function effectiveGasPrice: TWei; // eip-1559-only
   end;
 
 constructor TTxReceipt.Create(aJsonObject: TJsonObject);
@@ -735,7 +736,7 @@ begin
 end;
 
 // the amount of gas used by this specific transaction.
-function TTxReceipt.gasUsed: TWei;
+function TTxReceipt.gasUsed: BigInteger;
 begin
   Result := getPropAsStr(FJsonObject, 'gasUsed', '0x0');
 end;
@@ -744,6 +745,12 @@ end;
 function TTxReceipt.status: Boolean;
 begin
   Result := getPropAsStr(FJsonObject, 'status', '0x1') = '0x1';
+end;
+
+// eip-1559-ony
+function TTxReceipt.effectiveGasPrice: TWei;
+begin
+  Result := getPropAsStr(FJsonObject, 'effectiveGasPrice', '0x0');
 end;
 
 // returns the receipt of a transaction by transaction hash.
