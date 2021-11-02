@@ -57,14 +57,17 @@ type
   end;
 
   ITxn = interface
+    function &type: Byte;
     function ToString: string;
-    function blockNumber: BigInteger; // block number where this transaction was in. null when its pending.
-    function from: TAddress;          // address of the sender.
-    function gasLimit: BigInteger;    // gas provided by the sender.
-    function gasPrice: TWei;          // gas price provided by the sender in Wei.
-    function input: string;           // the data send along with the transaction.
-    function &to: TAddress;           // address of the receiver. null when its a contract creation transaction.
-    function value: TWei;             // value transferred in Wei.
+    function blockNumber: BigInteger;    // block number where this transaction was in. null when its pending.
+    function from: TAddress;             // address of the sender.
+    function gasLimit: BigInteger;       // gas limit provided by the sender.
+    function gasPrice: TWei;             // gas price provided by the sender in Wei.
+    function maxPriorityFeePerGas: TWei; // EIP-1559-only
+    function maxFeePerGas: TWei;         // EIP-1559-only
+    function input: string;              // the data send along with the transaction.
+    function &to: TAddress;              // address of the receiver. null when its a contract creation transaction.
+    function value: TWei;                // value transferred in Wei.
   end;
 
 type

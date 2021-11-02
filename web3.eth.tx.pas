@@ -578,14 +578,17 @@ type
   public
     constructor Create(aJsonObject: TJsonObject);
     destructor Destroy; override;
+    function &type: Byte;
     function ToString: string; override;
-    function blockNumber: BigInteger; // block number where this transaction was in. null when its pending.
-    function from: TAddress;          // address of the sender.
-    function gasLimit: BigInteger;    // gas provided by the sender.
-    function gasPrice: TWei;          // gas price provided by the sender in Wei.
-    function input: string;           // the data send along with the transaction.
-    function &to: TAddress;           // address of the receiver. null when its a contract creation transaction.
-    function value: TWei;             // value transferred in Wei.
+    function blockNumber: BigInteger;    // block number where this transaction was in. null when its pending.
+    function from: TAddress;             // address of the sender.
+    function gasLimit: BigInteger;       // gas limit provided by the sender.
+    function gasPrice: TWei;             // gas price provided by the sender in Wei.
+    function maxPriorityFeePerGas: TWei; // EIP-1559-only
+    function maxFeePerGas: TWei;         // EIP-1559-only
+    function input: string;              // the data send along with the transaction.
+    function &to: TAddress;              // address of the receiver. null when its a contract creation transaction.
+    function value: TWei;                // value transferred in Wei.
   end;
 
 constructor TTxn.Create(aJsonObject: TJsonObject);
@@ -598,6 +601,14 @@ destructor TTxn.Destroy;
 begin
   if Assigned(FJsonObject) then FJsonObject.Free;
   inherited Destroy;
+end;
+
+function TTxn.&type: Byte;
+begin
+  if (Self.maxPriorityFeePerGas > 0) or (Self.maxFeePerGas > 0) then
+    Result := 2 // EIP-1559
+  else
+    Result := 0; // Legacy
 end;
 
 function TTxn.ToString: string;
@@ -617,7 +628,7 @@ begin
   Result := TAddress.New(getPropAsStr(FJsonObject, 'from'));
 end;
 
-// gas provided by the sender.
+// gas limit provided by the sender.
 function TTxn.gasLimit: BigInteger;
 begin
   Result := getPropAsStr(FJsonObject, 'gas', '0x5208');
@@ -627,6 +638,18 @@ end;
 function TTxn.gasPrice: TWei;
 begin
   Result := getPropAsStr(FJsonObject, 'gasPrice', '0x0');
+end;
+
+// EIP-1559-only
+function TTxn.maxPriorityFeePerGas: TWei;
+begin
+  Result := getPropAsStr(FJsonObject, 'maxPriorityFeePerGas', '0x0');
+end;
+
+// EIP-1559-only
+function TTxn.maxFeePerGas: TWei;
+begin
+  Result := getPropAsStr(FJsonObject, 'maxFeePerGas', '0x0');
 end;
 
 // the data send along with the transaction.
@@ -756,6 +779,8 @@ begin
   end;
 
   web3.eth.tx.getTransaction(client, rcpt.txHash, procedure(txn: ITxn; err: IError)
+  var
+    obj: TJsonObject;
   begin
     if Assigned(err) then
     begin
@@ -776,16 +801,31 @@ begin
     end;
 
     // eth_call the failed transaction *with the block number from the receipt*
-    var obj := web3.json.unmarshal(Format(
-      '{"to": %s, "data": %s, "from": %s, "value": %s, "gas": %s, "gasPrice": %s}', [
-        web3.json.quoteString(string(txn.&to), '"'),
-        web3.json.quoteString(txn.input, '"'),
-        web3.json.quoteString(string(txn.from), '"'),
-        web3.json.quoteString(toHex(txn.value, [zeroAs0x0]), '"'),
-        web3.json.quoteString(toHex(txn.gasLimit, [zeroAs0x0]), '"'),
-        web3.json.quoteString(toHex(txn.gasPrice, [zeroAs0x0]), '"')
-      ]
-    )) as TJsonObject;
+    if txn.&type >= 2 then
+      obj := web3.json.unmarshal(Format(
+        '{"to": %s, "data": %s, "from": %s, "value": %s, "gas": %s, "maxPriorityFeePerGas": %s, "maxFeePerGas": %s}', [
+          web3.json.quoteString(string(txn.&to), '"'),
+          web3.json.quoteString(txn.input, '"'),
+          web3.json.quoteString(string(txn.from), '"'),
+          web3.json.quoteString(toHex(txn.value, [zeroAs0x0]), '"'),
+          web3.json.quoteString(toHex(txn.gasLimit, [zeroAs0x0]), '"'),
+          web3.json.quoteString(toHex(txn.maxPriorityFeePerGas, [zeroAs0x0]), '"'),
+          web3.json.quoteString(toHex(txn.maxFeePerGas, [zeroAs0x0]), '"')
+        ]
+      )) as TJsonObject
+    else
+      obj := web3.json.unmarshal(Format(
+        '{"to": %s, "data": %s, "from": %s, "value": %s, "gas": %s, "gasPrice": %s}', [
+          web3.json.quoteString(string(txn.&to), '"'),
+          web3.json.quoteString(txn.input, '"'),
+          web3.json.quoteString(string(txn.from), '"'),
+          web3.json.quoteString(toHex(txn.value, [zeroAs0x0]), '"'),
+          web3.json.quoteString(toHex(txn.gasLimit, [zeroAs0x0]), '"'),
+          web3.json.quoteString(toHex(txn.gasPrice, [zeroAs0x0]), '"')
+        ]
+      )) as TJsonObject;
+
+    if Assigned(obj) then
     try
       client.Call('eth_call', [obj, toHex(txn.blockNumber)], procedure(resp: TJsonObject; err: IError)
       begin
