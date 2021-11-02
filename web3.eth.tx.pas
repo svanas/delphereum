@@ -19,6 +19,7 @@ uses
   // Delphi
   System.JSON,
   System.SysUtils,
+  System.Variants,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // CryptoLib4Pascal
@@ -68,7 +69,7 @@ procedure signTransaction(
   callback    : TAsyncString);
 
 function signTransactionLegacy(
-  chain     : TChain;
+  chainId   : Integer;
   nonce     : BigInteger;
   from      : TPrivateKey;
   &to       : TAddress;
@@ -78,7 +79,7 @@ function signTransactionLegacy(
   gasLimit  : BigInteger): string;
 
 function signTransactionType2(
-  chain         : TChain;
+  chainId       : Integer;
   nonce         : BigInteger;
   from          : TPrivateKey;
   &to           : TAddress;
@@ -283,20 +284,20 @@ begin
                 callback('', err);
                 EXIT;
               end;
-              callback(signTransactionType2(client.Chain, nonce, from, &to, value, data, tip, max, gasLimit), nil);
+              callback(signTransactionType2(client.Chain.Id, nonce, from, &to, value, data, tip, max, gasLimit), nil);
             end);
           end);
           EXIT;
         end;
 
-        callback(signTransactionLegacy(client.Chain, nonce, from, &to, value, data, gasPrice, gasLimit), nil);
+        callback(signTransactionLegacy(client.Chain.Id, nonce, from, &to, value, data, gasPrice, gasLimit), nil);
       end);
     end);
   end);
 end;
 
 function signTransactionLegacy(
-  chain     : TChain;
+  chainId   : Integer;
   nonce     : BigInteger;
   from      : TPrivateKey;
   &to       : TAddress;
@@ -318,7 +319,7 @@ begin
           &to,                                     // to
           web3.utils.toHex(value, [padToEven]),    // value
           data,                                    // data
-          chain.Id,                                // v
+          chainId,                                 // v
           0,                                       // r
           0                                        // s
         ])
@@ -327,7 +328,7 @@ begin
 
     var r := Signature.r;
     var s := Signature.s;
-    var v := Signature.rec.Add(TBigInteger.ValueOf(chain.Id * 2 + 35));
+    var v := Signature.rec.Add(TBigInteger.ValueOf(chainId * 2 + 35));
 
     Result :=
       web3.utils.toHex(
@@ -348,8 +349,8 @@ begin
   end;
 end;
 
-function signTransactionType2( // ToDo: EIP-1559
-  chain         : TChain;
+function signTransactionType2(
+  chainId       : Integer;
   nonce         : BigInteger;
   from          : TPrivateKey;
   &to           : TAddress;
@@ -359,7 +360,52 @@ function signTransactionType2( // ToDo: EIP-1559
   maxFee        : TWei;
   gasLimit      : BigInteger): string;
 begin
-  raise EWeb3.Create('Not implemented');
+  var Signer := TEthereumSigner.Create;
+  try
+    Signer.Init(True, from.Parameters);
+
+    var Signature := Signer.GenerateSignature(
+      sha3(
+        [2] +
+        web3.rlp.encode([
+          web3.utils.toHex(chainId),                     // chainId
+          web3.utils.toHex(nonce, [padToEven]),          // nonce
+          web3.utils.toHex(maxPriorityFee, [padToEven]), // maxPriorityFeePerGas
+          web3.utils.toHex(maxFee, [padToEven]),         // maxFeePerGas
+          web3.utils.toHex(gasLimit, [padToEven]),       // gas(Limit)
+          &to,                                           // to
+          web3.utils.toHex(value, [padToEven]),          // value
+          data,                                          // data
+          VarArrayCreate([0, 0], varVariant)             // accessList
+        ])
+      )
+    );
+
+    var r := Signature.r;
+    var s := Signature.s;
+    var v := Signature.rec;
+
+    Result :=
+      web3.utils.toHex(
+        [2] +
+        web3.rlp.encode([
+          web3.utils.toHex(chainId),                     // chainId
+          web3.utils.toHex(nonce, [padToEven]),          // nonce
+          web3.utils.toHex(maxPriorityFee, [padToEven]), // maxPriorityFeePerGas
+          web3.utils.toHex(maxFee, [padToEven]),         // maxFeePerGas
+          web3.utils.toHex(gasLimit, [padToEven]),       // gas(Limit)
+          &to,                                           // to
+          web3.utils.toHex(value, [padToEven]),          // value
+          data,                                          // data
+          VarArrayCreate([0, 0], varVariant),            // accessList
+          web3.utils.toHex(v.ToByteArrayUnsigned),       // v
+          web3.utils.toHex(r.ToByteArrayUnsigned),       // r
+          web3.utils.toHex(s.ToByteArrayUnsigned)        // s
+        ])
+      );
+  finally
+    Signer.Free;
+  end;
 end;
 
 // send raw (aka signed) transaction.
