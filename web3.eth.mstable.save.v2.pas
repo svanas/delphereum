@@ -20,6 +20,7 @@ uses
   Velthuis.BigIntegers,
   // web3
   web3,
+  web3.eth.contract,
   web3.eth.defi,
   web3.eth.erc20,
   web3.eth.types;
@@ -67,6 +68,14 @@ type
     procedure APY(period: TPeriod; callback: TAsyncFloat);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
     procedure ExchangeRate(const block: string; callback: TAsyncQuantity);
+    procedure CreditsToUnderlying(credits: BigInteger; callback: TAsyncQuantity);
+  end;
+
+type
+  TimVaultUSD = class(TCustomContract)
+  public
+    constructor Create(aClient: IWeb3); reintroduce;
+    procedure BalanceOf(owner: TAddress; callback: TAsyncQuantity);
   end;
 
 implementation
@@ -126,11 +135,32 @@ class procedure TmStable.Balance(
   callback: TAsyncQuantity);
 begin
   var imUSD := TimUSD.Create(client);
-  try
-    imUSD.BalanceOfUnderlying(owner, callback);
-  finally
-    imUSD.Free;
-  end;
+  imUSD.BalanceOfUnderlying(owner, procedure(balance1: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(0, err);
+      EXIT;
+    end;
+    var vault := TImVaultUSD.Create(client);
+    vault.BalanceOf(owner, procedure(qty: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        callback(0, err);
+        EXIT;
+      end;
+      imUSD.CreditsToUnderlying(qty, procedure(balance2: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+        begin
+          callback(0, err);
+          EXIT;
+        end;
+        callback(balance1 + balance2, nil);
+      end);
+    end);
+  end);
 end;
 
 class procedure TmStable.Withdraw(
@@ -196,6 +226,23 @@ end;
 procedure TimUSD.ExchangeRate(const block: string; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'exchangeRate()', block, [], callback);
+end;
+
+procedure TimUSD.CreditsToUnderlying(credits: BigInteger; callback: TAsyncQuantity);
+begin
+  web3.eth.call(Client, Contract, 'creditsToUnderlying(uint256)', [web3.utils.toHex(credits)], callback);
+end;
+
+{ TimVaultUSD }
+
+constructor TimVaultUSD.Create(aClient: IWeb3);
+begin
+  inherited Create(aClient, '0x78BefCa7de27d07DC6e71da295Cc2946681A6c7B');
+end;
+
+procedure TimVaultUSD.BalanceOf(owner: TAddress; callback: TAsyncQuantity);
+begin
+  web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
 end;
 
 end.
