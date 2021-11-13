@@ -26,7 +26,8 @@ uses
   web3.eth.contract,
   web3.eth.crypto,
   web3.eth.logs,
-  web3.eth.types;
+  web3.eth.types,
+  web3.utils;
 
 type
   // https://eips.ethereum.org/EIPS/eip-721
@@ -88,7 +89,7 @@ type
     procedure Symbol(callback: TAsyncString);
     // A distinct Uniform Resource Identifier (URI) for a given asset.
     // The URI may point to a JSON file that conforms to the "ERC721 Metadata JSON Schema".
-    procedure TokenURI(tokenId: UInt64; callback: TAsyncString);
+    procedure TokenURI(tokenId: BigInteger; callback: TAsyncString);
   end;
 
   IERC721Enumerable = interface
@@ -179,7 +180,7 @@ type
     // IERC721Metadata
     procedure Name(callback: TAsyncString);
     procedure Symbol(callback: TAsyncString);
-    procedure TokenURI(tokenId: UInt64; callback: TAsyncString);
+    procedure TokenURI(tokenId: BigInteger; callback: TAsyncString);
     // IERC721Enumerable
     procedure TotalSupply(callback: TAsyncQuantity);
     procedure TokenByIndex(index: UInt64; callback: TAsyncQuantity);
@@ -372,9 +373,9 @@ begin
   end);
 end;
 
-procedure TERC721.TokenURI(tokenId: UInt64; callback: TAsyncString);
+procedure TERC721.TokenURI(tokenId: BigInteger; callback: TAsyncString);
 begin
-  web3.eth.call(Client, Contract, 'tokenURI(uint256)', [tokenId], procedure(tup: TTuple; err: IError)
+  web3.eth.call(Client, Contract, 'tokenURI(uint256)', [web3.utils.toHex(tokenId)], procedure(tup: TTuple; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
