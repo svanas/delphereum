@@ -43,6 +43,7 @@ type
   TChainHelper = record helper for TChain
     function Id: Integer;
     function Name: string;
+    function TxType: Byte;
     function Ethereum: Boolean;
     function BlockExplorerURL: string;
   end;
@@ -142,8 +143,8 @@ type
   TSignatureDenied = class(TError, ISignatureDenied);
 
   TSignatureRequestResult = reference to procedure(approved: Boolean; err: IError);
-  TOnSignatureRequest     = reference to procedure(from, &to: TAddress;
-                            gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
+  TOnSignatureRequest     = reference to procedure(from, &to: TAddress; gasPrice: TWei;
+                            estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
   IWeb3 = interface
   ['{D4C1A132-2296-40C0-B6FB-6B326EFB8A26}']
@@ -152,7 +153,7 @@ type
 
     function  ETHERSCAN_API_KEY: string;
     function  GetGasStationInfo: TGasStationInfo;
-    procedure CanSignTransaction(from, &to: TAddress; gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
+    procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
     function  Call(const method: string; args: array of const): TJsonObject; overload;
     procedure Call(const method: string; args: array of const; callback: TAsyncJsonObject); overload;
@@ -172,7 +173,7 @@ type
 
     function  ETHERSCAN_API_KEY: string;
     function  GetGasStationInfo: TGasStationInfo;
-    procedure CanSignTransaction(from, &to: TAddress; gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
+    procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
     function  Call(const method: string; args: array of const): TJsonObject; overload; virtual; abstract;
     procedure Call(const method: string; args: array of const; callback: TAsyncJsonObject); overload; virtual; abstract;
@@ -284,6 +285,31 @@ begin
   Result := GetEnumName(TypeInfo(TChain), Integer(Self)).Replace('_', ' ');
 end;
 
+function TChainHelper.TxType: Byte;
+const
+  // https://eips.ethereum.org/EIPS/eip-2718
+  // 0 = Legacy
+  // 2 = EIP-1559
+  TX_TYPE: array[TChain] of Byte = (
+    2, // Mainnet
+    2, // Ropsten
+    2, // Rinkeby
+    2, // Kovan
+    2, // Goerli
+    2, // Optimism
+    2, // Optimism_test_net
+    0, // RSK
+    0, // RSK_test_net
+    0, // BSC
+    0, // BSC_test_net
+    0, // xDai
+    0, // Arbitrum
+    0  // Arbitrum_test_net
+  );
+begin
+  Result := TX_TYPE[Self];
+end;
+
 function TChainHelper.Ethereum: Boolean;
 begin
   Result := Self in [Mainnet, Ropsten, Rinkeby, Kovan, Goerli];
@@ -366,8 +392,11 @@ begin
   if Assigned(FOnGasStationInfo) then FOnGasStationInfo(Result);
 end;
 
-procedure TCustomWeb3.CanSignTransaction(from, &to: TAddress;
-  gasPrice, estimatedGas: TWei; callback: TSignatureRequestResult);
+procedure TCustomWeb3.CanSignTransaction(
+  from, &to   : TAddress;
+  gasPrice    : TWei;
+  estimatedGas: BigInteger;
+  callback    : TSignatureRequestResult);
 resourcestring
   RS_SIGNATURE_REQUEST = 'Your signature is being requested.'
         + #13#10#13#10 + 'Network'   + #9 + ': %s'

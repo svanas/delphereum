@@ -51,25 +51,34 @@ type
   TTopics = array[0..3] of TArg;
 
 type
-  ITxn = interface
+  IBlock = interface
     function ToString: string;
-    function blockNumber: BigInteger; // block number where this transaction was in. null when its pending.
-    function from: TAddress;          // address of the sender.
-    function gasLimit: TWei;          // gas provided by the sender.
-    function gasPrice: TWei;          // gas price provided by the sender in Wei.
-    function input: string;           // the data send along with the transaction.
-    function &to: TAddress;           // address of the receiver. null when its a contract creation transaction.
-    function value: TWei;             // value transferred in Wei.
+    function baseFeePerGas: TWei;
+  end;
+
+  ITxn = interface
+    function &type: Byte;
+    function ToString: string;
+    function blockNumber: BigInteger;    // block number where this transaction was in. null when its pending.
+    function from: TAddress;             // address of the sender.
+    function gasLimit: BigInteger;       // gas limit provided by the sender.
+    function gasPrice: TWei;             // gas price provided by the sender in Wei.
+    function maxPriorityFeePerGas: TWei; // EIP-1559-only
+    function maxFeePerGas: TWei;         // EIP-1559-only
+    function input: string;              // the data send along with the transaction.
+    function &to: TAddress;              // address of the receiver. null when its a contract creation transaction.
+    function value: TWei;                // value transferred in Wei.
   end;
 
 type
   ITxReceipt = interface
     function ToString: string;
-    function txHash: TTxHash; // hash of the transaction.
-    function from: TAddress;  // address of the sender.
-    function &to: TAddress;   // address of the receiver. null when it's a contract creation transaction.
-    function gasUsed: TWei;   // the amount of gas used by this specific transaction.
-    function status: Boolean; // success or failure.
+    function txHash: TTxHash;         // hash of the transaction.
+    function from: TAddress;          // address of the sender.
+    function &to: TAddress;           // address of the receiver. null when it's a contract creation transaction.
+    function gasUsed: BigInteger;     // the amount of gas used by this specific transaction.
+    function status: Boolean;         // success or failure.
+    function effectiveGasPrice: TWei; // eip-1559-only
   end;
 
 type
@@ -81,6 +90,7 @@ type
   TAsyncArg       = reference to procedure(arg  : TArg;       next: TProc);
   TAsyncTuple     = reference to procedure(tup  : TTuple;     err : IError);
   TAsyncTxHash    = reference to procedure(hash : TTxHash;    err : IError);
+  TAsyncBlock     = reference to procedure(block: IBlock;     err : IError);
   TAsyncTxn       = reference to procedure(txn  : ITxn;       err : IError);
   TAsyncReceipt   = reference to procedure(rcpt : ITxReceipt; err : IError);
   TAsyncReceiptEx = reference to procedure(rcpt : ITxReceipt; qty : BigInteger; err: IError);

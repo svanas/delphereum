@@ -19,6 +19,7 @@ uses
   // Delphi
   System.Math,
   System.SysUtils,
+  System.Variants,
   // web3
   web3,
   web3.utils;
@@ -60,7 +61,7 @@ begin
       raise EWeb3.Create('RLP input is too long.');
 end;
 
-function encodeItem(const item: TBytes): TBytes;
+function encodeItem(const item: TBytes): TBytes; overload;
 var
   len: Integer;
 begin
@@ -69,6 +70,30 @@ begin
     Result := item
   else
     Result := encodeLength(len, $80) + item;
+end;
+
+function encodeItem(const item: Variant): TBytes; overload;
+begin
+  Result := [];
+  case FindVarData(item)^.VType of
+    varSmallint,
+    varShortInt,
+    varInteger:
+      Result := encode(Integer(item));
+    varOleStr,
+    varStrArg,
+    varUStrArg,
+    varString,
+    varUString:
+      Result := encode(string(item));
+  else
+    if VarIsArray(item) then
+    begin
+      for var I := VarArrayLowBound(item, 1) to VarArrayHighBound(item, 1) do
+        Result := Result + encodeItem(VarArrayGet(item, [I]));
+      Result := encodeLength(Length(Result), $c0) + Result;
+    end;
+  end;
 end;
 
 function encode(item: Integer): TBytes;
@@ -91,7 +116,10 @@ end;
 
 function encode(item: TVarRec): TBytes;
 begin
-  Result := encodeItem(web3.utils.fromHex(web3.utils.toHex(item)));
+  if item.VType = vtVariant then
+    Result := encodeItem(item.VVariant^)
+  else
+    Result := encodeItem(web3.utils.fromHex(web3.utils.toHex(item)));
 end;
 
 function encode(items: array of const): TBytes;
