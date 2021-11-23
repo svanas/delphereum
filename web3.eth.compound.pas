@@ -127,6 +127,11 @@ type
     constructor Create(aClient: IWeb3); override;
   end;
 
+  TcTUSD = class(TcToken)
+  public
+    constructor Create(aClient: IWeb3); override;
+  end;
+
 const
   NO_ERROR                       = 0;
   UNAUTHORIZED                   = 1;  // The sender is not authorized to perform this action.
@@ -156,7 +161,8 @@ const
     TcDAI,
     TcUSDC,
     TcUSDT,
-    nil
+    nil,
+    TcTUSD
   );
 
 { TCompound }
@@ -207,6 +213,8 @@ end;
 class function TCompound.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
   Result := (
+    (reserve = TUSD) and (chain = Mainnet)
+  ) or (
     (reserve = USDT) and (chain in [Mainnet, Ropsten, Rinkeby, Kovan])
   ) or (
     (reserve in [DAI, USDC]) and (chain in [Mainnet, Ropsten, Rinkeby, Goerli, Kovan])
@@ -531,6 +539,14 @@ begin
     Kovan:
       inherited Create(aClient, '0x3f0a0ea2f86bae6362cf9799b523ba06647da018');
   end;
+end;
+
+{ TcTUSD }
+
+constructor TcTUSD.Create(aClient: IWeb3);
+begin
+  // https://compound.finance/docs#networks
+  inherited Create(aClient, '0x12392f67bdf24fae0af363c24ac620a2f67dad86');
 end;
 
 end.

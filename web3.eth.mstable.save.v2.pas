@@ -95,7 +95,7 @@ end;
 
 class function TmStable.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (reserve = mUSD);
+  Result := (chain = Mainnet) and (reserve = MUSD);
 end;
 
 class procedure TmStable.APY(

@@ -228,7 +228,7 @@ end;
 
 class function TyVaultV2.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (reserve in [DAI, USDC, USDT]);
+  Result := (chain = Mainnet) and (reserve in [DAI, USDC, USDT, TUSD]);
 end;
 
 class procedure TyVaultV2.APY(

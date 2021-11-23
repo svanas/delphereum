@@ -117,6 +117,11 @@ type
     constructor Create(aClient: IWeb3); override;
   end;
 
+  TIdleTUSD = class(TIdleToken)
+  public
+    constructor Create(aClient: IWeb3); override;
+  end;
+
 implementation
 
 type
@@ -127,7 +132,8 @@ const
     TIdleDAI,
     TIdleUSDC,
     TIdleUSDT,
-    nil
+    nil,
+    TIdleTUSD
   );
 
 { TIdle }
@@ -219,7 +225,7 @@ end;
 class function TIdle.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
   Result := (
-    (chain = Mainnet) and (reserve = USDT)
+    (chain = Mainnet) and (reserve in [USDT, TUSD])
   ) or (
     (chain in [Mainnet, Kovan]) and (reserve in [DAI, USDC])
   );
@@ -232,18 +238,21 @@ class procedure TIdle.APY(
   callback: TAsyncFloat);
 begin
   var IdleToken := IdleTokenClass[reserve].Create(client);
-  if Assigned(IdleToken) then
-  try
-    IdleToken.GetFullAPR(procedure(apr: BigInteger; err: IError)
+  IdleToken.GetFullAPR(procedure(apr1: BigInteger; err1: IError)
+  begin
+    if Assigned(err1) then
     begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(apr.AsDouble / 1e18, nil);
-    end);
-  finally
-    IdleToken.Free;
-  end;
+      IdleToken.GetAvgAPR(procedure(apr2: BigInteger; err2: IError)
+      begin
+        if Assigned(err2) then
+          callback(0, err2)
+        else
+          callback(apr2.AsDouble / 1e18, nil);
+      end);
+      EXIT;
+    end;
+    callback(apr1.AsDouble / 1e18, nil);
+  end);
 end;
 
 class procedure TIdle.Deposit(
@@ -469,6 +478,13 @@ end;
 constructor TIdleUSDT.Create(aClient: IWeb3);
 begin
   inherited Create(aClient, '0xF34842d05A1c888Ca02769A633DF37177415C2f8');
+end;
+
+{ TIdleTUSD }
+
+constructor TIdleTUSD.Create(aClient: IWeb3);
+begin
+  inherited Create(aClient, '0xc278041fDD8249FE4c1Aad1193876857EEa3D68c');
 end;
 
 end.

@@ -83,7 +83,8 @@ const
     TyDAIv3,  // DAI
     TyUSDCv3, // USDC
     TyUSDTv3, // USDT
-    nil       // mUSD
+    nil,      // mUSD
+    nil       // TUSD
   );
 
 { TyEarnV3 }

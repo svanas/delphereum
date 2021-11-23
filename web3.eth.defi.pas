@@ -24,7 +24,7 @@ uses
   web3.eth.types;
 
 type
-  TReserve = (DAI, USDC, USDT, mUSD);
+  TReserve = (DAI, USDC, USDT, MUSD, TUSD);
 
   TReserveHelper = record helper for TReserve
     function  Symbol  : string;
@@ -138,7 +138,8 @@ begin
     DAI : Result := 1e18;
     USDC: Result := 1e6;
     USDT: Result := 1e6;
-    mUSD: Result := 1e18
+    MUSD: Result := 1e18;
+    TUSD: Result := 1e18;
   else
     raise EWeb3.CreateFmt('%s not implemented', [Self.Symbol]);
   end;
@@ -150,7 +151,8 @@ begin
     DAI : Result := '0x6b175474e89094c44da98b954eedeac495271d0f';
     USDC: Result := '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
     USDT: Result := '0xdac17f958d2ee523a2206206994597c13d831ec7';
-    mUSD: Result := '0xe2f2a5C287993345a840Db3B0845fbC70f5935a5';
+    MUSD: Result := '0xe2f2a5C287993345a840Db3B0845fbC70f5935a5';
+    TUSD: Result := '0x0000000000085d4780B73119b644AE5ecd22b376';
   else
     raise EWeb3.CreateFmt('%s not implemented', [Self.Symbol]);
   end;

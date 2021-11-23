@@ -137,6 +137,7 @@ const
     TRariPoolManagerDAI,
     TRariPoolManagerUSDC,
     nil,
+    nil,
     nil
   );
 

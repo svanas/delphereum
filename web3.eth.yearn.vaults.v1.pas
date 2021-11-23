@@ -103,6 +103,11 @@ type
     class function DeployedAt: TAddress; override;
   end;
 
+  TyTUSD = class(TyToken)
+  public
+    class function DeployedAt: TAddress; override;
+  end;
+
 type
   TyTokenClass = class of TyToken;
 
@@ -111,7 +116,8 @@ const
     TyDAI,
     TyUSDC,
     TyUSDT,
-    TyMUSD
+    TyMUSD,
+    TyTUSD
   );
 
 { TyVaultV1 }
@@ -174,7 +180,7 @@ end;
 
 class function TyVaultV1.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (Reserve in [DAI, USDC, USDT, mUSD]);
+  Result := (chain = Mainnet) and (Reserve in [DAI, USDC, USDT, MUSD, TUSD]);
 end;
 
 class procedure TyVaultV1.APY(
@@ -352,6 +358,13 @@ end;
 class function TyMUSD.DeployedAt: TAddress;
 begin
   Result := TAddress('0xE0db48B4F71752C4bEf16De1DBD042B82976b8C7');
+end;
+
+{ TyTUSD }
+
+class function TyTUSD.DeployedAt: TAddress;
+begin
+  Result := TAddress('0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a');
 end;
 
 end.

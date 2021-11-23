@@ -78,12 +78,18 @@ type
     class function DeployedAt: TAddress; override;
   end;
 
+  TyTUSDv2 = class(TyToken)
+  public
+    class function DeployedAt: TAddress; override;
+  end;
+
 const
   yTokenClass: array[TReserve] of TyTokenClass = (
     TyDAIv2,  // DAI
     TyUSDCv2, // USDC
     TyUSDTv2, // USDT
-    nil       // mUSD
+    nil,      // mUSD
+    TyTUSDv2  // TUSD
   );
 
 { TyEarnV2 }
@@ -95,7 +101,7 @@ end;
 
 class function TyEarnV2.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (reserve in [DAI, USDC, USDT]);
+  Result := (chain = Mainnet) and (reserve in [DAI, USDC, USDT, TUSD]);
 end;
 
 class procedure TyEarnV2.APY(
@@ -164,6 +170,13 @@ end;
 class function TyUSDTv2.DeployedAt: TAddress;
 begin
   Result := TAddress('0x83f798e925BcD4017Eb265844FDDAbb448f1707D');
+end;
+
+{ TyTUSDv2 }
+
+class function TyTUSDv2.DeployedAt: TAddress;
+begin
+  Result := TAddress('0x73a052500105205d34daf004eab301916da8190f');
 end;
 
 end.

@@ -137,7 +137,8 @@ type
         3,  // DAI
         2,  // USDC
         -1, // USDT
-        -1  // mUSD
+        -1, // mUSD
+        -1  // TUSD
       );
     constructor Create(aClient: IWeb3); reintroduce;
     procedure GetAccountWei(owner: TAddress; marketId: Integer; callback: TAsyncQuantity);
