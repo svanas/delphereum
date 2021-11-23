@@ -434,7 +434,7 @@ begin
         callback(False, err);
         EXIT;
       end;
-      web3.eth.chainlink.eth_usd(client, procedure(price: Extended; err: IError)
+      web3.eth.chainlink.eth_usd(client, procedure(price: Double; err: IError)
       begin
         if Assigned(err) then
         begin

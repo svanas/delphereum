@@ -55,8 +55,8 @@ type
 function fromWei(wei: TWei; &to: TEthUnit; decimals: Byte = 18): string;
 function toWei(input: string; &unit: TEthUnit): TWei;
 
-function EthToFloat(const value: string): Extended;
-function FloatToEth(value: Extended): string;
+function EthToFloat(const value: string): Double;
+function FloatToEth(value: Double): string;
 
 implementation
 
@@ -154,7 +154,7 @@ begin
     Result := BigInteger.Negate(Result);
 end;
 
-function EthToFloat(const value: string): Extended;
+function EthToFloat(const value: string): Double;
 var
   FS: TFormatSettings;
 begin
@@ -163,7 +163,7 @@ begin
   Result := StrToFloat(value, FS);
 end;
 
-function FloatToEth(value: Extended): string;
+function FloatToEth(value: Double): string;
 var
   FS: TFormatSettings;
 begin

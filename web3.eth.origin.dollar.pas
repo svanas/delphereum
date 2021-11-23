@@ -142,7 +142,7 @@ begin
   var ousd := TOriginDollar.Create(client);
   if Assigned(ousd) then
   begin
-    ousd.APY(period, procedure(apy: Extended; err: IError)
+    ousd.APY(period, procedure(apy: Double; err: IError)
     begin
       try
         callback(apy, err);
@@ -192,7 +192,7 @@ begin
         if reserve.Decimals = 1e18 then
           callback(balance, err)
         else
-          callback(reserve.Scale(balance.AsExtended / 1e18), err);
+          callback(reserve.Scale(balance.AsDouble / 1e18), err);
     end);
   finally
     ousd.Free;
@@ -320,7 +320,7 @@ begin
           callback(0, err);
           EXIT;
         end;
-        callback(period.ToYear((1 / curr.AsExtended) / (1 / past.AsExtended) - 1) * 100, nil);
+        callback(period.ToYear((1 / curr.AsDouble) / (1 / past.AsDouble) - 1) * 100, nil);
       end);
     end);
   end);

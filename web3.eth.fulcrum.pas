@@ -213,7 +213,7 @@ begin
       if Assigned(err) then
         callback(0, err)
       else
-        callback(BigInteger.Create(amount.AsExtended * (price.AsExtended / 1e18)), nil);
+        callback(BigInteger.Create(amount.AsDouble * (price.AsDouble / 1e18)), nil);
     end);
   finally
     iToken.Free;
@@ -234,7 +234,7 @@ begin
       if Assigned(err) then
         callback(0, err)
       else
-        callback(BigInteger.Create(amount.AsExtended / (price.AsExtended / 1e18)), nil);
+        callback(BigInteger.Create(amount.AsDouble / (price.AsDouble / 1e18)), nil);
     end);
   finally
     iToken.Free;
@@ -345,7 +345,7 @@ begin
       if reserve.Decimals = Power(10, decimals.AsInteger) then
         callback(balance, err)
       else
-        callback(reserve.Scale(balance.AsExtended / Power(10, decimals.AsInteger)), err);
+        callback(reserve.Scale(balance.AsDouble / Power(10, decimals.AsInteger)), err);
     end);
   end);
 end;

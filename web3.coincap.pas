@@ -22,8 +22,8 @@ uses
 
 type
   ITicker = interface
-    function Symbol: string;   // most common symbol used to identify this asset on an exchange
-    function Price : Extended; // volume-weighted price based on real-time market data, translated to USD
+    function Symbol: string; // most common symbol used to identify this asset on an exchange
+    function Price : Double; // volume-weighted price based on real-time market data, translated to USD
   end;
 
   TAsyncTicker = reference to procedure(ticker: ITicker; err: IError);
@@ -46,7 +46,7 @@ type
     FJsonObject: TJsonObject;
   public
     function Symbol: string;
-    function Price : Extended;
+    function Price : Double;
     constructor Create(aJsonObject: TJsonObject);
     destructor Destroy; override;
   end;
@@ -69,9 +69,9 @@ begin
   Result := getPropAsStr(FJsonObject, 'symbol');
 end;
 
-function TTicker.Price: Extended;
+function TTicker.Price: Double;
 begin
-  Result := getPropAsExt(FJsonObject, 'priceUsd');
+  Result := getPropAsDbl(FJsonObject, 'priceUsd');
 end;
 
 function ticker(const asset: string; callback: TAsyncTicker): IAsyncResult;

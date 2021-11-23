@@ -86,8 +86,8 @@ type
   end;
 
   TSoloIndex = record
-    Borrow    : Extended;
-    Supply    : Extended;
+    Borrow    : Double;
+    Supply    : Double;
     LastUpdate: BigInteger;
   end;
 
@@ -97,8 +97,8 @@ type
     function Index         : TSoloIndex;    // Interest index of the market
     function PriceOracle   : TAddress;      // Contract address of the price oracle for this market
     function InterestSetter: TAddress;      // Contract address of the interest setter for this market
-    function MarginPremium : Extended;      // Multiplier on the marginRatio for this market
-    function SpreadPremium : Extended;      // Multiplier on the liquidationSpread for this market
+    function MarginPremium : Double;        // Multiplier on the marginRatio for this market
+    function SpreadPremium : Double;        // Multiplier on the liquidationSpread for this market
     function IsClosing     : Boolean;       // Whether additional borrows are allowed for this market
   end;
 
@@ -249,7 +249,7 @@ begin
   var dYdX := TSoloMargin.Create(client);
   if Assigned(dYdX) then
   begin
-    dYdX.GetMarketSupplyInterestRate(TSoloMargin.marketId[reserve], procedure(qty: Extended; err: IError)
+    dYdX.GetMarketSupplyInterestRate(TSoloMargin.marketId[reserve], procedure(qty: Double; err: IError)
     begin
       try
         if Assigned(err) then
@@ -360,8 +360,8 @@ type
     function Index         : TSoloIndex;
     function PriceOracle   : TAddress;
     function InterestSetter: TAddress;
-    function MarginPremium : Extended;
-    function SpreadPremium : Extended;
+    function MarginPremium : Double;
+    function SpreadPremium : Double;
     function IsClosing     : Boolean;
     constructor Create(aTuple: TTuple);
   end;
@@ -400,12 +400,12 @@ begin
   Result := FTuple[7].toAddress;
 end;
 
-function TSoloMarket.MarginPremium: Extended;
+function TSoloMarket.MarginPremium: Double;
 begin
   Result := FTuple[8].toInt64 / INTEREST_RATE_BASE;
 end;
 
-function TSoloMarket.SpreadPremium: Extended;
+function TSoloMarket.SpreadPremium: Double;
 begin
   Result := FTuple[9].toInt64 / INTEREST_RATE_BASE;
 end;
@@ -500,21 +500,21 @@ end;
 // https://github.com/dydxprotocol/solo/blob/master/src/modules/Getters.ts#L253
 procedure TSoloMargin.GetMarketSupplyInterestRate(marketId: Integer; callback: TAsyncFloat);
 begin
-  GetEarningsRate(procedure(earningsRate: Extended; err: IError)
+  GetEarningsRate(procedure(earningsRate: Double; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(0, err);
       EXIT;
     end;
-    GetMarketInterestRate(marketId, procedure(borrowInterestRate: Extended; err: IError)
+    GetMarketInterestRate(marketId, procedure(borrowInterestRate: Double; err: IError)
     begin
       if Assigned(err) then
       begin
         callback(0, err);
         EXIT;
       end;
-      GetMarketUtilization(marketId, procedure(utilization: Extended; err: IError)
+      GetMarketUtilization(marketId, procedure(utilization: Double; err: IError)
       begin
         if Assigned(err) then
           callback(0, err)
@@ -535,8 +535,8 @@ begin
       callback(0, err);
       EXIT;
     end;
-    var totalSupply := market.TotalPar.Supply.AsExtended * market.Index.Supply;
-    var totalBorrow := market.TotalPar.Borrow.AsExtended * market.Index.Borrow;
+    var totalSupply := market.TotalPar.Supply.AsDouble * market.Index.Supply;
+    var totalBorrow := market.TotalPar.Borrow.AsDouble * market.Index.Borrow;
     callback(totalBorrow / totalSupply, nil);
   end);
 end;

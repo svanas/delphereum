@@ -92,7 +92,7 @@ type
     procedure Allowance  (owner, spender: TAddress; callback: TAsyncQuantity);
 
     //------- helpers ----------------------------------------------------------
-    procedure Scale  (amount: Extended; callback: TAsyncQuantity);
+    procedure Scale  (amount: Double; callback: TAsyncQuantity);
     procedure Unscale(amount: BigInteger; callback: TAsyncFloat);
 
     //------- write to contract ------------------------------------------------
@@ -227,7 +227,7 @@ begin
   web3.eth.call(Client, Contract, 'allowance(address,address)', [owner, spender], callback);
 end;
 
-procedure TERC20.Scale(amount: Extended; callback: TAsyncQuantity);
+procedure TERC20.Scale(amount: Double; callback: TAsyncQuantity);
 begin
   Self.Decimals(procedure(dec: BigInteger; err: IError)
   begin
@@ -237,7 +237,7 @@ begin
       if dec.IsZero then
         callback(BigInteger.Create(amount), nil)
       else
-        callback(BigInteger.Create(amount * Power(10, dec.AsExtended)), nil);
+        callback(BigInteger.Create(amount * Power(10, dec.AsDouble)), nil);
   end);
 end;
 
@@ -249,9 +249,9 @@ begin
       callback(0, err)
     else
       if dec.IsZero then
-        callback(amount.AsExtended, nil)
+        callback(amount.AsDouble, nil)
       else
-        callback(amount.AsExtended / Power(10, dec.AsExtended), nil);
+        callback(amount.AsDouble / Power(10, dec.AsDouble), nil);
   end);
 end;
 

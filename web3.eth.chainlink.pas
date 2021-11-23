@@ -55,7 +55,7 @@ begin
     EthUsd := TEthUsd.Create(client);
     if Assigned(EthUsd) then
     begin
-      EthUsd.Price(procedure(price: Extended; err: IError)
+      EthUsd.Price(procedure(price: Double; err: IError)
       begin
         try
           callback(price, err);

@@ -77,22 +77,22 @@ end;
 
 function TGasPrice.Fastest: TWei;
 begin
-  Result := toWei(FloatToEth(getPropAsExt(FJsonObject, 'fastest') / 10), gwei);
+  Result := toWei(FloatToEth(getPropAsDbl(FJsonObject, 'fastest') / 10), gwei);
 end;
 
 function TGasPrice.Fast: TWei;
 begin
-  Result := toWei(FloatToEth(getPropAsExt(FJsonObject, 'fast') / 10), gwei);
+  Result := toWei(FloatToEth(getPropAsDbl(FJsonObject, 'fast') / 10), gwei);
 end;
 
 function TGasPrice.Average: TWei;
 begin
-  Result := toWei(FloatToEth(getPropAsExt(FJsonObject, 'average') / 10), gwei);
+  Result := toWei(FloatToEth(getPropAsDbl(FJsonObject, 'average') / 10), gwei);
 end;
 
 function TGasPrice.SafeLow: TWei;
 begin
-  Result := toWei(FloatToEth(getPropAsExt(FJsonObject, 'safeLow') / 10), gwei);
+  Result := toWei(FloatToEth(getPropAsDbl(FJsonObject, 'safeLow') / 10), gwei);
 end;
 
 function getGasPrice(const apiKey: string; callback: TAsyncGasPrice): IAsyncResult;

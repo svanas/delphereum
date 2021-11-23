@@ -28,21 +28,21 @@ type
 
   TReserveHelper = record helper for TReserve
     function  Symbol  : string;
-    function  Decimals: Extended;
+    function  Decimals: Double;
     function  Address : TAddress;
-    function  Scale(amount: Extended): BigInteger;
-    function  Unscale(amount: BigInteger): Extended;
+    function  Scale(amount: Double): BigInteger;
+    function  Unscale(amount: BigInteger): Double;
     procedure BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
   end;
 
   TPeriod = (oneDay, threeDays, oneWeek, oneMonth);
 
   TPeriodHelper = record helper for TPeriod
-    function Days   : Extended;
-    function Hours  : Extended;
+    function Days   : Double;
+    function Hours  : Double;
     function Minutes: Integer;
     function Seconds: Integer;
-    function ToYear(value: Extended): Extended;
+    function ToYear(value: Double): Double;
   end;
 
   TLendingProtocol = class abstract
@@ -95,7 +95,7 @@ uses
 
 { TPeriodHelper }
 
-function TPeriodHelper.Days: Extended;
+function TPeriodHelper.Days: Double;
 begin
   Result := 1;
   case Self of
@@ -105,7 +105,7 @@ begin
   end;
 end;
 
-function TPeriodHelper.Hours: Extended;
+function TPeriodHelper.Hours: Double;
 begin
   Result := Self.Days * 24;
 end;
@@ -120,7 +120,7 @@ begin
   Result := Self.Minutes * 60;
 end;
 
-function TPeriodHelper.ToYear(value: Extended): Extended;
+function TPeriodHelper.ToYear(value: Double): Double;
 begin
   Result := value * (365.25 / Self.Days);
 end;
@@ -132,7 +132,7 @@ begin
   Result := GetEnumName(TypeInfo(TReserve), Ord(Self));
 end;
 
-function TReserveHelper.Decimals: Extended;
+function TReserveHelper.Decimals: Double;
 begin
   case Self of
     DAI : Result := 1e18;
@@ -156,14 +156,14 @@ begin
   end;
 end;
 
-function TReserveHelper.Scale(amount: Extended): BigInteger;
+function TReserveHelper.Scale(amount: Double): BigInteger;
 begin
   Result := BigInteger.Create(amount * Self.Decimals);
 end;
 
-function TReserveHelper.Unscale(amount: BigInteger): Extended;
+function TReserveHelper.Unscale(amount: BigInteger): Double;
 begin
-  Result := amount.AsExtended / Self.Decimals;
+  Result := amount.AsDouble / Self.Decimals;
 end;
 
 procedure TReserveHelper.BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);

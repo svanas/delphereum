@@ -247,7 +247,7 @@ begin
     var yVaultToken := TyVaultToken.Create(client, addr);
     if Assigned(yVaultToken) then
     begin
-      yVaultToken.APY(period, procedure(apy: Extended; err: IError)
+      yVaultToken.APY(period, procedure(apy: Double; err: IError)
       begin
         try
           if Assigned(err)
@@ -470,30 +470,30 @@ begin
       if Assigned(err) then
         callback(0, err)
       else
-        callback(price.AsExtended / Power(10, decimals.AsInteger), nil);
+        callback(price.AsDouble / Power(10, decimals.AsInteger), nil);
     end);
   end);
 end;
 
 procedure TyVaultToken.TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
 begin
-  Self.PricePerShareEx(BLOCK_LATEST, procedure(price: Extended; err: IError)
+  Self.PricePerShareEx(BLOCK_LATEST, procedure(price: Double; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(BigInteger.Create(amount.AsExtended * price), nil);
+      callback(BigInteger.Create(amount.AsDouble * price), nil);
   end);
 end;
 
 procedure TyVaultToken.UnderlyingToToken(amount: BIgInteger; callback: TAsyncQuantity);
 begin
-  Self.PricePerShareEx(BLOCK_LATEST, procedure(price: Extended; err: IError)
+  Self.PricePerShareEx(BLOCK_LATEST, procedure(price: Double; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(BigInteger.Create(amount.AsExtended / price), nil);
+      callback(BigInteger.Create(amount.AsDouble / price), nil);
   end);
 end;
 
@@ -520,10 +520,10 @@ begin
           callback(0, err);
           EXIT;
         end;
-        if IsNaN(currPrice.AsExtended) or IsNaN(pastPrice.AsExtended) then
+        if IsNaN(currPrice.AsDouble) or IsNaN(pastPrice.AsDouble) then
           callback(NaN, nil)
         else
-          callback(period.ToYear((currPrice.AsExtended / pastPrice.AsExtended - 1) * 100), nil);
+          callback(period.ToYear((currPrice.AsDouble / pastPrice.AsDouble - 1) * 100), nil);
       end);
     end);
   end);

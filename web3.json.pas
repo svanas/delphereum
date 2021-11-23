@@ -27,7 +27,7 @@ function unmarshal(const value: string)  : TJsonValue;
 
 function getPropAsStr(obj: TJsonValue; const name: string; const def: string = ''): string;
 function getPropAsInt(obj: TJsonValue; const name: string; def: Integer = 0): Integer;
-function getPropAsExt(obj: TJsonValue; const name: string; def: Extended = 0): Extended;
+function getPropAsDbl(obj: TJsonValue; const name: string; def: Double = 0): Double;
 function getPropAsBig(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;
 function getPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
 function getPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
@@ -108,7 +108,7 @@ begin
           Result := def;
 end;
 
-function getPropAsExt(obj: TJsonValue; const name: string; def: Extended): Extended;
+function getPropAsDbl(obj: TJsonValue; const name: string; def: Double): Double;
 var
   P : TJsonPair;
   FS: TFormatSettings;

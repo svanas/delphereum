@@ -186,7 +186,7 @@ begin
   var yToken := yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
   begin
-    yToken.APY(period, procedure(apy: Extended; err: IError)
+    yToken.APY(period, procedure(apy: Double; err: IError)
     begin
       try
         callback(apy, err);

@@ -183,7 +183,7 @@ begin
       if Assigned(err) then
         callback(0, err)
       else
-        callback(reserve.Scale(reserve.Unscale(amount) * (price.AsExtended / 1e18)), nil);
+        callback(reserve.Scale(reserve.Unscale(amount) * (price.AsDouble / 1e18)), nil);
     end);
   finally
     IdleToken.free;
@@ -204,7 +204,7 @@ begin
       if Assigned(err) then
         callback(0, err)
       else
-        callback(reserve.Scale(reserve.Unscale(amount) / (price.AsExtended / 1e18)), nil);
+        callback(reserve.Scale(reserve.Unscale(amount) / (price.AsDouble / 1e18)), nil);
     end);
   finally
     IdleToken.free;
@@ -239,7 +239,7 @@ begin
       if Assigned(err) then
         callback(0, err)
       else
-        callback(apr.AsExtended / 1e18, nil);
+        callback(apr.AsDouble / 1e18, nil);
     end);
   finally
     IdleToken.Free;

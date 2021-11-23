@@ -24,10 +24,10 @@ uses
 
 type
   IRariStats = interface
-    function StablePoolAPY: Extended;
-    function EthPoolAPY   : Extended;
-    function YieldPoolAPY : Extended;
-    function DaiPoolAPY   : Extended;
+    function StablePoolAPY: Double;
+    function EthPoolAPY   : Double;
+    function YieldPoolAPY : Double;
+    function DaiPoolAPY   : Double;
   end;
 
   TAsyncRariStats = reference to procedure(stats: IRariStats; err: IError);
@@ -50,10 +50,10 @@ type
   private
     FJsonObject: TJsonObject;
   public
-    function StablePoolAPY: Extended;
-    function EthPoolAPY   : Extended;
-    function YieldPoolAPY : Extended;
-    function DaiPoolAPY   : Extended;
+    function StablePoolAPY: Double;
+    function EthPoolAPY   : Double;
+    function YieldPoolAPY : Double;
+    function DaiPoolAPY   : Double;
     constructor Create(aJsonObject: TJsonObject);
     destructor Destroy; override;
   end;
@@ -71,24 +71,24 @@ begin
   inherited Destroy;
 end;
 
-function TRariStats.StablePoolAPY: Extended;
+function TRariStats.StablePoolAPY: Double;
 begin
-  Result := getPropAsExt(FJsonObject, 'stablePoolAPY');
+  Result := getPropAsDbl(FJsonObject, 'stablePoolAPY');
 end;
 
-function TRariStats.EthPoolAPY: Extended;
+function TRariStats.EthPoolAPY: Double;
 begin
-  Result := getPropAsExt(FJsonObject, 'ethPoolAPY');
+  Result := getPropAsDbl(FJsonObject, 'ethPoolAPY');
 end;
 
-function TRariStats.YieldPoolAPY: Extended;
+function TRariStats.YieldPoolAPY: Double;
 begin
-  Result := getPropAsExt(FJsonObject, 'yieldPoolAPY');
+  Result := getPropAsDbl(FJsonObject, 'yieldPoolAPY');
 end;
 
-function TRariStats.DaiPoolAPY: Extended;
+function TRariStats.DaiPoolAPY: Double;
 begin
-  Result := getPropAsExt(FJsonObject, 'daiPoolAPY');
+  Result := getPropAsDbl(FJsonObject, 'daiPoolAPY');
 end;
 
 {------------------------------ global functions ------------------------------}

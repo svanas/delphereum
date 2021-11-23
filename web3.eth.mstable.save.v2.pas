@@ -107,7 +107,7 @@ begin
   var imUSD := TimUSD.Create(client);
   if Assigned(imUSD) then
   begin
-    imUSD.APY(period, procedure(apy: Extended; err: IError)
+    imUSD.APY(period, procedure(apy: Double; err: IError)
     begin
       try
         callback(apy, err);
@@ -212,7 +212,7 @@ begin
           callback(0, err);
           EXIT;
         end;
-        callback(period.ToYear(curr.AsExtended / past.AsExtended - 1) * 100, nil);
+        callback(period.ToYear(curr.AsDouble / past.AsDouble - 1) * 100, nil);
       end);
     end);
   end);

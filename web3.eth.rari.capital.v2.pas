@@ -194,7 +194,7 @@ class procedure TRari.APY(
   end;
 
 begin
-  getAPY(reserve, procedure(apy: Extended; err: IError)
+  getAPY(reserve, procedure(apy: Double; err: IError)
   begin
     if (apy > 0) and not Assigned(err) then
     begin
@@ -204,7 +204,7 @@ begin
     var manager := RariPoolManager[reserve].Create(client);
     if Assigned(manager) then
     begin
-      manager.APY(period, procedure(apy: Extended; err: IError)
+      manager.APY(period, procedure(apy: Double; err: IError)
       begin
         try
           if Assigned(err) or (not IsNaN(apy)) or (period = System.Low(TPeriod)) then
@@ -261,7 +261,7 @@ begin
         if reserve.Decimals = 1e18 then
           callback(usd, err)
         else
-          callback(reserve.Scale(usd.AsExtended / 1e18), err);
+          callback(reserve.Scale(usd.AsDouble / 1e18), err);
     end);
   finally
     manager.Free;
@@ -416,7 +416,7 @@ begin
           callback(0, err);
           EXIT;
         end;
-        callback(balance.AsExtended / totalSupply.AsExtended, nil);
+        callback(balance.AsDouble / totalSupply.AsDouble, nil);
       end);
     finally
       token.Free;
@@ -427,7 +427,7 @@ end;
 // Returns the annual yield as a percentage.
 procedure TCustomRariPoolManager.APY(period: TPeriod; callback: TAsyncFloat);
 begin
-  Self.GetExchangeRate(BLOCK_LATEST, procedure(currRate: Extended; err: IError)
+  Self.GetExchangeRate(BLOCK_LATEST, procedure(currRate: Double; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -441,7 +441,7 @@ begin
         callback(0, err);
         EXIT;
       end;
-      Self.GetExchangeRate(web3.utils.toHex(bn), procedure(pastRate: Extended; err: IError)
+      Self.GetExchangeRate(web3.utils.toHex(bn), procedure(pastRate: Double; err: IError)
       begin
         if Assigned(err) then
         begin

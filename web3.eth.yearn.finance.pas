@@ -190,7 +190,7 @@ begin
   token := yToken.Create(client);
   if Assigned(token) then
   begin
-    token.APY(period, procedure(apy: Extended; err: IError)
+    token.APY(period, procedure(apy: Double; err: IError)
     begin
       try
         callback(apy, err);
@@ -392,7 +392,7 @@ begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(BigInteger.Create(amount.AsExtended * (price.AsExtended / 1e18)), nil);
+      callback(BigInteger.Create(amount.AsDouble * (price.AsDouble / 1e18)), nil);
   end);
 end;
 
@@ -403,7 +403,7 @@ begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(BigInteger.Create(amount.AsExtended / (price.AsExtended / 1e18)), nil);
+      callback(BigInteger.Create(amount.AsDouble / (price.AsDouble / 1e18)), nil);
   end);
 end;
 
@@ -430,7 +430,7 @@ begin
           callback(0, err);
           EXIT;
         end;
-        callback(period.ToYear(currPrice.AsExtended / pastPrice.AsExtended - 1) * 100, nil);
+        callback(period.ToYear(currPrice.AsDouble / pastPrice.AsDouble - 1) * 100, nil);
       end);
     end);
   end);
