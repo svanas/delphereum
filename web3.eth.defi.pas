@@ -5,7 +5,20 @@
 {             Copyright(c) 2020 Stefan van As <svanas@runbox.com>              }
 {           Github Repository <https://github.com/svanas/delphereum>           }
 {                                                                              }
-{   Distributed under Creative Commons NonCommercial (aka CC BY-NC) license.   }
+{             Distributed under GNU AGPL v3.0 with Commons Clause              }
+{                                                                              }
+{   This program is free software: you can redistribute it and/or modify       }
+{   it under the terms of the GNU Affero General Public License as published   }
+{   by the Free Software Foundation, either version 3 of the License, or       }
+{   (at your option) any later version.                                        }
+{                                                                              }
+{   This program is distributed in the hope that it will be useful,            }
+{   but WITHOUT ANY WARRANTY; without even the implied warranty of             }
+{   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the              }
+{   GNU Affero General Public License for more details.                        }
+{                                                                              }
+{   You should have received a copy of the GNU Affero General Public License   }
+{   along with this program.  If not, see <https://www.gnu.org/licenses/>      }
 {                                                                              }
 {******************************************************************************}
 
@@ -35,7 +48,7 @@ type
     procedure BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
   end;
 
-  TPeriod = (oneDay, threeDays, oneWeek, oneMonth);
+  TPeriod = (oneDay, threeDays, oneWeek, twoWeeks, oneMonth);
 
   TPeriodHelper = record helper for TPeriod
     function Days   : Double;
@@ -101,6 +114,7 @@ begin
   case Self of
     threeDays: Result := 3;
     oneWeek  : Result := 7;
+    twoWeeks : Result := 14;
     oneMonth : Result := 365.25 / 12;
   end;
 end;
