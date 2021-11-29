@@ -66,7 +66,7 @@ You can download Bankless [for Windows](https://www.microsoft.com/store/productI
 
 ## License
 
-Distributed under the [Creative Commons NonCommercial](https://github.com/svanas/delphereum/blob/master/LICENSE.md) (aka CC BY-NC) license.
+Distributed under the [GNU AGP v3.0 with Commons Clause](https://github.com/svanas/delphereum/blob/master/LICENSE) license.
 
 ## Sponsors
 
@@ -76,4 +76,4 @@ Distributed under the [Creative Commons NonCommercial](https://github.com/svanas
 
 ## Commercial support and training
 
-Commercial support and training is available from [Stefan van As](https://stackoverflow.com/story/svanas).
+Commercial support and training is available from [Stefan](https://stackoverflow.com/story/svanas).
