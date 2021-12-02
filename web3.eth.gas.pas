@@ -46,7 +46,23 @@ procedure estimateGas(
 procedure estimateGas(
   client    : IWeb3;
   from, &to : TAddress;
+  const func: string;
+  args      : array of const;
+  &strict   : Boolean;
+  default   : BigInteger;
+  callback  : TAsyncQuantity); overload;
+
+procedure estimateGas(
+  client    : IWeb3;
+  from, &to : TAddress;
   const data: string;
+  default   : BigInteger;
+  callback  : TAsyncQuantity); overload;
+procedure estimateGas(
+  client    : IWeb3;
+  from, &to : TAddress;
+  const data: string;
+  &strict   : Boolean;
   default   : BigInteger;
   callback  : TAsyncQuantity); overload;
 
@@ -127,10 +143,10 @@ begin
   var adjustForSpeed := function(tip: BigInteger; speed: TGasPrice): BigInteger
   begin
     case speed of
-      Fastest: Result := TWei.Max(tip, 4);
-      Fast   : Result := TWei.Max(tip, 3);
-      Medium : Result := TWei.Max(tip, 2);
-      Low    : Result := 1;
+      Fastest: Result := TWei.Max(tip, 4000000000); // 4 Gwei
+      Fast   : Result := TWei.Max(tip, 3000000000); // 3 Gwei
+      Medium : Result := TWei.Max(tip, 2000000000); // 2 Gwei
+      Low    : Result := 1000000000;                // 1 Gwei
     end;
   end;
 
@@ -162,6 +178,14 @@ end;
 
 procedure getMaxFeePerGas(client: IWeb3; callback: TAsyncQuantity);
 begin
+  var info := client.GetGasStationInfo;
+
+  if info.Custom > 0 then
+  begin
+    callback(info.Custom, nil);
+    EXIT;
+  end;
+
   getBaseFeePerGas(client, procedure(baseFee: TWei; err: IError)
   begin
     if Assigned(err) then
@@ -185,13 +209,36 @@ procedure estimateGas(
   default   : BigInteger;
   callback  : TAsyncQuantity);
 begin
-  estimateGas(client, from, &to, web3.eth.abi.encode(func, args), default, callback);
+  estimateGas(client, from, &to, func, args, False, default, callback);
+end;
+
+procedure estimateGas(
+  client    : IWeb3;
+  from, &to : TAddress;
+  const func: string;
+  args      : array of const;
+  &strict   : Boolean;
+  default   : BigInteger;
+  callback  : TAsyncQuantity);
+begin
+  estimateGas(client, from, &to, web3.eth.abi.encode(func, args), &strict, default, callback);
 end;
 
 procedure estimateGas(
   client    : IWeb3;
   from, &to : TAddress;
   const data: string;
+  default   : BigInteger;
+  callback  : TAsyncQuantity);
+begin
+  estimateGas(client, from, &to, data, False, default, callback);
+end;
+
+procedure estimateGas(
+  client    : IWeb3;
+  from, &to : TAddress;
+  const data: string;
+  &strict   : Boolean;
   default   : BigInteger;
   callback  : TAsyncQuantity);
 begin
@@ -217,6 +264,16 @@ begin
     end;
   end;
 
+  // if True, then factor in your gas price (otherwise ignore your gas price while estimating gas)
+  if not &strict then
+  begin
+    eth_estimateGas(client, Format(
+      '{"from": %s, "to": %s, "data": %s}',
+      [quoteString(string(from), '"'), quoteString(string(&to), '"'), quoteString(data, '"')]
+    ), default, callback);
+    EXIT;
+  end;
+
   // construct the eip-1559 transaction call object
   if client.Chain.TxType >= 2 then
   begin
@@ -225,7 +282,7 @@ begin
       if Assigned(err) then
         callback(0, err)
       else
-        getMaxFeePerGas(client, procedure(maxFee: TWei; err: IError)
+        getMaxFeePerGas(client, procedure(max: TWei; err: IError)
         begin
           if Assigned(err) then
             callback(0, err)
@@ -236,7 +293,7 @@ begin
                 web3.json.quoteString(string(&to), '"'),
                 web3.json.quoteString(data, '"'),
                 web3.json.quoteString(toHex(tip, [zeroAs0x0]), '"'),
-                web3.json.quoteString(toHex(maxFee, [zeroAs0x0]), '"')
+                web3.json.quoteString(toHex(max, [zeroAs0x0]), '"')
               ]
             )
             , default, callback);
