@@ -67,8 +67,10 @@ const
     ('', ''),                                         // BSC
     ('', ''),                                         // BSC_test_net
     ('', ''),                                         // xDai
-    ('', ''),                                         // Arbitrum
-    ('', '')                                          // Arbitrum_test_net
+    ('https://polygon-mainnet.infura.io/v3/%s',  ''), // Polygon
+    ('https://polygon-mumbai.infura.io/v3/%s',   ''), // Polygon_test_net
+    ('https://arbitrum-mainnet.infura.io/v3/%s', ''), // Arbitrum
+    ('https://arbitrum-rinkeby.infura.io/v3/%s', '')  // Arbitrum_test_net
   );
 begin
   Result := ENDPOINT[chain][protocol];

@@ -30,6 +30,7 @@ Delphereum supports [every EVM-compatible network](https://chainlist.org/), incl
 * [RSK](https://www.rsk.co/)
 * [xDai](https://www.xdaichain.com/)
 * [Binance Smart Chain](https://bscscan.com/)
+* [Polygon](https://polygon.technology/)
 
 ## Dependencies
 
