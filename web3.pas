@@ -319,7 +319,7 @@ const
     0, // RSK_test_net
     0, // BSC
     0, // BSC_test_net
-    0, // xDai
+    2, // xDai
     0, // Polygon
     0, // Polygon_test_net
     0, // Arbitrum
@@ -348,7 +348,7 @@ const
     'https://explorer.testnet.rsk.co',       // RSK_test_net
     'https://bscscan.com',                   // BSC
     'https://testnet.bscscan.com',           // BSC_test_net
-    'https://blockscout.com/poa/xdai',       // xDai
+    'https://blockscout.com/xdai/mainnet/',  // xDai
     'https://polygonscan.com',               // Polygon
     'https://mumbai.polygonscan.com',        // Polygon_test_net
     'https://explorer.arbitrum.io',          // Arbitrum

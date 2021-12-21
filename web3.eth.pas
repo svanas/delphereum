@@ -88,29 +88,18 @@ function sign(privateKey: TPrivateKey; const msg: string): TSignature;
 
 // transact with a non-payable function.
 // default to the median gas price from the latest blocks.
-// default to a 600,000 gas limit.
+// gas limit is twice the estimated gas.
 procedure write(
   client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
   const func: string;
   args      : array of const;
-  callback  : TAsyncReceipt); overload;
-
-// transact with a non-payable function.
-// default to the median gas price from the latest blocks.
-procedure write(
-  client    : IWeb3;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  const func: string;
-  args      : array of const;
-  gasLimit  : BigInteger;
   callback  : TAsyncReceipt); overload;
 
 // transact with a payable function.
 // default to the median gas price from the latest blocks.
-// default to a 600,000 gas limit.
+// gas limit is twice the estimated gas.
 procedure write(
   client    : IWeb3;
   from      : TPrivateKey;
@@ -118,18 +107,6 @@ procedure write(
   value     : TWei;
   const func: string;
   args      : array of const;
-  callback  : TAsyncReceipt); overload;
-
-// transact with a payable function.
-// default to the median gas price from the latest blocks.
-procedure write(
-  client    : IWeb3;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  value     : TWei;
-  const func: string;
-  args      : array of const;
-  gasLimit  : BigInteger;
   callback  : TAsyncReceipt); overload;
 
 procedure write(
@@ -138,7 +115,6 @@ procedure write(
   &to         : TAddress;
   value       : TWei;
   const data  : string;
-  gasLimit    : BigInteger;
   estimatedGas: BigInteger;
   callback    : TAsyncReceipt); overload;
 
@@ -487,34 +463,9 @@ procedure write(
   client    : IWeb3;
   from      : TPrivateKey;
   &to       : TAddress;
-  const func: string;
-  args      : array of const;
-  gasLimit  : BigInteger;
-  callback  : TAsyncReceipt);
-begin
-  write(client, from, &to, 0, func, args, gasLimit, callback);
-end;
-
-procedure write(
-  client    : IWeb3;
-  from      : TPrivateKey;
-  &to       : TAddress;
   value     : TWei;
   const func: string;
   args      : array of const;
-  callback  : TAsyncReceipt);
-begin
-  write(client, from, &to, value, func, args, 600000, callback);
-end;
-
-procedure write(
-  client    : IWeb3;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  value     : TWei;
-  const func: string;
-  args      : array of const;
-  gasLimit  : BigInteger;
   callback  : TAsyncReceipt);
 begin
   var data := web3.eth.abi.encode(func, args);
@@ -523,12 +474,12 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      web3.eth.gas.estimateGas(client, addr, &to, data, gasLimit, procedure(estimatedGas: BigInteger; err: IError)
+      web3.eth.gas.estimateGas(client, addr, &to, data, procedure(estimatedGas: BigInteger; err: IError)
       begin
         if Assigned(err) then
           callback(nil, err)
         else
-          write(client, from, &to, value, data, gasLimit, estimatedGas, callback);
+          write(client, from, &to, value, data, estimatedGas, callback);
       end);
   end);
 end;
@@ -539,7 +490,6 @@ procedure write(
   &to         : TAddress;
   value       : TWei;
   const data  : string;
-  gasLimit    : BigInteger;
   estimatedGas: BigInteger;
   callback    : TAsyncReceipt);
 begin
@@ -553,7 +503,7 @@ begin
         if Assigned(err) then
           callback(nil, err)
         else
-          signTransaction(client, nonce, from, &to, value, data, gasLimit, estimatedGas, procedure(const sig: string; err: IError)
+          signTransaction(client, nonce, from, &to, value, data, 2 * estimatedGas, estimatedGas, procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then
               callback(nil, err)
@@ -561,7 +511,7 @@ begin
               sendTransactionEx(client, sig, procedure(rcpt: ITxReceipt; err: IError)
               begin
                 if Assigned(err) and (err.Message = 'nonce too low') then
-                  write(client, from, &to, value, data, gasLimit, estimatedGas, callback)
+                  write(client, from, &to, value, data, estimatedGas, callback)
                 else
                   callback(rcpt, err);
               end);

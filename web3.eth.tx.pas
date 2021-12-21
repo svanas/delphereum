@@ -136,28 +136,6 @@ procedure sendTransactionEx(
   value   : TWei;
   callback: TAsyncReceipt); overload;
 
-// calculate the nonce, then sign the transaction, then send the transaction.
-procedure sendTransaction(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : TWei;
-  gasLimit: BigInteger;
-  callback: TAsyncTxHash); overload;
-
-// 1. calculate the nonce, then
-// 2. sign the transaction, then
-// 3. send the raw transaction, then
-// 4. get the transaction receipt, then
-// 5. get the reason if the transaction failed.
-procedure sendTransactionEx(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : TWei;
-  gasLimit: BigInteger;
-  callback: TAsyncReceipt); overload;
-
 // returns the information about a transaction requested by transaction hash.
 procedure getTransaction(
   client  : IWeb3;
@@ -488,33 +466,6 @@ procedure sendTransaction(
   value   : TWei;
   callback: TAsyncTxHash);
 begin
-  sendTransaction(client, from, &to, value, 21000, callback);
-end;
-
-// 1. calculate the nonce, then
-// 2. sign the transaction, then
-// 3. send the raw transaction, then
-// 4. get the transaction receipt, then
-// 5. get the reason if the transaction failed.
-procedure sendTransactionEx(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : TWei;
-  callback: TAsyncReceipt);
-begin
-  sendTransactionEx(client, from, &to, value, 21000, callback);
-end;
-
-// calculate the nonce, then sign the transaction, then send the transaction.
-procedure sendTransaction(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : TWei;
-  gasLimit: BigInteger;
-  callback: TAsyncTxHash);
-begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
@@ -525,7 +476,7 @@ begin
         if Assigned(err) then
           callback('', err)
         else
-          signTransaction(client, nonce, from, &to, value, '', gasLimit, 21000, procedure(const sig: string; err: IError)
+          signTransaction(client, nonce, from, &to, value, '', 21000, 21000, procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then
               callback('', err)
@@ -533,7 +484,7 @@ begin
               sendTransaction(client, sig, procedure(hash: TTxHash; err: IError)
               begin
                 if Assigned(err) and (err.Message = 'nonce too low') then
-                  sendTransaction(client, from, &to, value, gasLimit, callback)
+                  sendTransaction(client, from, &to, value, callback)
                 else
                   callback(hash, err);
               end);
@@ -552,7 +503,6 @@ procedure sendTransactionEx(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : TWei;
-  gasLimit: BigInteger;
   callback: TAsyncReceipt);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
@@ -565,7 +515,7 @@ begin
         if Assigned(err) then
           callback(nil, err)
         else
-          signTransaction(client, nonce, from, &to, value, '', gasLimit, 21000, procedure(const sig: string; err: IError)
+          signTransaction(client, nonce, from, &to, value, '', 21000, 21000, procedure(const sig: string; err: IError)
           begin
             if Assigned(err) then
               callback(nil, err)
@@ -573,7 +523,7 @@ begin
               sendTransactionEx(client, sig, procedure(rcpt: ITxReceipt; err: IError)
               begin
                 if Assigned(err) and (err.Message = 'nonce too low') then
-                  sendTransactionEx(client, from, &to, value, gasLimit, callback)
+                  sendTransactionEx(client, from, &to, value, callback)
                 else
                   callback(rcpt, err);
               end);

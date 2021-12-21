@@ -82,7 +82,7 @@ procedure TGasToken.Mint(from: TAddress; amount: BigInteger; callback: TAsyncQua
 begin
   estimateGas(
     Self.Client, from, Self.Contract,
-    'mint(uint256)', [web3.utils.toHex(amount)], 0, callback);
+    'mint(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 // Mint gas tokens
@@ -90,7 +90,7 @@ procedure TGasToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsync
 begin
   web3.eth.write(
     Self.Client, from, Self.Contract,
-    'mint(uint256)', [web3.utils.toHex(amount)], 5200000, callback);
+    'mint(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 { TGST1 }

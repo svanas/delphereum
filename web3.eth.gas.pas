@@ -54,7 +54,6 @@ procedure estimateGas(
   from, &to : TAddress;
   const func: string;
   args      : array of const;
-  default   : BigInteger;
   callback  : TAsyncQuantity); overload;
 procedure estimateGas(
   client    : IWeb3;
@@ -62,21 +61,18 @@ procedure estimateGas(
   const func: string;
   args      : array of const;
   &strict   : Boolean;
-  default   : BigInteger;
   callback  : TAsyncQuantity); overload;
 
 procedure estimateGas(
   client    : IWeb3;
   from, &to : TAddress;
   const data: string;
-  default   : BigInteger;
   callback  : TAsyncQuantity); overload;
 procedure estimateGas(
   client    : IWeb3;
   from, &to : TAddress;
   const data: string;
   &strict   : Boolean;
-  default   : BigInteger;
   callback  : TAsyncQuantity); overload;
 
 implementation
@@ -219,10 +215,9 @@ procedure estimateGas(
   from, &to : TAddress;
   const func: string;
   args      : array of const;
-  default   : BigInteger;
   callback  : TAsyncQuantity);
 begin
-  estimateGas(client, from, &to, func, args, False, default, callback);
+  estimateGas(client, from, &to, func, args, False, callback);
 end;
 
 procedure estimateGas(
@@ -231,20 +226,18 @@ procedure estimateGas(
   const func: string;
   args      : array of const;
   &strict   : Boolean;
-  default   : BigInteger;
   callback  : TAsyncQuantity);
 begin
-  estimateGas(client, from, &to, web3.eth.abi.encode(func, args), &strict, default, callback);
+  estimateGas(client, from, &to, web3.eth.abi.encode(func, args), &strict, callback);
 end;
 
 procedure estimateGas(
   client    : IWeb3;
   from, &to : TAddress;
   const data: string;
-  default   : BigInteger;
   callback  : TAsyncQuantity);
 begin
-  estimateGas(client, from, &to, data, False, default, callback);
+  estimateGas(client, from, &to, data, False, callback);
 end;
 
 procedure estimateGas(
@@ -252,11 +245,10 @@ procedure estimateGas(
   from, &to : TAddress;
   const data: string;
   &strict   : Boolean;
-  default   : BigInteger;
   callback  : TAsyncQuantity);
 begin
   // estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
-  var eth_estimateGas := procedure(client: IWeb3; const json: string; default: BigInteger; callback: TAsyncQuantity)
+  var eth_estimateGas := procedure(client: IWeb3; const json: string; callback: TAsyncQuantity)
   begin
     var obj := web3.json.unmarshal(json) as TJsonObject;
     try
@@ -264,10 +256,7 @@ begin
       begin
         if Assigned(err) then
         begin
-          if err.Message.Contains('gas required exceeds allowance') and (default > 0) then
-            callback(default, nil)
-          else
-            callback(0, err);
+          callback(0, err);
           EXIT;
         end;
         callback(web3.json.getPropAsStr(resp, 'result'), nil);
@@ -283,7 +272,7 @@ begin
     eth_estimateGas(client, Format(
       '{"from": %s, "to": %s, "data": %s}',
       [quoteString(string(from), '"'), quoteString(string(&to), '"'), quoteString(data, '"')]
-    ), default, callback);
+    ), callback);
     EXIT;
   end;
 
@@ -309,7 +298,7 @@ begin
                 web3.json.quoteString(toHex(max, [zeroAs0x0]), '"')
               ]
             )
-            , default, callback);
+            , callback);
         end);
     end);
     EXIT;
@@ -328,7 +317,7 @@ begin
           web3.json.quoteString(data, '"'),
           web3.json.quoteString(toHex(gasPrice, [zeroAs0x0]), '"')
         ]
-      ), default, callback);
+      ), callback);
   end);
 end;
 

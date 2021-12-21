@@ -392,7 +392,7 @@ procedure TCustomRariPoolManager.Deposit(
 begin
   web3.eth.write(Client, from, Contract,
     'deposit(string,uint256)',
-    [currencyCode, web3.utils.toHex(amount)], 900000, callback);
+    [currencyCode, web3.utils.toHex(amount)], callback);
 end;
 
 // Withdraws funds from the pool in exchange for pool tokens.
@@ -405,7 +405,7 @@ procedure TCustomRariPoolManager.Withdraw(
 begin
   web3.eth.write(Client, from, Contract,
     'withdraw(string,uint256)',
-    [currencyCode, web3.utils.toHex(amount)], 1200000, callback);
+    [currencyCode, web3.utils.toHex(amount)], callback);
 end;
 
 // Get the exchange rate of pool tokens in USD (scaled by 1e18).
