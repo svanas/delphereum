@@ -163,6 +163,8 @@ const
     '',                                                        // xDai
     'https://api.polygonscan.com/api?apikey=%s',               // Polygon
     'https://api-testnet.polygonscan.com/api?apikey=%s',       // Polygon_test_net
+    'https://api.ftmscan.com/api?apikey=%s',                   // Fantom
+    'https://api-testnet.ftmscan.com/api?apikey=%s',           // Fantom_test_net
     'https://api.arbiscan.io/api?apikey=%s',                   // Arbitrum
     'https://api-testnet.arbiscan.io/api?apikey=%s'            // Arbitrum_test_net
   );

@@ -27,10 +27,10 @@ A [dapp](https://en.wikipedia.org/wiki/Decentralized_application) is an applicat
 Delphereum supports [every EVM-compatible network](https://chainlist.org/), including (but not limited to)
 * [Arbitrum](https://arbitrum.io/)
 * [Optimism](https://optimism.io/)
-* [RSK](https://www.rsk.co/)
+* [Polygon](https://polygon.technology/)
 * [Gnosis/xDai](https://www.xdaichain.com/)
 * [Binance Smart Chain](https://bscscan.com/)
-* [Polygon](https://polygon.technology/)
+* [Fantom](https://fantom.foundation/)
 
 ## Dependencies
 

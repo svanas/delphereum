@@ -51,6 +51,8 @@ type
     xDai,
     Polygon,
     Polygon_test_net,
+    Fantom,
+    Fantom_test_net,
     Arbitrum,
     Arbitrum_test_net
   );
@@ -290,6 +292,8 @@ const
     100,   // xDai
     137,   // Polygon,
     80001, // Polygon_test_net
+    250,   // Fantom
+    4002,  // Fantom_test_net
     42161, // Arbitrum
     421611 // Arbitrum_test_net
   );
@@ -322,6 +326,8 @@ const
     2, // xDai
     0, // Polygon
     0, // Polygon_test_net
+    0, // Fantom
+    0, // Fantom_test_net
     0, // Arbitrum
     0  // Arbitrum_test_net
   );
@@ -351,6 +357,8 @@ const
     'https://blockscout.com/xdai/mainnet/',  // xDai
     'https://polygonscan.com',               // Polygon
     'https://mumbai.polygonscan.com',        // Polygon_test_net
+    'https://ftmscan.com',                   // Fantom
+    'https://testnet.ftmscan.com',           // Fantom_test_net
     'https://explorer.arbitrum.io',          // Arbitrum
     'https://rinkeby-explorer.arbitrum.io'   // Arbitrum_test_net
   );

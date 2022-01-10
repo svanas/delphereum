@@ -193,6 +193,8 @@ const
     'xdai',       // xDai
     'matic-main', // Polygon
     '',           // Polygon_test_net
+    '',           // Fantom
+    '',           // Fantom_test_net
     '',           // Arbitrum
     ''            // Arbitrum_test_net
   );

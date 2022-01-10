@@ -68,7 +68,9 @@ const
     ('', ''),                                                                                     // BSC_test_net
     ('', ''),                                                                                     // xDai
     ('https://polygon-mainnet.g.alchemy.com/v2/%s', 'wss://polygon-mainnet.g.alchemy.com/v2/%s'), // Polygon                                         // Polygon
-    ('https://polygon-mumbai.g.alchemy.com/v2/%s',  'wss://polygon-mumbai.g.alchemy.com/v2/%s'),  // Polygon_test_net                                       // Polygon_test_net
+    ('https://polygon-mumbai.g.alchemy.com/v2/%s',  'wss://polygon-mumbai.g.alchemy.com/v2/%s'),  // Polygon_test_net
+    ('', ''),                                                                                     // Fantom
+    ('', ''),                                                                                     // Fantom_test_net                                           // Polygon_test_net
     ('https://arb-mainnet.g.alchemy.com/v2/%s',     'wss://arb-mainnet.g.alchemy.com/v2/%s'),     // Arbitrum
     ('https://arb-rinkeby.g.alchemy.com/v2/%s',     'wss://arb-rinkeby.g.alchemy.com/v2/%s')      // Arbitrum_test_net
   );
