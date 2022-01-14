@@ -324,8 +324,8 @@ const
     0, // BSC
     0, // BSC_test_net
     2, // xDai
-    0, // Polygon
-    0, // Polygon_test_net
+    2, // Polygon
+    2, // Polygon_test_net
     0, // Fantom
     0, // Fantom_test_net
     0, // Arbitrum
