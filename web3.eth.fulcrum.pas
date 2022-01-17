@@ -262,7 +262,7 @@ end;
 
 class function TFulcrum.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain in [Mainnet, Kovan]) and (reserve in [DAI, USDC, USDT]);
+  Result := (chain in [Ethereum, Kovan]) and (reserve in [DAI, USDC, USDT]);
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -557,7 +557,7 @@ end;
 constructor TiDAI.Create(aClient: IWeb3);
 begin
   // https://bzx.network/itokens
-  if aClient.Chain = Mainnet then
+  if aClient.Chain = Ethereum then
     inherited Create(aClient, '0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0')
   else
     if aClient.Chain = Kovan then
@@ -571,7 +571,7 @@ end;
 constructor TiUSDC.Create(aClient: IWeb3);
 begin
   // https://bzx.network/itokens
-  if aClient.Chain = Mainnet then
+  if aClient.Chain = Ethereum then
     inherited Create(aClient, '0x32e4c68b3a4a813b710595aeba7f6b7604ab9c15')
   else
     if aClient.Chain = Kovan then
@@ -585,7 +585,7 @@ end;
 constructor TiUSDT.Create(aClient: IWeb3);
 begin
   // https://bzx.network/itokens
-  if aClient.Chain = Mainnet then
+  if aClient.Chain = Ethereum then
     inherited Create(aClient, '0x7e9997a38a439b2be7ed9c9c4628391d3e055d48')
   else
     if aClient.Chain = Kovan then

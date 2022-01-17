@@ -42,7 +42,7 @@ type
   TReserveHelper = record helper for TReserve
     function  Symbol  : string;
     function  Decimals: Double;
-    function  Address : TAddress;
+    function  Address(chain: TChain): TAddress;
     function  Scale(amount: Double): BigInteger;
     function  Unscale(amount: BigInteger): Double;
     procedure BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
@@ -104,6 +104,7 @@ implementation
 
 uses
   // Delphi
+  System.SysUtils,
   System.TypInfo;
 
 { TPeriodHelper }
@@ -159,8 +160,20 @@ begin
   end;
 end;
 
-function TReserveHelper.Address: TAddress;
+function TReserveHelper.Address(chain: TChain): TAddress;
 begin
+  if chain = Fantom then
+  begin
+    case Self of
+      DAI : Result := '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E';
+      USDC: Result := '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75';
+      USDT: Result := '0x049d68029688eAbF473097a2fC38ef61633A3C7A';
+      TUSD: Result := '0x9879abdea01a879644185341f7af7d8343556b7a';
+    else
+      raise EWeb3.CreateFmt('%s not implemented on %s', [Self.Symbol, chain.Name]);
+    end;
+    EXIT;
+  end;
   case Self of
     DAI : Result := '0x6b175474e89094c44da98b954eedeac495271d0f';
     USDC: Result := '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
@@ -183,10 +196,18 @@ begin
 end;
 
 procedure TReserveHelper.BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
-var
-  erc20: TERC20;
 begin
-  erc20 := TERC20.Create(client, Self.Address);
+  var address: TAddress;
+  try
+    address := Self.Address(client.Chain);
+  except
+    on E: Exception do
+    begin
+      callback(0, TError.Create(E.Message));
+      EXIT;
+    end;
+  end;
+  var erc20 := TERC20.Create(client, address);
   try
     erc20.BalanceOf(owner, callback);
   finally

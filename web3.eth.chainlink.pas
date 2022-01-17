@@ -63,7 +63,7 @@ var
   EthUsd: TEthUsd;
 begin
   // Ethereum price feed is available on Mainnet and Rinkeby and Kovan only.
-  if client.Chain in [Mainnet, Rinkeby, Kovan] then
+  if client.Chain in [Ethereum, Rinkeby, Kovan] then
   begin
     EthUsd := TEthUsd.Create(client);
     if Assigned(EthUsd) then
@@ -124,7 +124,7 @@ end;
 constructor TEthUsd.Create(aClient: IWeb3);
 begin
   case aClient.Chain of
-    Mainnet:
+    Ethereum:
       inherited Create(aClient, '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419');
     Rinkeby:
       inherited Create(aClient, '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e');

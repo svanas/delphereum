@@ -226,11 +226,11 @@ end;
 class function TCompound.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
   Result := (
-    (reserve = TUSD) and (chain = Mainnet)
+    (reserve = TUSD) and (chain = Ethereum)
   ) or (
-    (reserve = USDT) and (chain in [Mainnet, Ropsten, Rinkeby, Kovan])
+    (reserve = USDT) and (chain in [Ethereum, Ropsten, Rinkeby, Kovan])
   ) or (
-    (reserve in [DAI, USDC]) and (chain in [Mainnet, Ropsten, Rinkeby, Goerli, Kovan])
+    (reserve in [DAI, USDC]) and (chain in [Ethereum, Ropsten, Rinkeby, Goerli, Kovan])
   );
 end;
 
@@ -505,7 +505,7 @@ constructor TcDAI.Create(aClient: IWeb3);
 begin
   // https://compound.finance/docs#networks
   case aClient.Chain of
-    Mainnet:
+    Ethereum:
       inherited Create(aClient, '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643');
     Ropsten:
       inherited Create(aClient, '0x6ce27497a64fffb5517aa4aee908b1e7eb63b9ff');
@@ -524,7 +524,7 @@ constructor TcUSDC.Create(aClient: IWeb3);
 begin
   // https://compound.finance/docs#networks
   case aClient.Chain of
-    Mainnet:
+    Ethereum:
       inherited Create(aClient, '0x39aa39c021dfbae8fac545936693ac917d5e7563');
     Ropsten:
       inherited Create(aClient, '0x20572e4c090f15667cf7378e16fad2ea0e2f3eff');
@@ -543,7 +543,7 @@ constructor TcUSDT.Create(aClient: IWeb3);
 begin
   // https://compound.finance/docs#networks
   case aClient.Chain of
-    Mainnet:
+    Ethereum:
       inherited Create(aClient, '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9');
     Ropsten:
       inherited Create(aClient, '0xb6f7f1901ffbcbadf9cd9831a032395105bc3142');

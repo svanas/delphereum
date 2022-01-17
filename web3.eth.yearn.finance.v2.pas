@@ -114,7 +114,7 @@ end;
 
 class function TyEarnV2.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (reserve in [DAI, USDC, USDT, TUSD]);
+  Result := (chain = Ethereum) and (reserve in [DAI, USDC, USDT, TUSD]);
 end;
 
 class procedure TyEarnV2.APY(

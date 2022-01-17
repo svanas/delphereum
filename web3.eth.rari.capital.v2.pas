@@ -163,7 +163,7 @@ class procedure TRari.Approve(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  var erc20 := TERC20.Create(client, reserve.Address);
+  var erc20 := TERC20.Create(client, reserve.Address(client.Chain));
   if Assigned(erc20) then
   begin
     erc20.ApproveEx(from, RariPoolManager[reserve].DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -184,7 +184,7 @@ end;
 
 class function TRari.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (reserve in [DAI, USDC]);
+  Result := (chain = Ethereum) and (reserve in [DAI, USDC]);
 end;
 
 class procedure TRari.APY(

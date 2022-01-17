@@ -193,7 +193,7 @@ end;
 
 class function TyVaultV1.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (Reserve in [DAI, USDC, USDT, MUSD, TUSD]);
+  Result := (chain = Ethereum) and (Reserve in [DAI, USDC, USDT, MUSD, TUSD]);
 end;
 
 class procedure TyVaultV1.APY(

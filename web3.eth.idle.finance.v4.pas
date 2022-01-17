@@ -238,9 +238,9 @@ end;
 class function TIdle.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
   Result := (
-    (chain = Mainnet) and (reserve in [USDT, TUSD])
+    (chain = Ethereum) and (reserve in [USDT, TUSD])
   ) or (
-    (chain in [Mainnet, Kovan]) and (reserve in [DAI, USDC])
+    (chain in [Ethereum, Kovan]) and (reserve in [DAI, USDC])
   );
 end;
 

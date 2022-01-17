@@ -86,22 +86,22 @@ end;
 
 function TRariStats.StablePoolAPY: Double;
 begin
-  Result := getPropAsDbl(FJsonObject, 'stablePoolAPY');
+  Result := getPropAsDouble(FJsonObject, 'stablePoolAPY');
 end;
 
 function TRariStats.EthPoolAPY: Double;
 begin
-  Result := getPropAsDbl(FJsonObject, 'ethPoolAPY');
+  Result := getPropAsDouble(FJsonObject, 'ethPoolAPY');
 end;
 
 function TRariStats.YieldPoolAPY: Double;
 begin
-  Result := getPropAsDbl(FJsonObject, 'yieldPoolAPY');
+  Result := getPropAsDouble(FJsonObject, 'yieldPoolAPY');
 end;
 
 function TRariStats.DaiPoolAPY: Double;
 begin
-  Result := getPropAsDbl(FJsonObject, 'daiPoolAPY');
+  Result := getPropAsDouble(FJsonObject, 'daiPoolAPY');
 end;
 
 {------------------------------ global functions ------------------------------}

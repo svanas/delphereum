@@ -84,7 +84,7 @@ end;
 
 function TTicker.Price: Double;
 begin
-  Result := getPropAsDbl(FJsonObject, 'priceUsd');
+  Result := getPropAsDouble(FJsonObject, 'priceUsd');
 end;
 
 function ticker(const asset: string; callback: TAsyncTicker): IAsyncResult;

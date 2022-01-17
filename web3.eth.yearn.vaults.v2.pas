@@ -129,6 +129,7 @@ uses
   // web3
   web3.eth,
   web3.eth.etherscan,
+  web3.eth.yearn.finance.api,
   web3.utils;
 
 { TyVaultV2 }
@@ -147,7 +148,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var underlying := TERC20.Create(client, reserve.Address);
+    var underlying := TERC20.Create(client, reserve.Address(client.Chain));
     if Assigned(underlying) then
     begin
       underlying.ApproveEx(from, token, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -221,16 +222,31 @@ class procedure TyVaultV2.UnderlyingToTokenAddress(
   reserve : TReserve;
   callback: TAsyncAddress);
 begin
-  TyVaultRegistry.Create(client, procedure(reg: TyVaultRegistry; err: IError)
+  // step #1: use the yearn API
+  web3.eth.yearn.finance.api.latest(client.Chain, reserve.Address(client.Chain), v2, procedure(const vault: IYearnVault; err: IError)
   begin
-    if Assigned(reg) then
-    try
-      reg.LatestVault(reserve.Address, callback);
+    if Assigned(err) then
+    begin
+      callback(EMPTY_ADDRESS, err);
       EXIT;
-    finally
-      reg.Free;
     end;
-    callback(EMPTY_ADDRESS, err);
+    if Assigned(vault) then
+    begin
+      callback(vault.Address, err);
+      EXIT;
+    end;
+    // step #2; if the yearn API didn't work, use the on-chain registry
+    TyVaultRegistry.Create(client, procedure(reg: TyVaultRegistry; err: IError)
+    begin
+      if Assigned(reg) then
+      try
+        reg.LatestVault(reserve.Address(client.Chain), callback);
+        EXIT;
+      finally
+        reg.Free;
+      end;
+      callback(EMPTY_ADDRESS, err);
+    end);
   end);
 end;
 
@@ -241,7 +257,10 @@ end;
 
 class function TyVaultV2.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (reserve in [DAI, USDC, USDT, TUSD]);
+  Result :=
+    (chain = Fantom) and (reserve in [DAI, USDC, USDT])
+  or
+    (chain = Ethereum) and (reserve in [DAI, USDC, USDT, TUSD]);
 end;
 
 class procedure TyVaultV2.APY(
@@ -250,32 +269,47 @@ class procedure TyVaultV2.APY(
   period  : TPeriod;
   callback: TAsyncFloat);
 begin
-  Self.UnderlyingToTokenAddress(client, reserve, procedure(addr: TAddress; err: IError)
+  // step #1: use the yearn API
+  web3.eth.yearn.finance.api.latest(client.Chain, reserve.Address(client.Chain), v2, procedure(const vault: IYearnVault; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(0, err);
       EXIT;
     end;
-    var yVaultToken := TyVaultToken.Create(client, addr);
-    if Assigned(yVaultToken) then
+    if Assigned(vault) then
     begin
-      yVaultToken.APY(period, procedure(apy: Double; err: IError)
-      begin
-        try
-          if Assigned(err)
-          or (period = System.Low(TPeriod))
-          or (not(IsNaN(apy) or IsInfinite(apy))) then
-          begin
-            callback(apy, err);
-            EXIT;
-          end;
-          Self.APY(client, reserve, Pred(period), callback);
-        finally
-          yVaultToken.Free;
-        end;
-      end);
+      callback(vault.APY, err);
+      EXIT;
     end;
+    // step #2; if the yearn API didn't work, use the on-chain smart contract
+    Self.UnderlyingToTokenAddress(client, reserve, procedure(addr: TAddress; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        callback(0, err);
+        EXIT;
+      end;
+      var yVaultToken := TyVaultToken.Create(client, addr);
+      if Assigned(yVaultToken) then
+      begin
+        yVaultToken.APY(period, procedure(apy: Double; err: IError)
+        begin
+          try
+            if Assigned(err)
+            or (period = System.Low(TPeriod))
+            or (not(IsNaN(apy) or IsInfinite(apy))) then
+            begin
+              callback(apy, err);
+              EXIT;
+            end;
+            Self.APY(client, reserve, Pred(period), callback);
+          finally
+            yVaultToken.Free;
+          end;
+        end);
+      end;
+    end);
   end);
 end;
 
@@ -499,7 +533,7 @@ begin
   end);
 end;
 
-procedure TyVaultToken.UnderlyingToToken(amount: BIgInteger; callback: TAsyncQuantity);
+procedure TyVaultToken.UnderlyingToToken(amount: BigInteger; callback: TAsyncQuantity);
 begin
   Self.PricePerShareEx(BLOCK_LATEST, procedure(price: Double; err: IError)
   begin

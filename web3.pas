@@ -37,7 +37,7 @@ uses
 
 type
   TChain = (
-    Mainnet,
+    Ethereum,
     Ropsten,
     Rinkeby,
     Kovan,
@@ -61,7 +61,6 @@ type
     function Id: Integer;
     function Name: string;
     function TxType: Byte;
-    function Ethereum: Boolean;
     function BlockExplorerURL: string;
   end;
 
@@ -335,11 +334,6 @@ begin
   Result := TX_TYPE[Self];
 end;
 
-function TChainHelper.Ethereum: Boolean;
-begin
-  Result := Self in [Mainnet, Ropsten, Rinkeby, Kovan, Goerli];
-end;
-
 function TChainHelper.BlockExplorerURL: string;
 const
   BLOCK_EXPLORER_URL: array[TChain] of string = (
@@ -497,7 +491,7 @@ end;
 
 constructor TWeb3.Create(const aURL: string);
 begin
-  Self.Create(Mainnet, aURL);
+  Self.Create(Ethereum, aURL);
 end;
 
 constructor TWeb3.Create(aChain: TChain; const aURL: string);
@@ -529,7 +523,7 @@ constructor TWeb3Ex.Create(
   aProtocol : IPubSub;
   aSecurity : TSecurity = TSecurity.Automatic);
 begin
-  Self.Create(Mainnet, aURL, aProtocol, aSecurity);
+  Self.Create(Ethereum, aURL, aProtocol, aSecurity);
 end;
 
 constructor TWeb3Ex.Create(

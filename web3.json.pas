@@ -40,10 +40,11 @@ function unmarshal(const value: string)  : TJsonValue;
 
 function getPropAsStr(obj: TJsonValue; const name: string; const def: string = ''): string;
 function getPropAsInt(obj: TJsonValue; const name: string; def: Integer = 0): Integer;
-function getPropAsDbl(obj: TJsonValue; const name: string; def: Double = 0): Double;
-function getPropAsBig(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;
+function getPropAsDouble(obj: TJsonValue; const name: string; def: Double = 0): Double;
+function getPropAsBigInt(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;
 function getPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
 function getPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
+function getPropAsBOOL(obj: TJsonValue; const name: string; def: Boolean = False): Boolean;
 
 function quoteString(const S: string; Quote: Char = '"'): string;
 
@@ -121,7 +122,7 @@ begin
           Result := def;
 end;
 
-function getPropAsDbl(obj: TJsonValue; const name: string; def: Double): Double;
+function getPropAsDouble(obj: TJsonValue; const name: string; def: Double): Double;
 var
   P : TJsonPair;
   FS: TFormatSettings;
@@ -145,7 +146,7 @@ begin
         end;
 end;
 
-function getPropAsBig(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;
+function getPropAsBigInt(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;
 var
   P: TJsonPair;
 begin
@@ -196,6 +197,30 @@ begin
     if Assigned(P.JsonValue) then
       if P.JsonValue is TJsonArray then
         Result := TJsonArray(P.JsonValue);
+end;
+
+function getPropAsBOOL(obj: TJsonValue; const name: string; def: Boolean): Boolean;
+var
+  P: TJsonPair;
+begin
+  Result := def;
+  if not Assigned(obj) then
+    EXIT;
+  if not(obj is TJsonObject) then
+    EXIT;
+  P := TJsonObject(obj).Get(name);
+  if Assigned(P) then
+    if Assigned(P.JsonValue) then
+      if P.JsonValue is TJsonTrue then
+        Result := True
+      else
+        if P.JsonValue is TJsonFalse then
+          Result := False
+        else
+          if P.JsonValue is TJsonString then
+            Result := SameText(TJsonString(P.JsonValue).Value, '1')
+                   or SameText(TJsonString(P.JsonValue).Value, 'yes')
+                   or SameText(TJsonString(P.JsonValue).Value, 'true');
 end;
 
 function quoteString(const S: string; Quote: Char): string;

@@ -108,7 +108,7 @@ end;
 
 class function TmStable.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (reserve = MUSD);
+  Result := (chain = Ethereum) and (reserve = MUSD);
 end;
 
 class procedure TmStable.APY(

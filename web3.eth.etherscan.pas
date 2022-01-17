@@ -252,7 +252,7 @@ end;
 
 function TErc20TransferEvent.Value: BigInteger;
 begin
-  Result := getPropAsBig(FJsonObject, 'value', 0);
+  Result := getPropAsBigInt(FJsonObject, 'value', 0);
 end;
 
 {---------------------------- TErc20TransferEvents ----------------------------}
@@ -614,7 +614,7 @@ begin
     if status = 0 then
       callback(0, TEtherscanError.Create(status, resp))
     else
-      callback(web3.json.getPropAsBig(resp, 'result', 0), nil);
+      callback(web3.json.getPropAsBigInt(resp, 'result', 0), nil);
   end);
 end;
 

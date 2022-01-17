@@ -152,9 +152,9 @@ class procedure TAave.GET_RESERVE_ADDRESS(
   reserve : TReserve;
   callback: TAsyncAddress);
 begin
-  if chain = Mainnet then
+  if chain = Ethereum then
   begin
-    callback(reserve.Address, nil);
+    callback(reserve.Address(chain), nil);
     EXIT;
   end;
   if (chain = Kovan) and (reserve in [DAI, USDC, USDT]) then
@@ -273,7 +273,7 @@ end;
 
 class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain in [Mainnet, Kovan]) and (reserve in [DAI, USDC, USDT]);
+  Result := (chain in [Ethereum, Kovan]) and (reserve in [DAI, USDC, USDT]);
 end;
 
 class procedure TAave.APY(
@@ -545,7 +545,7 @@ end;
 
 constructor TAaveLendingPoolAddressesProvider.Create(aClient: IWeb3);
 begin
-  if aClient.Chain = Mainnet then
+  if aClient.Chain = Ethereum then
     inherited Create(aClient, '0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5')
   else
     if aClient.Chain = Kovan then

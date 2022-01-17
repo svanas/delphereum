@@ -122,7 +122,7 @@ class procedure TOrigin.Approve(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  var underlying := TERC20.Create(client, reserve.Address);
+  var underlying := TERC20.Create(client, reserve.Address(client.Chain));
   if Assigned(underlying) then
   begin
     underlying.ApproveEx(from, TOriginVault.DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -143,7 +143,7 @@ end;
 
 class function TOrigin.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Mainnet) and (reserve = USDC);
+  Result := (chain = Ethereum) and (reserve = USDC);
 end;
 
 class procedure TOrigin.APY(
@@ -272,7 +272,7 @@ begin
     Contract,
     'mint(address,uint256,uint256)',
     [
-      reserve.Address,
+      reserve.Address(Client.Chain),
       web3.utils.toHex(amount),
       0
     ],

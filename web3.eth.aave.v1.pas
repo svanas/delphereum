@@ -141,9 +141,9 @@ implementation
 // Returns the ERC-20 contract address of the underlying asset.
 class procedure TAave.UNDERLYING_ADDRESS(chain: TChain; reserve: TReserve; callback: TAsyncAddress);
 begin
-  if chain = Mainnet then
+  if chain = Ethereum then
   begin
-    callback(reserve.Address, nil);
+    callback(reserve.Address(chain), nil);
     EXIT;
   end;
   if (chain = Kovan) and (reserve in [DAI, USDC, USDT]) then
@@ -222,7 +222,7 @@ end;
 
 class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain in [Mainnet, Ropsten, Kovan]) and (reserve in [DAI, USDC, USDT]);
+  Result := (chain in [Ethereum, Ropsten, Kovan]) and (reserve in [DAI, USDC, USDT]);
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -429,7 +429,7 @@ end;
 constructor TAaveAddressesProvider.Create(aClient: IWeb3);
 begin
   // https://docs.aave.com/developers/developing-on-aave/deployed-contract-instances
-  if aClient.Chain = Mainnet then
+  if aClient.Chain = Ethereum then
     inherited Create(aClient, '0x24a42fD28C976A61Df5D00D0599C34c4f90748c8')
   else
     if aClient.Chain = Kovan then

@@ -248,7 +248,7 @@ end;
 
 class function TdYdX.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain in [Mainnet, Kovan]) and (reserve in [DAI, USDC]);
+  Result := (chain in [Ethereum, Kovan]) and (reserve in [DAI, USDC]);
 end;
 
 // Returns the annual yield as a percentage.
@@ -438,7 +438,7 @@ end;
 
 class function TSoloMargin.DeployedAt(chain: TChain): TAddress;
 begin
-  if chain = Mainnet then
+  if chain = Ethereum then
     Result := '0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e'
   else
     if chain = Kovan then
