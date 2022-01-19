@@ -89,6 +89,12 @@ type
     function Message: string; virtual;
   end;
 
+  // You can safely ignore this error and continue execution if you want
+  ISilent = interface(IError)
+  ['{07D302E5-B5F2-479C-8606-574D2F8BCF4F}']
+  end;
+  TSilent = class(TError, ISilent);
+
   TOnEtherscanApiKey = reference to procedure(var apiKey: string);
 
   TGasPrice = (

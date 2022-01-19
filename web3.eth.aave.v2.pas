@@ -154,7 +154,7 @@ class procedure TAave.GET_RESERVE_ADDRESS(
 begin
   if chain = Ethereum then
   begin
-    callback(reserve.Address(chain), nil);
+    reserve.Address(chain, callback);
     EXIT;
   end;
   if (chain = Kovan) and (reserve in [DAI, USDC, USDT]) then

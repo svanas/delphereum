@@ -163,18 +163,26 @@ class procedure TRari.Approve(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  var erc20 := TERC20.Create(client, reserve.Address(client.Chain));
-  if Assigned(erc20) then
+  reserve.Address(client.Chain, procedure(reserveAddr: TAddress; err: IError)
   begin
-    erc20.ApproveEx(from, RariPoolManager[reserve].DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
+    if Assigned(err) then
     begin
-      try
-        callback(rcpt, err);
-      finally
-        erc20.Free;
-      end;
-    end);
-  end;
+      callback(nil, err);
+      EXIT;
+    end;
+    var erc20 := TERC20.Create(client, reserveAddr);
+    if Assigned(erc20) then
+    begin
+      erc20.ApproveEx(from, RariPoolManager[reserve].DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
+      begin
+        try
+          callback(rcpt, err);
+        finally
+          erc20.Free;
+        end;
+      end);
+    end;
+  end);
 end;
 
 class function TRari.Name: string;

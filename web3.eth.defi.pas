@@ -42,7 +42,7 @@ type
   TReserveHelper = record helper for TReserve
     function  Symbol  : string;
     function  Decimals: Double;
-    function  Address(chain: TChain): TAddress;
+    procedure Address(chain: TChain; callback: TAsyncAddress);
     function  Scale(amount: Double): BigInteger;
     function  Unscale(amount: BigInteger): Double;
     procedure BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
@@ -105,7 +105,9 @@ implementation
 uses
   // Delphi
   System.SysUtils,
-  System.TypInfo;
+  System.TypInfo,
+  // web3
+  web3.eth;
 
 { TPeriodHelper }
 
@@ -149,39 +151,34 @@ end;
 
 function TReserveHelper.Decimals: Double;
 begin
-  case Self of
-    DAI : Result := 1e18;
-    USDC: Result := 1e6;
-    USDT: Result := 1e6;
-    MUSD: Result := 1e18;
-    TUSD: Result := 1e18;
+  if Self in [USDC, USDT] then
+    Result := 1e6
   else
-    raise EWeb3.CreateFmt('%s not implemented', [Self.Symbol]);
-  end;
+    Result := 1e18;
 end;
 
-function TReserveHelper.Address(chain: TChain): TAddress;
+procedure TReserveHelper.Address(chain: TChain; callback: TAsyncAddress);
 begin
   if chain = Fantom then
   begin
     case Self of
-      DAI : Result := '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E';
-      USDC: Result := '0x04068DA6C83AFCFA0e13ba15A6696662335D5B75';
-      USDT: Result := '0x049d68029688eAbF473097a2fC38ef61633A3C7A';
-      TUSD: Result := '0x9879abdea01a879644185341f7af7d8343556b7a';
+      DAI : callback('0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E', nil);
+      USDC: callback('0x04068DA6C83AFCFA0e13ba15A6696662335D5B75', nil);
+      USDT: callback('0x049d68029688eAbF473097a2fC38ef61633A3C7A', nil);
+      TUSD: callback('0x9879abdea01a879644185341f7af7d8343556b7a', nil);
     else
-      raise EWeb3.CreateFmt('%s not implemented on %s', [Self.Symbol, chain.Name]);
+      callback(EMPTY_ADDRESS, TSilent.Create('%s not implemented on %s', [Self.Symbol, chain.Name]));
     end;
     EXIT;
   end;
   case Self of
-    DAI : Result := '0x6b175474e89094c44da98b954eedeac495271d0f';
-    USDC: Result := '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
-    USDT: Result := '0xdac17f958d2ee523a2206206994597c13d831ec7';
-    MUSD: Result := '0xe2f2a5C287993345a840Db3B0845fbC70f5935a5';
-    TUSD: Result := '0x0000000000085d4780B73119b644AE5ecd22b376';
+    DAI : callback('0x6b175474e89094c44da98b954eedeac495271d0f', nil);
+    USDC: callback('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', nil);
+    USDT: callback('0xdac17f958d2ee523a2206206994597c13d831ec7', nil);
+    MUSD: callback('0xe2f2a5C287993345a840Db3B0845fbC70f5935a5', nil);
+    TUSD: callback('0x0000000000085d4780B73119b644AE5ecd22b376', nil);
   else
-    raise EWeb3.CreateFmt('%s not implemented', [Self.Symbol]);
+    callback(EMPTY_ADDRESS, TSilent.Create('%s not implemented', [Self.Symbol]));
   end;
 end;
 
@@ -197,22 +194,23 @@ end;
 
 procedure TReserveHelper.BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
 begin
-  var address: TAddress;
-  try
-    address := Self.Address(client.Chain);
-  except
-    on E: Exception do
+  Self.Address(client.Chain, procedure(token: TAddress; err: IError)
+  begin
+    if Assigned(err) then
     begin
-      callback(0, TError.Create(E.Message));
+      if Supports(err, ISilent) then
+        callback(0, nil)
+      else
+        callback(0, err);
       EXIT;
     end;
-  end;
-  var erc20 := TERC20.Create(client, address);
-  try
-    erc20.BalanceOf(owner, callback);
-  finally
-    erc20.Free;
-  end;
+    var erc20 := TERC20.Create(client, token);
+    try
+      erc20.BalanceOf(owner, callback);
+    finally
+      erc20.Free;
+    end;
+  end);
 end;
 
 end.
