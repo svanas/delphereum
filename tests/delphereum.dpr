@@ -48,7 +48,6 @@ uses
   web3.eth.blocknative.mempool in '..\web3.eth.blocknative.mempool.pas',
   web3.eth.blocknative.mempool.sgc in '..\web3.eth.blocknative.mempool.sgc.pas',
   web3.eth.chainlink in '..\web3.eth.chainlink.pas',
-  web3.eth.chi in '..\web3.eth.chi.pas',
   web3.eth.compound in '..\web3.eth.compound.pas',
   web3.eth.contract in '..\web3.eth.contract.pas',
   web3.eth.crypto in '..\web3.eth.crypto.pas',
