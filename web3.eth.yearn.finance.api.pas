@@ -32,8 +32,7 @@ uses
   // Delphi
   System.Types,
   // web3
-  web3,
-  web3.eth.types;
+  web3;
 
 type
   TVaultType = (vUnknown, v1, v2);
@@ -70,9 +69,9 @@ uses
   System.SysUtils,
   // web3
   web3.eth,
+  web3.eth.types,
   web3.http,
   web3.json;
-
 
 {--------------------------------- TMigration ---------------------------------}
 
@@ -189,7 +188,7 @@ begin
     Result := TMigration.Create(migration.Clone as TJsonObject);
 end;
 
-{------------------------------ global functions ------------------------------}
+{------------------------------ public functions ------------------------------}
 
 function vaults(chain: TChain; callback: TAsyncVaults): IAsyncResult;
 begin
