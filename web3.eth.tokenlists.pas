@@ -30,9 +30,11 @@ interface
 
 uses
   // Delphi
+  System.SysUtils,
   System.Types,
   // web3
-  web3;
+  web3,
+  web3.eth.types;
 
 type
   IToken = interface
@@ -42,9 +44,17 @@ type
     function Symbol: string;
     function Decimals: Integer;
     function LogoURI: string;
+    procedure Balance(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
   end;
 
-  TAsyncTokens = reference to procedure(vaults: TArray<IToken>; err: IError);
+  TTokens = TArray<IToken>;
+
+  TTokensHelper = record helper for TTokens
+    procedure Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
+    function IndexOf(address: TAddress): Integer;
+  end;
+
+  TAsyncTokens = reference to procedure(tokens: TTokens; err: IError);
 
 function tokens(const source: string; callback: TAsyncJsonArray): IAsyncResult; overload;
 function tokens(const source: string; callback: TAsyncTokens): IAsyncResult; overload;
@@ -57,7 +67,7 @@ uses
   System.Generics.Collections,
   System.JSON,
   // web3
-  web3.eth.types,
+  web3.eth.erc20,
   web3.http,
   web3.json;
 
@@ -66,7 +76,12 @@ uses
 type
   TToken = class(TInterfacedObject, IToken)
   private
-    FJsonObject: TJsonObject;
+    FChainId: Integer;
+    FAddress: TAddress;
+    FName: string;
+    FSymbol: string;
+    FDecimals: Integer;
+    FLogoURI: string;
   public
     function ChainId: Integer;
     function Address: TAddress;
@@ -74,50 +89,95 @@ type
     function Symbol: string;
     function Decimals: Integer;
     function LogoURI: string;
+    procedure Balance(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
     constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
   end;
 
 constructor TToken.Create(aJsonObject: TJsonObject);
 begin
   inherited Create;
-  FJsonObject := aJsonObject;
-end;
-
-destructor TToken.Destroy;
-begin
-  if Assigned(FJsonObject) then FJsonObject.Free;
-  inherited Destroy;
+  FChainId := getPropAsInt(aJsonObject, 'chainId');
+  FAddress := TAddress.New(getPropAsStr(aJsonObject, 'address'));
+  FName := getPropAsStr(aJsonObject, 'name');
+  FSymbol := getPropAsStr(aJsonObject, 'symbol');
+  FDecimals := getPropAsInt(aJsonObject, 'decimals');
+  FLogoURI := getPropAsStr(aJsonObject, 'logoURI');
 end;
 
 function TToken.ChainId: Integer;
 begin
-  Result := getPropAsInt(FJsonObject, 'chainId');
+  Result := FChainId;
 end;
 
 function TToken.Address: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonObject, 'address'));
+  Result := FAddress;
 end;
 
 function TToken.Name: string;
 begin
-  Result := getPropAsStr(FJsonObject, 'name');
+  Result := FName;
 end;
 
 function TToken.Symbol: string;
 begin
-  Result := getPropAsStr(FJsonObject, 'symbol');
+  Result := FSymbol;
 end;
 
 function TToken.Decimals: Integer;
 begin
-  Result := getPropAsInt(FJsonObject, 'decimals');
+  Result := FDecimals;
 end;
 
 function TToken.LogoURI: string;
 begin
-  Result := getPropAsStr(FJsonObject, 'logoURI');
+  Result := FLogoURI;
+end;
+
+procedure TToken.Balance(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
+begin
+  var erc20 := TERC20.Create(client, Self.Address);
+  try
+    erc20.BalanceOf(owner, callback);
+  finally
+    erc20.Free;
+  end;
+end;
+
+{------------------------------- TTokensHelper --------------------------------}
+
+procedure TTokensHelper.Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
+begin
+  var next: TProc<TTokens, Integer>;
+
+  next := procedure(tokens: TTokens; idx: Integer)
+  begin
+    if idx >= Length(tokens) then
+    begin
+      if Assigned(done) then done;
+      EXIT;
+    end;
+    foreach(idx, procedure
+    begin
+      next(tokens, idx + 1);
+    end);
+  end;
+
+  if Length(Self) = 0 then
+  begin
+    if Assigned(done) then done;
+    EXIT;
+  end;
+
+  next(Self, 0);
+end;
+
+function TTokensHelper.IndexOf(address: TAddress): Integer;
+begin
+  for Result := 0 to Length(Self) - 1 do
+    if Self[Result].Address.SameAs(address) then
+      EXIT;
+  Result := -1;
 end;
 
 {------------------------------ public functions ------------------------------}
@@ -139,10 +199,10 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var result: TArray<IToken>;
+    var result: TTokens;
     SetLength(result, arr.Count);
     for var I := 0 to Pred(arr.Count) do
-      result[I] := TToken.Create(arr[I].Clone as TJsonObject);
+      result[I] := TToken.Create(arr[I] as TJsonObject);
     callback(result, nil);
   end);
 end;
@@ -171,33 +231,33 @@ const
   );
 begin
   // step #1: get the (multi-chain) Uniswap Labs List
-  Result := tokens('https://tokens.uniswap.org', procedure(tokens1: TArray<IToken>; err1: IError)
+  Result := tokens('https://tokens.uniswap.org', procedure(tokens1: TTokens; err1: IError)
   begin
     if Assigned(err1) or not Assigned(tokens1) then
     begin
       callback(nil, err1);
       EXIT;
     end;
-    var result: TArray<IToken>;
-    for var token in tokens1 do
-      if token.ChainId = chain.Id then
-        result := result + [token];
+    var result: TTokens;
+    for var token1 in tokens1 do
+      if token1.ChainId = chain.Id then
+        result := result + [token1];
     // step #2: add tokens from a chain-specific token list (if any)
     if TOKEN_LIST[chain] = '' then
     begin
       callback(result, nil);
       EXIT;
     end;
-    tokens(TOKEN_LIST[chain], procedure(tokens2: TArray<IToken>; err2: IError)
+    tokens(TOKEN_LIST[chain], procedure(tokens2: TTokens; err2: IError)
     begin
       if Assigned(err2) or not Assigned(tokens2) then
       begin
         callback(result, err2);
         EXIT;
       end;
-      for var token in tokens2 do
-        if token.ChainId = chain.Id then
-          result := result + [token];
+      for var token2 in tokens2 do
+        if (token2.ChainId = chain.Id) and (result.IndexOf(token2.Address) = -1) then
+          result := result + [token2];
       callback(result, nil);
     end);
   end);
