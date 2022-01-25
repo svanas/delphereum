@@ -148,22 +148,58 @@ begin
 end;
 
 function tokens(chain: TChain; callback: TAsyncTokens): IAsyncResult;
+const
+  TOKEN_LIST: array[TChain] of string = (
+    { Ethereum          } 'https://tokens.coingecko.com/uniswap/all.json',
+    { Ropsten           } '',
+    { Rinkeby           } '',
+    { Kovan             } '',
+    { Goerli            } '',
+    { Optimism          } 'https://static.optimism.io/optimism.tokenlist.json',
+    { Optimism_test_net } '',
+    { RSK               } '',
+    { RSK_test_net      } '',
+    { BSC               } 'https://tokens.pancakeswap.finance/pancakeswap-extended.json',
+    { BSC_test_net      } '',
+    { xDai              } '',
+    { Polygon           } 'https://unpkg.com/quickswap-default-token-list@latest/build/quickswap-default.tokenlist.json',
+    { Polygon_test_net  } '',
+    { Fantom            } '',
+    { Fantom_test_net   } '',
+    { Arbitrum          } 'https://bridge.arbitrum.io/token-list-42161.json',
+    { Arbitrum_test_net } ''
+  );
 begin
-  Result := tokens('https://tokens.uniswap.org', procedure(tokens: TArray<IToken>; err: IError)
+  // step #1: get the (multi-chain) Uniswap Labs List
+  Result := tokens('https://tokens.uniswap.org', procedure(tokens1: TArray<IToken>; err1: IError)
   begin
-    if Assigned(err) or not Assigned(tokens) then
+    if Assigned(err1) or not Assigned(tokens1) then
     begin
-      callback(nil, err);
+      callback(nil, err1);
       EXIT;
     end;
     var result: TArray<IToken>;
-    for var token in tokens do
+    for var token in tokens1 do
       if token.ChainId = chain.Id then
+        result := result + [token];
+    // step #2: add tokens from a chain-specific token list (if any)
+    if TOKEN_LIST[chain] = '' then
+    begin
+      callback(result, nil);
+      EXIT;
+    end;
+    tokens(TOKEN_LIST[chain], procedure(tokens2: TArray<IToken>; err2: IError)
+    begin
+      if Assigned(err2) or not Assigned(tokens2) then
       begin
-        SetLength(result, Length(result) + 1);
-        result[Length(Result) - 1] := token;
+        callback(result, err2);
+        EXIT;
       end;
-    callback(result, nil);
+      for var token in tokens2 do
+        if token.ChainId = chain.Id then
+          result := result + [token];
+      callback(result, nil);
+    end);
   end);
 end;
 
