@@ -48,7 +48,7 @@ type
     RSK_test_net,
     BSC,
     BSC_test_net,
-    xDai,
+    Gnosis,
     Polygon,
     Polygon_test_net,
     Fantom,
@@ -294,7 +294,7 @@ const
     31,    // RSK_test_net
     56,    // BSC
     97,    // BSC_test_net
-    100,   // xDai
+    100,   // Gnosis
     137,   // Polygon,
     80001, // Polygon_test_net
     250,   // Fantom
@@ -328,7 +328,7 @@ const
     0, // RSK_test_net
     0, // BSC
     0, // BSC_test_net
-    2, // xDai
+    2, // Gnosis
     2, // Polygon
     2, // Polygon_test_net
     0, // Fantom
@@ -354,7 +354,7 @@ const
     'https://explorer.testnet.rsk.co',       // RSK_test_net
     'https://bscscan.com',                   // BSC
     'https://testnet.bscscan.com',           // BSC_test_net
-    'https://blockscout.com/xdai/mainnet/',  // xDai
+    'https://blockscout.com/xdai/mainnet/',  // Gnosis
     'https://polygonscan.com',               // Polygon
     'https://mumbai.polygonscan.com',        // Polygon_test_net
     'https://ftmscan.com',                   // Fantom

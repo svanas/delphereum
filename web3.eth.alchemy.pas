@@ -55,24 +55,24 @@ end;
 function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): string;
 const
   ENDPOINT: array[TChain] of array[TProtocol] of string = (
-    ('https://eth-mainnet.alchemyapi.io/v2/%s',     'wss://eth-mainnet.ws.alchemyapi.io/v2/%s'),  // Mainnet
-    ('https://eth-ropsten.alchemyapi.io/v2/%s',     'wss://eth-ropsten.ws.alchemyapi.io/v2/%s'),  // Ropsten
-    ('https://eth-rinkeby.alchemyapi.io/v2/%s',     'wss://eth-rinkeby.ws.alchemyapi.io/v2/%s'),  // Rinkeby
-    ('https://eth-kovan.alchemyapi.io/v2/%s',       'wss://eth-kovan.ws.alchemyapi.io/v2/%s'),    // Kovan
-    ('https://eth-goerli.alchemyapi.io/v2/%s',      'wss://eth-goerli.ws.alchemyapi.io/v2/%s'),   // Goerli
-    ('https://opt-mainnet.g.alchemy.com/v2/%s',     'wss://opt-mainnet.g.alchemy.com/v2/%s'),     // Optimism
-    ('https://opt-kovan.g.alchemy.com/v2/y%s',      'wss://opt-kovan.g.alchemy.com/v2/%s'),       // Optimism_test_net
-    ('', ''),                                                                                     // RSK
-    ('', ''),                                                                                     // RSK_test_net
-    ('', ''),                                                                                     // BSC
-    ('', ''),                                                                                     // BSC_test_net
-    ('', ''),                                                                                     // xDai
-    ('https://polygon-mainnet.g.alchemy.com/v2/%s', 'wss://polygon-mainnet.g.alchemy.com/v2/%s'), // Polygon
-    ('https://polygon-mumbai.g.alchemy.com/v2/%s',  'wss://polygon-mumbai.g.alchemy.com/v2/%s'),  // Polygon_test_net
-    ('https://rpc.ftm.tools',                       ''),                                          // Fantom
-    ('https://rpc.testnet.fantom.network',          ''),                                          // Fantom_test_net
-    ('https://arb-mainnet.g.alchemy.com/v2/%s',     'wss://arb-mainnet.g.alchemy.com/v2/%s'),     // Arbitrum
-    ('https://arb-rinkeby.g.alchemy.com/v2/%s',     'wss://arb-rinkeby.g.alchemy.com/v2/%s')      // Arbitrum_test_net
+    { Ethereum          } ('https://eth-mainnet.alchemyapi.io/v2/%s', 'wss://eth-mainnet.ws.alchemyapi.io/v2/%s'),
+    { Ropsten           } ('https://eth-ropsten.alchemyapi.io/v2/%s', 'wss://eth-ropsten.ws.alchemyapi.io/v2/%s'),
+    { Rinkeby           } ('https://eth-rinkeby.alchemyapi.io/v2/%s', 'wss://eth-rinkeby.ws.alchemyapi.io/v2/%s'),
+    { Kovan             } ('https://eth-kovan.alchemyapi.io/v2/%s', 'wss://eth-kovan.ws.alchemyapi.io/v2/%s'),
+    { Goerli            } ('https://eth-goerli.alchemyapi.io/v2/%s', 'wss://eth-goerli.ws.alchemyapi.io/v2/%s'),
+    { Optimism          } ('https://opt-mainnet.g.alchemy.com/v2/%s', 'wss://opt-mainnet.g.alchemy.com/v2/%s'),
+    { Optimism_test_net } ('https://opt-kovan.g.alchemy.com/v2/y%s', 'wss://opt-kovan.g.alchemy.com/v2/%s'),
+    { RSK               } ('', ''),
+    { RSK_test_net      } ('', ''),
+    { BSC               } ('', ''),
+    { BSC_test_net      } ('', ''),
+    { Gnosis            } ('https://rpc.gnosischain.com', 'wss://rpc.gnosischain.com/wss'),
+    { Polygon           } ('https://polygon-mainnet.g.alchemy.com/v2/%s', 'wss://polygon-mainnet.g.alchemy.com/v2/%s'),
+    { Polygon_test_net  } ('https://polygon-mumbai.g.alchemy.com/v2/%s', 'wss://polygon-mumbai.g.alchemy.com/v2/%s'),
+    { Fantom            } ('https://rpc.ftm.tools', ''),
+    { Fantom_test_net   } ('https://rpc.testnet.fantom.network', ''),
+    { Arbitrum          } ('https://arb-mainnet.g.alchemy.com/v2/%s', 'wss://arb-mainnet.g.alchemy.com/v2/%s'),
+    { Arbitrum_test_net } ('https://arb-rinkeby.g.alchemy.com/v2/%s', 'wss://arb-rinkeby.g.alchemy.com/v2/%s')
   );
 begin
   Result := ENDPOINT[chain][protocol];

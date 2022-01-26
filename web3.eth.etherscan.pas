@@ -160,7 +160,7 @@ const
     '',                                                        // RSK_test_net
     'https://api.bscscan.com/api?apikey=%s',                   // BSC
     'https://api-testnet.bscscan.com/api?apikey=%s',           // BSC_test_net
-    '',                                                        // xDai
+    '',                                                        // Gnosis
     'https://api.polygonscan.com/api?apikey=%s',               // Polygon
     'https://api-testnet.polygonscan.com/api?apikey=%s',       // Polygon_test_net
     'https://api.ftmscan.com/api?apikey=%s',                   // Fantom

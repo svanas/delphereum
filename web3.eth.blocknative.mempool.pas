@@ -190,7 +190,7 @@ const
     '',           // RSK_test_net
     'bsc-main',   // BSC
     '',           // BSC_test_net
-    'xdai',       // xDai
+    'xdai',       // Gnosis
     'matic-main', // Polygon
     '',           // Polygon_test_net
     '',           // Fantom
