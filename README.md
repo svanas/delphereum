@@ -78,6 +78,12 @@ SimpleBaseLib4Pascal
 
 ## Case study
 
+### 1. Migratooor
+
+[Migratooor](https://github.com/svanas/migratooor) transfers all your tokens from one wallet to another. You can download Migratooor [for macOS and Windows](https://github.com/svanas/migratooor/releases/latest).
+
+### 2. Bankless
+
 Bankless is a DeFi desktop app with the highest possible yield on your stablecoin savings.
 
 Made with Delphi, Bankless is a small and simple dapp that makes it super easy to transfer your savings from one lending protocol to another with the click of one button.
