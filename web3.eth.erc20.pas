@@ -67,6 +67,11 @@ type
       from    : TPrivateKey;
       &to     : TAddress;
       value   : BigInteger;
+      callback: TAsyncTxHash);
+    procedure TransferEx(
+      from    : TPrivateKey;
+      &to     : TAddress;
+      value   : BigInteger;
       callback: TAsyncReceipt);
     procedure Approve(
       owner   : TPrivateKey;
@@ -110,6 +115,11 @@ type
 
     //------- write to contract ------------------------------------------------
     procedure Transfer(
+      from    : TPrivateKey;
+      &to     : TAddress;
+      value   : BigInteger;
+      callback: TAsyncTxHash);
+    procedure TransferEx(
       from    : TPrivateKey;
       &to     : TAddress;
       value   : BigInteger;
@@ -269,6 +279,15 @@ begin
 end;
 
 procedure TERC20.Transfer(
+  from    : TPrivateKey;
+  &to     : TAddress;
+  value   : BigInteger;
+  callback: TAsyncTxHash);
+begin
+  web3.eth.write(Client, from, Contract, 'transfer(address,uint256)', [&to, web3.utils.toHex(value)], callback);
+end;
+
+procedure TERC20.TransferEx(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : BigInteger;

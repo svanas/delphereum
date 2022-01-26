@@ -109,7 +109,7 @@ procedure sendTransaction(
   callback : TAsyncTxHash); overload;
 
 // send raw transaction, get the receipt, and get the reason if the transaction failed.
-procedure sendTransactionEx(
+procedure sendTransaction(
   client   : IWeb3;
   const raw: string;
   callback : TAsyncReceipt); overload;
@@ -129,7 +129,7 @@ procedure sendTransaction(
 // 3. send the raw transaction, then
 // 4. get the transaction receipt, then
 // 5. get the reason if the transaction failed.
-procedure sendTransactionEx(
+procedure sendTransaction(
   client  : IWeb3;
   from    : TPrivateKey;
   &to     : TAddress;
@@ -412,7 +412,7 @@ begin
 end;
 
 // send raw transaction, get the receipt, and get the reason if the transaction failed.
-procedure sendTransactionEx(client: IWeb3; const raw: string; callback: TAsyncReceipt);
+procedure sendTransaction(client: IWeb3; const raw: string; callback: TAsyncReceipt);
 begin
   // send the raw transaction
   sendTransaction(client, raw, procedure(hash: TTxHash; err: IError)
@@ -498,7 +498,7 @@ end;
 // 3. send the raw transaction, then
 // 4. get the transaction receipt, then
 // 5. get the reason if the transaction failed.
-procedure sendTransactionEx(
+procedure sendTransaction(
   client  : IWeb3;
   from    : TPrivateKey;
   &to     : TAddress;
@@ -520,10 +520,10 @@ begin
             if Assigned(err) then
               callback(nil, err)
             else
-              sendTransactionEx(client, sig, procedure(rcpt: ITxReceipt; err: IError)
+              sendTransaction(client, sig, procedure(rcpt: ITxReceipt; err: IError)
               begin
                 if Assigned(err) and (err.Message = 'nonce too low') then
-                  sendTransactionEx(client, from, &to, value, callback)
+                  sendTransaction(client, from, &to, value, callback)
                 else
                   callback(rcpt, err);
               end);

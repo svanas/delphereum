@@ -84,11 +84,19 @@ procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: arr
 procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple); overload;
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncTuple); overload;
 
-function sign(privateKey: TPrivateKey; const msg: string): TSignature;
+function  sign(privateKey: TPrivateKey; const msg: string): TSignature; overload;
+procedure sign(client: IWeb3; from: TPrivateKey; &to: TAddress; value: TWei; const data: string; estimatedGas: BigInteger; callback: TAsyncString); overload;
 
 // transact with a non-payable function.
 // default to the median gas price from the latest blocks.
 // gas limit is twice the estimated gas.
+procedure write(
+  client    : IWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  const func: string;
+  args      : array of const;
+  callback  : TAsyncTxHash); overload;
 procedure write(
   client    : IWeb3;
   from      : TPrivateKey;
@@ -107,8 +115,24 @@ procedure write(
   value     : TWei;
   const func: string;
   args      : array of const;
+  callback  : TAsyncTxHash); overload;
+procedure write(
+  client    : IWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const func: string;
+  args      : array of const;
   callback  : TAsyncReceipt); overload;
 
+procedure write(
+  client      : IWeb3;
+  from        : TPrivateKey;
+  &to         : TAddress;
+  value       : TWei;
+  const data  : string;
+  estimatedGas: BigInteger;
+  callback    : TAsyncTxHash); overload;
 procedure write(
   client      : IWeb3;
   from        : TPrivateKey;
@@ -454,9 +478,45 @@ procedure write(
   &to       : TAddress;
   const func: string;
   args      : array of const;
+  callback  : TAsyncTxHash);
+begin
+  write(client, from, &to, 0, func, args, callback);
+end;
+
+procedure write(
+  client    : IWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  const func: string;
+  args      : array of const;
   callback  : TAsyncReceipt);
 begin
   write(client, from, &to, 0, func, args, callback);
+end;
+
+procedure write(
+  client    : IWeb3;
+  from      : TPrivateKey;
+  &to       : TAddress;
+  value     : TWei;
+  const func: string;
+  args      : array of const;
+  callback  : TAsyncTxHash);
+begin
+  var data := web3.eth.abi.encode(func, args);
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      web3.eth.gas.estimateGas(client, addr, &to, data, procedure(estimatedGas: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback('', err)
+        else
+          write(client, from, &to, value, data, estimatedGas, callback);
+      end);
+  end);
 end;
 
 procedure write(
@@ -484,6 +544,54 @@ begin
   end);
 end;
 
+procedure sign(
+  client      : IWeb3;
+  from        : TPrivateKey;
+  &to         : TAddress;
+  value       : TWei;
+  const data  : string;
+  estimatedGas: BigInteger;
+  callback    : TAsyncString);
+begin
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      web3.eth.tx.getNonce(client, addr, procedure(nonce: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback('', err)
+        else
+          signTransaction(client, nonce, from, &to, value, data, 2 * estimatedGas, estimatedGas, callback);
+      end);
+  end);
+end;
+
+procedure write(
+  client      : IWeb3;
+  from        : TPrivateKey;
+  &to         : TAddress;
+  value       : TWei;
+  const data  : string;
+  estimatedGas: BigInteger;
+  callback    : TAsyncTxHash);
+begin
+  sign(client, from, &to, value, data, estimatedGas, procedure(const sig: string; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      sendTransaction(client, sig, procedure(hash: TTxHash; err: IError)
+      begin
+        if Assigned(err) and (err.Message = 'nonce too low') then
+          write(client, from, &to, value, data, estimatedGas, callback)
+        else
+          callback(hash, err);
+      end);
+  end);
+end;
+
 procedure write(
   client      : IWeb3;
   from        : TPrivateKey;
@@ -493,29 +601,17 @@ procedure write(
   estimatedGas: BigInteger;
   callback    : TAsyncReceipt);
 begin
-  from.Address(procedure(addr: TAddress; err: IError)
+  sign(client, from, &to, value, data, estimatedGas, procedure(const sig: string; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
     else
-      web3.eth.tx.getNonce(client, addr, procedure(nonce: BigInteger; err: IError)
+      sendTransaction(client, sig, procedure(rcpt: ITxReceipt; err: IError)
       begin
-        if Assigned(err) then
-          callback(nil, err)
+        if Assigned(err) and (err.Message = 'nonce too low') then
+          write(client, from, &to, value, data, estimatedGas, callback)
         else
-          signTransaction(client, nonce, from, &to, value, data, 2 * estimatedGas, estimatedGas, procedure(const sig: string; err: IError)
-          begin
-            if Assigned(err) then
-              callback(nil, err)
-            else
-              sendTransactionEx(client, sig, procedure(rcpt: ITxReceipt; err: IError)
-              begin
-                if Assigned(err) and (err.Message = 'nonce too low') then
-                  write(client, from, &to, value, data, estimatedGas, callback)
-                else
-                  callback(rcpt, err);
-              end);
-          end);
+          callback(rcpt, err);
       end);
   end);
 end;
