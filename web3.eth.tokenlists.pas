@@ -224,7 +224,7 @@ const
     { Gnosis            } 'https://tokens.honeyswap.org',
     { Polygon           } 'https://unpkg.com/quickswap-default-token-list@latest/build/quickswap-default.tokenlist.json',
     { Polygon_test_net  } '',
-    { Fantom            } '',
+    { Fantom            } 'https://raw.githubusercontent.com/SpookySwap/spooky-info/master/src/constants/token/spookyswap.json',
     { Fantom_test_net   } '',
     { Arbitrum          } 'https://bridge.arbitrum.io/token-list-42161.json',
     { Arbitrum_test_net } 'https://bridge.arbitrum.io/token-list-421611.json'
@@ -253,7 +253,7 @@ const
     '"logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png"' +
   '}]';
 begin
-  // step #1: get the (multi-chain) Uniswap Labs List
+  // step #1: get the (multi-chain) Uniswap list
   Result := tokens('https://tokens.uniswap.org', procedure(tokens1: TTokens; err1: IError)
   begin
     if Assigned(err1) or not Assigned(tokens1) then
