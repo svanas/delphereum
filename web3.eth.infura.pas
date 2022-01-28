@@ -43,9 +43,7 @@ implementation
 uses
   // Delphi
   System.SysUtils,
-  System.TypInfo,
-  // web3
-  web3.eth.binance;
+  System.TypInfo;
 
 function endpoint(chain: TChain; const projectId: string): string;
 begin
@@ -62,10 +60,10 @@ const
     { Goerli            } ('https://goerli.infura.io/v3/%s', 'wss://goerli.infura.io/ws/v3/%s'),
     { Optimism          } ('https://optimism-mainnet.infura.io/v3/%s', ''),
     { Optimism_test_net } ('https://optimism-kovan.infura.io/v3/%s', ''),
-    { RSK               } ('', ''),
-    { RSK_test_net      } ('', ''),
-    { BSC               } ('', ''),
-    { BSC_test_net      } ('', ''),
+    { RSK               } ('https://public-node.rsk.co', ''),
+    { RSK_test_net      } ('https://public-node.testnet.rsk.co', ''),
+    { BSC               } ('https://bsc-dataseed.binance.org', ''),
+    { BSC_test_net      } ('https://data-seed-prebsc-1-s1.binance.org:8545', ''),
     { Gnosis            } ('https://rpc.gnosischain.com', 'wss://rpc.gnosischain.com/wss'),
     { Polygon           } ('https://polygon-mainnet.infura.io/v3/%s', ''),
     { Polygon_test_net  } ('https://polygon-mumbai.infura.io/v3/%s', ''),
@@ -79,11 +77,6 @@ begin
   if Result <> '' then
   begin
     Result := Format(Result, [projectId]);
-    EXIT;
-  end;
-  if chain in [BSC, BSC_test_net] then
-  begin
-    Result := web3.eth.binance.endpoint(chain);
     EXIT;
   end;
   raise EInfura.CreateFmt('%s not supported', [GetEnumName(TypeInfo(TChain), Ord(chain))]);

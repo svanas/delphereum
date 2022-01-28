@@ -44,7 +44,6 @@ uses
   web3.eth.abi in '..\web3.eth.abi.pas',
   web3.eth.abi.tests in '..\web3.eth.abi.tests.pas',
   web3.eth.alchemy in '..\web3.eth.alchemy.pas',
-  web3.eth.binance in '..\web3.eth.binance.pas',
   web3.eth.blocknative.mempool in '..\web3.eth.blocknative.mempool.pas',
   web3.eth.blocknative.mempool.sgc in '..\web3.eth.blocknative.mempool.sgc.pas',
   web3.eth.chainlink in '..\web3.eth.chainlink.pas',

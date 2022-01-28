@@ -125,7 +125,6 @@
         <DCCReference Include="..\web3.eth.abi.pas"/>
         <DCCReference Include="..\web3.eth.abi.tests.pas"/>
         <DCCReference Include="..\web3.eth.alchemy.pas"/>
-        <DCCReference Include="..\web3.eth.binance.pas"/>
         <DCCReference Include="..\web3.eth.blocknative.mempool.pas"/>
         <DCCReference Include="..\web3.eth.blocknative.mempool.sgc.pas"/>
         <DCCReference Include="..\web3.eth.chainlink.pas"/>
