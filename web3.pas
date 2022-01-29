@@ -463,7 +463,7 @@ begin
         callback(False, err);
         EXIT;
       end;
-      web3.eth.chainlink.eth_usd(client, procedure(price: Double; err: IError)
+      web3.eth.chainlink.ETH_USD(client, procedure(price: Double; err: IError)
       begin
         if Assigned(err) then
         begin
@@ -479,7 +479,7 @@ begin
               chainName,                                                  // Network
               from,                                                       // From
               &to,                                                        // To
-              fromWei(gasPrice, gwei, 1),                                 // Gas price (gwei)
+              fromWei(gasPrice, gwei, 2),                                 // Gas price (gwei)
               estimatedGas.ToString,                                      // Estimated gas (units)
               EthToFloat(fromWei(estimatedGas * gasPrice, ether)) * price // Gas fee
             ]),

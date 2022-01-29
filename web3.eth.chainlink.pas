@@ -41,12 +41,12 @@ type
     procedure Price(callback: TAsyncFloat);
   end;
 
-  TEthUsd = class(TAggregatorV3)
+  TETH_USD = class(TAggregatorV3)
   public
     constructor Create(aClient: IWeb3); reintroduce;
   end;
 
-procedure eth_usd(client: IWeb3; callback: TAsyncFloat);
+procedure ETH_USD(client: IWeb3; callback: TAsyncFloat);
 
 implementation
 
@@ -58,30 +58,48 @@ uses
   // web3
   web3.coincap;
 
-procedure eth_usd(client: IWeb3; callback: TAsyncFloat);
-var
-  EthUsd: TEthUsd;
+procedure ETH_USD(client: IWeb3; callback: TAsyncFloat);
 begin
-  // Ethereum price feed is available on Mainnet and Rinkeby and Kovan only.
-  if client.Chain in [Ethereum, Rinkeby, Kovan] then
+  // Ethereum price feed is available on the following networks only.
+  if client.Chain in [
+    Ethereum,
+    Rinkeby,
+    Kovan,
+    BSC,
+    BSC_test_net,
+    Polygon,
+    Polygon_test_net,
+    Gnosis,
+    Fantom,
+    Fantom_test_net,
+    Arbitrum,
+    Arbitrum_test_net,
+    Optimism,
+    Optimism_test_net] then
   begin
-    EthUsd := TEthUsd.Create(client);
-    if Assigned(EthUsd) then
+    var ETH_USD := TETH_USD.Create(client);
+    if Assigned(ETH_USD) then
     begin
-      EthUsd.Price(procedure(price: Double; err: IError)
+      ETH_USD.Price(procedure(price: Double; err: IError)
       begin
         try
           callback(price, err);
         finally
-          EthUsd.Free;
+          ETH_USD.Free;
         end;
       end);
       EXIT;
     end;
   end;
-  // Not on Mainnet or Rinkeby or Kovan? Fall back on api.coincap.io
-  web3.coincap.ticker('ethereum', procedure(ticker: ITicker; err: IError)
+  // Not on any of the above networks? fall back on api.coincap.io
+  web3.coincap.ticker('ethereum', procedure(const ticker: ITicker; err: IError)
   begin
+    if Assigned(err) then
+    begin
+      // Life sucks. Let's try one more time on BSC. Fingers crossed.
+      ETH_USD(TWeb3.Create(BSC, 'https://bsc-dataseed.binance.org'), callback);
+      EXIT;
+    end;
     callback(ticker.Price, err);
   end);
 end;
@@ -119,9 +137,9 @@ begin
   end);
 end;
 
-{ TEthUsd}
+{ TETH_USD }
 
-constructor TEthUsd.Create(aClient: IWeb3);
+constructor TETH_USD.Create(aClient: IWeb3);
 begin
   case aClient.Chain of
     Ethereum:
@@ -130,6 +148,28 @@ begin
       inherited Create(aClient, '0x8A753747A1Fa494EC906cE90E9f37563A8AF630e');
     Kovan:
       inherited Create(aClient, '0x9326BFA02ADD2366b30bacB125260Af641031331');
+    BSC:
+      inherited Create(aClient, '0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e');
+    BSC_test_net:
+      inherited Create(aClient, '0x143db3CEEfbdfe5631aDD3E50f7614B6ba708BA7');
+    Polygon:
+      inherited Create(aClient, '0xF9680D99D6C9589e2a93a78A04A279e509205945');
+    Polygon_test_net:
+      inherited Create(aClient, '0x0715A7794a1dc8e42615F059dD6e406A6594651A');
+    Gnosis:
+      inherited Create(aClient, '0xa767f745331D267c7751297D982b050c93985627');
+    Fantom:
+      inherited Create(aClient, '0x11DdD3d147E5b83D01cee7070027092397d63658');
+    Fantom_test_net:
+      inherited Create(aClient, '0xB8C458C957a6e6ca7Cc53eD95bEA548c52AFaA24');
+    Arbitrum:
+      inherited Create(aClient, '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612');
+    Arbitrum_test_net:
+      inherited Create(aClient, '0x5f0423B1a6935dc5596e7A24d98532b67A0AeFd8');
+    Optimism:
+      inherited Create(aClient, '0x13e3Ee699D1909E989722E753853AE30b17e08c5');
+    Optimism_test_net:
+      inherited Create(aClient, '0xCb7895bDC70A1a1Dce69b689FD7e43A627475A06');
   end;
 end;
 
