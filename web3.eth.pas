@@ -335,7 +335,7 @@ begin
     if Assigned(err) then
       callback(0, err)
     else
-      if (hex = '') or (hex = '0x') then
+      if (hex = '') or (hex.ToLower = '0x') then
         callback(0, nil)
       else
       begin

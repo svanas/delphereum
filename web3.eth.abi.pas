@@ -113,7 +113,7 @@ function encode(const func: string; args: array of const): string;
       buf: TBytes;
       hex: string;
     begin
-      if Copy(str, System.Low(str), 2) <> '0x' then
+      if Copy(str, System.Low(str), 2).ToLower <> '0x' then
       begin
         buf := TEncoding.UTF8.GetBytes(str);
         hex := web3.utils.toHex('', buf);
@@ -142,7 +142,7 @@ function encode(const func: string; args: array of const): string;
         varUStrArg,
         varString,
         varUString:
-          Result := Copy(string(arg), System.Low(string(arg)), 2) <> '0x';
+          Result := Copy(string(arg), System.Low(string(arg)), 2).ToLower <> '0x';
       else
         if VarIsArray(arg) then // tuple is dynamic if any of the elements is dynamic
           for I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
@@ -285,7 +285,7 @@ function encode(const func: string; args: array of const): string;
               vtUnicodeString:
                 S := string(arg.VUnicodeString);
             end;
-            Result := Copy(S, System.Low(S), 2) <> '0x';
+            Result := Copy(S, System.Low(S), 2).ToLower <> '0x';
           end;
     end;
 

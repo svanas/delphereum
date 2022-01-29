@@ -194,7 +194,7 @@ begin
   Result := Length(str) > 1;
   if Result then
   begin
-    Result := Copy(str, System.Low(str), Length(prefix)) = prefix;
+    Result := SameText(Copy(str, System.Low(str), Length(prefix)), prefix);
     if Result then
       for I := System.Low(str) + Length(prefix) to High(str) do
       begin
@@ -210,7 +210,7 @@ var
   I: Integer;
 begin
   hex := Trim(hex);
-  while Copy(hex, System.Low(hex), 2) = '0x' do
+  while Copy(hex, System.Low(hex), 2).ToLower = '0x' do
     Delete(hex, System.Low(hex), 2);
   if hex.Length mod 2 > 0 then
     hex := '0' + hex; // pad to even
