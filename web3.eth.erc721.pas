@@ -30,6 +30,7 @@ interface
 
 uses
   // Delphi
+  System.SysUtils,
   System.Threading,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
@@ -142,6 +143,8 @@ type
     &Operator: TAddress;
     Approved : Boolean);
 
+  TForEach = TProc<BigInteger, TProc>; // (tokenId, next)
+
   TERC721 = class(TCustomContract, IERC721, IERC721Metadata, IERC721Enumerable)
   strict private
     FTask: ITask;
@@ -198,6 +201,7 @@ type
     procedure TotalSupply(callback: TAsyncQuantity);
     procedure TokenByIndex(index: UInt64; callback: TAsyncQuantity);
     procedure TokenOfOwnerByIndex(owner: TAddress; index: UInt64; callback: TAsyncQuantity);
+    procedure Enumerate(foreach: TForEach; error: TProc<IError>; done: TProc);
     // events
     property OnTransfer: TOnTransfer read FOnTransfer write SetOnTransfer;
     property OnApproval: TOnApproval read FOnApproval write SetOnApproval;
@@ -410,6 +414,49 @@ end;
 procedure TERC721.TokenOfOwnerByIndex(owner: TAddress; index: UInt64; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'tokenOfOwnerByIndex(address,uint256)', [owner, index], callback);
+end;
+
+procedure TERC721.Enumerate(foreach: TForEach; error: TProc<IError>; done: TProc);
+begin
+  var next: TProc<Integer, BigInteger>; // (index, length)
+
+  next := procedure(idx: Integer; len: BigInteger)
+  begin
+    if idx >= len then
+    begin
+      done;
+      EXIT;
+    end;
+    Self.TokenByIndex(idx, procedure(tokenId: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        error(err);
+        next(idx + 1, len);
+      end
+      else
+        foreach(tokenId, procedure
+        begin
+          next(idx + 1, len);
+        end);
+    end);
+  end;
+
+  Self.TotalSupply(procedure(len: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      error(err);
+      done;
+      EXIT;
+    end;
+    if len = 0 then
+    begin
+      done;
+      EXIT;
+    end;
+    next(0, len);
+  end);
 end;
 
 end.
