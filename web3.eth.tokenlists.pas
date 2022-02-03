@@ -211,7 +211,7 @@ function tokens(chain: TChain; callback: TAsyncTokens): IAsyncResult;
 const
   TOKEN_LIST: array[TChain] of string = (
     { Ethereum          } 'https://tokens.coingecko.com/uniswap/all.json',
-    { Ropsten           } '',
+    { Ropsten           } 'https://raw.githubusercontent.com/euler-xyz/euler-tokenlist/master/euler-tokenlist-ropsten.json',
     { Rinkeby           } '',
     { Kovan             } '',
     { Goerli            } '',
