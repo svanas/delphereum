@@ -90,6 +90,14 @@ Made with Delphi, Bankless is a small and simple dapp that makes it super easy t
 
 You can download Bankless [for Windows](https://www.microsoft.com/store/productId/9P50F616XCDJ) or [for macOS](https://apps.apple.com/us/app/id1521153171).
 
+### 3. PubSub
+
+[PubSub](https://github.com/svanas/PubSub) is a simple "Hello World" example project, demonstrating how to subscribe to an Ethereum gateway and get notified every time a new block got mined.
+
+### 4. NFT
+
+[NFT](https://github.com/svanas/NFT) is a simple "Hello World" example project, demonstrating how to enumerate over the NFTs in a token contract and display the associated image for each and every one of them.
+
 ## License
 
 Distributed under the [GNU AGP v3.0 with Commons Clause](https://github.com/svanas/delphereum/blob/master/LICENSE) license.
