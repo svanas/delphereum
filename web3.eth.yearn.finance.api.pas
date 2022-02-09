@@ -76,44 +76,26 @@ uses
 {--------------------------------- TMigration ---------------------------------}
 
 type
-  TMigration = class(TInterfacedObject, IMigration)
-  private
-    FJsonObject: TJsonObject;
+  TMigration = class(TDeserialized<TJsonObject>, IMigration)
   public
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
     function Available: Boolean;
     function Address: TAddress;
   end;
 
-constructor TMigration.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject;
-end;
-
-destructor TMigration.Destroy;
-begin
-  if Assigned(FJsonObject) then FJsonObject.Free;
-  inherited Destroy;
-end;
-
 function TMigration.Available: Boolean;
 begin
-  Result := getPropAsBOOL(FJsonObject, 'available');
+  Result := getPropAsBOOL(FJsonValue, 'available');
 end;
 
 function TMigration.Address: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonObject, 'address'));
+  Result := TAddress.New(getPropAsStr(FJsonValue, 'address'));
 end;
 
 {-------------------------------- TYearnVault ---------------------------------}
 
 type
-  TYearnVault = class(TInterfacedObject, IYearnVault)
-  private
-    FJsonObject: TJsonObject;
+  TYearnVault = class(TDeserialized<TJsonObject>, IYearnVault)
   public
     function Address: TAddress;
     function Token: TAddress;
@@ -122,31 +104,17 @@ type
     function Version: string;
     function &Type: TVaultType;
     function Migration: IMigration;
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
   end;
-
-constructor TYearnVault.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject;
-end;
-
-destructor TYearnVault.Destroy;
-begin
-  if Assigned(FJsonObject) then FJsonObject.Free;
-  inherited Destroy;
-end;
 
 function TYearnVault.Address: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonObject, 'address'));
+  Result := TAddress.New(getPropAsStr(FJsonValue, 'address'));
 end;
 
 function TYearnVault.Token: TAddress;
 begin
   Result := EMPTY_ADDRESS;
-  var token := getPropAsObj(FJsonObject, 'token');
+  var token := getPropAsObj(FJsonValue, 'token');
   if Assigned(token) then
     Result := TAddress.New(getPropAsStr(token, 'address'));
 end;
@@ -154,25 +122,25 @@ end;
 function TYearnVault.APY: Double;
 begin
   Result := 0;
-  var apy := getPropAsObj(FJsonObject, 'apy');
+  var apy := getPropAsObj(FJsonValue, 'apy');
   if Assigned(apy) then
      Result := getPropAsDouble(apy, 'net_apy', Result) * 100;
 end;
 
 function TYearnVault.Endorsed: Boolean;
 begin
-  Result := getPropAsBOOL(FJsonObject, 'endorsed');
+  Result := getPropAsBOOL(FJsonValue, 'endorsed');
 end;
 
 function TYearnVault.Version: string;
 begin
-  Result := getPropAsStr(FJsonObject, 'version');
+  Result := getPropAsStr(FJsonValue, 'version');
 end;
 
 function TYearnVault.&Type: TVaultType;
 begin
   Result := vUnknown;
-  var &type := getPropAsStr(FJsonObject, 'type');
+  var &type := getPropAsStr(FJsonValue, 'type');
   if &type = 'v1' then
     Result := v1
   else
@@ -183,9 +151,9 @@ end;
 function TYearnVault.Migration: IMigration;
 begin
   Result := nil;
-  var migration := getPropAsObj(FJsonObject, 'migration');
+  var migration := getPropAsObj(FJsonValue, 'migration');
   if Assigned(migration) then
-    Result := TMigration.Create(migration.Clone as TJsonObject);
+    Result := TMigration.Create(migration);
 end;
 
 {------------------------------ public functions ------------------------------}
@@ -202,7 +170,7 @@ begin
     var result: TArray<IYearnVault>;
     SetLength(result, arr.Count);
     for var I := 0 to Pred(arr.Count) do
-      result[I] := TYearnVault.Create(arr[I].Clone as TJsonObject);
+      result[I] := TYearnVault.Create(arr[I] as TJsonObject);
     callback(result, nil);
   end);
 end;

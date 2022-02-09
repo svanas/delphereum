@@ -74,7 +74,7 @@ uses
 {----------------------------------- TToken -----------------------------------}
 
 type
-  TToken = class(TInterfacedObject, IToken)
+  TToken = class(TCustomDeserialized<TJsonObject>, IToken)
   private
     FChainId: Integer;
     FAddress: TAddress;
@@ -90,18 +90,18 @@ type
     function Decimals: Integer;
     function LogoURI: string;
     procedure Balance(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
-    constructor Create(aJsonObject: TJsonObject);
+    constructor Create(const aJsonValue: TJsonObject); override;
   end;
 
-constructor TToken.Create(aJsonObject: TJsonObject);
+constructor TToken.Create(const aJsonValue: TJsonObject);
 begin
-  inherited Create;
-  FChainId := getPropAsInt(aJsonObject, 'chainId');
-  FAddress := TAddress.New(getPropAsStr(aJsonObject, 'address'));
-  FName := getPropAsStr(aJsonObject, 'name');
-  FSymbol := getPropAsStr(aJsonObject, 'symbol');
-  FDecimals := getPropAsInt(aJsonObject, 'decimals');
-  FLogoURI := getPropAsStr(aJsonObject, 'logoURI');
+  inherited Create(aJsonValue);
+  FChainId := getPropAsInt(aJsonValue, 'chainId');
+  FAddress := TAddress.New(getPropAsStr(aJsonValue, 'address'));
+  FName := getPropAsStr(aJsonValue, 'name');
+  FSymbol := getPropAsStr(aJsonValue, 'symbol');
+  FDecimals := getPropAsInt(aJsonValue, 'decimals');
+  FLogoURI := getPropAsStr(aJsonValue, 'logoURI');
 end;
 
 function TToken.ChainId: Integer;
@@ -273,8 +273,8 @@ begin
         var arr := TJsonObject.ParseJsonValue(TOKENS_RINKEBY) as TJsonArray;
         if Assigned(arr) then
         try
-          for var token in arr do
-            result := result + [TToken.Create(token as TJsonObject)];
+          for var token2 in arr do
+            result := result + [TToken.Create(token2 as TJsonObject)];
         finally
           arr.Free;
         end;

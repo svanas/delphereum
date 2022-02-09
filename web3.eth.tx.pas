@@ -535,12 +535,8 @@ end;
 { TTxn }
 
 type
-  TTxn = class(TInterfacedObject, ITxn)
-  private
-    FJsonObject: TJsonObject;
+  TTxn = class(TDeserialized<TJsonObject>, ITxn)
   public
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
     function &type: Byte;
     function ToString: string; override;
     function blockNumber: BigInteger;    // block number where this transaction was in. null when its pending.
@@ -554,18 +550,6 @@ type
     function value: TWei;                // value transferred in Wei.
   end;
 
-constructor TTxn.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject.Clone as TJsonObject;
-end;
-
-destructor TTxn.Destroy;
-begin
-  if Assigned(FJsonObject) then FJsonObject.Free;
-  inherited Destroy;
-end;
-
 function TTxn.&type: Byte;
 begin
   if (Self.maxPriorityFeePerGas > 0) or (Self.maxFeePerGas > 0) then
@@ -576,61 +560,61 @@ end;
 
 function TTxn.ToString: string;
 begin
-  Result := web3.json.marshal(FJsonObject);
+  Result := web3.json.marshal(FJsonValue);
 end;
 
 // block number where this transaction was in. null when its pending.
 function TTxn.blockNumber: BigInteger;
 begin
-  Result := getPropAsStr(FJsonObject, 'blockNumber', '0x0');
+  Result := getPropAsStr(FJsonValue, 'blockNumber', '0x0');
 end;
 
 // address of the sender.
 function TTxn.from: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonObject, 'from'));
+  Result := TAddress.New(getPropAsStr(FJsonValue, 'from'));
 end;
 
 // gas limit provided by the sender.
 function TTxn.gasLimit: BigInteger;
 begin
-  Result := getPropAsStr(FJsonObject, 'gas', '0x5208');
+  Result := getPropAsStr(FJsonValue, 'gas', '0x5208');
 end;
 
 // gas price provided by the sender in Wei.
 function TTxn.gasPrice: TWei;
 begin
-  Result := getPropAsStr(FJsonObject, 'gasPrice', '0x0');
+  Result := getPropAsStr(FJsonValue, 'gasPrice', '0x0');
 end;
 
 // EIP-1559-only
 function TTxn.maxPriorityFeePerGas: TWei;
 begin
-  Result := getPropAsStr(FJsonObject, 'maxPriorityFeePerGas', '0x0');
+  Result := getPropAsStr(FJsonValue, 'maxPriorityFeePerGas', '0x0');
 end;
 
 // EIP-1559-only
 function TTxn.maxFeePerGas: TWei;
 begin
-  Result := getPropAsStr(FJsonObject, 'maxFeePerGas', '0x0');
+  Result := getPropAsStr(FJsonValue, 'maxFeePerGas', '0x0');
 end;
 
 // the data send along with the transaction.
 function TTxn.input: string;
 begin
-  Result := web3.json.getPropAsStr(FJsonObject, 'input');
+  Result := web3.json.getPropAsStr(FJsonValue, 'input');
 end;
 
 // address of the receiver. null when its a contract creation transaction.
 function TTxn.&to: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonObject, 'to'));
+  Result := TAddress.New(getPropAsStr(FJsonValue, 'to'));
 end;
 
 // value transferred in Wei.
 function TTxn.value: TWei;
 begin
-  Result := getPropAsStr(FJsonObject, 'value', '0x0');
+  Result := getPropAsStr(FJsonValue, 'value', '0x0');
 end;
 
 // returns the information about a transaction requested by transaction hash.
@@ -648,12 +632,8 @@ end;
 { TTxReceipt }
 
 type
-  TTxReceipt = class(TInterfacedObject, ITxReceipt)
-  private
-    FJsonObject: TJsonObject;
+  TTxReceipt = class(TDeserialized<TJsonObject>, ITxReceipt)
   public
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
     function ToString: string; override;
     function txHash: TTxHash;         // hash of the transaction.
     function from: TAddress;          // address of the sender.
@@ -663,57 +643,45 @@ type
     function effectiveGasPrice: TWei; // eip-1559-only
   end;
 
-constructor TTxReceipt.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject.Clone as TJsonObject;
-end;
-
-destructor TTxReceipt.Destroy;
-begin
-  if Assigned(FJsonObject) then FJsonObject.Free;
-  inherited Destroy;
-end;
-
 function TTxReceipt.ToString: string;
 begin
-  Result := web3.json.marshal(FJsonObject);
+  Result := web3.json.marshal(FJsonValue);
 end;
 
 // hash of the transaction.
 function TTxReceipt.txHash: TTxHash;
 begin
-  Result := TTxHash(getPropAsStr(FJsonObject, 'transactionHash', ''));
+  Result := TTxHash(getPropAsStr(FJsonValue, 'transactionHash', ''));
 end;
 
 // address of the sender.
 function TTxReceipt.from: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonObject, 'from'));
+  Result := TAddress.New(getPropAsStr(FJsonValue, 'from'));
 end;
 
 // address of the receiver. null when it's a contract creation transaction.
 function TTxReceipt.&to: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonObject, 'to'));
+  Result := TAddress.New(getPropAsStr(FJsonValue, 'to'));
 end;
 
 // the amount of gas used by this specific transaction.
 function TTxReceipt.gasUsed: BigInteger;
 begin
-  Result := getPropAsStr(FJsonObject, 'gasUsed', '0x0');
+  Result := getPropAsStr(FJsonValue, 'gasUsed', '0x0');
 end;
 
 // success or failure.
 function TTxReceipt.status: Boolean;
 begin
-  Result := getPropAsStr(FJsonObject, 'status', '0x1') = '0x1';
+  Result := getPropAsStr(FJsonValue, 'status', '0x1') = '0x1';
 end;
 
 // eip-1559-ony
 function TTxReceipt.effectiveGasPrice: TWei;
 begin
-  Result := getPropAsStr(FJsonObject, 'effectiveGasPrice', '0x0');
+  Result := getPropAsStr(FJsonValue, 'effectiveGasPrice', '0x0');
 end;
 
 // returns the receipt of a transaction by transaction hash.

@@ -186,36 +186,20 @@ begin
 end;
 
 type
-  TBlock = class(TInterfacedObject, IBlock)
-  private
-    FJsonObject: TJsonObject;
+  TBlock = class(TDeserialized<TJsonObject>, IBlock)
   public
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
     function ToString: string; override;
     function baseFeePerGas: TWei;
   end;
 
-constructor TBlock.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject.Clone as TJsonObject;
-end;
-
-destructor TBlock.Destroy;
-begin
-  if Assigned(FJsonObject) then FJsonObject.Free;
-  inherited Destroy;
-end;
-
 function TBlock.ToString: string;
 begin
-  Result := web3.json.marshal(FJsonObject);
+  Result := web3.json.marshal(FJsonValue);
 end;
 
 function TBlock.baseFeePerGas: TWei;
 begin
-  Result := getPropAsStr(FJsonObject, 'baseFeePerGas', '0x0');
+  Result := getPropAsStr(FJsonValue, 'baseFeePerGas', '0x0');
 end;
 
 procedure getBlockByNumber(client: IWeb3; callback: TAsyncBlock);

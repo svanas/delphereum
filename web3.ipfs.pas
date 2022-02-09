@@ -86,44 +86,27 @@ const
 { TFile }
 
 type
-  TFile = class(TInterfacedObject, IFile)
-  private
-    FJsonObject: TJsonObject;
+  TFile = class(TDeserialized<TJsonObject>, IFile)
   public
     function Name: string;
     function Hash: string;
     function Size: UInt64;
     function Endpoint(Gateway: TGateway): string;
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
   end;
-
-constructor TFile.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject;
-end;
-
-destructor TFile.Destroy;
-begin
-  if Assigned(FJsonObject) then
-    FJsonObject.Free;
-  inherited Destroy;
-end;
 
 function TFile.Name: string;
 begin
-  Result := getPropAsStr(FJsonObject, 'Name');
+  Result := getPropAsStr(FJsonValue, 'Name');
 end;
 
 function TFile.Hash: string;
 begin
-  Result := getPropAsStr(FJsonObject, 'Hash');
+  Result := getPropAsStr(FJsonValue, 'Hash');
 end;
 
 function TFile.Size: UInt64;
 begin
-  Result := getPropAsInt(FJsonObject, 'Size');
+  Result := getPropAsInt(FJsonValue, 'Size');
 end;
 
 function TFile.Endpoint(Gateway: TGateway): string;
@@ -166,7 +149,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    callback(TFile.Create(obj.Clone as TJsonObject), nil);
+    callback(TFile.Create(obj), nil);
   end);
 end;
 

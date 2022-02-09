@@ -59,49 +59,32 @@ uses
 {--------------------------------- TRariStats ---------------------------------}
 
 type
-  TRariStats = class(TInterfacedObject, IRariStats)
-  private
-    FJsonObject: TJsonObject;
+  TRariStats = class(TDeserialized<TJsonObject>, IRariStats)
   public
     function StablePoolAPY: Double;
     function EthPoolAPY   : Double;
     function YieldPoolAPY : Double;
     function DaiPoolAPY   : Double;
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
   end;
-
-constructor TRariStats.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject;
-end;
-
-destructor TRariStats.Destroy;
-begin
-  if Assigned(FJsonObject) then
-    FJsonObject.Free;
-  inherited Destroy;
-end;
 
 function TRariStats.StablePoolAPY: Double;
 begin
-  Result := getPropAsDouble(FJsonObject, 'stablePoolAPY');
+  Result := getPropAsDouble(FJsonValue, 'stablePoolAPY');
 end;
 
 function TRariStats.EthPoolAPY: Double;
 begin
-  Result := getPropAsDouble(FJsonObject, 'ethPoolAPY');
+  Result := getPropAsDouble(FJsonValue, 'ethPoolAPY');
 end;
 
 function TRariStats.YieldPoolAPY: Double;
 begin
-  Result := getPropAsDouble(FJsonObject, 'yieldPoolAPY');
+  Result := getPropAsDouble(FJsonValue, 'yieldPoolAPY');
 end;
 
 function TRariStats.DaiPoolAPY: Double;
 begin
-  Result := getPropAsDouble(FJsonObject, 'daiPoolAPY');
+  Result := getPropAsDouble(FJsonValue, 'daiPoolAPY');
 end;
 
 {------------------------------ global functions ------------------------------}
@@ -113,7 +96,7 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      callback(TRariStats.Create(obj.Clone as TJsonObject), nil);
+      callback(TRariStats.Create(obj), nil);
   end);
 end;
 

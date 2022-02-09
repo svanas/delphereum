@@ -54,36 +54,20 @@ uses
   web3.json;
 
 type
-  TTicker = class(TInterfacedObject, ITicker)
-  private
-    FJsonObject: TJsonObject;
+  TTicker = class(TDeserialized<TJsonObject>, ITicker)
   public
     function Symbol: string;
     function Price : Double;
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
   end;
-
-constructor TTicker.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject;
-end;
-
-destructor TTicker.Destroy;
-begin
-  if Assigned(FJsonObject) then FJsonObject.Free;
-  inherited Destroy;
-end;
 
 function TTicker.Symbol: string;
 begin
-  Result := getPropAsStr(FJsonObject, 'symbol');
+  Result := getPropAsStr(FJsonValue, 'symbol');
 end;
 
 function TTicker.Price: Double;
 begin
-  Result := getPropAsDouble(FJsonObject, 'priceUsd');
+  Result := getPropAsDouble(FJsonValue, 'priceUsd');
 end;
 
 function ticker(const asset: string; callback: TAsyncTicker): IAsyncResult;
@@ -101,7 +85,7 @@ begin
       callback(nil, TError.Create('%s.data is null', [asset]));
       EXIT;
     end;
-    callback(TTicker.Create(data.Clone as TJsonObject), nil);
+    callback(TTicker.Create(data), nil);
   end);
 end;
 

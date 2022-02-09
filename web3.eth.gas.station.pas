@@ -63,49 +63,32 @@ uses
   web3.json;
 
 type
-  TGasPrice = class(TInterfacedObject, IGasPrice)
-  private
-    FJsonObject: TJsonObject;
+  TGasPrice = class(TDeserialized<TJsonObject>, IGasPrice)
   public
     function Fastest: TWei;
     function Fast   : TWei;
     function Average: TWei;
     function SafeLow: TWei;
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
   end;
-
-constructor TGasPrice.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject;
-end;
-
-destructor TGasPrice.Destroy;
-begin
-  if Assigned(FJsonObject) then
-    FJsonObject.Free;
-  inherited Destroy;
-end;
 
 function TGasPrice.Fastest: TWei;
 begin
-  Result := toWei(FloatToEth(getPropAsDouble(FJsonObject, 'fastest') / 10), gwei);
+  Result := toWei(FloatToEth(getPropAsDouble(FJsonValue, 'fastest') / 10), gwei);
 end;
 
 function TGasPrice.Fast: TWei;
 begin
-  Result := toWei(FloatToEth(getPropAsDouble(FJsonObject, 'fast') / 10), gwei);
+  Result := toWei(FloatToEth(getPropAsDouble(FJsonValue, 'fast') / 10), gwei);
 end;
 
 function TGasPrice.Average: TWei;
 begin
-  Result := toWei(FloatToEth(getPropAsDouble(FJsonObject, 'average') / 10), gwei);
+  Result := toWei(FloatToEth(getPropAsDouble(FJsonValue, 'average') / 10), gwei);
 end;
 
 function TGasPrice.SafeLow: TWei;
 begin
-  Result := toWei(FloatToEth(getPropAsDouble(FJsonObject, 'safeLow') / 10), gwei);
+  Result := toWei(FloatToEth(getPropAsDouble(FJsonValue, 'safeLow') / 10), gwei);
 end;
 
 function getGasPrice(const apiKey: string; callback: TAsyncGasPrice): IAsyncResult;
@@ -115,7 +98,7 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      callback(TGasPrice.Create(obj.Clone as TJsonObject), nil);
+      callback(TGasPrice.Create(obj), nil);
   end);
 end;
 

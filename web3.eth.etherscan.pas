@@ -35,7 +35,8 @@ uses
   Velthuis.BigIntegers,
   // web3
   web3,
-  web3.eth.types;
+  web3.eth.types,
+  web3.json;
 
 type
   EEtherscan = class(EWeb3);
@@ -61,12 +62,7 @@ type
     function Value: BigInteger;
   end;
 
-  IErc20TransferEvents = interface
-    function Count: Integer;
-    function Item(const Index: Integer): IErc20TransferEvent;
-  end;
-
-  TAsyncErc20TransferEvents = reference to procedure(events: IErc20TransferEvents; err: IError);
+  TAsyncErc20TransferEvents = reference to procedure(events: IDeserializedArray<IErc20TransferEvent>; err: IError);
 
   TSymbolType = (UnknownSymbol, &Function, &Constructor, Fallback, Event);
 
@@ -80,12 +76,9 @@ type
     function StateMutability: TStateMutability;
   end;
 
-  IContractABI = interface
+  IContractABI = interface(IDeserializedArray<IContractSymbol>)
     function Chain: TChain;
-    function Count: Integer;
     function Contract: TAddress;
-    function AsArray: TJsonArray;
-    function Item(const Index: Integer): IContractSymbol;
     function IndexOf(
       const Name: string;
       &Type     : TSymbolType;
@@ -143,7 +136,6 @@ uses
   System.TypInfo,
   // web3
   web3.http.throttler,
-  web3.json,
   web3.sync;
 
 function endpoint(chain: TChain; const apiKey: string): string;
@@ -204,132 +196,75 @@ end;
 {---------------------------- TErc20TransferEvent -----------------------------}
 
 type
-  TErc20TransferEvent = class(TInterfacedObject, IErc20TransferEvent)
-  private
-    FJsonObject: TJsonObject;
+  TErc20TransferEvent = class(TDeserialized<TJsonObject>, IErc20TransferEvent)
   public
     function Hash: TTxHash;
     function From: TAddress;
     function &To: TAddress;
     function Contract: TAddress;
     function Value: BigInteger;
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
   end;
-
-constructor TErc20TransferEvent.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject;
-end;
-
-destructor TErc20TransferEvent.Destroy;
-begin
-  if Assigned(FJsonObject) then
-    FJsonObject.Free;
-  inherited Destroy;
-end;
 
 function TErc20TransferEvent.Hash: TTxHash;
 begin
-  Result := TTxHash(getPropAsStr(FJsonObject, 'hash'));
+  Result := TTxHash(getPropAsStr(FJsonValue, 'hash'));
 end;
 
 function TErc20TransferEvent.From: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonObject, 'from'));
+  Result := TAddress.New(getPropAsStr(FJsonValue, 'from'));
 end;
 
 function TErc20TransferEvent.&To: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonObject, 'to'));
+  Result := TAddress.New(getPropAsStr(FJsonValue, 'to'));
 end;
 
 function TErc20TransferEvent.Contract: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonObject, 'contractAddress'));
+  Result := TAddress.New(getPropAsStr(FJsonValue, 'contractAddress'));
 end;
 
 function TErc20TransferEvent.Value: BigInteger;
 begin
-  Result := getPropAsBigInt(FJsonObject, 'value', 0);
+  Result := getPropAsBigInt(FJsonValue, 'value', 0);
 end;
 
 {---------------------------- TErc20TransferEvents ----------------------------}
 
 type
-  TErc20TransferEvents = class(TInterfacedObject, IErc20TransferEvents)
-  private
-    FJsonArray: TJsonArray;
+  TErc20TransferEvents = class(TDeserializedArray<IErc20TransferEvent>)
   public
-    function Count: Integer;
-    function Item(const Index: Integer): IErc20TransferEvent;
-    constructor Create(aJsonArray: TJsonArray);
-    destructor Destroy; override;
+    function Item(const Index: Integer): IErc20TransferEvent; override;
   end;
-
-constructor TErc20TransferEvents.Create(aJsonArray: TJsonArray);
-begin
-  inherited Create;
-  FJsonArray := aJsonArray;
-end;
-
-destructor TErc20TransferEvents.Destroy;
-begin
-  if Assigned(FJsonArray) then
-    FJsonArray.Free;
-  inherited Destroy;
-end;
-
-function TErc20TransferEvents.Count: Integer;
-begin
-  Result := FJsonArray.Count;
-end;
 
 function TErc20TransferEvents.Item(const Index: Integer): IErc20TransferEvent;
 begin
-  Result := TErc20TransferEvent.Create(FJsonArray.Items[Index].Clone as TJsonObject);
+  Result := TErc20TransferEvent.Create(FJsonValue.Items[Index] as TJsonObject);
 end;
 
 {------------------------------ TContractSymbol -------------------------------}
 
 type
-  TContractSymbol = class(TInterfacedObject, IContractSymbol)
-  private
-    FJsonObject: TJsonObject;
+  TContractSymbol = class(TDeserialized<TJsonObject>, IContractSymbol)
   public
     function Name: string;
     function &Type: TSymbolType;
     function Inputs: TJsonArray;
     function Outputs: TJsonArray;
     function StateMutability: TStateMutability;
-    constructor Create(aJsonObject: TJsonObject);
-    destructor Destroy; override;
   end;
-
-constructor TContractSymbol.Create(aJsonObject: TJsonObject);
-begin
-  inherited Create;
-  FJsonObject := aJsonObject;
-end;
-
-destructor TContractSymbol.Destroy;
-begin
-  if Assigned(FJsonObject) then
-    FJsonObject.Free;
-  inherited Destroy;
-end;
 
 function TContractSymbol.Name: string;
 begin
-  Result := getPropAsStr(FJsonObject, 'name');
+  Result := getPropAsStr(FJsonValue, 'name');
 end;
 
 function TContractSymbol.&Type: TSymbolType;
 var
   S: string;
 begin
-  S := getPropAsStr(FJsonObject, 'type');
+  S := getPropAsStr(FJsonValue, 'type');
   for Result := System.Low(TSymbolType) to High(TSymbolType) do
     if SameText(GetEnumName(TypeInfo(TSymbolType), Integer(Result)), S) then
       EXIT;
@@ -338,19 +273,19 @@ end;
 
 function TContractSymbol.Inputs: TJsonArray;
 begin
-  Result := getPropAsArr(FJsonObject, 'inputs');
+  Result := getPropAsArr(FJsonValue, 'inputs');
 end;
 
 function TContractSymbol.Outputs: TJsonArray;
 begin
-  Result := getPropAsArr(FJsonObject, 'outputs');
+  Result := getPropAsArr(FJsonValue, 'outputs');
 end;
 
 function TContractSymbol.StateMutability: TStateMutability;
 var
   S: string;
 begin
-  S := getPropAsStr(FJsonObject, 'stateMutability');
+  S := getPropAsStr(FJsonValue, 'stateMutability');
   for Result := System.Low(TStateMutability) to High(TStateMutability) do
     if SameText(GetEnumName(TypeInfo(TStateMutability), Integer(Result)), S) then
       EXIT;
@@ -360,17 +295,14 @@ end;
 {-------------------------------- TContractABI --------------------------------}
 
 type
-  TContractABI = class(TInterfacedObject, IContractABI)
+  TContractABI = class(TDeserializedArray<IContractSymbol>, IContractABI)
   private
     FChain: TChain;
     FContract: TAddress;
-    FJsonArray: TJsonArray;
   public
     function Chain: TChain;
-    function Count: Integer;
     function Contract: TAddress;
-    function AsArray: TJsonArray;
-    function Item(const Index: Integer): IContractSymbol;
+    function Item(const Index: Integer): IContractSymbol; override;
     function IndexOf(
       const Name: string;
       &Type     : TSymbolType;
@@ -384,23 +316,14 @@ type
       &Type          : TSymbolType;
       InputCount     : Integer;
       StateMutability: TStateMutability): Integer; overload;
-    constructor Create(aChain: TChain; aContract: TAddress; aJsonArray: TJsonArray);
-    destructor Destroy; override;
+    constructor Create(aChain: TChain; aContract: TAddress; aJsonArray: TJsonArray); reintroduce;
   end;
 
 constructor TContractABI.Create(aChain: TChain; aContract: TAddress; aJsonArray: TJsonArray);
 begin
-  inherited Create;
-  FChain     := aChain;
-  FContract  := aContract;
-  FJsonArray := aJsonArray;
-end;
-
-destructor TContractABI.Destroy;
-begin
-  if Assigned(FJsonArray) then
-    FJsonArray.Free;
-  inherited Destroy;
+  inherited Create(aJsonArray);
+  FChain    := aChain;
+  FContract := aContract;
 end;
 
 function TContractABI.Chain: TChain;
@@ -408,36 +331,24 @@ begin
   Result := FChain;
 end;
 
-function TContractABI.Count: Integer;
-begin
-  Result := FJsonArray.Count;
-end;
-
 function TContractABI.Contract: TAddress;
 begin
   Result := FContract;
 end;
 
-function TContractABI.AsArray: TJSONArray;
-begin
-  Result := Self.FJsonArray.Clone as TJsonArray;
-end;
-
 function TContractABI.Item(const Index: Integer): IContractSymbol;
 begin
-  Result := TContractSymbol.Create(FJsonArray.Items[Index].Clone as TJsonObject);
+  Result := TContractSymbol.Create(FJsonValue.Items[Index] as TJsonObject);
 end;
 
 function TContractABI.IndexOf(
   const Name: string;
   &Type     : TSymbolType;
   InputCount: Integer): Integer;
-var
-  Item: IContractSymbol;
 begin
   for Result := 0 to Pred(Count) do
   begin
-    Item := Self.Item(Result);
+    var Item := Self.Item(Result);
     if  (Item.Name = Name)
     and (Item.&Type = &Type)
     and (Item.Inputs.Count = InputCount) then
@@ -450,12 +361,10 @@ function TContractABI.IndexOf(
   const Name     : string;
   &Type          : TSymbolType;
   StateMutability: TStateMutability): Integer;
-var
-  Item: IContractSymbol;
 begin
   for Result := 0 to Pred(Count) do
   begin
-    Item := Self.Item(Result);
+    var Item := Self.Item(Result);
     if  (Item.Name = Name)
     and (Item.&Type = &Type)
     and (Item.StateMutability = StateMutability) then
@@ -469,12 +378,10 @@ function TContractABI.IndexOf(
   &Type          : TSymbolType;
   InputCount     : Integer;
   StateMutability: TStateMutability): Integer;
-var
-  Item: IContractSymbol;
 begin
   for Result := 0 to Pred(Count) do
   begin
-    Item := Self.Item(Result);
+    var Item := Self.Item(Result);
     if  (Item.Name = Name)
     and (Item.&Type = &Type)
     and (Item.Inputs.Count = InputCount)
@@ -660,7 +567,7 @@ begin
       callback(nil, TEtherscanError.Create(status, nil));
       EXIT;
     end;
-    callback(TErc20TransferEvents.Create(&array.Clone as TJsonArray), nil);
+    callback(TErc20TransferEvents.Create(&array), nil);
   end);
 end;
 
@@ -698,30 +605,26 @@ begin
   Etherscan.Get(chain, apiKey,
     Format('&module=contract&action=getabi&address=%s', [contract]),
   procedure(resp: TJsonObject; err: IError)
-  var
-    status : Integer;
-    &result: TJsonValue;
-    abi    : IContractABI;
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    status := web3.json.getPropAsInt(resp, 'status');
+    var status := web3.json.getPropAsInt(resp, 'status');
     if status = 0 then
     begin
       callback(nil, TEtherscanError.Create(status, resp));
       EXIT;
     end;
-    &result := unmarshal(web3.json.getPropAsStr(resp, 'result'));
+    var &result := unmarshal(web3.json.getPropAsStr(resp, 'result'));
     if not Assigned(&result) then
     begin
       callback(nil, TEtherscanError.Create(status, nil));
       EXIT;
     end;
     try
-      abi := TContractABI.Create(chain, contract, &result.Clone as TJsonArray);
+      var abi := TContractABI.Create(chain, contract, &result as TJsonArray);
       ContractCache.Enter;
       try
         ContractCache.Add(abi);
