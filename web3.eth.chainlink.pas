@@ -34,7 +34,11 @@ uses
   web3.eth.types;
 
 type
-  TAggregatorV3 = class(TCustomContract)
+  IAggregatorV3 = interface
+    procedure Price(callback: TAsyncFloat);
+  end;
+
+  TAggregatorV3 = class(TCustomContract, IAggregatorV3)
   public
     procedure LatestRoundData(callback: TAsyncTuple);
     procedure Decimals(callback: TAsyncQuantity);
@@ -60,6 +64,24 @@ uses
 
 procedure ETH_USD(client: IWeb3; callback: TAsyncFloat);
 begin
+  var coincap := procedure(callback: TAsyncFloat)
+  begin
+    web3.coincap.ticker('ethereum', procedure(const ticker: ITicker; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        // if coincap didn't work, try Chainlink on Binance Smart Chain
+        var ETH_USD: IAggregatorV3 := TETH_USD.Create(TWeb3.Create(BSC, 'https://bsc-dataseed.binance.org'));
+        ETH_USD.Price(procedure(price: Double; err: IError)
+        begin
+          callback(price, err);
+        end);
+        EXIT;
+      end;
+      callback(ticker.Price, err);
+    end);
+  end;
+
   // Ethereum price feed is available on the following networks only.
   if client.Chain in [
     Ethereum,
@@ -77,31 +99,20 @@ begin
     Optimism,
     Optimism_test_net] then
   begin
-    var ETH_USD := TETH_USD.Create(client);
-    if Assigned(ETH_USD) then
+    var ETH_USD: IAggregatorV3 := TETH_USD.Create(client);
+    ETH_USD.Price(procedure(price: Double; err: IError)
     begin
-      ETH_USD.Price(procedure(price: Double; err: IError)
+      if Assigned(err) then
       begin
-        try
-          callback(price, err);
-        finally
-          ETH_USD.Free;
-        end;
-      end);
-      EXIT;
-    end;
-  end;
-  // Not on any of the above networks? fall back on api.coincap.io
-  web3.coincap.ticker('ethereum', procedure(const ticker: ITicker; err: IError)
-  begin
-    if Assigned(err) then
-    begin
-      // Life sucks. Let's try one more time on BSC. Fingers crossed.
-      ETH_USD(TWeb3.Create(BSC, 'https://bsc-dataseed.binance.org'), callback);
-      EXIT;
-    end;
-    callback(ticker.Price, err);
-  end);
+        coincap(callback);
+        EXIT;
+      end;
+      callback(price, err);
+    end);
+  end
+  else
+    // not on any of the above networks? fall back on api.coincap.io
+    coincap(callback);
 end;
 
 { TAggregatorV3 }
@@ -123,6 +134,11 @@ begin
     if Assigned(err) then
     begin
       callback(0, err);
+      EXIT;
+    end;
+    if tup.Empty then
+    begin
+      callback(0, TError.Create('latestRoundData() returned 0x'));
       EXIT;
     end;
     Self.Decimals(procedure(decimals: BigInteger; err: IError)
