@@ -141,7 +141,7 @@ uses
 function endpoint(chain: TChain; const apiKey: string): string;
 const
   ENDPOINT: array[TChain] of string = (
-    'https://api.etherscan.io/api?apikey=%s',                  // Mainnet
+    'https://api.etherscan.io/api?apikey=%s',                  // Ethereum
     'https://api-ropsten.etherscan.io/api?apikey=%s',          // Ropsten
     'https://api-rinkeby.etherscan.io/api?apikey=%s',          // Rinkeby
     'https://api-kovan.etherscan.io/api?apikey=%s',            // Kovan
