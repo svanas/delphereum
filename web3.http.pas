@@ -59,16 +59,19 @@ type
 
 function get(
   const URL: string;
+  headers  : TNetHeaders;
   callback : TAsyncResponse;
   timeout  : Integer = 60000;
   backoff  : Integer = 1): IAsyncResult; overload;
 function get(
   const URL: string;
+  headers  : TNetHeaders;
   callback : TAsyncJsonObject;
   timeout  : Integer = 60000;
   backoff  : Integer = 1): IAsyncResult; overload;
 function get(
   const URL: string;
+  headers  : TNetHeaders;
   callback : TAsyncJsonArray;
   timeout  : Integer = 60000;
   backoff  : Integer = 1) : IAsyncResult; overload;
@@ -147,7 +150,7 @@ end;
 
 {---------------------------- async function calls ----------------------------}
 
-function get(const URL: string; callback: TAsyncResponse; timeout, backoff: Integer): IAsyncResult;
+function get(const URL: string; headers: TNetHeaders; callback: TAsyncResponse; timeout, backoff: Integer): IAsyncResult;
 begin
   var task: ITask := nil;
   try
@@ -192,7 +195,7 @@ begin
             if (retryAfter > 0) and (retryAfter <= MAX_BACKOFF) then
             begin
               TThread.Sleep(retryAfter * 1000);
-              get(URL, callback, timeout, backoff * 2);
+              get(URL, headers, callback, timeout, backoff * 2);
               EXIT;
             end;
           end;
@@ -203,7 +206,7 @@ begin
       finally
         client.Free;
       end;
-    end, URL);
+    end, URL, nil, headers);
 
     if Assigned(task) then task.Start;
   except
@@ -211,9 +214,9 @@ begin
   end;
 end;
 
-function get(const URL: string; callback: TAsyncJsonObject; timeout, backoff: Integer): IAsyncResult;
+function get(const URL: string; headers: TNetHeaders; callback: TAsyncJsonObject; timeout, backoff: Integer): IAsyncResult;
 begin
-  Result := get(URL, procedure(resp: IHttpResponse; err: IError)
+  Result := get(URL, headers, procedure(resp: IHttpResponse; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -232,9 +235,9 @@ begin
   end, timeout, backoff);
 end;
 
-function get(const URL: string; callback: TAsyncJsonArray; timeout, backoff: Integer): IAsyncResult;
+function get(const URL: string; headers: TNetHeaders; callback: TAsyncJsonArray; timeout, backoff: Integer): IAsyncResult;
 begin
-  Result := get(URL, procedure(resp: IHttpResponse; err: IError)
+  Result := get(URL, headers, procedure(resp: IHttpResponse; err: IError)
   begin
     if Assigned(err) then
     begin

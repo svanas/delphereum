@@ -162,7 +162,7 @@ function pin(const apiHost, hash: string; callback: TAsyncJsonObject): IAsyncRes
 begin
   Result := web3.http.get(
     apiHost + '/api/v0/pin/add?arg=' + TNetEncoding.URL.Encode(hash),
-    callback
+    [], callback
   );
 end;
 
@@ -175,7 +175,7 @@ function cat(const apiHost, hash: string; callback: TAsyncResponse): IAsyncResul
 begin
   Result := web3.http.get(
     apiHost + '/api/v0/cat?arg=' + TNetEncoding.URL.Encode(hash),
-    callback
+    [], callback
   );
 end;
 

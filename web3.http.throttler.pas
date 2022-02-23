@@ -40,8 +40,9 @@ type
 
   TGet = record
     endpoint: string;
+    headers : TNetHeaders;
     callback: TAsyncJsonObject;
-    constructor Create(const aURL: string; aCallback: TAsyncJsonObject);
+    constructor Create(const aURL: string; aHeaders: TNetheaders; aCallback: TAsyncJsonObject);
   end;
 
   IGetter = interface
@@ -95,9 +96,10 @@ uses
 
 { TGet }
 
-constructor TGet.Create(const aURL: string; aCallback: TAsyncJsonObject);
+constructor TGet.Create(const aURL: string; aHeaders: TNetHeaders; aCallback: TAsyncJsonObject);
 begin
   Self.endpoint := aURL;
+  Self.headers  := aHeaders;
   Self.callback := aCallback;
 end;
 
@@ -117,12 +119,11 @@ begin
 end;
 
 procedure TGetter.Get(const request: TGet);
-var
-  _get: TProc<TGet>;
 begin
-  _get := procedure(request: TGet)
+  var g: TProc<TGet>;
+  g := procedure(request: TGet)
   begin
-    web3.http.get(request.endpoint, procedure(resp: TJsonObject; err: IError)
+    web3.http.get(request.endpoint, request.headers, procedure(resp: TJsonObject; err: IError)
     begin
       request.callback(resp, err);
       Queue.Enter;
@@ -131,7 +132,7 @@ begin
         if Queue.Length > 0 then
         begin
           TThread.Sleep(Ceil(1000 / FReqPerSec));
-          _get(Queue.First);
+          g(Queue.First);
         end;
       finally
         Queue.Leave;
@@ -142,7 +143,7 @@ begin
   try
     Queue.Add(request);
     if Queue.Length = 1 then
-      _get(Queue.First);
+      g(Queue.First);
   finally
     Queue.Leave;
   end;
@@ -174,10 +175,9 @@ begin
 end;
 
 procedure TThrottler.Post(const request: TPost);
-var
-  _post: TProc<TPost>;
 begin
-  _post := procedure(request: TPost)
+  var p: TProc<TPost>;
+  p := procedure(request: TPost)
   begin
     web3.http.post(request.endpoint, request.body, request.headers, procedure(resp: TJsonObject; err: IError)
     begin
@@ -188,7 +188,7 @@ begin
         if Queue.Length > 0 then
         begin
           TThread.Sleep(Ceil(1000 / FReqPerSec));
-          _post(Queue.First);
+          p(Queue.First);
         end;
       finally
         Queue.Leave;
@@ -199,7 +199,7 @@ begin
   try
     Queue.Add(request);
     if Queue.Length = 1 then
-      _post(Queue.First);
+      p(Queue.First);
   finally
     Queue.Leave;
   end;

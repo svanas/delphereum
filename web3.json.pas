@@ -66,7 +66,8 @@ function unmarshal(const value: string): TJsonValue;
 function getPropAsStr(obj: TJsonValue; const name: string; const def: string = ''): string;
 function getPropAsInt(obj: TJsonValue; const name: string; def: Integer = 0): Integer;
 function getPropAsDouble(obj: TJsonValue; const name: string; def: Double = 0): Double;
-function getPropAsBigInt(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;
+function getPropAsBigInt(obj: TJsonValue; const name: string): BigInteger; overload;
+function getPropAsBigInt(obj: TJsonValue; const name: string; def: BigInteger): BigInteger; overload;
 function getPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
 function getPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
 function getPropAsBOOL(obj: TJsonValue; const name: string; def: Boolean = False): Boolean;
@@ -191,6 +192,11 @@ begin
           FS.DecimalSeparator := '.';
           Result := StrToFloat(TJsonString(P.JsonValue).Value, FS);
         end;
+end;
+
+function getPropAsBigInt(obj: TJsonValue; const name: string): BigInteger;
+begin
+  Result := getPropAsBigInt(obj, name, BigInteger.Zero);
 end;
 
 function getPropAsBigInt(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;

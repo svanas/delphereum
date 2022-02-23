@@ -52,7 +52,7 @@ type
       callback : TAsyncQuantity); // The number of NFTs owned by `owner`, possibly zero
     // Find the owner of an NFT
     procedure OwnerOf(
-      tokenId  : UInt64;          // The identifier for an NFT
+      tokenId  : BigInteger;      // The identifier for an NFT
       callback : TAsyncAddress);  // The address of the owner of the NFT
     // Transfers the ownership of an NFT from one address to another address
     // Throws...
@@ -63,7 +63,12 @@ type
     procedure SafeTransferFrom(
       from     : TPrivateKey;     // The current owner of the NFT
       &to      : TAddress;        // The new owner
-      tokenId  : UInt64;          // The NFT to transfer
+      tokenId  : BigInteger;      // The NFT to transfer
+      callback : TAsyncTxHash);
+    procedure SafeTransferFromEx(
+      from     : TPrivateKey;     // The current owner of the NFT
+      &to      : TAddress;        // The new owner
+      tokenId  : BigInteger;      // The NFT to transfer
       callback : TAsyncReceipt);
     // Transfers the ownership of an NFT from one address to another address
     // THE CALLER IS RESPONSIBLE TO CONFIRM THAT `to` IS CAPABLE OF RECEIVING
@@ -71,13 +76,18 @@ type
     procedure TransferFrom(
       from     : TPrivateKey;     // The current owner of the NFT
       &to      : TAddress;        // The new owner
-      tokenId  : UInt64;          // The NFT to transfer
+      tokenId  : BigInteger;      // The NFT to transfer
+      callback : TAsyncTxHash);
+    procedure TransferFromEx(
+      from     : TPrivateKey;     // The current owner of the NFT
+      &to      : TAddress;        // The new owner
+      tokenId  : BigInteger;      // The NFT to transfer
       callback : TAsyncReceipt);
     // Change or reaffirm the approved address for an NFT
     procedure Approve(
       owner    : TPrivateKey;     // The current owner of the NFT
       spender  : TAddress;        // The new approved NFT controller
-      tokenId  : UInt64;          // The NFT to approve
+      tokenId  : BigInteger;      // The NFT to approve
       callback : TAsyncReceipt);
     // Change or reaffirm the approved address for an NFT
     procedure SetApprovalForAll(
@@ -87,7 +97,7 @@ type
       callback : TAsyncReceipt);
     // Get the approved address for a single NFT
     procedure GetApproved(
-      tokenId  : UInt64;          // The NFT to find the approved address for
+      tokenId  : BigInteger;      // The NFT to find the approved address for
       callback : TAsyncAddress);  // The approved address for this NFT, or the zero address if there is none
     // Query if an address is an authorized operator for another address
     procedure IsApprovedForAll(
@@ -111,12 +121,12 @@ type
     procedure TotalSupply(callback: TAsyncQuantity);
     // Enumerate valid NFTs
     procedure TokenByIndex(
-      index   : UInt64;          // A counter less than `totalSupply()`
+      index   : BigInteger;      // A counter less than `totalSupply()`
       callback: TAsyncQuantity); // The token identifier for the `index`th NFT
     // Enumerate NFTs assigned to an owner
     procedure TokenOfOwnerByIndex(
       owner   : TAddress;        // An address where we are interested in NFTs owned by them
-      index   : UInt64;          // A counter less than `balanceOf(_owner)`
+      index   : BigInteger;      // A counter less than `balanceOf(_owner)`
       callback: TAsyncQuantity); // The token identifier for the `index`th NFT assigned to `owner`
   end;
 
@@ -164,22 +174,32 @@ type
       owner    : TAddress;
       callback : TAsyncQuantity);
     procedure OwnerOf(
-      tokenId  : UInt64;
+      tokenId  : BigInteger;
       callback : TAsyncAddress);
     procedure SafeTransferFrom(
       from     : TPrivateKey;
       &to      : TAddress;
-      tokenId  : UInt64;
+      tokenId  : BigInteger;
+      callback : TAsyncTxHash);
+    procedure SafeTransferFromEx(
+      from     : TPrivateKey;
+      &to      : TAddress;
+      tokenId  : BigInteger;
       callback : TAsyncReceipt);
     procedure TransferFrom(
       from     : TPrivateKey;
       &to      : TAddress;
-      tokenId  : UInt64;
+      tokenId  : BigInteger;
+      callback : TAsyncTxHash);
+    procedure TransferFromEx(
+      from     : TPrivateKey;
+      &to      : TAddress;
+      tokenId  : BigInteger;
       callback : TAsyncReceipt);
     procedure Approve(
       owner    : TPrivateKey;
       spender  : TAddress;
-      tokenId  : UInt64;
+      tokenId  : BigInteger;
       callback : TAsyncReceipt);
     procedure SetApprovalForAll(
       owner    : TPrivateKey;
@@ -187,7 +207,7 @@ type
       approved : Boolean;
       callback : TAsyncReceipt);
     procedure GetApproved(
-      tokenId  : UInt64;
+      tokenId  : BigInteger;
       callback : TAsyncAddress);
     procedure IsApprovedForAll(
       owner    : TAddress;
@@ -199,8 +219,8 @@ type
     procedure TokenURI(tokenId: BigInteger; callback: TAsyncString);
     // IERC721Enumerable
     procedure TotalSupply(callback: TAsyncQuantity);
-    procedure TokenByIndex(index: UInt64; callback: TAsyncQuantity);
-    procedure TokenOfOwnerByIndex(owner: TAddress; index: UInt64; callback: TAsyncQuantity);
+    procedure TokenByIndex(index: BigInteger; callback: TAsyncQuantity);
+    procedure TokenOfOwnerByIndex(owner: TAddress; index: BigInteger; callback: TAsyncQuantity);
     procedure Enumerate(foreach: TForEach; error: TProc<IError>; done: TProc);
     // events
     property OnTransfer: TOnTransfer read FOnTransfer write SetOnTransfer;
@@ -284,9 +304,9 @@ begin
   web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
 end;
 
-procedure TERC721.OwnerOf(tokenId: UInt64; callback: TAsyncAddress);
+procedure TERC721.OwnerOf(tokenId: BigInteger; callback: TAsyncAddress);
 begin
-  web3.eth.call(Client, Contract, 'ownerOf(uint256)', [tokenId], procedure(const hex: string; err: IError)
+  web3.eth.call(Client, Contract, 'ownerOf(uint256)', [web3.utils.toHex(tokenId)], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
@@ -298,7 +318,25 @@ end;
 procedure TERC721.SafeTransferFrom(
   from    : TPrivateKey;
   &to     : TAddress;
-  tokenId : UInt64;
+  tokenId : BigInteger;
+  callback: TAsyncTxHash);
+begin
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      web3.eth.write(
+        Client, from, Contract,
+        'safeTransferFrom(address,address,uint256)', [addr, &to, web3.utils.toHex(tokenId)], callback
+      );
+  end);
+end;
+
+procedure TERC721.SafeTransferFromEx(
+  from    : TPrivateKey;
+  &to     : TAddress;
+  tokenId : BigInteger;
   callback: TAsyncReceipt);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
@@ -308,7 +346,7 @@ begin
     else
       web3.eth.write(
         Client, from, Contract,
-        'safeTransferFrom(address,address,uint256)', [addr, &to, tokenId], callback
+        'safeTransferFrom(address,address,uint256)', [addr, &to, web3.utils.toHex(tokenId)], callback
       );
   end);
 end;
@@ -316,7 +354,25 @@ end;
 procedure TERC721.TransferFrom(
   from    : TPrivateKey;
   &to     : TAddress;
-  tokenId : UInt64;
+  tokenId : BigInteger;
+  callback: TAsyncTxHash);
+begin
+  from.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      web3.eth.write(
+        Client, from, Contract,
+        'transferFrom(address,address,uint256)', [addr, &to, web3.utils.toHex(tokenId)], callback
+      );
+  end);
+end;
+
+procedure TERC721.TransferFromEx(
+  from    : TPrivateKey;
+  &to     : TAddress;
+  tokenId : BigInteger;
   callback: TAsyncReceipt);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
@@ -326,7 +382,7 @@ begin
     else
       web3.eth.write(
         Client, from, Contract,
-        'transferFrom(address,address,uint256)', [addr, &to, tokenId], callback
+        'transferFrom(address,address,uint256)', [addr, &to, web3.utils.toHex(tokenId)], callback
       );
   end);
 end;
@@ -334,10 +390,10 @@ end;
 procedure TERC721.Approve(
   owner   : TPrivateKey;
   spender : TAddress;
-  tokenId : UInt64;
+  tokenId : BigInteger;
   callback: TAsyncReceipt);
 begin
-  web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, tokenId], callback);
+  web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, web3.utils.toHex(tokenId)], callback);
 end;
 
 procedure TERC721.SetApprovalForAll(
@@ -349,9 +405,9 @@ begin
   web3.eth.write(Client, owner, Contract, 'setApprovalForAll(address,bool)', [&operator, approved], callback);
 end;
 
-procedure TERC721.GetApproved(tokenId: UInt64; callback: TAsyncAddress);
+procedure TERC721.GetApproved(tokenId: BigInteger; callback: TAsyncAddress);
 begin
-  web3.eth.call(Client, Contract, 'getApproved(uint256)', [tokenId], procedure(const hex: string; err: IError)
+  web3.eth.call(Client, Contract, 'getApproved(uint256)', [web3.utils.toHex(tokenId)], procedure(const hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
@@ -406,14 +462,14 @@ begin
   web3.eth.call(Client, Contract, 'totalSupply()', [], callback);
 end;
 
-procedure TERC721.TokenByIndex(index: UInt64; callback: TAsyncQuantity);
+procedure TERC721.TokenByIndex(index: BigInteger; callback: TAsyncQuantity);
 begin
-  web3.eth.call(Client, Contract, 'tokenByIndex(uint256)', [index], callback);
+  web3.eth.call(Client, Contract, 'tokenByIndex(uint256)', [web3.utils.toHex(index)], callback);
 end;
 
-procedure TERC721.TokenOfOwnerByIndex(owner: TAddress; index: UInt64; callback: TAsyncQuantity);
+procedure TERC721.TokenOfOwnerByIndex(owner: TAddress; index: BigInteger; callback: TAsyncQuantity);
 begin
-  web3.eth.call(Client, Contract, 'tokenOfOwnerByIndex(address,uint256)', [owner, index], callback);
+  web3.eth.call(Client, Contract, 'tokenOfOwnerByIndex(address,uint256)', [owner, web3.utils.toHex(index)], callback);
 end;
 
 procedure TERC721.Enumerate(foreach: TForEach; error: TProc<IError>; done: TProc);

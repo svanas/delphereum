@@ -72,6 +72,12 @@ type
   TUnixDateTime = Int64;
   TProtocol     = (HTTPS, WebSocket);
   TSecurity     = (Automatic, TLS_10, TLS_11, TLS_12, TLS_13);
+  TStandard     = (erc20, erc721, erc1155);
+
+type
+  TStandardHelper = record helper for TStandard
+    class function New(const name: string): TStandard; static;
+  end;
 
   EWeb3 = class(Exception);
 
@@ -381,6 +387,18 @@ const
   );
 begin
   Result := BLOCK_EXPLORER_URL[Self];
+end;
+
+{ TStandardHelper }
+
+class function TStandardHelper.New(const name: string): TStandard;
+begin
+  if SameText(name, 'ERC1155') or SameText(name, 'ERC-1155') then
+    Result := erc1155
+  else if SameText(name, 'ERC721') or SameText(name, 'ERC-721') then
+    Result := erc721
+  else
+    result := erc20;
 end;
 
 { TError }

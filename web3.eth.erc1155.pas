@@ -47,9 +47,21 @@ type
       &to     : TAddress;    // Target address
       id      : BigInteger;  // ID of the token type
       value   : BigInteger;  // Transfer amount
+      callback: TAsyncTxHash);
+    procedure SafeTransferFromEx(
+      owner   : TPrivateKey; // Source address
+      &to     : TAddress;    // Target address
+      id      : BigInteger;  // ID of the token type
+      value   : BigInteger;  // Transfer amount
       callback: TAsyncReceipt);
     // Transfers `values` amount(s) of `IDs` from the `owner` address to the `to` address specified (with safety call).
     procedure SafeBatchTransferFrom(
+      owner   : TPrivateKey;         // Source address
+      &to     : TAddress;            // Target address
+      IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
+      values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
+      callback: TAsyncTxHash);
+    procedure SafeBatchTransferFromEx(
       owner   : TPrivateKey;         // Source address
       &to     : TAddress;            // Target address
       IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
@@ -147,9 +159,21 @@ type
       &to     : TAddress;    // Target address
       id      : BigInteger;  // ID of the token type
       value   : BigInteger;  // Transfer amount
+      callback: TAsyncTxHash);
+    procedure SafeTransferFromEx(
+      owner   : TPrivateKey; // Source address
+      &to     : TAddress;    // Target address
+      id      : BigInteger;  // ID of the token type
+      value   : BigInteger;  // Transfer amount
       callback: TAsyncReceipt);
     // Transfers `values` amount(s) of `IDs` from the `owner` address to the `to` address specified (with safety call).
     procedure SafeBatchTransferFrom(
+      owner   : TPrivateKey;         // Source address
+      &to     : TAddress;            // Target address
+      IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
+      values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
+      callback: TAsyncTxHash);
+    procedure SafeBatchTransferFromEx(
       owner   : TPrivateKey;         // Source address
       &to     : TAddress;            // Target address
       IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
@@ -291,6 +315,29 @@ procedure TERC1155.SafeTransferFrom(
   &to     : TAddress;    // Target address
   id      : BigInteger;  // ID of the token type
   value   : BigInteger;  // Transfer amount
+  callback: TAsyncTxHash);
+begin
+  owner.Address(procedure(from: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      web3.eth.write(
+        Self.Client,
+        owner,
+        Self.Contract,
+        'safeTransferFrom(address,address,uint256,uint256,bytes)',
+        [from, &to, web3.utils.toHex(id), web3.utils.toHex(value), ''],
+        callback
+      );
+  end);
+end;
+
+procedure TERC1155.SafeTransferFromEx(
+  owner   : TPrivateKey; // Source address
+  &to     : TAddress;    // Target address
+  id      : BigInteger;  // ID of the token type
+  value   : BigInteger;  // Transfer amount
   callback: TAsyncReceipt);
 begin
   owner.Address(procedure(from: TAddress; err: IError)
@@ -311,6 +358,31 @@ end;
 
 // Transfers `values` amount(s) of `IDs` from the `owner` address to the `to` address specified (with safety call).
 procedure TERC1155.SafeBatchTransferFrom(
+  owner   : TPrivateKey;         // Source address
+  &to     : TAddress;            // Target address
+  IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
+  values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
+  callback: TAsyncTxHash);
+begin
+  var _IDs    := &array(IDs);
+  var _values := &array(values);
+  owner.Address(procedure(from: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      callback('', err)
+    else
+      web3.eth.write(
+        Self.Client,
+        owner,
+        Self.Contract,
+        'safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)',
+        [from, &to, _IDs, _values, ''],
+        callback
+      );
+  end);
+end;
+
+procedure TERC1155.SafeBatchTransferFromEx(
   owner   : TPrivateKey;         // Source address
   &to     : TAddress;            // Target address
   IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)

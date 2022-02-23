@@ -52,9 +52,13 @@ type
   TTokensHelper = record helper for TTokens
     procedure Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
     function IndexOf(address: TAddress): Integer;
+    function Length: Integer;
   end;
 
   TAsyncTokens = reference to procedure(tokens: TTokens; err: IError);
+
+function count(const source: string; callback: TAsyncQuantity): IAsyncResult; overload;
+function count(chain: TChain; callback: TAsyncQuantity): IAsyncResult; overload;
 
 function tokens(const source: string; callback: TAsyncJsonArray): IAsyncResult; overload;
 function tokens(const source: string; callback: TAsyncTokens): IAsyncResult; overload;
@@ -152,7 +156,7 @@ begin
 
   next := procedure(tokens: TTokens; idx: Integer)
   begin
-    if idx >= Length(tokens) then
+    if idx >= tokens.Length then
     begin
       if Assigned(done) then done;
       EXIT;
@@ -163,7 +167,7 @@ begin
     end);
   end;
 
-  if Length(Self) = 0 then
+  if Self.Length = 0 then
   begin
     if Assigned(done) then done;
     EXIT;
@@ -174,17 +178,43 @@ end;
 
 function TTokensHelper.IndexOf(address: TAddress): Integer;
 begin
-  for Result := 0 to Length(Self) - 1 do
+  for Result := 0 to Self.Length - 1 do
     if Self[Result].Address.SameAs(address) then
       EXIT;
   Result := -1;
 end;
 
+function TTokensHelper.Length: Integer;
+begin
+  Result := System.Length(Self);
+end;
+
 {------------------------------ public functions ------------------------------}
+
+function count(const source: string; callback: TAsyncQuantity): IAsyncResult;
+begin
+  Result := tokens(source, procedure(arr: TJsonArray; err: IError)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else if not Assigned(arr) then
+      callback(0, nil)
+    else
+      callback(arr.Count, nil);
+  end);
+end;
+
+function count(chain: TChain; callback: TAsyncQuantity): IAsyncResult;
+begin
+  Result := tokens(chain, procedure(tokens: TTokens; err: IError)
+  begin
+    callback(tokens.Length, nil);
+  end);
+end;
 
 function tokens(const source: string; callback: TAsyncJsonArray): IAsyncResult;
 begin
-  Result := web3.http.get(source, procedure(obj: TJsonObject; err: IError)
+  Result := web3.http.get(source, [], procedure(obj: TJsonObject; err: IError)
   begin
     callback(getPropAsArr(obj, 'tokens'), err);
   end);

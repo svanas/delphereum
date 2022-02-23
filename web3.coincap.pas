@@ -93,7 +93,7 @@ function ticker(const asset: string; callback: TAsyncJsonObject): IAsyncResult;
 begin
   Result := web3.http.get(
     'https://api.coincap.io/v2/assets/' + TNetEncoding.URL.Encode(asset),
-    callback
+    [], callback
   );
 end;
 

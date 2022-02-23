@@ -106,7 +106,7 @@ function getGasPrice(const apiKey: string; callback: TAsyncJsonObject): IAsyncRe
 begin
   Result := web3.http.get(
     'https://ethgasstation.info/api/ethgasAPI.json?api-key=' + TNetEncoding.URL.Encode(apiKey),
-    callback
+    [], callback
   );
 end;
 

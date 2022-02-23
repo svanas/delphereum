@@ -102,7 +102,7 @@ end;
 
 function stats(callback: TAsyncJsonObject): IAsyncResult;
 begin
-  Result := web3.http.get('https://v2.rari.capital/api/stats', callback);
+  Result := web3.http.get('https://v2.rari.capital/api/stats', [], callback);
 end;
 
 end.

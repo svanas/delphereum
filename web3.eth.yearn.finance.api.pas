@@ -177,7 +177,7 @@ end;
 
 function vaults(chain: TChain; callback: TAsyncJsonArray): IAsyncResult;
 begin
-  Result := web3.http.get(Format('https://api.yearn.finance/v1/chains/%d/vaults/all', [chain.Id]), callback);
+  Result := web3.http.get(Format('https://api.yearn.finance/v1/chains/%d/vaults/all', [chain.Id]), [], callback);
 end;
 
 function latest(chain: TChain; reserve: TAddress; &type: TVaultType; callback: TAsyncVault): IAsyncResult;
