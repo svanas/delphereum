@@ -88,7 +88,7 @@ Bankless is a DeFi desktop app with the highest possible yield on your stablecoi
 
 Made with Delphi, Bankless is a small and simple dapp that makes it super easy to transfer your savings from one lending protocol to another with the click of one button.
 
-You can download Bankless [for Windows](https://www.microsoft.com/store/productId/9P50F616XCDJ) or [for macOS](https://apps.apple.com/us/app/id1521153171).
+You can download Bankless [for Windows](https://www.dropbox.com/s/fgjl5zmfnuw7h0s/bankless.zip?dl=1) or [for macOS](https://apps.apple.com/us/app/id1521153171).
 
 ### 3. PubSub
 
