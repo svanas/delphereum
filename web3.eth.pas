@@ -267,18 +267,15 @@ begin
 end;
 
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString);
-var
-  abi: string;
-  obj: TJsonObject;
 begin
   // step #1: encode the function abi
-  abi := web3.eth.abi.encode(func, args);
+  var abi := web3.eth.abi.encode(func, args);
   // step #2: construct the transaction call object
-  obj := web3.json.unmarshal(Format(
+  var obj := web3.json.unmarshal(Format(
     '{"from": %s, "to": %s, "data": %s}', [
       web3.json.quoteString(string(from), '"'),
       web3.json.quoteString(string(&to), '"'),
-      web3.json.quoteString(abi, '"')
+      web3.json.quoteString(web3.utils.toHex(abi), '"')
     ]
   )) as TJsonObject;
   try
@@ -493,12 +490,12 @@ begin
     if Assigned(err) then
       callback('', err)
     else
-      web3.eth.gas.estimateGas(client, addr, &to, data, procedure(estimatedGas: BigInteger; err: IError)
+      web3.eth.gas.estimateGas(client, addr, &to, web3.utils.toHex(data), procedure(estimatedGas: BigInteger; err: IError)
       begin
         if Assigned(err) then
           callback('', err)
         else
-          write(client, from, &to, value, data, estimatedGas, callback);
+          write(client, from, &to, value, web3.utils.toHex(data), estimatedGas, callback);
       end);
   end);
 end;
@@ -518,12 +515,12 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      web3.eth.gas.estimateGas(client, addr, &to, data, procedure(estimatedGas: BigInteger; err: IError)
+      web3.eth.gas.estimateGas(client, addr, &to, web3.utils.toHex(data), procedure(estimatedGas: BigInteger; err: IError)
       begin
         if Assigned(err) then
           callback(nil, err)
         else
-          write(client, from, &to, value, data, estimatedGas, callback);
+          write(client, from, &to, value, web3.utils.toHex(data), estimatedGas, callback);
       end);
   end);
 end;

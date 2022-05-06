@@ -31,6 +31,7 @@ interface
 uses
   // Delphi
   System.Generics.Collections,
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -39,19 +40,24 @@ uses
 type
   TContractArray = TList<Variant>;
 
-function  tuple(args: array of Variant): Variant;
+  IContractStruct = interface
+  ['{CA0C794D-6280-4AB1-9E91-4DE3443DFD1B}']
+    function Encode: TBytes;
+  end;
+
+function tuple(args: array of Variant): Variant;
 
 function &array(args: array of Variant): TContractArray; overload;
 function &array(args: array of TAddress): TContractArray; overload;
 function &array(args: array of BigInteger): TContractArray; overload;
 
-function encode(const func: string; args: array of const): string;
+function encode(args: array of const): TBytes; overload;
+function encode(const func: string; args: array of const): TBytes; overload;
 
 implementation
 
 uses
   // Delphi
-  System.SysUtils,
   System.Variants,
   // web3
   web3.utils;
@@ -88,7 +94,8 @@ begin
   for arg in args do Result.Add(web3.utils.toHex(arg));
 end;
 
-function encode(const func: string; args: array of const): string;
+// encode the args into a byte array
+function encode(args: array of const): TBytes;
 
   // https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI#argument-encoding
   function encodeArgs(args: array of const): TBytes;
@@ -226,6 +233,7 @@ function encode(const func: string; args: array of const): string;
       curr  : TBytes;
       suffix: TBytes;
       offset: Integer;
+      struct: IContractStruct;
     begin
       case arg.VType of
         vtBoolean:
@@ -242,6 +250,9 @@ function encode(const func: string; args: array of const): string;
           Result := encodeArg(string(arg.VUnicodeString));
         vtVariant:
           Result := encodeArg(arg.VVariant^);
+        vtInterface:
+          if Supports(IInterface(arg.VInterface), IContractStruct, struct) then
+            Result := struct.Encode;
         vtObject:
           if arg.VObject is TContractArray then // array
           begin
@@ -312,24 +323,22 @@ function encode(const func: string; args: array of const): string;
     Result := Result + suffix;
   end;
 
-var
-  hash: TBytes;
-  data: TBytes;
-  arg : TVarRec;
 begin
-  // step #1: encode the args into a byte array
   try
-    data := encodeArgs(args);
+    Result := encodeArgs(args);
   finally
-    for arg in args do
+    for var arg in args do
       if (arg.VType = vtObject) and (arg.VObject is TContractArray) then
         arg.VObject.Free;
   end;
-  // step #2: the first four bytes specify the function to be called
-  hash := web3.utils.sha3(web3.utils.toHex(func));
-  data := Copy(hash, 0, 4) + data;
-  // step #3: hex-encode the data
-  Result := web3.utils.toHex(data);
+end;
+
+// the first four bytes specify the function to be called
+function encode(const func: string; args: array of const): TBytes;
+begin
+  Result := encode(args);
+  var hash := web3.utils.sha3(web3.utils.toHex(func));
+  Result := Copy(hash, 0, 4) + Result;
 end;
 
 end.

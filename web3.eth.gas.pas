@@ -228,7 +228,7 @@ procedure estimateGas(
   &strict   : Boolean;
   callback  : TAsyncQuantity);
 begin
-  estimateGas(client, from, &to, web3.eth.abi.encode(func, args), &strict, callback);
+  estimateGas(client, from, &to, web3.utils.toHex(web3.eth.abi.encode(func, args)), &strict, callback);
 end;
 
 procedure estimateGas(
