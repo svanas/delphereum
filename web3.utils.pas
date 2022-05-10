@@ -30,17 +30,12 @@ interface
 
 uses
   // Delphi
-  System.JSON,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
-  // HashLib4Pascal
-  HlpSHA3,
   // web3
   web3,
-  web3.eth.types,
-  web3.json,
-  web3.json.rpc;
+  web3.eth.types;
 
 type
   TToHex = set of (padToEven, zeroAs0x0);
@@ -61,13 +56,24 @@ function toHex(int: BigInteger; options: TToHex = []): string; overload;
 
 function isHex(const str: string): Boolean; overload;
 function isHex(const prefix, str: string): Boolean; overload;
+
 function fromHex(hex: string): TBytes;
+function fromHex32(hex: string): TBytes32;
 
 function  sha3(const hex: string): TBytes; overload;
 function  sha3(const buf: TBytes): TBytes; overload;
 procedure sha3(client: IWeb3; const hex: string; callback: TAsyncString); overload;
 
 implementation
+
+uses
+  // Delphi
+  System.JSON,
+  System.Math,
+  // HashLib4Pascal
+  HlpSHA3,
+  // web3
+  web3.json;
 
 function toHex(const buf: TBytes): string;
 begin
@@ -217,6 +223,13 @@ begin
   SetLength(Result, Length(hex) div 2);
   for I := System.Low(hex) to Length(hex) div 2 do
     Result[I - 1] := StrToInt('$' + Copy(hex, (I - 1) * 2 + 1, 2));
+end;
+
+function fromHex32(hex: string): TBytes32;
+begin
+  FillChar(Result, SizeOf(Result), 0);
+  var buf := fromHex(hex);
+  Move(buf[0], Result[0], Min(Length(buf), SizeOf(Result)));
 end;
 
 function sha3(const hex: string): TBytes;

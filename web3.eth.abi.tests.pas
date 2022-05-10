@@ -50,26 +50,28 @@ type
     procedure TestCase6;
     [Test]
     procedure TestCase7;
+    [Test]
+    procedure TestCase8;
   end;
 
 implementation
 
 uses
   // Delphi
+  System.Math,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
   web3.eth.abi,
+  web3.eth.balancer.v2,
   web3.utils;
 
 procedure TTests.TestCase1;
 begin
   Assert.AreEqual(
-    web3.utils.toHex(
-      web3.eth.abi.encode(
-        'baz(uint32,bool)', [69, True]
-      )
+    web3.eth.abi.encode(
+      'baz(uint32,bool)', [69, True]
     ).ToLower,
     '0xcdcd77c0' +
     '0000000000000000000000000000000000000000000000000000000000000045' +
@@ -80,10 +82,8 @@ end;
 procedure TTests.TestCase2;
 begin
   Assert.AreEqual(
-    web3.utils.toHex(
-      web3.eth.abi.encode(
-        'sam(bytes,bool,uint256)', ['dave', True, 69]
-      )
+    web3.eth.abi.encode(
+      'sam(bytes,bool,uint256)', ['dave', True, 69]
     ).ToLower,
     '0x2fd6b0a2' +
     '0000000000000000000000000000000000000000000000000000000000000060' +
@@ -97,10 +97,8 @@ end;
 procedure TTests.TestCase3;
 begin
   Assert.AreEqual(
-    web3.utils.toHex(
-      web3.eth.abi.encode(
-        'sam(bytes,bool,uint256[])', ['dave', True, &array([1, 2, 3])]
-      )
+    web3.eth.abi.encode(
+      'sam(bytes,bool,uint256[])', ['dave', True, &array([1, 2, 3])]
     ).ToLower,
     '0xa5643bf2' +
     '0000000000000000000000000000000000000000000000000000000000000060' +
@@ -118,10 +116,8 @@ end;
 procedure TTests.TestCase4;
 begin
   Assert.AreEqual(
-    web3.utils.toHex(
-      web3.eth.abi.encode(
-        'sam(uint256,uint32[],bytes)', [291, &array([1110, 1929]), 'Hello, world!']
-      )
+    web3.eth.abi.encode(
+      'sam(uint256,uint32[],bytes)', [291, &array([1110, 1929]), 'Hello, world!']
     ).ToLower,
     '0x8bf36d46' +
     '0000000000000000000000000000000000000000000000000000000000000123' +
@@ -138,10 +134,8 @@ end;
 procedure TTests.TestCase5;
 begin
   Assert.AreEqual(
-    web3.utils.toHex(
-      web3.eth.abi.encode(
-        'headlong_147(uint96,(uint16,int256))', [1123223036891436004, tuple([0, 97701118957406])]
-      )
+    web3.eth.abi.encode(
+      'headlong_147(uint96,(uint16,int256))', [1123223036891436004, tuple([0, 97701118957406])]
     ).ToLower,
     '0xe2f6ed8b' +
     '0000000000000000000000000000000000000000000000000f967d66a57313e4' +
@@ -153,31 +147,29 @@ end;
 procedure TTests.TestCase6;
 begin
   Assert.AreEqual(
-    web3.utils.toHex(
-      web3.eth.abi.encode(
-        'operate(' +
-          '(address,uint256)[],' +          // accountOwner, accountNumber
-          '(' +
-            'uint8,uint256,' +              // actionType, accountId
-            '(bool,uint8,uint8,uint256),' + // sign, denomination, reference, value
-            'uint256,' +                    // primaryMarketId
-            'uint256,' +                    // secondaryMarketId
-            'address,' +                    // otherAddress
-            'uint256,' +                    // otherAccountId
-            'bytes' +                       // arbitrary data
-          ')[]' +
-        ')',
-        [
-          &array([
-            tuple(['0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 0])
-          ]),
-          &array([
-            tuple([1, 0,
-              tuple([False, 0, 0, '0x6D6E499B3301E6968B']),
-            3, 0, '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 0, ''])
-          ])
-        ]
-      )
+    web3.eth.abi.encode(
+      'operate(' +
+        '(address,uint256)[],' +          // accountOwner, accountNumber
+        '(' +
+          'uint8,uint256,' +              // actionType, accountId
+          '(bool,uint8,uint8,uint256),' + // sign, denomination, reference, value
+          'uint256,' +                    // primaryMarketId
+          'uint256,' +                    // secondaryMarketId
+          'address,' +                    // otherAddress
+          'uint256,' +                    // otherAccountId
+          'bytes' +                       // arbitrary data
+        ')[]' +
+      ')',
+      [
+        &array([
+          tuple(['0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 0])
+        ]),
+        &array([
+          tuple([1, 0,
+            tuple([False, 0, 0, '0x6D6E499B3301E6968B']),
+          3, 0, '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 0, ''])
+        ])
+      ]
     ).ToLower,
     '0xa67a6a45' +
     '0000000000000000000000000000000000000000000000000000000000000040' +
@@ -197,7 +189,7 @@ begin
     '0000000000000000000000000000000000000000000000000000000000000000' +
     '000000000000000000000000742d35cc6634c0532925a3b844bc454e4438f44e' +
     '0000000000000000000000000000000000000000000000000000000000000000' +
-    '0000000000000000000000000000000000000000000000000000000000000160' +
+    '0000000000000000000000000000000000000000000000000000000000000180' +
     '0000000000000000000000000000000000000000000000000000000000000000' +
     '0000000000000000000000000000000000000000000000000000000000000000'
   );
@@ -210,12 +202,12 @@ type
     Second: BigInteger;
     Third : string;
   public
-    function Encode: TBytes;
+    function Tuple: TArray<Variant>;
   end;
 
-  function TSimpleStruct.Encode: TBytes;
+  function TSimpleStruct.Tuple: TArray<Variant>;
   begin
-    Result := web3.eth.abi.encode([Self.First, web3.utils.toHex(Self.Second), Self.Third]);
+    Result := [Self.First, web3.utils.toHex(Self.Second), Self.Third];
   end;
 
 procedure TTests.TestCase7;
@@ -228,10 +220,14 @@ begin
     Third  := 'world';
   end;
   Assert.AreEqual(
-    web3.utils.toHex(
-      web3.eth.abi.encode([SS])
+    web3.eth.abi.encode(
+      'test(' +
+        '(string,uint256,string)' +
+      ')',
+      [SS]
     ).ToLower,
-    '0x' +
+    '0x962e238a' +
+    '0000000000000000000000000000000000000000000000000000000000000020' +
     '0000000000000000000000000000000000000000000000000000000000000060' +
     '0000000000000000000000000000000000000000000000000000000000000045' +
     '00000000000000000000000000000000000000000000000000000000000000a0' +
@@ -239,6 +235,37 @@ begin
     '68656c6c6f000000000000000000000000000000000000000000000000000000' +
     '0000000000000000000000000000000000000000000000000000000000000005' +
     '776f726c64000000000000000000000000000000000000000000000000000000'
+  );
+end;
+
+procedure TTests.TestCase8;
+begin
+  var SS: IContractStruct := TSingleSwap.Create;
+  with SS as TSingleSwap do
+  begin
+    Kind     := GivenOut;
+    PoolId   := web3.utils.fromHex32('0x61d5dc44849c9c87b0856a2a311536205c96c7fd000200000000000000000000');
+    AssetIn  := '0xdFCeA9088c8A88A76FF74892C1457C17dfeef9C1'.ToLower; // WETH
+    AssetOut := '0x41286Bb1D3E870f3F750eB7E1C25d7E48c8A1Ac7'.ToLower; // BAL
+    Amount   := BigInteger.Create(100 * Power(10, 18));               // 100 BAL
+  end;
+  Assert.AreEqual(
+    web3.eth.abi.encode(
+      'swap(' +
+        '(bytes32,uint8,address,address,uint256,bytes)' +
+      ')',
+      [SS]
+    ).ToLower,
+    '0x8fc89ecf' +
+    '0000000000000000000000000000000000000000000000000000000000000020' +
+    '61d5dc44849c9c87b0856a2a311536205c96c7fd000200000000000000000000' +
+    '0000000000000000000000000000000000000000000000000000000000000001' +
+    '000000000000000000000000dfcea9088c8a88a76ff74892c1457c17dfeef9c1' +
+    '00000000000000000000000041286bb1d3e870f3f750eb7e1c25d7e48c8a1ac7' +
+    '0000000000000000000000000000000000000000000000056bc75e2d63100000' +
+    '00000000000000000000000000000000000000000000000000000000000000c0' +
+    '0000000000000000000000000000000000000000000000000000000000000000' +
+    '0000000000000000000000000000000000000000000000000000000000000000'
   );
 end;
 

@@ -29,9 +29,35 @@ unit web3.eth.balancer.v2;
 interface
 
 uses
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
+  // web3
   web3,
+  web3.eth.abi,
   web3.eth.contract,
   web3.eth.types;
+
+type
+  TSwapKind = (
+    GivenIn,
+    GivenOut
+  );
+
+  TSingleSwap = class(TInterfacedObject, IContractStruct)
+  private
+    FPoolId  : TBytes32;
+    FKind    : TSwapKind;
+    FAssetIn : TAddress;
+    FAssetOut: TAddress;
+    FAmount  : BigInteger;
+  public
+    function Tuple: TArray<Variant>;
+    property PoolId  : TBytes32   read FPoolId   write FPoolId;
+    property Kind    : TSwapKind  read FKind     write FKind;
+    property AssetIn : TAddress   read FAssetIn  write FAssetIn;
+    property AssetOut: TAddress   read FAssetOut write FAssetOut;
+    property Amount  : BigInteger read FAmount   write FAmount;
+  end;
 
 type
   TVault = class(TCustomContract)
@@ -49,7 +75,22 @@ uses
   System.SysUtils,
   // web3
   web3.graph,
-  web3.json;
+  web3.json,
+  web3.utils;
+
+{ TSingleSwap }
+
+function TSingleSwap.Tuple: TArray<Variant>;
+begin
+  Result := [
+    web3.utils.toHex(Self.PoolId), // bytes32
+    Self.Kind,                     // uint8
+    Self.AssetIn,                  // address
+    Self.AssetOut,                 // address
+    web3.utils.toHex(Self.Amount), // uint256
+    ''                             // bytes
+  ];
+end;
 
 { TVault }
 
@@ -121,7 +162,6 @@ begin
       callback('', TPoolDoesNotExist.Create);
     end);
   end;
-
   execute(asset0, asset1, procedure(const id: string; err: IError)
   begin
     if Assigned(err) and Supports(err, IPoolDoesNotExist) then

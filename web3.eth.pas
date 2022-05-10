@@ -275,7 +275,7 @@ begin
     '{"from": %s, "to": %s, "data": %s}', [
       web3.json.quoteString(string(from), '"'),
       web3.json.quoteString(string(&to), '"'),
-      web3.json.quoteString(web3.utils.toHex(abi), '"')
+      web3.json.quoteString(abi, '"')
     ]
   )) as TJsonObject;
   try
@@ -490,12 +490,12 @@ begin
     if Assigned(err) then
       callback('', err)
     else
-      web3.eth.gas.estimateGas(client, addr, &to, web3.utils.toHex(data), procedure(estimatedGas: BigInteger; err: IError)
+      web3.eth.gas.estimateGas(client, addr, &to, data, procedure(estimatedGas: BigInteger; err: IError)
       begin
         if Assigned(err) then
           callback('', err)
         else
-          write(client, from, &to, value, web3.utils.toHex(data), estimatedGas, callback);
+          write(client, from, &to, value, data, estimatedGas, callback);
       end);
   end);
 end;
@@ -515,12 +515,12 @@ begin
     if Assigned(err) then
       callback(nil, err)
     else
-      web3.eth.gas.estimateGas(client, addr, &to, web3.utils.toHex(data), procedure(estimatedGas: BigInteger; err: IError)
+      web3.eth.gas.estimateGas(client, addr, &to, data, procedure(estimatedGas: BigInteger; err: IError)
       begin
         if Assigned(err) then
           callback(nil, err)
         else
-          write(client, from, &to, value, web3.utils.toHex(data), estimatedGas, callback);
+          write(client, from, &to, value, data, estimatedGas, callback);
       end);
   end);
 end;

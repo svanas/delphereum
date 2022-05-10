@@ -31,7 +31,6 @@ interface
 uses
   // Delphi
   System.Generics.Collections,
-  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -42,7 +41,7 @@ type
 
   IContractStruct = interface
   ['{CA0C794D-6280-4AB1-9E91-4DE3443DFD1B}']
-    function Encode: TBytes;
+    function Tuple: TArray<Variant>;
   end;
 
 function tuple(args: array of Variant): Variant;
@@ -51,13 +50,13 @@ function &array(args: array of Variant): TContractArray; overload;
 function &array(args: array of TAddress): TContractArray; overload;
 function &array(args: array of BigInteger): TContractArray; overload;
 
-function encode(args: array of const): TBytes; overload;
-function encode(const func: string; args: array of const): TBytes; overload;
+function encode(const func: string; args: array of const): string;
 
 implementation
 
 uses
   // Delphi
+  System.SysUtils,
   System.Variants,
   // web3
   web3.utils;
@@ -94,8 +93,7 @@ begin
   for arg in args do Result.Add(web3.utils.toHex(arg));
 end;
 
-// encode the args into a byte array
-function encode(args: array of const): TBytes;
+function encode(const func: string; args: array of const): string;
 
   // https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI#argument-encoding
   function encodeArgs(args: array of const): TBytes;
@@ -208,7 +206,7 @@ function encode(args: array of const): TBytes;
       else
         if VarIsArray(arg) then // tuple
         begin
-          offset  := (VarArrayCount(arg) - 1) * 32;
+          offset  := VarArrayCount(arg) * 32;
           for idx := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
           begin
             elem := VarArrayGet(arg, [idx]);
@@ -252,7 +250,7 @@ function encode(args: array of const): TBytes;
           Result := encodeArg(arg.VVariant^);
         vtInterface:
           if Supports(IInterface(arg.VInterface), IContractStruct, struct) then
-            Result := struct.Encode;
+            Result := encodeArg(tuple(struct.Tuple));
         vtObject:
           if arg.VObject is TContractArray then // array
           begin
@@ -276,28 +274,33 @@ function encode(args: array of const): TBytes;
     end;
 
     function isDynamic(const arg: TVarRec): Boolean; overload;
-    var
-      S: string;
     begin
       Result := False;
-      if arg.VType = vtVariant then
-        Result := isDynamic(arg.VVariant^)
-      else
-        if arg.VType = vtObject then
-          Result := arg.VObject is TContractArray
-        else
-          if arg.VType in [vtString, vtWideString, vtUnicodeString] then
-          begin
-            case arg.VType of
-              vtString:
-                S := UnicodeString(PShortString(arg.VAnsiString)^);
-              vtWideString:
-                S := WideString(arg.VWideString^);
-              vtUnicodeString:
-                S := string(arg.VUnicodeString);
-            end;
-            Result := Copy(S, System.Low(S), 2).ToLower <> '0x';
+      case arg.VType of
+        vtVariant:
+          Result := isDynamic(arg.VVariant^);
+        vtObject:
+          Result := arg.VObject is TContractArray;
+        vtInterface:
+        begin
+          var struct: IContractStruct;
+          if Supports(IInterface(arg.VInterface), IContractStruct, struct) then
+            Result := isDynamic(tuple(struct.Tuple));
+        end;
+        vtString, vtWideString, vtUnicodeString:
+        begin
+          var S: string;
+          case arg.VType of
+            vtString:
+              S := UnicodeString(PShortString(arg.VAnsiString)^);
+            vtWideString:
+              S := WideString(arg.VWideString^);
+            vtUnicodeString:
+              S := string(arg.VUnicodeString);
           end;
+          Result := Copy(S, System.Low(S), 2).ToLower <> '0x';
+        end;
+      end;
     end;
 
   var
@@ -324,21 +327,20 @@ function encode(args: array of const): TBytes;
   end;
 
 begin
+  // step #1: encode the args into a byte array
+  var data: TBytes;
   try
-    Result := encodeArgs(args);
+    data := encodeArgs(args);
   finally
     for var arg in args do
       if (arg.VType = vtObject) and (arg.VObject is TContractArray) then
         arg.VObject.Free;
   end;
-end;
-
-// the first four bytes specify the function to be called
-function encode(const func: string; args: array of const): TBytes;
-begin
-  Result := encode(args);
+  // step #2: the first four bytes specify the function to be called
   var hash := web3.utils.sha3(web3.utils.toHex(func));
-  Result := Copy(hash, 0, 4) + Result;
+  data := Copy(hash, 0, 4) + data;
+  // step #3: hex-encode the data
+  Result := web3.utils.toHex(data);
 end;
 
 end.
