@@ -115,6 +115,7 @@ type
     class function  New(const hex: string): TAddress; overload; static;
     class procedure New(client: IWeb3; const name: string; callback: TAsyncAddress); overload; static;
     procedure ToString(client: IWeb3; callback: TAsyncString; abbreviated: Boolean = False);
+    function  ToChecksum: string;
     function  Abbreviated: string;
     function  IsZero: Boolean;
     function  SameAs(const other: TAddress): Boolean;
@@ -273,6 +274,24 @@ begin
 
     callback(output, nil);
   end);
+end;
+
+function TAddressHelper.ToChecksum: string;
+begin
+  Result := '0x';
+  // take lowercase hex address sans 0x as input
+  var input := string(Self).ToLower;
+  while Copy(input, System.Low(input), 2).ToLower = '0x' do
+    Delete(input, System.Low(input), 2);
+  // treat the hex address as UTF-8 for keccak256 hashing
+  var hash := web3.utils.toHex('', web3.utils.sha3(TEncoding.UTF8.GetBytes(input)));
+  // iterate over each character in the hex address
+  for var I := System.Low(input) to High(input) do
+    // check if the corresponding hex digit (nibble) in the hash is 8 or higher
+    if CharInSet(input[I], ['a', 'b', 'c', 'd', 'e', 'f']) and (StrToInt('$' + hash[I]) > 7) then
+      Result := Result + input.ToUpper[I]
+    else
+      Result := Result + input[I];
 end;
 
 function TAddressHelper.Abbreviated: string;
