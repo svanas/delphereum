@@ -33,12 +33,7 @@ uses
   web3;
 
 type
-  ICustomContract = interface
-    function Client  : IWeb3;
-    function Contract: TAddress;
-  end;
-
-  TCustomContract = class abstract(TInterfacedObject, ICustomContract)
+  TCustomContract = class abstract(TInterfacedObject)
   strict private
     FClient  : IWeb3;
     FContract: TAddress;

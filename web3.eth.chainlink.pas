@@ -34,11 +34,7 @@ uses
   web3.eth.types;
 
 type
-  IAggregatorV3 = interface
-    procedure Price(callback: TAsyncFloat);
-  end;
-
-  TAggregatorV3 = class(TCustomContract, IAggregatorV3)
+  TAggregatorV3 = class(TCustomContract)
   public
     procedure LatestRoundData(callback: TAsyncTuple);
     procedure Decimals(callback: TAsyncQuantity);
@@ -71,11 +67,7 @@ begin
       if Assigned(err) then
       begin
         // if coincap didn't work, try Chainlink on Binance Smart Chain
-        var ETH_USD: IAggregatorV3 := TETH_USD.Create(TWeb3.Create(BSC, 'https://bsc-dataseed.binance.org'));
-        ETH_USD.Price(procedure(price: Double; err: IError)
-        begin
-          callback(price, err);
-        end);
+        TETH_USD.Create(TWeb3.Create(BSC, 'https://bsc-dataseed.binance.org')).Price(callback);
         EXIT;
       end;
       callback(ticker.Price, err);
@@ -99,20 +91,18 @@ begin
     Optimism,
     Optimism_test_net] then
   begin
-    var ETH_USD: IAggregatorV3 := TETH_USD.Create(client);
-    ETH_USD.Price(procedure(price: Double; err: IError)
+    TETH_USD.Create(client).Price(procedure(price: Double; err: IError)
     begin
       if Assigned(err) then
-      begin
-        coincap(callback);
-        EXIT;
-      end;
-      callback(price, err);
+        coincap(callback)
+      else
+        callback(price, err);
     end);
-  end
-  else
-    // not on any of the above networks? fall back on api.coincap.io
-    coincap(callback);
+    EXIT;
+  end;
+
+  // not on any of the above networks? fall back on api.coincap.io
+  coincap(callback);
 end;
 
 { TAggregatorV3 }

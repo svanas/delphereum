@@ -115,7 +115,7 @@ type
     class function  New(const hex: string): TAddress; overload; static;
     class procedure New(client: IWeb3; const name: string; callback: TAsyncAddress); overload; static;
     procedure ToString(client: IWeb3; callback: TAsyncString; abbreviated: Boolean = False);
-    function  ToChecksum: string;
+    function  ToChecksum: TAddress;
     function  Abbreviated: string;
     function  IsZero: Boolean;
     function  SameAs(const other: TAddress): Boolean;
@@ -276,7 +276,7 @@ begin
   end);
 end;
 
-function TAddressHelper.ToChecksum: string;
+function TAddressHelper.ToChecksum: TAddress;
 begin
   Result := '0x';
   // take lowercase hex address sans 0x as input
@@ -289,9 +289,9 @@ begin
   for var I := System.Low(input) to High(input) do
     // check if the corresponding hex digit (nibble) in the hash is 8 or higher
     if CharInSet(input[I], ['a', 'b', 'c', 'd', 'e', 'f']) and (StrToInt('$' + hash[I]) > 7) then
-      Result := Result + input.ToUpper[I]
+      Result := TAddress(string(Result) + input.ToUpper[I])
     else
-      Result := Result + input[I];
+      Result := TAddress(string(Result) + input[I]);
 end;
 
 function TAddressHelper.Abbreviated: string;
@@ -362,7 +362,7 @@ end;
 
 function TTupleHelper.Empty: Boolean;
 begin
-  Result := (Length(Self) < 2) or (Self[1].toInt = 0);
+  Result := (Length(Self) < 2) or (Self[1].toInt64 = 0);
 end;
 
 function TTupleHelper.Strings: Boolean;

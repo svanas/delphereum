@@ -265,7 +265,7 @@ begin
           FOnApprovalForAll(Self,
             log.Topic[1].toAddress, // owner
             log.Topic[2].toAddress, // operator
-            log.Data[0].toBoolean   // apprpved
+            log.Data[0].toBoolean   // approved
           );
     end);
 end;
