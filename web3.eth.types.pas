@@ -343,7 +343,7 @@ end;
 
 function TTupleHelper.Empty: Boolean;
 begin
-  Result := (Length(Self) < 2) or (Self[1].toInt = 0);
+  Result := (Length(Self) < 2) or (Self[1].toInt64 = 0);
 end;
 
 function TTupleHelper.Strings: Boolean;
