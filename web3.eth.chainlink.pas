@@ -65,12 +65,10 @@ begin
     web3.coincap.ticker('ethereum', procedure(const ticker: ITicker; err: IError)
     begin
       if Assigned(err) then
-      begin
         // if coincap didn't work, try Chainlink on Binance Smart Chain
-        TETH_USD.Create(TWeb3.Create(BSC, 'https://bsc-dataseed.binance.org')).Price(callback);
-        EXIT;
-      end;
-      callback(ticker.Price, err);
+        TETH_USD.Create(TWeb3.Create(BSC, 'https://bsc-dataseed.binance.org')).Price(callback)
+      else
+        callback(ticker.Price, err);
     end);
   end;
 
