@@ -123,7 +123,8 @@ function encode(const func: string; args: array of const): string;
         buf := TEncoding.UTF8.GetBytes(str);
         hex := web3.utils.toHex('', buf);
         while (hex = '') or (Length(hex) mod 64 <> 0) do hex := hex + '0';
-        hex := '0x' + IntToHex(Length(buf), 64) + hex;
+        if Length(buf) > 0 then hex := IntToHex(Length(buf), 64) + hex;
+        hex := '0x' + hex;
       end
       else
       begin
@@ -159,21 +160,18 @@ function encode(const func: string; args: array of const): string;
       end;
     end;
 
-    function encodeArg(const arg: Variant): TBytes; overload;
-
-      function VarArrayCount(const arg: Variant): Integer;
-      var
-        I: Integer;
+    function varArrayCount(const arg: Variant): Integer;
+    begin
+      Result := 0;
+      if VarIsArray(arg) then
       begin
-        Result := 0;
-        if VarIsArray(arg) then
-        begin
-          Result := VarArrayHighBound(arg, 1) - VarArrayLowBound(arg, 1) + 1;
-          for I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
-            Result := Result + VarArrayCount(VarArrayGet(arg, [I]));
-        end;
+        Result := VarArrayHighBound(arg, 1) - VarArrayLowBound(arg, 1) + 1;
+        for var I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
+          Result := Result + varArrayCount(VarArrayGet(arg, [I]));
       end;
+    end;
 
+    function encodeArg(const arg: Variant): TBytes; overload;
     var
       idx   : Integer;
       elem  : Variant;
@@ -206,7 +204,7 @@ function encode(const func: string; args: array of const): string;
       else
         if VarIsArray(arg) then // tuple
         begin
-          offset  := VarArrayCount(arg) * 32;
+          offset  := varArrayCount(arg) * 32;
           for idx := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
           begin
             elem := VarArrayGet(arg, [idx]);
@@ -303,6 +301,27 @@ function encode(const func: string; args: array of const): string;
       end;
     end;
 
+    function len(args: array of const): Integer;
+
+      function len(const arg: TVarRec): Integer;
+      begin
+        Result := 1;
+        if arg.VType = vtInterface then
+        begin
+          var S: IContractStruct;
+          if Supports(IInterface(arg.VInterface), IContractStruct, S) then
+          begin
+            var T := tuple(S.Tuple);
+            if not isDynamic(T) then Result := varArrayCount(T);
+          end;
+        end;
+      end;
+
+    begin
+      Result := 0;
+      for var arg in args do Result := Result + len(arg);
+    end;
+
   var
     arg   : TVarRec;
     curr  : TBytes;
@@ -310,7 +329,7 @@ function encode(const func: string; args: array of const): string;
     offset: Integer;
   begin
     Result := [];
-    offset := Length(args) * 32;
+    offset := len(args) * 32;
     for arg in args do
     begin
       curr := encodeArg(arg);

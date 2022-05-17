@@ -276,6 +276,7 @@ type
   end;
 
 function Now: TUnixDateTime;
+function Infinite: BigInteger;
 
 implementation
 
@@ -298,6 +299,11 @@ uses
 function Now: TUnixDateTime;
 begin
   Result := DateTimeToUnix(System.SysUtils.Now, False);
+end;
+
+function Infinite: BigInteger;
+begin
+  Result := BigInteger.Create('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF');
 end;
 
 { TChainHelper }

@@ -43,7 +43,9 @@ type
     GivenOut
   );
 
-  TSingleSwap = class(TInterfacedObject, IContractStruct)
+  ISingleSwap = interface end;
+
+  TSingleSwap = class(TInterfacedObject, IContractStruct, ISingleSwap)
   private
     FPoolId  : TBytes32;
     FKind    : TSwapKind;
@@ -52,11 +54,11 @@ type
     FAmount  : BigInteger;
   public
     function Tuple: TArray<Variant>;
-    property PoolId  : TBytes32   write FPoolId;
-    property Kind    : TSwapKind  write FKind;
-    property AssetIn : TAddress   write FAssetIn;
-    property AssetOut: TAddress   write FAssetOut;
-    property Amount  : BigInteger write FAmount;
+    function PoolId(Value: TBytes32): TSingleSwap;
+    function Kind(Value: TSwapKind): TSingleSwap;
+    function AssetIn(Value: TAddress): TSingleSwap;
+    function AssetOut(Value: TAddress): TSingleSwap;
+    function Amount(Value: BigInteger): TSingleSwap;
   end;
 
   TVault = class(TCustomContract)
@@ -65,9 +67,9 @@ type
     class function DeployedAt: TAddress;
     procedure Swap(
       owner   : TPrivateKey;
-      swap    : TSingleSwap;
+      swap    : ISingleSwap;
       limit   : BigInteger;
-      deadline: TUnixDateTime;
+      deadline: BigInteger;
       callback: TAsyncReceipt);
   end;
 
@@ -82,7 +84,7 @@ procedure swap(
   assetIn : TAddress;    // the address of the token which we are sending to the pool
   assetOut: TAddress;    // the address of the token which we will receive in return
   amount  : BigInteger;  // the amount of tokens we (a) are sending to the pool, or (b) want to receive from the pool
-  minutes : Int64;       // your transaction will revert if it is pending for more than this long
+  deadline: BigInteger;  // your transaction will revert if it is still pending on this Unix epoch
   callback: TAsyncReceipt);
 
 implementation
@@ -112,6 +114,36 @@ begin
     web3.utils.toHex(Self.FAmount), // uint256
     ''                              // bytes
   ];
+end;
+
+function TSingleSwap.PoolId(Value: TBytes32): TSingleSwap;
+begin
+  Self.FPoolId := Value;
+  Result := Self;
+end;
+
+function TSingleSwap.Kind(Value: TSwapKind): TSingleSwap;
+begin
+  Self.FKind := Value;
+  Result := Self;
+end;
+
+function TSingleSwap.AssetIn(Value: TAddress): TSingleSwap;
+begin
+  Self.FAssetIn := Value;
+  Result := Self;
+end;
+
+function TSingleSwap.AssetOut(Value: TAddress): TSingleSwap;
+begin
+  Self.FAssetOut := Value;
+  Result := Self;
+end;
+
+function TSingleSwap.Amount(Value: BigInteger): TSingleSwap;
+begin
+  Self.FAmount := Value;
+  Result := Self;
 end;
 
 { TFundManagement }
@@ -155,9 +187,9 @@ end;
 
 procedure TVault.Swap(
   owner   : TPrivateKey;
-  swap    : TSingleSwap;
+  swap    : ISingleSwap;
   limit   : BigInteger;
-  deadline: TUnixDateTime;
+  deadline: BigInteger;
   callback: TAsyncReceipt);
 begin
   owner.Address(procedure(addr: TAddress; err: IError)
@@ -180,7 +212,7 @@ begin
         'uint256,' +                                       // limit
         'uint256' +                                        // deadline
       ')',
-      [swap, funds, web3.utils.toHex(limit), deadline],
+      [swap, funds, web3.utils.toHex(limit), web3.utils.toHex(deadline)],
       callback
     );
   end);
@@ -265,7 +297,7 @@ procedure swap(
   assetIn : TAddress;
   assetOut: TAddress;
   amount  : BigInteger;
-  minutes : Int64;
+  deadline: BigInteger;
   callback: TAsyncReceipt);
 begin
   // step #1: get the pool id for a single swap
@@ -277,7 +309,7 @@ begin
       EXIT;
     end;
     // step #2: grant token spend allowance to the vault
-    TERC20.Create(client, assetIn).ApproveEx(owner, TVault.DeployedAt, $FFFFFFFFFFFFFFFF, procedure(rcpt: ITxReceipt; err: IError)
+    TERC20.Create(client, assetIn).ApproveEx(owner, TVault.DeployedAt, web3.Infinite, procedure(rcpt: ITxReceipt; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -287,18 +319,19 @@ begin
       // step #3: initialize which pool we're trading with and what kind of swap we want to perform
       var vault := TVault.Create(client);
       try
-        var swap := TSingleSwap.Create;
-        try
-          swap.PoolId   := web3.utils.fromHex32(poolId);
-          swap.Kind     := kind;
-          swap.AssetIn  := assetIn;
-          swap.AssetOut := assetOut;
-          swap.Amount   := Amount;
-          // step #4: execute a single swap
-          vault.Swap(owner, swap, 0, DateTimeToUnix(IncMinute(System.SysUtils.Now, minutes), False), callback);
-        finally
-          swap.Free;
-        end;
+        // step #4: execute a single swap
+        vault.Swap(
+          owner,
+          TSingleSwap.Create
+            .PoolId(web3.utils.fromHex32(poolId))
+            .Kind(kind)
+            .AssetIn(assetIn)
+            .AssetOut(assetOut)
+            .Amount(amount),
+          0,
+          deadline,
+          callback
+        );
       finally
         vault.Free;
       end;
