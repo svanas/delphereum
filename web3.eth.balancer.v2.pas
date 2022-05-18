@@ -35,6 +35,7 @@ uses
   web3,
   web3.eth.abi,
   web3.eth.contract,
+  web3.eth.tokenlists,
   web3.eth.types;
 
 type
@@ -76,6 +77,9 @@ type
 // get the pool id for a single swap between two tokens
 procedure getPoolId(chain: TChain; asset0, asset1: TAddress; callback: TAsyncString);
 
+// get the Balancer token list
+procedure tokens(chain: TChain; callback: TAsyncTokens);
+
 // easy access function: make a trade between two tokens in one pool, saving ~6,000 gas.
 procedure swap(
   client  : IWeb3;
@@ -84,17 +88,21 @@ procedure swap(
   assetIn : TAddress;    // the address of the token which we are sending to the pool
   assetOut: TAddress;    // the address of the token which we will receive in return
   amount  : BigInteger;  // the amount of tokens we (a) are sending to the pool, or (b) want to receive from the pool
-  deadline: BigInteger;  // your transaction will revert if it is still pending on this Unix epoch
+  deadline: BigInteger;  // your transaction will revert if it is still pending after this Unix epoch
   callback: TAsyncReceipt);
 
 implementation
 
+{$R 'web3.eth.balancer.v2.tokenlist.kovan.res'}
+
 uses
   // Delphi
+  System.Classes,
   System.DateUtils,
   System.Generics.Collections,
   System.JSON,
   System.SysUtils,
+  System.Types,
   // web3
   web3.eth,
   web3.eth.erc20,
@@ -218,6 +226,8 @@ begin
   end);
 end;
 
+{----------- get the pool id for a single swap between two tokens -------------}
+
 type
   IPoolDoesNotExist = interface(IError)
   ['{98E7E985-B74E-4D20-84A4-E8A2F8060D56}']
@@ -289,6 +299,51 @@ begin
       callback(id, err);
   end);
 end;
+
+{------------------------ get the Balancer token list -------------------------}
+
+procedure tokens(chain: TChain; callback: TAsyncTokens);
+begin
+  if chain = Kovan then
+  begin
+    var tokens: TTokens;
+    var RS := TResourceStream.Create(hInstance, 'BALANCER_V2_TOKENLIST_KOVAN', RT_RCDATA);
+    try
+      var buf: TBytes;
+      SetLength(buf, RS.Size);
+      RS.Read(buf[0], RS.Size);
+      var arr := TJsonObject.ParseJsonValue(TEncoding.UTF8.GetString(buf)) as TJsonArray;
+      if Assigned(arr) then
+      try
+        for var token in arr do
+          tokens := tokens + [web3.eth.tokenlists.token(token as TJsonObject)];
+      finally
+        arr.Free;
+      end;
+    finally
+      RS.Free;
+    end;
+    callback(tokens, nil);
+    EXIT;
+  end;
+  web3.eth.tokenlists.tokens('https://raw.githubusercontent.com/balancer-labs/assets/master/generated/listed.tokenlist.json', procedure(tokens: TTokens; err: IError)
+  begin
+    if Assigned(err) or not Assigned(tokens) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    var I := 0;
+    while I < tokens.Length do
+      if tokens[I].ChainId <> chain.Id then
+        Delete(tokens, I, 1)
+      else
+        Inc(I);
+    callback(tokens, nil);
+  end);
+end;
+
+{----- easy access function: make a trade between two tokens in one pool ------}
 
 procedure swap(
   client  : IWeb3;
