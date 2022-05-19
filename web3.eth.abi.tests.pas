@@ -52,6 +52,8 @@ type
     procedure TestCase7;
     [Test]
     procedure TestCase8;
+    [Test]
+    procedure TestCase9;
   end;
 
 implementation
@@ -169,7 +171,7 @@ begin
         &array([
           tuple([1, 0,
             tuple([False, 0, 0, '0x6D6E499B3301E6968B']),
-          3, 0, '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 0, ''])
+          3, 0, '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 0, '0b0'])
         ])
       ]
     ).ToLower,
@@ -196,6 +198,20 @@ begin
   );
 end;
 
+procedure TTests.TestCase7;
+begin
+  Assert.AreEqual(
+    web3.eth.abi.encode(
+      'test(bytes)',
+      [web3.utils.toBin(BigInteger.Create('0x0f00000002'))]
+    ).ToLower,
+    '0x2f570a23' +
+    '0000000000000000000000000000000000000000000000000000000000000020' +
+    '0000000000000000000000000000000000000000000000000000000000000005' +
+    '0f00000002000000000000000000000000000000000000000000000000000000'
+  );
+end;
+
 type
   TSimpleStruct = class(TInterfacedObject, IContractStruct)
   private
@@ -211,7 +227,7 @@ type
     Result := [Self.First, web3.utils.toHex(Self.Second), Self.Third];
   end;
 
-procedure TTests.TestCase7;
+procedure TTests.TestCase8;
 begin
   var SS: IContractStruct := TSimpleStruct.Create;
   with SS as TSimpleStruct do
@@ -239,7 +255,7 @@ begin
   );
 end;
 
-procedure TTests.TestCase8;
+procedure TTests.TestCase9;
 begin
   var SS: ISingleSwap := TSingleSwap.Create
     .Kind(GivenOut)
@@ -265,6 +281,8 @@ begin
     '0000000000000000000000000000000000000000000000000000000000000000'
   );
 end;
+
+
 
 initialization
   TDUnitX.RegisterTestFixture(TTests);

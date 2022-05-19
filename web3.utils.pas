@@ -38,7 +38,7 @@ uses
   web3.eth.types;
 
 type
-  TToHex = set of (padToEven, zeroAs0x0);
+  TToHex = set of (padToEven, zeroAs0x0, noPrefix);
 
 function toHex(const buf: TBytes): string; overload;
 function toHex(const bytes32: TBytes32): string; overload;
@@ -53,6 +53,7 @@ function toHex(const prefix, str: string; offset, len: Integer): string; overloa
 
 function toHex(val: TVarRec): string; overload;
 function toHex(int: BigInteger; options: TToHex = []): string; overload;
+function toBin(int: BigInteger): string;
 
 function isHex(const str: string): Boolean; overload;
 function isHex(const prefix, str: string): Boolean; overload;
@@ -185,7 +186,13 @@ begin
       if Result.Length mod 2 > 0 then
         Result := '0' + Result; // pad to even
   end;
-  Result := '0x' + Result;
+  if not(noPrefix in options) then
+    Result := '0x' + Result;
+end;
+
+function toBin(int: BigInteger): string;
+begin
+  Result := '0b' + int.ToBinaryString;
 end;
 
 function isHex(const str: string): Boolean;

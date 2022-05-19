@@ -118,15 +118,24 @@ function encode(const func: string; args: array of const): string;
       buf: TBytes;
       hex: string;
     begin
-      if Copy(str, System.Low(str), 2).ToLower <> '0x' then
+      var prefix := Copy(str, System.Low(str), 2).ToLower;
+      if prefix <> '0x' then
       begin
-        buf := TEncoding.UTF8.GetBytes(str);
-        hex := web3.utils.toHex('', buf);
+        if prefix = '0b' then // bytes
+        begin
+          hex := web3.utils.toHex(BigInteger.Create(str), [padToEven, noPrefix]);
+          buf := web3.utils.fromHex(hex);
+        end
+        else // string literal
+        begin
+          buf := TEncoding.UTF8.GetBytes(str);
+          hex := web3.utils.toHex('', buf);
+        end;
         while (hex = '') or (Length(hex) mod 64 <> 0) do hex := hex + '0';
         if Length(buf) > 0 then hex := IntToHex(Length(buf), 64) + hex;
         hex := '0x' + hex;
       end
-      else
+      else // number or address
       begin
         buf := web3.utils.fromHex(str);
         if Length(buf) = 32 then
