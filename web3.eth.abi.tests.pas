@@ -48,6 +48,8 @@ type
     procedure TestCase5;
     [Test]
     procedure TestCase6;
+    [Test]
+    procedure TestCase7;
   end;
 
 implementation
@@ -55,15 +57,17 @@ implementation
 uses
   // Delphi
   System.SysUtils,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // web3
-  web3.eth.abi;
+  web3.eth.abi,
+  web3.utils;
 
 procedure TTests.TestCase1;
 begin
   Assert.AreEqual(
     web3.eth.abi.encode(
-      'baz(uint32,bool)',
-      [69, True]
+      'baz(uint32,bool)', [69, True]
     ).ToLower,
     '0xcdcd77c0' +
     '0000000000000000000000000000000000000000000000000000000000000045' +
@@ -75,8 +79,7 @@ procedure TTests.TestCase2;
 begin
   Assert.AreEqual(
     web3.eth.abi.encode(
-      'sam(bytes,bool,uint256)',
-      ['dave', True, 69]
+      'sam(bytes,bool,uint256)', ['dave', True, 69]
     ).ToLower,
     '0x2fd6b0a2' +
     '0000000000000000000000000000000000000000000000000000000000000060' +
@@ -91,8 +94,7 @@ procedure TTests.TestCase3;
 begin
   Assert.AreEqual(
     web3.eth.abi.encode(
-      'sam(bytes,bool,uint256[])',
-      ['dave', True, &array([1, 2, 3])]
+      'sam(bytes,bool,uint256[])', ['dave', True, &array([1, 2, 3])]
     ).ToLower,
     '0xa5643bf2' +
     '0000000000000000000000000000000000000000000000000000000000000060' +
@@ -111,8 +113,7 @@ procedure TTests.TestCase4;
 begin
   Assert.AreEqual(
     web3.eth.abi.encode(
-      'sam(uint256,uint32[],bytes)',
-      [291, &array([1110, 1929]), 'Hello, world!']
+      'sam(uint256,uint32[],bytes)', [291, &array([1110, 1929]), 'Hello, world!']
     ).ToLower,
     '0x8bf36d46' +
     '0000000000000000000000000000000000000000000000000000000000000123' +
@@ -163,7 +164,7 @@ begin
         &array([
           tuple([1, 0,
             tuple([False, 0, 0, '0x6D6E499B3301E6968B']),
-          3, 0, '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 0, ''])
+          3, 0, '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 0, '0b0'])
         ])
       ]
     ).ToLower,
@@ -185,9 +186,22 @@ begin
     '0000000000000000000000000000000000000000000000000000000000000000' +
     '000000000000000000000000742d35cc6634c0532925a3b844bc454e4438f44e' +
     '0000000000000000000000000000000000000000000000000000000000000000' +
-    '0000000000000000000000000000000000000000000000000000000000000160' +
-    '0000000000000000000000000000000000000000000000000000000000000000' +
+    '0000000000000000000000000000000000000000000000000000000000000180' +
     '0000000000000000000000000000000000000000000000000000000000000000'
+  );
+end;
+
+procedure TTests.TestCase7;
+begin
+  Assert.AreEqual(
+    web3.eth.abi.encode(
+      'test(bytes)',
+      [web3.utils.toBin(BigInteger.Create('0x0f00000002'))]
+    ).ToLower,
+    '0x2f570a23' +
+    '0000000000000000000000000000000000000000000000000000000000000020' +
+    '0000000000000000000000000000000000000000000000000000000000000005' +
+    '0f00000002000000000000000000000000000000000000000000000000000000'
   );
 end;
 

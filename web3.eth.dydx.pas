@@ -601,7 +601,7 @@ begin
           secondaryMarketId,
           otherAddress,
           otherAccountId,
-          ''
+          '0b0'
         ])])
       ],
       callback

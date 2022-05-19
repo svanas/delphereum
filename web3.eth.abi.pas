@@ -39,7 +39,7 @@ uses
 type
   TContractArray = TList<Variant>;
 
-function  tuple(args: array of Variant): Variant;
+function tuple(args: array of Variant): Variant;
 
 function &array(args: array of Variant): TContractArray; overload;
 function &array(args: array of TAddress): TContractArray; overload;
@@ -113,14 +113,24 @@ function encode(const func: string; args: array of const): string;
       buf: TBytes;
       hex: string;
     begin
-      if Copy(str, System.Low(str), 2).ToLower <> '0x' then
+      var prefix := Copy(str, System.Low(str), 2).ToLower;
+      if prefix <> '0x' then
       begin
-        buf := TEncoding.UTF8.GetBytes(str);
-        hex := web3.utils.toHex('', buf);
+        if prefix = '0b' then // bytes
+        begin
+          hex := web3.utils.toHex(BigInteger.Create(str), [padToEven, noPrefix]);
+          buf := web3.utils.fromHex(hex);
+        end
+        else // string literal
+        begin
+          buf := TEncoding.UTF8.GetBytes(str);
+          hex := web3.utils.toHex('', buf);
+        end;
         while (hex = '') or (Length(hex) mod 64 <> 0) do hex := hex + '0';
-        hex := '0x' + IntToHex(Length(buf), 64) + hex;
+        if Length(buf) > 0 then hex := IntToHex(Length(buf), 64) + hex;
+        hex := '0x' + hex;
       end
-      else
+      else // number or address
       begin
         buf := web3.utils.fromHex(str);
         if Length(buf) = 32 then
@@ -154,21 +164,18 @@ function encode(const func: string; args: array of const): string;
       end;
     end;
 
-    function encodeArg(const arg: Variant): TBytes; overload;
-
-      function VarArrayCount(const arg: Variant): Integer;
-      var
-        I: Integer;
+    function varArrayCount(const arg: Variant): Integer;
+    begin
+      Result := 0;
+      if VarIsArray(arg) then
       begin
-        Result := 0;
-        if VarIsArray(arg) then
-        begin
-          Result := VarArrayHighBound(arg, 1) - VarArrayLowBound(arg, 1) + 1;
-          for I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
-            Result := Result + VarArrayCount(VarArrayGet(arg, [I]));
-        end;
+        Result := VarArrayHighBound(arg, 1) - VarArrayLowBound(arg, 1) + 1;
+        for var I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
+          Result := Result + varArrayCount(VarArrayGet(arg, [I]));
       end;
+    end;
 
+    function encodeArg(const arg: Variant): TBytes; overload;
     var
       idx   : Integer;
       elem  : Variant;
@@ -201,7 +208,7 @@ function encode(const func: string; args: array of const): string;
       else
         if VarIsArray(arg) then // tuple
         begin
-          offset  := (VarArrayCount(arg) - 1) * 32;
+          offset  := varArrayCount(arg) * 32;
           for idx := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
           begin
             elem := VarArrayGet(arg, [idx]);
@@ -265,28 +272,27 @@ function encode(const func: string; args: array of const): string;
     end;
 
     function isDynamic(const arg: TVarRec): Boolean; overload;
-    var
-      S: string;
     begin
       Result := False;
-      if arg.VType = vtVariant then
-        Result := isDynamic(arg.VVariant^)
-      else
-        if arg.VType = vtObject then
-          Result := arg.VObject is TContractArray
-        else
-          if arg.VType in [vtString, vtWideString, vtUnicodeString] then
-          begin
-            case arg.VType of
-              vtString:
-                S := UnicodeString(PShortString(arg.VAnsiString)^);
-              vtWideString:
-                S := WideString(arg.VWideString^);
-              vtUnicodeString:
-                S := string(arg.VUnicodeString);
-            end;
-            Result := Copy(S, System.Low(S), 2).ToLower <> '0x';
+      case arg.VType of
+        vtVariant:
+          Result := isDynamic(arg.VVariant^);
+        vtObject:
+          Result := arg.VObject is TContractArray;
+        vtString, vtWideString, vtUnicodeString:
+        begin
+          var S: string;
+          case arg.VType of
+            vtString:
+              S := UnicodeString(PShortString(arg.VAnsiString)^);
+            vtWideString:
+              S := WideString(arg.VWideString^);
+            vtUnicodeString:
+              S := string(arg.VUnicodeString);
           end;
+          Result := Copy(S, System.Low(S), 2).ToLower <> '0x';
+        end;
+      end;
     end;
 
   var
@@ -312,21 +318,18 @@ function encode(const func: string; args: array of const): string;
     Result := Result + suffix;
   end;
 
-var
-  hash: TBytes;
-  data: TBytes;
-  arg : TVarRec;
 begin
   // step #1: encode the args into a byte array
+  var data: TBytes;
   try
     data := encodeArgs(args);
   finally
-    for arg in args do
+    for var arg in args do
       if (arg.VType = vtObject) and (arg.VObject is TContractArray) then
         arg.VObject.Free;
   end;
   // step #2: the first four bytes specify the function to be called
-  hash := web3.utils.sha3(web3.utils.toHex(func));
+  var hash := web3.utils.sha3(web3.utils.toHex(func));
   data := Copy(hash, 0, 4) + data;
   // step #3: hex-encode the data
   Result := web3.utils.toHex(data);
