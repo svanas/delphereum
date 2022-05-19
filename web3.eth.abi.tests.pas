@@ -282,8 +282,6 @@ begin
   );
 end;
 
-
-
 initialization
   TDUnitX.RegisterTestFixture(TTests);
 
