@@ -62,6 +62,24 @@ type
     function Amount(Value: BigInteger): TSingleSwap;
   end;
 
+  ISwapStep = interface end;
+
+  TSwapStep = class(TInterfacedObject, IContractStruct, ISwapStep)
+  private
+    FPoolId       : TBytes32;
+    FAssetInIndex : Integer;
+    FAssetOutIndex: Integer;
+    FAmount       : BigInteger;
+  public
+    function Tuple: TArray<Variant>;
+    function PoolId(Value: TBytes32): TSwapStep;
+    function AssetInIndex(Value: Integer): TSwapStep;
+    function AssetOutIndex(Value: Integer): TSwapStep;
+    function Amount(Value: BigInteger): TSwapStep;
+  end;
+
+  TAsyncAssetDeltas = reference to procedure(deltas: TArray<BigInteger>; err: IError);
+
   TVault = class(TCustomContract)
   public
     constructor Create(aClient: IWeb3); reintroduce;
@@ -72,6 +90,20 @@ type
       limit   : BigInteger;
       deadline: BigInteger;
       callback: TAsyncReceipt);
+    procedure BatchSwap(
+      owner   : TPrivateKey;
+      kind    : TSwapKind;
+      swaps   : TArray<ISwapStep>;
+      assets  : TArray<TAddress>;
+      limits  : TArray<BigInteger>;
+      deadline: BigInteger;
+      callback: TAsyncReceipt);
+    procedure QueryBatchSwap(
+      owner   : TAddress;
+      kind    : TSwapKind;
+      swaps   : TArray<ISwapStep>;
+      assets  : TArray<TAddress>;
+      callback: TAsyncAssetDeltas);
   end;
 
 // get the pool id for a single swap between two tokens
@@ -90,6 +122,16 @@ procedure swap(
   amount  : BigInteger;  // the amount of tokens we (a) are sending to the pool, or (b) want to receive from the pool
   deadline: BigInteger;  // your transaction will revert if it is still pending after this Unix epoch
   callback: TAsyncReceipt);
+
+// easy access function: simulate the trade between two tokens in one pool, returning Vault asset deltas.
+procedure simulate(
+  client  : IWeb3;
+  owner   : TAddress;
+  kind    : TSwapKind;
+  assetIn : TAddress;
+  assetOut: TAddress;
+  amount  : BigInteger;
+  callback: TAsyncAssetDeltas);
 
 implementation
 
@@ -120,7 +162,7 @@ begin
     Self.FAssetIn,                  // address
     Self.FAssetOut,                 // address
     web3.utils.toHex(Self.FAmount), // uint256
-    ''                              // bytes
+    '0b0'                           // bytes
   ];
 end;
 
@@ -149,6 +191,43 @@ begin
 end;
 
 function TSingleSwap.Amount(Value: BigInteger): TSingleSwap;
+begin
+  Self.FAmount := Value;
+  Result := Self;
+end;
+
+{ TSwapStep }
+
+function TSwapStep.Tuple: TArray<Variant>;
+begin
+  Result := [
+    web3.utils.toHex(Self.FPoolId), // bytes32
+    Self.FAssetInIndex,             // uint256
+    Self.FAssetOutIndex,            // uint256
+    web3.utils.toHex(Self.FAmount), // uint256
+    '0b0'                           // bytes
+  ];
+end;
+
+function TSwapStep.PoolId(Value: TBytes32): TSwapStep;
+begin
+  Self.FPoolId := Value;
+  Result := Self;
+end;
+
+function TSwapStep.AssetInIndex(Value: Integer): TSwapStep;
+begin
+  Self.FAssetInIndex := Value;
+  Result := Self;
+end;
+
+function TSwapStep.AssetOutIndex(Value: Integer): TSwapStep;
+begin
+  Self.FAssetOutIndex := Value;
+  Result := Self;
+end;
+
+function TSwapStep.Amount(Value: BigInteger): TSwapStep;
 begin
   Self.FAmount := Value;
   Result := Self;
@@ -224,6 +303,106 @@ begin
       callback
     );
   end);
+end;
+
+procedure TVault.BatchSwap(
+  owner   : TPrivateKey;
+  kind    : TSwapKind;
+  swaps   : TArray<ISwapStep>;
+  assets  : TArray<TAddress>;
+  limits  : TArray<BigInteger>;
+  deadline: BigInteger;
+  callback: TAsyncReceipt);
+begin
+  owner.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    var funds: IContractStruct := TFundManagement.Create;
+    with funds as TFundManagement do
+    begin
+      Sender    := addr.ToChecksum;
+      Recipient := addr.ToChecksum;
+    end;
+    web3.eth.write(Client, owner, Contract,
+      'batchSwap(' +
+        'uint8,' +                                     // kind
+        '(bytes32,uint256,uint256,uint256,bytes)[],' + // SwapSteps
+        'address[],' +                                 // assets
+        '(address,bool,address,bool),' +               // FundManagement
+        'uint256[],' +                                 // limits
+        'uint256' +                                    // deadline
+      ')',
+      [
+        Ord(kind),
+        (
+          function: TContractArray
+          begin
+            Result := TContractArray.Create;
+            for var swap in swaps do Result.Add(swap);
+          end
+        )(),
+        &array(assets),
+        funds,
+        &array(limits),
+        web3.utils.toHex(deadline)
+      ],
+      callback
+    );
+  end);
+end;
+
+procedure TVault.QueryBatchSwap(
+  owner   : TAddress;
+  kind    : TSwapKind;
+  swaps   : TArray<ISwapStep>;
+  assets  : TArray<TAddress>;
+  callback: TAsyncAssetDeltas);
+begin
+  var funds: IContractStruct := TFundManagement.Create;
+  with funds as TFundManagement do
+  begin
+    Sender    := owner.ToChecksum;
+    Recipient := owner.ToChecksum;
+  end;
+  web3.eth.call(Client, owner, Contract,
+    'queryBatchSwap(' +
+      'uint8,' +                                     // kind
+      '(bytes32,uint256,uint256,uint256,bytes)[],' + // SwapSteps
+      'address[],' +                                 // assets
+      '(address,bool,address,bool)' +                // FundManagement
+    ')',
+    [
+      Ord(kind),
+      (
+        function: TContractArray
+        begin
+          Result := TContractArray.Create;
+          for var swap in swaps do Result.Add(swap);
+        end
+      )(),
+      &array(assets),
+      funds
+    ],
+    procedure(tup: TTuple; err: IError)
+    begin
+      callback(
+        (
+          function: TArray<BigInteger>
+          begin
+            Result := [];
+            if Assigned(tup) then
+              for var arg in tup.ToArray do
+                Result := Result + [arg.toBigInt];
+          end
+        )(),
+        err
+      );
+    end
+  );
 end;
 
 {----------- get the pool id for a single swap between two tokens -------------}
@@ -371,12 +550,12 @@ begin
         callback(nil, err);
         EXIT;
       end;
-      // step #3: initialize which pool we're trading with and what kind of swap we want to perform
+      // step #3: execute a single swap
       var vault := TVault.Create(client);
       try
-        // step #4: execute a single swap
         vault.Swap(
           owner,
+          // initialize which pool we're trading with and what kind of swap we want to perform
           TSingleSwap.Create
             .PoolId(web3.utils.fromHex32(poolId))
             .Kind(kind)
@@ -391,6 +570,45 @@ begin
         vault.Free;
       end;
     end);
+  end);
+end;
+
+procedure simulate(
+  client  : IWeb3;
+  owner   : TAddress;
+  kind    : TSwapKind;
+  assetIn : TAddress;
+  assetOut: TAddress;
+  amount  : BigInteger;
+  callback: TAsyncAssetDeltas);
+begin
+  // step #1: get the pool id for a single swap
+  getPoolId(client.Chain, assetIn, assetOut, procedure(const poolId: string; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    // step #2: simulate a call to `batchSwap`
+    var vault := TVault.Create(client);
+    try
+      vault.QueryBatchSwap(
+        owner,
+        kind,
+        [
+          TSwapStep.Create
+            .PoolId(web3.utils.fromHex32(poolId))
+            .AssetInIndex(0)
+            .AssetOutIndex(1)
+            .Amount(amount)
+        ],
+        [assetIn, assetOut],
+        callback
+      );
+    finally
+      vault.Free;
+    end;
   end);
 end;
 

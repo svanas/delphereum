@@ -189,7 +189,10 @@ end;
 
 function TArg.toBigInt: BigInteger;
 begin
-  Result := Self.toHex('0x');
+  var S := Self.toHex('0x');
+  Result := S;
+  if Copy(S, System.Low(S), 4) = '0xFF' then
+    Result := web3.Infinite - Result;
 end;
 
 function TArg.toBoolean: Boolean;

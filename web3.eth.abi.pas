@@ -147,11 +147,15 @@ function encode(const func: string; args: array of const): string;
     end;
 
     function isDynamic(const arg: Variant): Boolean; overload;
-    var
-      I: Integer;
     begin
       Result := False;
       case FindVarData(arg)^.VType of
+        varUnknown:
+        begin
+          var S: IContractStruct;
+          if Supports(arg, IContractStruct, S) then
+            Result := isDynamic(tuple(S.Tuple));
+        end;
         varOleStr,
         varStrArg,
         varUStrArg,
@@ -160,7 +164,7 @@ function encode(const func: string; args: array of const): string;
           Result := Copy(string(arg), System.Low(string(arg)), 2).ToLower <> '0x';
       else
         if VarIsArray(arg) then // tuple is dynamic if any of the elements is dynamic
-          for I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
+          for var I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
           begin
             Result := isDynamic(VarArrayGet(arg, [I]));
             if Result then
@@ -187,6 +191,7 @@ function encode(const func: string; args: array of const): string;
       curr  : TBytes;
       suffix: TBytes;
       offset: Integer;
+      struct: IContractStruct;
     begin
       Result := [];
       case FindVarData(arg)^.VType of
@@ -210,6 +215,9 @@ function encode(const func: string; args: array of const): string;
           Result := encodeArg(string(arg));
         varBoolean:
           Result := encodeArg(Boolean(arg));
+        varUnknown:
+          if Supports(arg, IContractStruct, struct) then
+            Result := encodeArg(tuple(struct.Tuple));
       else
         if VarIsArray(arg) then // tuple
         begin
