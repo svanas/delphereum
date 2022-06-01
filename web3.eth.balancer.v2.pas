@@ -286,7 +286,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var funds: IContractStruct := TFundManagement.Create;
+    const funds: IContractStruct = TFundManagement.Create;
     with funds as TFundManagement do
     begin
       Sender    := addr.ToChecksum;
@@ -321,7 +321,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var funds: IContractStruct := TFundManagement.Create;
+    const funds: IContractStruct = TFundManagement.Create;
     with funds as TFundManagement do
     begin
       Sender    := addr.ToChecksum;
@@ -362,7 +362,7 @@ procedure TVault.QueryBatchSwap(
   assets  : TArray<TAddress>;
   callback: TAsyncAssetDeltas);
 begin
-  var funds: IContractStruct := TFundManagement.Create;
+  const funds: IContractStruct = TFundManagement.Create;
   with funds as TFundManagement do
   begin
     Sender    := owner.ToChecksum;
@@ -395,8 +395,7 @@ begin
           begin
             Result := [];
             if Assigned(tup) then
-              for var arg in tup.ToArray do
-                Result := Result + [arg.toBigInt];
+              for var arg in tup.ToArray do Result := Result + [arg.toBigInt];
           end
         )(),
         err
@@ -448,7 +447,7 @@ const
     ''                                                                            // Arbitrum_test_net
   );
 begin
-  var execute := procedure(token0, token1: TAddress; callback: TAsyncString)
+  const execute = procedure(token0, token1: TAddress; callback: TAsyncString)
   begin
     web3.graph.execute(SUBGRAPH[chain], Format(QUERY, [string(token0), string(token1)]), procedure(resp: TJsonObject; err: IError)
     begin
@@ -457,10 +456,10 @@ begin
         callback('', err);
         EXIT;
       end;
-      var data := web3.json.getPropAsObj(resp, 'data');
+      const data = web3.json.getPropAsObj(resp, 'data');
       if Assigned(data) then
       begin
-        var pools := web3.json.getPropAsArr(data, 'pools');
+        const pools = web3.json.getPropAsArr(data, 'pools');
         if Assigned(pools) and (pools.Count > 0) then
         begin
           callback(web3.json.getPropAsStr(pools[0], 'id'), nil);
@@ -483,43 +482,47 @@ end;
 
 procedure tokens(chain: TChain; callback: TAsyncTokens);
 begin
-  if chain = Kovan then
-  begin
-    var tokens: TTokens;
-    var RS := TResourceStream.Create(hInstance, 'BALANCER_V2_TOKENLIST_KOVAN', RT_RCDATA);
-    try
-      var buf: TBytes;
-      SetLength(buf, RS.Size);
-      RS.Read(buf[0], RS.Size);
-      var arr := TJsonObject.ParseJsonValue(TEncoding.UTF8.GetString(buf)) as TJsonArray;
-      if Assigned(arr) then
-      try
-        for var token in arr do
-          tokens := tokens + [web3.eth.tokenlists.token(token as TJsonObject)];
-      finally
-        arr.Free;
-      end;
-    finally
-      RS.Free;
-    end;
-    callback(tokens, nil);
-    EXIT;
-  end;
-  web3.eth.tokenlists.tokens('https://raw.githubusercontent.com/balancer-labs/assets/master/generated/listed.tokenlist.json', procedure(tokens: TTokens; err: IError)
-  begin
-    if Assigned(err) or not Assigned(tokens) then
+  case chain of
+    Kovan:
     begin
-      callback(nil, err);
-      EXIT;
+      var tokens: TTokens;
+      const RS = TResourceStream.Create(hInstance, 'BALANCER_V2_TOKENLIST_KOVAN', RT_RCDATA);
+      try
+        var buf: TBytes;
+        SetLength(buf, RS.Size);
+        RS.Read(buf[0], RS.Size);
+        const arr = TJsonObject.ParseJsonValue(TEncoding.UTF8.GetString(buf)) as TJsonArray;
+        if Assigned(arr) then
+        try
+          for var token in arr do
+            tokens := tokens + [web3.eth.tokenlists.token(token as TJsonObject)];
+        finally
+          arr.Free;
+        end;
+      finally
+        RS.Free;
+      end;
+      callback(tokens, nil);
     end;
-    var I := 0;
-    while I < tokens.Length do
-      if tokens[I].ChainId <> chain.Id then
-        Delete(tokens, I, 1)
-      else
-        Inc(I);
-    callback(tokens, nil);
-  end);
+    Polygon, Arbitrum:
+      web3.eth.tokenlists.tokens(chain, callback);
+  else
+    web3.eth.tokenlists.tokens('https://raw.githubusercontent.com/balancer-labs/assets/master/generated/listed.tokenlist.json', procedure(tokens: TTokens; err: IError)
+    begin
+      if Assigned(err) or not Assigned(tokens) then
+      begin
+        callback(nil, err);
+        EXIT;
+      end;
+      var I := 0;
+      while I < tokens.Length do
+        if tokens[I].ChainId <> chain.Id then
+          Delete(tokens, I, 1)
+        else
+          Inc(I);
+      callback(tokens, nil);
+    end);
+  end;
 end;
 
 {----- easy access function: make a trade between two tokens in one pool ------}
@@ -551,7 +554,7 @@ begin
         EXIT;
       end;
       // step #3: execute a single swap
-      var vault := TVault.Create(client);
+      const vault = TVault.Create(client);
       try
         vault.Swap(
           owner,
@@ -562,7 +565,15 @@ begin
             .AssetIn(assetIn)
             .AssetOut(assetOut)
             .Amount(amount),
-          0,
+          (
+            function: BigInteger
+            begin
+              if kind = GivenIn then
+                Result := 0
+              else
+                Result := web3.Infinite;
+            end
+          )(),
           deadline,
           callback
         );
@@ -591,7 +602,7 @@ begin
       EXIT;
     end;
     // step #2: simulate a call to `batchSwap`
-    var vault := TVault.Create(client);
+    const vault = TVault.Create(client);
     try
       vault.QueryBatchSwap(
         owner,

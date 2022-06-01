@@ -181,7 +181,10 @@ begin
   end
   else
   begin
-    Result := int.ToHexString;
+    if int.IsNegative then
+      Result := (web3.Infinite - int.Abs).ToHexString
+    else
+      Result := int.ToHexString;
     if padToEven in options then
       if Result.Length mod 2 > 0 then
         Result := '0' + Result; // pad to even
