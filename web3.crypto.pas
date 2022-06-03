@@ -83,7 +83,7 @@ end;
 
 function privateKeyFromByteArray(const algorithm: string; aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
 begin
-  const curve: IX9ECParameters = getCurveFromKeyType(aKeyType);
+  const curve : IX9ECParameters = getCurveFromKeyType(aKeyType);
   const domain: IECDomainParameters = TECDomainParameters.Create(curve.Curve, curve.G, curve.N, curve.H, curve.GetSeed);
   const privD = TBigInteger.Create(1, aPrivKey);
   Result := TECPrivateKeyParameters.Create(algorithm, privD, domain);
@@ -100,7 +100,7 @@ function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPri
 begin
   const secureRandom: ISecureRandom = TSecureRandom.Create;
 
-  const customCurve: IX9ECParameters = getCurveFromKeyType(aKeyType);
+  const customCurve : IX9ECParameters = getCurveFromKeyType(aKeyType);
   const domainParams: IECDomainParameters = TECDomainParameters.Create(customCurve.Curve,
     customCurve.G, customCurve.N, customCurve.H, customCurve.GetSeed);
   const keyPairGenerator: IECKeyPairGenerator = TECKeyPairGenerator.Create(algorithm);

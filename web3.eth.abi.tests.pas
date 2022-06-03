@@ -139,7 +139,8 @@ procedure TTests.TestCase5;
 begin
   Assert.AreEqual(
     web3.eth.abi.encode(
-      'headlong_147(uint96,(uint16,int256))', [1123223036891436004, tuple([0, 97701118957406])]
+      'headlong_147(uint96,(uint16,int256))',
+      [1123223036891436004, tuple([0, 97701118957406])]
     ).ToLower,
     '0xe2f6ed8b' +
     '0000000000000000000000000000000000000000000000000f967d66a57313e4' +
