@@ -406,8 +406,8 @@ end;
 
 class function TTupleHelper.From(const hex: string): TTuple;
 begin
-  var buf: TBytes := web3.utils.fromHex(hex);
   var tup: TTuple;
+  var buf: TBytes := web3.utils.fromHex(hex);
   while Length(buf) >= 32 do
   begin
     SetLength(tup, Length(tup) + 1);

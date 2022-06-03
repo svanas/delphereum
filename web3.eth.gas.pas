@@ -58,21 +58,7 @@ procedure estimateGas(
 procedure estimateGas(
   client    : IWeb3;
   from, &to : TAddress;
-  const func: string;
-  args      : array of const;
-  &strict   : Boolean;
-  callback  : TAsyncQuantity); overload;
-
-procedure estimateGas(
-  client    : IWeb3;
-  from, &to : TAddress;
   const data: string;
-  callback  : TAsyncQuantity); overload;
-procedure estimateGas(
-  client    : IWeb3;
-  from, &to : TAddress;
-  const data: string;
-  &strict   : Boolean;
   callback  : TAsyncQuantity); overload;
 
 implementation
@@ -217,34 +203,13 @@ procedure estimateGas(
   args      : array of const;
   callback  : TAsyncQuantity);
 begin
-  estimateGas(client, from, &to, func, args, False, callback);
-end;
-
-procedure estimateGas(
-  client    : IWeb3;
-  from, &to : TAddress;
-  const func: string;
-  args      : array of const;
-  &strict   : Boolean;
-  callback  : TAsyncQuantity);
-begin
-  estimateGas(client, from, &to, web3.eth.abi.encode(func, args), &strict, callback);
+  estimateGas(client, from, &to, web3.eth.abi.encode(func, args), callback);
 end;
 
 procedure estimateGas(
   client    : IWeb3;
   from, &to : TAddress;
   const data: string;
-  callback  : TAsyncQuantity);
-begin
-  estimateGas(client, from, &to, data, False, callback);
-end;
-
-procedure estimateGas(
-  client    : IWeb3;
-  from, &to : TAddress;
-  const data: string;
-  &strict   : Boolean;
   callback  : TAsyncQuantity);
 begin
   // estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
@@ -266,58 +231,68 @@ begin
     end;
   end;
 
-  // if True, then factor in your gas price (otherwise ignore your gas price while estimating gas)
-  if not &strict then
+  // if strict, then factor in your gas price (otherwise ignore your gas price while estimating gas)
+  const &do = procedure(client: IWeb3; from, &to: TAddress; &strict: Boolean; callback: TAsyncQuantity)
   begin
-    eth_estimateGas(client, Format(
-      '{"from": %s, "to": %s, "data": %s}',
-      [quoteString(string(from), '"'), quoteString(string(&to), '"'), quoteString(data, '"')]
-    ), callback);
-    EXIT;
-  end;
-
-  // construct the eip-1559 transaction call object
-  if client.TxType >= 2 then
-  begin
-    getMaxPriorityFeePerGas(client, procedure(tip: TWei; err: IError)
+    if not &strict then
+    begin
+      eth_estimateGas(client, Format(
+        '{"from": %s, "to": %s, "data": %s}',
+        [quoteString(string(from), '"'), quoteString(string(&to), '"'), quoteString(data, '"')]
+      ), callback);
+      EXIT;
+    end;
+    // construct the eip-1559 transaction call object
+    if client.TxType >= 2 then
+    begin
+      getMaxPriorityFeePerGas(client, procedure(tip: TWei; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          getMaxFeePerGas(client, procedure(max: TWei; err: IError)
+          begin
+            if Assigned(err) then
+              callback(0, err)
+            else
+              eth_estimateGas(client, Format(
+                '{"from": %s, "to": %s, "data": %s, "maxPriorityFeePerGas": %s, "maxFeePerGas": %s}', [
+                  web3.json.quoteString(string(from), '"'),
+                  web3.json.quoteString(string(&to), '"'),
+                  web3.json.quoteString(data, '"'),
+                  web3.json.quoteString(toHex(tip, [zeroAs0x0]), '"'),
+                  web3.json.quoteString(toHex(max, [zeroAs0x0]), '"')
+                ]
+              )
+              , callback);
+          end);
+      end);
+      EXIT;
+    end;
+    // construct the legacy transaction call object
+    getGasPrice(client, procedure(gasPrice: TWei; err: IError)
     begin
       if Assigned(err) then
         callback(0, err)
       else
-        getMaxFeePerGas(client, procedure(max: TWei; err: IError)
-        begin
-          if Assigned(err) then
-            callback(0, err)
-          else
-            eth_estimateGas(client, Format(
-              '{"from": %s, "to": %s, "data": %s, "maxPriorityFeePerGas": %s, "maxFeePerGas": %s}', [
-                web3.json.quoteString(string(from), '"'),
-                web3.json.quoteString(string(&to), '"'),
-                web3.json.quoteString(data, '"'),
-                web3.json.quoteString(toHex(tip, [zeroAs0x0]), '"'),
-                web3.json.quoteString(toHex(max, [zeroAs0x0]), '"')
-              ]
-            )
-            , callback);
-        end);
+        eth_estimateGas(client, Format(
+          '{"from": %s, "to": %s, "data": %s, "gasPrice": %s}', [
+            web3.json.quoteString(string(from), '"'),
+            web3.json.quoteString(string(&to), '"'),
+            web3.json.quoteString(data, '"'),
+            web3.json.quoteString(toHex(gasPrice, [zeroAs0x0]), '"')
+          ]
+        ), callback);
     end);
-    EXIT;
   end;
 
-  // construct the legacy transaction call object
-  getGasPrice(client, procedure(gasPrice: TWei; err: IError)
+  // do a loosely estimate first, then a strict estimate if an error occurred
+  &do(client, from, &to, False, procedure(qty: BigInteger; err: IError)
   begin
     if Assigned(err) then
-      callback(0, err)
+      &do(client, from, &to, True, callback)
     else
-      eth_estimateGas(client, Format(
-        '{"from": %s, "to": %s, "data": %s, "gasPrice": %s}', [
-          web3.json.quoteString(string(from), '"'),
-          web3.json.quoteString(string(&to), '"'),
-          web3.json.quoteString(data, '"'),
-          web3.json.quoteString(toHex(gasPrice, [zeroAs0x0]), '"')
-        ]
-      ), callback);
+      callback(qty, nil);
   end);
 end;
 
