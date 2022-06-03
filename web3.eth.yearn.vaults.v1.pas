@@ -142,7 +142,7 @@ class procedure TyVaultV1.Approve(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  var yToken := yTokenClass[reserve].Create(client);
+  const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
   begin
     yToken.ApproveUnderlying(from, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -162,7 +162,7 @@ class procedure TyVaultV1.TokenToUnderlying(
   amount  : BigInteger;
   callback: TAsyncQuantity);
 begin
-  var yToken := yTokenClass[reserve].Create(client);
+  const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
   try
     yToken.TokenToUnderlying(amount, callback);
@@ -177,7 +177,7 @@ class procedure TyVaultV1.UnderlyingToToken(
   amount  : BIgInteger;
   callback: TAsyncQuantity);
 begin
-  var yToken := yTokenClass[reserve].Create(client);
+  const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
   try
     yToken.UnderlyingToToken(amount, callback);
@@ -202,7 +202,7 @@ class procedure TyVaultV1.APY(
   period  : TPeriod;
   callback: TAsyncFloat);
 begin
-  var yToken := yTokenClass[reserve].Create(client);
+  const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
   begin
     yToken.APY(period, procedure(apy: Double; err: IError)
@@ -230,7 +230,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var yToken := yTokenClass[reserve].Create(client);
+    const yToken = yTokenClass[reserve].Create(client);
     if Assigned(yToken) then
     try
       yToken.Deposit(from, amount, callback);
@@ -246,7 +246,7 @@ class procedure TyVaultV1.Balance(
   reserve : TReserve;
   callback: TAsyncQuantity);
 begin
-  var yToken := yTokenClass[reserve].Create(client);
+  const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
   try
     // step #1: get the yToken balance
@@ -277,7 +277,7 @@ class procedure TyVaultV1.Withdraw(
   reserve : TReserve;
   callback: TAsyncReceiptEx);
 begin
-  var yToken := yTokenClass[reserve].Create(client);
+  const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
   begin
     // step #1: get the yToken balance
@@ -328,7 +328,7 @@ begin
       callback(nil, 0, err);
       EXIT;
     end;
-    var yToken := yTokenClass[reserve].Create(client);
+    const yToken = yTokenClass[reserve].Create(client);
     if Assigned(yToken) then
     try
       // step #2: withdraw yToken-amount in exchange for the underlying asset.

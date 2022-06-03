@@ -72,7 +72,7 @@ begin
         EXIT;
       end;
       // did we receive an error?
-      var errors := web3.json.getPropAsArr(resp, 'errors');
+      const errors = web3.json.getPropAsArr(resp, 'errors');
       if Assigned(errors) and (errors.Count > 0) then
       begin
         callback(resp, TGraphError.Create(web3.json.getPropAsStr(errors.Items[0], 'message')));

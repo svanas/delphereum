@@ -79,7 +79,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var data := getPropAsObj(obj, 'data');
+    const data = getPropAsObj(obj, 'data');
     if not Assigned(data) then
     begin
       callback(nil, TError.Create('%s.data is null', [asset]));

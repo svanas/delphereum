@@ -162,10 +162,8 @@ uses
   web3.utils;
 
 function blockNumber(client: IWeb3): BigInteger;
-var
-  obj: TJsonObject;
 begin
-  obj := client.Call('eth_blockNumber', []);
+  const obj = client.Call('eth_blockNumber', []);
   if Assigned(obj) then
   try
     Result := web3.json.getPropAsStr(obj, 'result');
@@ -269,9 +267,9 @@ end;
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncString);
 begin
   // step #1: encode the function abi
-  var abi := web3.eth.abi.encode(func, args);
+  const abi = web3.eth.abi.encode(func, args);
   // step #2: construct the transaction call object
-  var obj := web3.json.unmarshal(Format(
+  const obj = web3.json.unmarshal(Format(
     '{"from": %s, "to": %s, "data": %s}', [
       web3.json.quoteString(string(from), '"'),
       web3.json.quoteString(string(&to), '"'),
@@ -310,8 +308,6 @@ end;
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncQuantity);
 begin
   call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
-  var
-    buf: TBytes;
   begin
     if Assigned(err) then
       callback(0, err)
@@ -320,7 +316,7 @@ begin
         callback(0, nil)
       else
       begin
-        buf := web3.utils.fromHex(hex);
+        const buf = web3.utils.fromHex(hex);
         if Length(buf) <= 32 then
           callback(hex, nil)
         else
@@ -347,14 +343,12 @@ end;
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBoolean);
 begin
   call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
-  var
-    buf: TBytes;
   begin
     if Assigned(err) then
       callback(False, err)
     else
     begin
-      buf := web3.utils.fromHex(hex);
+      const buf = web3.utils.fromHex(hex);
       callback((Length(buf) > 0) and (buf[High(buf)] <> 0), nil);
     end;
   end);
@@ -378,21 +372,19 @@ end;
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TAsyncBytes32);
 begin
   call(client, from, &to, func, block, args, procedure(const hex: string; err: IError)
-  var
-    buffer: TBytes;
-    result: TBytes32;
   begin
     if Assigned(err) then
     begin
       callback(EMPTY_BYTES32, err);
       EXIT;
     end;
-    buffer := web3.utils.fromHex(hex);
+    const buffer = web3.utils.fromHex(hex);
     if Length(buffer) < 32 then
     begin
       callback(EMPTY_BYTES32, nil);
       EXIT;
     end;
+    var result: TBytes32;
     Move(buffer[0], result[0], 32);
     callback(result, nil);
   end);
@@ -425,22 +417,18 @@ begin
 end;
 
 function sign(privateKey: TPrivateKey; const msg: string): TSignature;
-var
-  Signer   : TEthereumSigner;
-  Signature: TECDsaSignature;
-  v        : TBigInteger;
 begin
-  Signer := TEthereumSigner.Create;
+  const Signer = TEthereumSigner.Create;
   try
     Signer.Init(True, privateKey.Parameters);
-    Signature := Signer.GenerateSignature(
+    const Signature = Signer.GenerateSignature(
       sha3(
         TEncoding.UTF8.GetBytes(
           #25 + 'Ethereum Signed Message:' + #10 + IntToStr(Length(msg)) + msg
         )
       )
     );
-    v := Signature.rec.Add(TBigInteger.ValueOf(27));
+    const v = Signature.rec.Add(TBigInteger.ValueOf(27));
     Result := TSignature(
       toHex(
         Signature.r.ToByteArrayUnsigned +
@@ -484,7 +472,7 @@ procedure write(
   args      : array of const;
   callback  : TAsyncTxHash);
 begin
-  var data := web3.eth.abi.encode(func, args);
+  const data = web3.eth.abi.encode(func, args);
   from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
@@ -509,7 +497,7 @@ procedure write(
   args      : array of const;
   callback  : TAsyncReceipt);
 begin
-  var data := web3.eth.abi.encode(func, args);
+  const data = web3.eth.abi.encode(func, args);
   from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then

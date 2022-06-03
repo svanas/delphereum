@@ -82,9 +82,8 @@ begin
 end;
 
 function toHex(const bytes32: TBytes32): string;
-var
-  buf: TBytes;
 begin
+  var buf: TBytes;
   SetLength(buf, 32);
   Move(bytes32, buf[0], 32);
   Result := toHex('0x', buf);
@@ -103,12 +102,10 @@ end;
 function toHex(const prefix: string; const buf: TBytes; offset, len: Integer): string;
 const
   Digits = '0123456789ABCDEF';
-var
-  I: Integer;
 begin
   Result := StringOfChar('0', len * 2);
   try
-    for I := 0 to Length(buf) - 1 do
+    for var I := 0 to Length(buf) - 1 do
     begin
       Result[2 * (I + offset) + 1] := Digits[(buf[I] shr 4)  + 1];
       Result[2 * (I + offset) + 2] := Digits[(buf[I] and $F) + 1];
@@ -204,15 +201,13 @@ begin
 end;
 
 function isHex(const prefix, str: string): Boolean;
-var
-  I: Integer;
 begin
   Result := Length(str) > 1;
   if Result then
   begin
     Result := SameText(Copy(str, System.Low(str), Length(prefix)), prefix);
     if Result then
-      for I := System.Low(str) + Length(prefix) to High(str) do
+      for var I := System.Low(str) + Length(prefix) to High(str) do
       begin
         Result := CharInSet(str[I], ['0'..'9', 'a'..'f', 'A'..'F']);
         if not Result then
@@ -222,8 +217,6 @@ begin
 end;
 
 function fromHex(hex: string): TBytes;
-var
-  I: Integer;
 begin
   hex := Trim(hex);
   while Copy(hex, System.Low(hex), 2).ToLower = '0x' do
@@ -231,7 +224,7 @@ begin
   if hex.Length mod 2 > 0 then
     hex := '0' + hex; // pad to even
   SetLength(Result, Length(hex) div 2);
-  for I := System.Low(hex) to Length(hex) div 2 do
+  for var I := System.Low(hex) to Length(hex) div 2 do
     Result[I - 1] := StrToInt('$' + Copy(hex, (I - 1) * 2 + 1, 2));
 end;
 
@@ -248,10 +241,8 @@ begin
 end;
 
 function sha3(const buf: TBytes): TBytes;
-var
-  keccak256: TKeccak_256;
 begin
-  keccak256 := TKeccak_256.Create;
+  const keccak256 = TKeccak_256.Create;
   try
     Result := keccak256.ComputeBytes(buf).GetBytes;
   finally

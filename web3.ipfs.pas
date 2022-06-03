@@ -127,10 +127,8 @@ begin
 end;
 
 function add(const apiHost, fileName: string; callback: TAsyncJsonObject): IAsyncResult;
-var
-  source: TMultipartFormData;
 begin
-  source := TMultipartFormData.Create;
+  const source = TMultipartFormData.Create;
   source.AddFile('file', fileName);
   web3.http.post(
     apiHost + '/api/v0/add',

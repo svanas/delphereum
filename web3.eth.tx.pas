@@ -297,11 +297,11 @@ function signTransactionLegacy(
   gasPrice  : TWei;
   gasLimit  : BigInteger): string;
 begin
-  var Signer := TEthereumSigner.Create;
+  const Signer = TEthereumSigner.Create;
   try
     Signer.Init(True, from.Parameters);
 
-    var Signature := Signer.GenerateSignature(
+    const Signature = Signer.GenerateSignature(
       sha3(
         web3.rlp.encode([
           web3.utils.toHex(nonce, [padToEven]),    // nonce
@@ -317,9 +317,9 @@ begin
       )
     );
 
-    var r := Signature.r;
-    var s := Signature.s;
-    var v := Signature.rec.Add(TBigInteger.ValueOf(chainId * 2 + 35));
+    const r = Signature.r;
+    const s = Signature.s;
+    const v = Signature.rec.Add(TBigInteger.ValueOf(chainId * 2 + 35));
 
     Result :=
       web3.utils.toHex(
@@ -351,11 +351,11 @@ function signTransactionType2(
   maxFee        : TWei;
   gasLimit      : BigInteger): string;
 begin
-  var Signer := TEthereumSigner.Create;
+  const Signer = TEthereumSigner.Create;
   try
     Signer.Init(True, from.Parameters);
 
-    var Signature := Signer.GenerateSignature(
+    const Signature = Signer.GenerateSignature(
       sha3(
         [2] +
         web3.rlp.encode([
@@ -372,9 +372,9 @@ begin
       )
     );
 
-    var r := Signature.r;
-    var s := Signature.s;
-    var v := Signature.rec;
+    const r = Signature.r;
+    const s = Signature.s;
+    const v = Signature.rec;
 
     Result :=
       web3.utils.toHex(
@@ -416,8 +416,6 @@ procedure sendTransaction(client: IWeb3; const raw: string; callback: TAsyncRece
 begin
   // send the raw transaction
   sendTransaction(client, raw, procedure(hash: TTxHash; err: IError)
-  var
-    onReceiptReceived: TAsyncReceipt;
   begin
     if Assigned(err) then
     begin
@@ -425,6 +423,7 @@ begin
       EXIT;
     end;
     // get the transaction receipt
+    var onReceiptReceived: TAsyncReceipt;
     onReceiptReceived := procedure(rcpt: ITxReceipt; err: IError)
     begin
       if Assigned(err) then
@@ -694,7 +693,7 @@ begin
       callback(nil, TTxError.Create(hash, err.Message));
       EXIT;
     end;
-    var rcpt := web3.json.getPropAsObj(resp, 'result');
+    const rcpt = web3.json.getPropAsObj(resp, 'result');
     if Assigned(rcpt) then
       callback(TTxReceipt.Create(rcpt), nil)
     else
@@ -717,8 +716,6 @@ begin
   end;
 
   web3.eth.tx.getTransaction(client, rcpt.txHash, procedure(txn: ITxn; err: IError)
-  var
-    obj: TJsonObject;
   begin
     if Assigned(err) then
     begin
@@ -738,30 +735,33 @@ begin
       EXIT;
     end;
 
-    // eth_call the failed transaction *with the block number from the receipt*
-    if txn.&type >= 2 then
-      obj := web3.json.unmarshal(Format(
-        '{"to": %s, "data": %s, "from": %s, "value": %s, "gas": %s, "maxPriorityFeePerGas": %s, "maxFeePerGas": %s}', [
-          web3.json.quoteString(string(txn.&to), '"'),
-          web3.json.quoteString(txn.input, '"'),
-          web3.json.quoteString(string(txn.from), '"'),
-          web3.json.quoteString(toHex(txn.value, [zeroAs0x0]), '"'),
-          web3.json.quoteString(toHex(txn.gasLimit, [zeroAs0x0]), '"'),
-          web3.json.quoteString(toHex(txn.maxPriorityFeePerGas, [zeroAs0x0]), '"'),
-          web3.json.quoteString(toHex(txn.maxFeePerGas, [zeroAs0x0]), '"')
-        ]
-      )) as TJsonObject
-    else
-      obj := web3.json.unmarshal(Format(
-        '{"to": %s, "data": %s, "from": %s, "value": %s, "gas": %s, "gasPrice": %s}', [
-          web3.json.quoteString(string(txn.&to), '"'),
-          web3.json.quoteString(txn.input, '"'),
-          web3.json.quoteString(string(txn.from), '"'),
-          web3.json.quoteString(toHex(txn.value, [zeroAs0x0]), '"'),
-          web3.json.quoteString(toHex(txn.gasLimit, [zeroAs0x0]), '"'),
-          web3.json.quoteString(toHex(txn.gasPrice, [zeroAs0x0]), '"')
-        ]
-      )) as TJsonObject;
+    const obj = (function: TObject
+    begin
+      // eth_call the failed transaction *with the block number from the receipt*
+      if txn.&type >= 2 then
+        Result := web3.json.unmarshal(Format(
+          '{"to": %s, "data": %s, "from": %s, "value": %s, "gas": %s, "maxPriorityFeePerGas": %s, "maxFeePerGas": %s}', [
+            web3.json.quoteString(string(txn.&to), '"'),
+            web3.json.quoteString(txn.input, '"'),
+            web3.json.quoteString(string(txn.from), '"'),
+            web3.json.quoteString(toHex(txn.value, [zeroAs0x0]), '"'),
+            web3.json.quoteString(toHex(txn.gasLimit, [zeroAs0x0]), '"'),
+            web3.json.quoteString(toHex(txn.maxPriorityFeePerGas, [zeroAs0x0]), '"'),
+            web3.json.quoteString(toHex(txn.maxFeePerGas, [zeroAs0x0]), '"')
+          ]
+        )) as TJsonObject
+      else
+        Result := web3.json.unmarshal(Format(
+          '{"to": %s, "data": %s, "from": %s, "value": %s, "gas": %s, "gasPrice": %s}', [
+            web3.json.quoteString(string(txn.&to), '"'),
+            web3.json.quoteString(txn.input, '"'),
+            web3.json.quoteString(string(txn.from), '"'),
+            web3.json.quoteString(toHex(txn.value, [zeroAs0x0]), '"'),
+            web3.json.quoteString(toHex(txn.gasLimit, [zeroAs0x0]), '"'),
+            web3.json.quoteString(toHex(txn.gasPrice, [zeroAs0x0]), '"')
+          ]
+        )) as TJsonObject;
+    end)();
 
     if Assigned(obj) then
     try
@@ -783,11 +783,11 @@ begin
           EXIT;
         end;
         // get the length of the revert reason
-        var len := StrToInt64('$' + Copy(encoded, System.Low(encoded) + 8 + 64, 64));
+        const len = StrToInt64('$' + Copy(encoded, System.Low(encoded) + 8 + 64, 64));
         // using the length and known offset, extract the revert reason
         encoded := Copy(encoded, System.Low(encoded) + 8 + 128, len * 2);
         // convert reason from hex to string
-        var decoded := TEncoding.UTF8.GetString(fromHex(encoded));
+        const decoded = TEncoding.UTF8.GetString(fromHex(encoded));
 
         callback(decoded, nil);
       end);

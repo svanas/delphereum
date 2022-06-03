@@ -141,7 +141,7 @@ begin
     EXIT;
   if not(obj is TJsonObject) then
     EXIT;
-  var P := TJsonObject(obj).Get(name);
+  const P = TJsonObject(obj).Get(name);
   if Assigned(P) then
     if Assigned(P.JsonValue) then
     begin
@@ -161,7 +161,7 @@ begin
     EXIT;
   if not(obj is TJsonObject) then
     EXIT;
-  var P := TJsonObject(obj).Get(name);
+  const P = TJsonObject(obj).Get(name);
   if Assigned(P) then
     if Assigned(P.JsonValue) then
       if P.JsonValue is TJsonNumber then
@@ -180,7 +180,7 @@ begin
     EXIT;
   if not(obj is TJsonObject) then
     EXIT;
-  var P := TJsonObject(obj).Get(name);
+  const P = TJsonObject(obj).Get(name);
   if Assigned(P) then
     if Assigned(P.JsonValue) then
       if P.JsonValue is TJsonNumber then
@@ -206,7 +206,7 @@ begin
     EXIT;
   if not(obj is TJsonObject) then
     EXIT;
-  var P := TJsonObject(obj).Get(name);
+  const P = TJsonObject(obj).Get(name);
   if Assigned(P) then
     if Assigned(P.JsonValue) then
       if P.JsonValue is TJsonNumber then
@@ -225,7 +225,7 @@ begin
     EXIT;
   if not(obj is TJsonObject) then
     EXIT;
-  var P := TJsonObject(obj).Get(name);
+  const P = TJsonObject(obj).Get(name);
   if Assigned(P) then
     if Assigned(P.JsonValue) then
       if P.JsonValue is TJsonObject then
@@ -239,7 +239,7 @@ begin
     EXIT;
   if not(obj is TJsonObject) then
     EXIT;
-  var P := TJsonObject(obj).Get(name);
+  const P = TJsonObject(obj).Get(name);
   if Assigned(P) then
     if Assigned(P.JsonValue) then
       if P.JsonValue is TJsonArray then
@@ -253,7 +253,7 @@ begin
     EXIT;
   if not(obj is TJsonObject) then
     EXIT;
-  var P := TJsonObject(obj).Get(name);
+  const P = TJsonObject(obj).Get(name);
   if Assigned(P) then
     if Assigned(P.JsonValue) then
       if P.JsonValue is TJsonTrue then

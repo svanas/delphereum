@@ -155,7 +155,7 @@ begin
         callback(nil, err);
         EXIT;
       end;
-      var underlying := TERC20.Create(client, reserveAddr);
+      const underlying = TERC20.Create(client, reserveAddr);
       if Assigned(underlying) then
       begin
         underlying.ApproveEx(from, lpTokenAddr, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -184,7 +184,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    var yVaultToken := TyVaultToken.Create(client, lpTokenAddr);
+    const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
     begin
       yVaultToken.TokenToUnderlying(amount, procedure(result: BigInteger; err: IError)
       begin
@@ -211,7 +211,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    var yVaultToken := TyVaultToken.Create(client, lpTokenAddr);
+    const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
     begin
       yVaultToken.UnderlyingToToken(amount, procedure(result: BigInteger; err: IError)
       begin
@@ -313,7 +313,7 @@ begin
           callback(0, err);
           EXIT;
         end;
-        var yVaultToken := TyVaultToken.Create(client, lpTokenAddr);
+        const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
         if Assigned(yVaultToken) then
         begin
           yVaultToken.APY(period, procedure(apy: Double; err: IError)
@@ -358,7 +358,7 @@ begin
         callback(nil, err);
         EXIT;
       end;
-      var yVaultToken := TyVaultToken.Create(client, lpTokenAddr);
+      const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
       try
         yVaultToken.Deposit(from, amount, callback);
       finally
@@ -381,7 +381,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    var yVaultToken := TyVaultToken.Create(client, lpTokenAddr);
+    const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
     try
       // step #1: get the yVaultToken balance
       yVaultToken.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
@@ -419,7 +419,7 @@ begin
       callback(nil, 0, err);
       EXIT;
     end;
-    var yVaultToken := TyVaultToken.Create(client, lpTokenAddr);
+    const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
     if Assigned(yVaultToken) then
     begin
       // step #1: get the yVaultToken balance
@@ -478,7 +478,7 @@ begin
         callback(nil, 0, err);
         EXIT;
       end;
-      var yVaultToken := TyVaultToken.Create(client, lpTokenAddr);
+      const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
       if Assigned(yVaultToken) then
       try
         // step #2: withdraw yVaultToken-amount in exchange for the underlying asset.

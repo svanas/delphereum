@@ -229,7 +229,7 @@ type
 
 procedure TTests.TestCase8;
 begin
-  var SS: IContractStruct := TSimpleStruct.Create;
+  const SS: IContractStruct = TSimpleStruct.Create;
   with SS as TSimpleStruct do
   begin
     First  := 'hello';
@@ -257,7 +257,7 @@ end;
 
 procedure TTests.TestCase9;
 begin
-  var SS: ISingleSwap := TSingleSwap.Create
+  const SS: ISingleSwap = TSingleSwap.Create
     .Kind(GivenOut)
     .PoolId(web3.utils.fromHex32('0x61d5dc44849c9c87b0856a2a311536205c96c7fd000200000000000000000000'))
     .AssetIn(TAddress('0xdFCeA9088c8A88A76FF74892C1457C17dfeef9C1').ToChecksum)  // WETH

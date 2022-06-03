@@ -62,35 +62,27 @@ uses
   web3.utils;
 
 function tuple(args: array of Variant): Variant;
-var
-  I: Integer;
 begin
   Result := VarArrayCreate([0, High(args)], varVariant);
-  for I := 0 to High(args) do Result[I] := args[I];
+  for var I := 0 to High(args) do Result[I] := args[I];
 end;
 
 function &array(args: array of Variant): TContractArray;
-var
-  arg: Variant;
 begin
   Result := TContractArray.Create;
-  for arg in args do Result.Add(arg);
+  for var arg in args do Result.Add(arg);
 end;
 
 function &array(args: array of TAddress): TContractArray;
-var
-  arg: TAddress;
 begin
   Result := TContractArray.Create;
-  for arg in args do Result.Add(arg);
+  for var arg in args do Result.Add(arg);
 end;
 
 function &array(args: array of BigInteger): TContractArray;
-var
-  arg: BigInteger;
 begin
   Result := TContractArray.Create;
-  for arg in args do Result.Add(web3.utils.toHex(arg));
+  for var arg in args do Result.Add(web3.utils.toHex(arg));
 end;
 
 function encode(const func: string; args: array of const): string;
@@ -118,7 +110,7 @@ function encode(const func: string; args: array of const): string;
       buf: TBytes;
       hex: string;
     begin
-      var prefix := Copy(str, System.Low(str), 2).ToLower;
+      const prefix = Copy(str, System.Low(str), 2).ToLower;
       if prefix <> '0x' then
       begin
         if prefix = '0b' then // bytes
@@ -185,13 +177,6 @@ function encode(const func: string; args: array of const): string;
     end;
 
     function encodeArg(const arg: Variant): TBytes; overload;
-    var
-      idx   : Integer;
-      elem  : Variant;
-      curr  : TBytes;
-      suffix: TBytes;
-      offset: Integer;
-      struct: IContractStruct;
     begin
       Result := [];
       case FindVarData(arg)^.VType of
@@ -216,16 +201,20 @@ function encode(const func: string; args: array of const): string;
         varBoolean:
           Result := encodeArg(Boolean(arg));
         varUnknown:
+        begin
+          var struct: IContractStruct;
           if Supports(arg, IContractStruct, struct) then
             Result := encodeArg(tuple(struct.Tuple));
+        end;
       else
         if VarIsArray(arg) then // tuple
         begin
-          offset  := varArrayCount(arg) * 32;
-          for idx := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
+          var suffix: TBytes;
+          var offset: Integer := varArrayCount(arg) * 32;
+          for var idx := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
           begin
-            elem := VarArrayGet(arg, [idx]);
-            curr := encodeArg(elem);
+            const elem = VarArrayGet(arg, [idx]);
+            const curr = encodeArg(elem);
             if isDynamic(elem) then
             begin
               Result := Result + encodeArg(offset);
@@ -241,12 +230,6 @@ function encode(const func: string; args: array of const): string;
     end;
 
     function encodeArg(const arg: TVarRec): TBytes; overload;
-    var
-      elem  : Variant;
-      curr  : TBytes;
-      suffix: TBytes;
-      offset: Integer;
-      struct: IContractStruct;
     begin
       case arg.VType of
         vtBoolean:
@@ -264,16 +247,20 @@ function encode(const func: string; args: array of const): string;
         vtVariant:
           Result := encodeArg(arg.VVariant^);
         vtInterface:
+        begin
+          var struct: IContractStruct;
           if Supports(IInterface(arg.VInterface), IContractStruct, struct) then
             Result := encodeArg(tuple(struct.Tuple));
+        end;
         vtObject:
           if arg.VObject is TContractArray then // array
           begin
             Result := encodeArg((arg.VObject as TContractArray).Count);
-            offset := (arg.VObject as TContractArray).Count * 32;
-            for elem in arg.VObject as TContractArray do
+            var suffix: TBytes;
+            var offset: Integer := (arg.VObject as TContractArray).Count * 32;
+            for var elem in arg.VObject as TContractArray do
             begin
-              curr := encodeArg(elem);
+              const curr = encodeArg(elem);
               if isDynamic(elem) then
               begin
                 Result := Result + encodeArg(offset);
@@ -328,7 +315,7 @@ function encode(const func: string; args: array of const): string;
           var S: IContractStruct;
           if Supports(IInterface(arg.VInterface), IContractStruct, S) then
           begin
-            var T := tuple(S.Tuple);
+            const T = tuple(S.Tuple);
             if not isDynamic(T) then Result := varArrayCount(T);
           end;
         end;
@@ -339,17 +326,13 @@ function encode(const func: string; args: array of const): string;
       for var arg in args do Result := Result + len(arg);
     end;
 
-  var
-    arg   : TVarRec;
-    curr  : TBytes;
-    suffix: TBytes;
-    offset: Integer;
   begin
     Result := [];
-    offset := len(args) * 32;
-    for arg in args do
+    var suffix: TBytes;
+    var offset: Integer := len(args) * 32;
+    for var arg in args do
     begin
-      curr := encodeArg(arg);
+      const curr = encodeArg(arg);
       if isDynamic(arg) then
       begin
         Result := Result + encodeArg(offset);
@@ -373,7 +356,7 @@ begin
         arg.VObject.Free;
   end;
   // step #2: the first four bytes specify the function to be called
-  var hash := web3.utils.sha3(web3.utils.toHex(func));
+  const hash = web3.utils.sha3(web3.utils.toHex(func));
   data := Copy(hash, 0, 4) + data;
   // step #3: hex-encode the data
   Result := web3.utils.toHex(data);

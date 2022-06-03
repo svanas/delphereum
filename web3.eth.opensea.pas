@@ -100,7 +100,7 @@ begin
   FName     := getPropAsStr(aJsonValue, 'name');
   FImageURL := getPropAsStr(aJsonValue, 'image_url');
 
-  var contract := getPropAsObj(aJsonValue, 'asset_contract');
+  const contract = getPropAsObj(aJsonValue, 'asset_contract');
   if Assigned(contract) then
   begin
     FAddress  := TAddress.New(getPropAsStr(contract, 'address'));
@@ -196,11 +196,11 @@ begin
         EXIT;
       end;
 
-      var assets := getPropAsArr(obj, 'assets');
+      const assets = getPropAsArr(obj, 'assets');
       for var asset in assets do
         result.Add(asset.Clone as TJsonObject);
 
-      var next := getPropAsStr(obj, 'next');
+      const next = getPropAsStr(obj, 'next');
       if not next.IsEmpty then
       begin
         if next.StartsWith('http', True) then

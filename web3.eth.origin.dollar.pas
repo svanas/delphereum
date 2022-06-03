@@ -129,7 +129,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var underlying := TERC20.Create(client, reserveAddr);
+    const underlying = TERC20.Create(client, reserveAddr);
     if Assigned(underlying) then
     begin
       underlying.ApproveEx(from, TOriginVault.DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -160,7 +160,7 @@ class procedure TOrigin.APY(
   period  : TPeriod;
   callback: TAsyncFloat);
 begin
-  var ousd := TOriginDollar.Create(client);
+  const ousd = TOriginDollar.Create(client);
   if Assigned(ousd) then
   begin
     ousd.APY(period, procedure(apy: Double; err: IError)
@@ -188,7 +188,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var vault := TOriginVault.Create(client);
+    const vault = TOriginVault.Create(client);
     try
       vault.Mint(from, reserve, amount, callback);
     finally
@@ -203,7 +203,7 @@ class procedure TOrigin.Balance(
   reserve : TReserve;
   callback: TAsyncQuantity);
 begin
-  var ousd := TOriginDollar.Create(client);
+  const ousd = TOriginDollar.Create(client);
   try
     ousd.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
     begin
@@ -242,7 +242,7 @@ class procedure TOrigin.WithdrawEx(
   amount  : BigInteger;
   callback: TAsyncReceiptEx);
 begin
-  var vault := TOriginVault.Create(client);
+  const vault = TOriginVault.Create(client);
   try
     vault.Redeem(from, amount, procedure(rcpt: ITxReceipt; err: IError)
     begin

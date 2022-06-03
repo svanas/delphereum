@@ -204,7 +204,7 @@ begin
         callback(0, err);
       EXIT;
     end;
-    var erc20 := TERC20.Create(client, token);
+    const erc20 = TERC20.Create(client, token);
     try
       erc20.BalanceOf(owner, callback);
     finally

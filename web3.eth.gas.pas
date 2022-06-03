@@ -76,7 +76,7 @@ end;
 
 procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity);
 begin
-  var info := client.GetGasStationInfo;
+  const info = client.GetGasStationInfo;
 
   if info.Custom > 0 then
   begin
@@ -135,7 +135,7 @@ end;
 
 procedure getMaxPriorityFeePerGas(client: IWeb3; callback: TAsyncQuantity);
 begin
-  var adjustForSpeed := function(tip: BigInteger; speed: TGasPrice): BigInteger
+  const adjustForSpeed = function(tip: BigInteger; speed: TGasPrice): BigInteger
   begin
     case speed of
       Fastest: Result := TWei.Max(tip, 4000000000); // 4 Gwei
@@ -147,7 +147,7 @@ begin
 
   client.Call('eth_maxPriorityFeePerGas', [], procedure(resp: TJsonObject; err: IError)
   begin
-    var info := client.GetGasStationInfo;
+    const info = client.GetGasStationInfo;
 
     if Assigned(err) then
     begin
@@ -173,7 +173,7 @@ end;
 
 procedure getMaxFeePerGas(client: IWeb3; callback: TAsyncQuantity);
 begin
-  var info := client.GetGasStationInfo;
+  const info = client.GetGasStationInfo;
 
   if info.Custom > 0 then
   begin
@@ -213,9 +213,9 @@ procedure estimateGas(
   callback  : TAsyncQuantity);
 begin
   // estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
-  var eth_estimateGas := procedure(client: IWeb3; const json: string; callback: TAsyncQuantity)
+  const eth_estimateGas = procedure(client: IWeb3; const json: string; callback: TAsyncQuantity)
   begin
-    var obj := web3.json.unmarshal(json) as TJsonObject;
+    const obj = web3.json.unmarshal(json) as TJsonObject;
     try
       client.Call('eth_estimateGas', [obj], procedure(resp: TJsonObject; err: IError)
       begin
@@ -232,7 +232,7 @@ begin
   end;
 
   // if strict, then factor in your gas price (otherwise ignore your gas price while estimating gas)
-  var &do := procedure(client: IWeb3; from, &to: TAddress; &strict: Boolean; callback: TAsyncQuantity)
+  const &do = procedure(client: IWeb3; from, &to: TAddress; &strict: Boolean; callback: TAsyncQuantity)
   begin
     if not &strict then
     begin

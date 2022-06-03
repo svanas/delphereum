@@ -164,21 +164,17 @@ begin
 end;
 
 function TJsonRpcSgcWebSocket.TryJsonRpcError(const Text: string): Boolean;
-var
-  response: TJsonValue;
-  error   : TJsonObject;
-  callback: TAsyncJsonObject;
-  params  : TJsonObject;
 begin
-  response := web3.json.unmarshal(Text);
+  const response = web3.json.unmarshal(Text);
 
   Result := Assigned(response);
   if not Result then
     EXIT;
 
+  var callback: TAsyncJsonObject;
   try
     // did we receive an error?
-    error := web3.json.getPropAsObj(response, 'error');
+    const error = web3.json.getPropAsObj(response, 'error');
     Result := Assigned(error);
     if not Result then
       EXIT;
@@ -201,7 +197,7 @@ begin
     end;
 
     // otherwise, do we have an attr named "params"? if yes, then this is a PubSub error.
-    params := web3.json.getPropAsObj(response, 'params');
+    const params = web3.json.getPropAsObj(response, 'params');
     if Assigned(params) then
     begin
       Subscriptions.Enter;
@@ -222,15 +218,11 @@ begin
 end;
 
 procedure TJsonRpcSgcWebSocket.DoMessage(Conn: TsgcWsConnection; const Text: string);
-var
-  response: TJsonValue;
-  callback: TAsyncJsonObject;
-  params  : TJsonObject;
 begin
   if TryJsonRpcError(Text) then
     EXIT;
 
-  response := web3.json.unmarshal(Text);
+  const response = web3.json.unmarshal(Text);
 
   if not Assigned(response) then
   begin
@@ -238,6 +230,7 @@ begin
     EXIT;
   end;
 
+  var callback: TAsyncJsonObject;
   try
     Callbacks.Enter;
     try
@@ -252,7 +245,7 @@ begin
       Callbacks.Leave;
     end;
     // otherwise, do we have an attr named "params"? if yes, then this is a PubSub notification.
-    params := web3.json.getPropAsObj(response, 'params');
+    const params = web3.json.getPropAsObj(response, 'params');
     if Assigned(params) then
       if Subscriptions.TryGetValue(web3.json.getPropAsStr(params, 'subscription'), callback) then
         callback(response.Clone as TJsonObject, nil);
@@ -285,16 +278,13 @@ function TJsonRpcSgcWebSocket.Call(
   security    : TSecurity;
   const method: string;
   args        : array of const): TJsonObject;
-var
-  resp : TJsonValue;
-  error: TJsonObject;
 begin
   Result := nil;
-  resp := web3.json.unmarshal(Client[URL, security].WriteAndWaitData(CreatePayload(method, args)));
+  const resp = web3.json.unmarshal(Client[URL, security].WriteAndWaitData(CreatePayload(method, args)));
   if Assigned(resp) then
   try
     // did we receive an error? then translate that into an exception
-    error := web3.json.getPropAsObj(resp, 'error');
+    const error = web3.json.getPropAsObj(resp, 'error');
     if Assigned(error) then
       raise EJsonRpc.Create(
         web3.json.getPropAsInt(error, 'code'),
@@ -312,24 +302,24 @@ procedure TJsonRpcSgcWebSocket.Call(
   const method: string;
   args        : array of const;
   callback    : TAsyncJsonObject);
-var
-  ID: Int64;
-  PL: string;
 begin
-  Self.ID.Enter;
-  try
-    ID := Self.ID.Inc;
-    Callbacks.Enter;
+  const payload = (function(args: array of const): string
+  begin
+    Self.ID.Enter;
     try
-      Callbacks.Add(ID, callback);
+      const ID = Self.ID.Inc;
+      Callbacks.Enter;
+      try
+        Callbacks.Add(ID, callback);
+      finally
+        Callbacks.Leave;
+      end;
+      Result := CreatePayload(ID, method, args);
     finally
-      Callbacks.Leave;
+      Self.ID.Leave;
     end;
-    PL := CreatePayload(ID, method, args);
-  finally
-    Self.ID.Leave;
-  end;
-  Client[URL, security].WriteData(PL);
+  end)(args);
+  Client[URL, security].WriteData(payload);
 end;
 
 procedure TJsonRpcSgcWebSocket.Subscribe(const subscription: string; callback: TAsyncJsonObject);

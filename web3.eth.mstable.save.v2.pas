@@ -117,7 +117,7 @@ class procedure TmStable.APY(
   period  : TPeriod;
   callback: TAsyncFloat);
 begin
-  var imUSD := TimUSD.Create(client);
+  const imUSD = TimUSD.Create(client);
   if Assigned(imUSD) then
   begin
     imUSD.APY(period, procedure(apy: Double; err: IError)
@@ -147,7 +147,7 @@ class procedure TmStable.Balance(
   _reserve: TReserve;
   callback: TAsyncQuantity);
 begin
-  var imUSD := TimUSD.Create(client);
+  const imUSD = TimUSD.Create(client);
   imUSD.BalanceOfUnderlying(owner, procedure(balance1: BigInteger; err: IError)
   begin
     if Assigned(err) then
@@ -155,7 +155,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    var vault := TImVaultUSD.Create(client);
+    const vault = TImVaultUSD.Create(client);
     vault.BalanceOf(owner, procedure(qty: BigInteger; err: IError)
     begin
       if Assigned(err) then

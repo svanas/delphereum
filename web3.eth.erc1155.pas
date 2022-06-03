@@ -364,8 +364,8 @@ procedure TERC1155.SafeBatchTransferFrom(
   values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
   callback: TAsyncTxHash);
 begin
-  var _IDs    := &array(IDs);
-  var _values := &array(values);
+  const _IDs    = &array(IDs);
+  const _values = &array(values);
   owner.Address(procedure(from: TAddress; err: IError)
   begin
     if Assigned(err) then
@@ -389,8 +389,8 @@ procedure TERC1155.SafeBatchTransferFromEx(
   values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
   callback: TAsyncReceipt);
 begin
-  var _IDs    := &array(IDs);
-  var _values := &array(values);
+  const _IDs    = &array(IDs);
+  const _values = &array(values);
   owner.Address(procedure(from: TAddress; err: IError)
   begin
     if Assigned(err) then

@@ -142,7 +142,7 @@ end;
 
 procedure TToken.Balance(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
 begin
-  var erc20 := TERC20.Create(client, Self.Address);
+  const erc20 = TERC20.Create(client, Self.Address);
   try
     erc20.BalanceOf(owner, callback);
   finally
@@ -302,7 +302,7 @@ begin
     begin
       if chain = Rinkeby then
       begin
-        var arr := TJsonObject.ParseJsonValue(TOKENS_RINKEBY) as TJsonArray;
+        const arr = TJsonObject.ParseJsonValue(TOKENS_RINKEBY) as TJsonArray;
         if Assigned(arr) then
         try
           for var token2 in arr do

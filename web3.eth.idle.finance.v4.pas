@@ -158,7 +158,7 @@ class procedure TIdle.Approve(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  var IdleToken := IdleTokenClass[reserve].Create(client);
+  const IdleToken = IdleTokenClass[reserve].Create(client);
   if Assigned(IdleToken) then
   begin
     IdleToken.Token(procedure(addr: TAddress; err: IError)
@@ -169,7 +169,7 @@ begin
           callback(nil, err);
           EXIT;
         end;
-        var erc20 := TERC20.Create(client, addr);
+        const erc20 = TERC20.Create(client, addr);
         if Assigned(erc20) then
         begin
           erc20.ApproveEx(from, IdleToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -194,7 +194,7 @@ class procedure TIdle.IdleToUnderlying(
   amount  : BigInteger;
   callback: TAsyncQuantity);
 begin
-  var IdleToken := IdleTokenClass[reserve].Create(client);
+  const IdleToken = IdleTokenClass[reserve].Create(client);
   if Assigned(IdleToken) then
   try
     IdleToken.TokenPrice(procedure(price: BigInteger; err: IError)
@@ -215,7 +215,7 @@ class procedure TIdle.UnderlyingToIdle(
   amount  : BIgInteger;
   callback: TAsyncQuantity);
 begin
-  var IdleToken := IdleTokenClass[reserve].Create(client);
+  const IdleToken = IdleTokenClass[reserve].Create(client);
   if Assigned(IdleToken) then
   try
     IdleToken.TokenPrice(procedure(price: BigInteger; err: IError)
@@ -250,7 +250,7 @@ class procedure TIdle.APY(
   _period : TPeriod;
   callback: TAsyncFloat);
 begin
-  var IdleToken := IdleTokenClass[reserve].Create(client);
+  const IdleToken = IdleTokenClass[reserve].Create(client);
   IdleToken.GetFullAPR(procedure(apr1: BigInteger; err1: IError)
   begin
     if Assigned(err1) then
@@ -282,7 +282,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var IdleToken := IdleTokenClass[reserve].Create(client);
+    const IdleToken = IdleTokenClass[reserve].Create(client);
     if Assigned(IdleToken) then
     try
       IdleToken.MintIdleToken(from, amount, True, EMPTY_ADDRESS, callback);
@@ -298,7 +298,7 @@ class procedure TIdle.Balance(
   reserve : TReserve;
   callback: TAsyncQuantity);
 begin
-  var IdleToken := IdleTokenClass[reserve].Create(client);
+  const IdleToken = IdleTokenClass[reserve].Create(client);
   if Assigned(IdleToken) then
   try
     // step #1: get the IdleToken balance
@@ -329,7 +329,7 @@ class procedure TIdle.Withdraw(
   reserve : TReserve;
   callback: TAsyncReceiptEx);
 begin
-  var IdleToken := IdleTokenClass[reserve].Create(client);
+  const IdleToken = IdleTokenClass[reserve].Create(client);
   if Assigned(IdleToken) then
   begin
     // step #1: get the IdleToken balance
@@ -379,7 +379,7 @@ begin
       callback(nil, 0, err);
       EXIT;
     end;
-    var IdleToken := IdleTokenClass[reserve].Create(client);
+    const IdleToken = IdleTokenClass[reserve].Create(client);
     if Assigned(IdleToken) then
     try
       // step #2: redeem IdleToken-amount in exchange for the underlying asset.
@@ -432,7 +432,7 @@ end;
 // Get current IdleToken average APR considering governance tokens.
 procedure TIdleToken.GetFullAPR(callback: TAsyncQuantity);
 begin
-  var helper := TIdleViewHelper.Create(Self.Client);
+  const helper = TIdleViewHelper.Create(Self.Client);
   try
     helper.GetFullAPR(Self.Contract, callback);
   finally
