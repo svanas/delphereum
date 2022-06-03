@@ -70,7 +70,8 @@ const
     { Fantom            } ('https://rpc.ftm.tools', ''),
     { Fantom_test_net   } ('https://rpc.testnet.fantom.network', ''),
     { Arbitrum          } ('https://arb-mainnet.g.alchemy.com/v2/%s', 'wss://arb-mainnet.g.alchemy.com/v2/%s'),
-    { Arbitrum_test_net } ('https://arb-rinkeby.g.alchemy.com/v2/%s', 'wss://arb-rinkeby.g.alchemy.com/v2/%s')
+    { Arbitrum_test_net } ('https://arb-rinkeby.g.alchemy.com/v2/%s', 'wss://arb-rinkeby.g.alchemy.com/v2/%s'),
+    { Sepolia           } ('https://nunki.htznr.fault.dev/rpc', 'wss://nunki.htznr.fault.dev/ws')
   );
 begin
   Result := ENDPOINT[chain][protocol];

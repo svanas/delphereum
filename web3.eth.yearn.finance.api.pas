@@ -167,10 +167,12 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var result: TArray<IYearnVault>;
-    SetLength(result, arr.Count);
-    for var I := 0 to Pred(arr.Count) do
-      result[I] := TYearnVault.Create(arr[I] as TJsonObject);
+    const result = (function: TArray<IYearnVault>
+    begin
+      SetLength(Result, arr.Count);
+      for var I := 0 to Pred(arr.Count) do
+        Result[I] := TYearnVault.Create(arr[I] as TJsonObject);
+    end)();
     callback(result, nil);
   end);
 end;

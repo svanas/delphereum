@@ -255,9 +255,9 @@ function encode(const func: string; args: array of const): string;
         vtObject:
           if arg.VObject is TContractArray then // array
           begin
-            Result := encodeArg((arg.VObject as TContractArray).Count);
             var suffix: TBytes;
             var offset: Integer := (arg.VObject as TContractArray).Count * 32;
+            Result := encodeArg((arg.VObject as TContractArray).Count);
             for var elem in arg.VObject as TContractArray do
             begin
               const curr = encodeArg(elem);

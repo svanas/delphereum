@@ -735,7 +735,7 @@ begin
       EXIT;
     end;
 
-    const obj = (function: TObject
+    const obj = (function: TJsonObject
     begin
       // eth_call the failed transaction *with the block number from the receipt*
       if txn.&type >= 2 then

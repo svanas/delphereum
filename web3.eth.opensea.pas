@@ -226,10 +226,12 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var result: TNFTs;
-    SetLength(result, arr.Count);
-    for var I := 0 to Pred(arr.Count) do
-      result[I] := TNFT.Create(chain.Id, arr[I] as TJsonObject);
+    const result = (function: TNFTs
+    begin
+      SetLength(Result, arr.Count);
+      for var I := 0 to Pred(arr.Count) do
+        Result[I] := TNFT.Create(chain.Id, arr[I] as TJsonObject);
+    end)();
     callback(result, nil);
   end);
 end;

@@ -158,7 +158,8 @@ const
     'https://api.ftmscan.com/api?apikey=%s',                   // Fantom
     'https://api-testnet.ftmscan.com/api?apikey=%s',           // Fantom_test_net
     'https://api.arbiscan.io/api?apikey=%s',                   // Arbitrum
-    'https://api-testnet.arbiscan.io/api?apikey=%s'            // Arbitrum_test_net
+    'https://api-testnet.arbiscan.io/api?apikey=%s',           // Arbitrum_test_net
+    'https://api-sepolia.etherscan.io/api?apikey=%s'           // Sepolia
   );
 begin
   Result := ENDPOINT[chain];

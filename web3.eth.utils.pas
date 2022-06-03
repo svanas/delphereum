@@ -142,9 +142,8 @@ begin
   const comps = input.Split(['.']);
   if Length(comps) > 2 then
     raise EWeb3.CreateFmt('Error while converting %s to wei. Too many decimal points.', [input]);
-  var whole: string;
+  var whole: string := comps[0];
   var fract: string;
-  whole := comps[0];
   if Length(comps) > 1 then
     fract := comps[1];
   Result := BigInteger.Multiply(whole, base);

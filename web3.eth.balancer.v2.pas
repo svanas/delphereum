@@ -444,7 +444,8 @@ const
     '',                                                                           // Fantom
     '',                                                                           // Fantom_test_net
     'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-arbitrum-v2', // Arbitrum
-    ''                                                                            // Arbitrum_test_net
+    '',                                                                           // Arbitrum_test_net
+    ''                                                                            // Sepolia
   );
 begin
   const execute = procedure(token0, token1: TAddress; callback: TAsyncString)

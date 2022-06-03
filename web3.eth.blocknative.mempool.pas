@@ -192,7 +192,8 @@ const
     '',            // Fantom
     'fantom-main', // Fantom_test_net
     '',            // Arbitrum
-    ''             // Arbitrum_test_net
+    '',            // Arbitrum_test_net
+    ''             // Sepolia
   );
 begin
   Result := Format('{' +

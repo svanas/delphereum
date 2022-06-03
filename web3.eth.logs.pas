@@ -108,11 +108,9 @@ begin
 end;
 
 function TLog.isEvent(const name: string): Boolean;
-var
-  buf: TBytes;
-  arg: TArg;
 begin
-  buf := web3.utils.sha3(web3.utils.toHex(name));
+  const buf = web3.utils.sha3(web3.utils.toHex(name));
+  var arg: TArg;
   Move(buf[0], arg.Inner[0], SizeOf(TArg));
   Result := CompareMem(@FTopics[0], @arg, SizeOf(TArg));
 end;
@@ -192,7 +190,7 @@ function get(client: IWeb3; address: TAddress; callback: TAsyncLog): ITask;
 begin
   Result := TTask.Create(procedure
   begin
-    var bn: BigInteger := web3.eth.blockNumber(client);
+    var bn := web3.eth.blockNumber(client);
     while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
     begin
       try
