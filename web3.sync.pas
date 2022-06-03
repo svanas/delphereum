@@ -250,12 +250,10 @@ begin
 end;
 
 procedure TCriticalList.Clear;
-var
-  I: Integer;
 begin
   if Assigned(Inner) then
   begin
-    for I := 0 to Pred(Inner.Count) do
+    for var I := 0 to Pred(Inner.Count) do
       Inner[I] := nil;
     Inner.Clear;
   end;

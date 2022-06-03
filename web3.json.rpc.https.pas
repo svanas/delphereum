@@ -81,11 +81,9 @@ function TJsonRpcHttps.Call(
   const URL   : string;
   const method: string;
   args        : array of const): TJsonObject;
-var
-  resp  : TJsonValue;
-  error : TJsonObject;
 begin
   Result := nil;
+  var resp: TJsonValue;
   web3.http.post(
     URL,
     CreatePayload(method, args),
@@ -95,7 +93,7 @@ begin
   if Assigned(resp) then
   try
     // did we receive an error? then translate that into an exception
-    error := web3.json.getPropAsObj(resp, 'error');
+    const error = web3.json.getPropAsObj(resp, 'error');
     if Assigned(error) then
       raise EJsonRpc.Create(
         web3.json.getPropAsInt(error, 'code'),
@@ -112,14 +110,8 @@ procedure TJsonRpcHttps.Call(
   const method: string;
   args        : array of const;
   callback    : TAsyncJsonObject);
-var
-  handler: TAsyncJsonObject;
-  payload: string;
-  headers: TNetHeaders;
 begin
-  handler := procedure(resp: TJsonObject; err: IError)
-  var
-    error: TJsonObject;
+  const handler: TAsyncJsonObject = procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -127,7 +119,7 @@ begin
       EXIT;
     end;
     // did we receive an error?
-    error := web3.json.getPropAsObj(resp, 'error');
+    const error = web3.json.getPropAsObj(resp, 'error');
     if Assigned(error) then
       callback(resp, TJsonRpcError.Create(
         web3.json.getPropAsInt(error, 'code'),
@@ -138,8 +130,8 @@ begin
       callback(resp, nil);
   end;
 
-  payload := CreatePayload(method, args);
-  headers := [TNetHeader.Create('Content-Type', 'application/json')];
+  const payload = CreatePayload(method, args);
+  const headers: TNetHeaders = [TNetHeader.Create('Content-Type', 'application/json')];
 
   if Assigned(FThrottler) then
   begin

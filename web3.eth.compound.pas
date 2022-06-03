@@ -188,7 +188,7 @@ class procedure TCompound.Approve(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  var cToken := cTokenClass[reserve].Create(client);
+  const cToken = cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
   begin
     cToken.Underlying(procedure(addr: TAddress; err: IError)
@@ -199,7 +199,7 @@ begin
           callback(nil, err);
           EXIT;
         end;
-        var erc20 := TERC20.Create(client, addr);
+        const erc20 = TERC20.Create(client, addr);
         if Assigned(erc20) then
         begin
           erc20.ApproveEx(from, cToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -241,7 +241,7 @@ class procedure TCompound.APY(
   _period : TPeriod;
   callback: TAsyncFloat);
 begin
-  var cToken := cTokenClass[reserve].Create(client);
+  const cToken = cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
   try
     cToken.APY(procedure(value: BigInteger; err: IError)
@@ -272,7 +272,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var cToken := cTokenClass[reserve].Create(client);
+    const cToken = cTokenClass[reserve].Create(client);
     if Assigned(cToken) then
     try
       cToken.Mint(from, amount, callback);
@@ -289,7 +289,7 @@ class procedure TCompound.Balance(
   reserve : TReserve;
   callback: TAsyncQuantity);
 begin
-  var cToken := cTokenClass[reserve].Create(client);
+  const cToken = cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
   try
     cToken.BalanceOfUnderlying(owner, callback);
@@ -319,7 +319,7 @@ begin
         callback(nil, 0, err);
         EXIT;
       end;
-      var cToken := cTokenClass[reserve].Create(client);
+      const cToken = cTokenClass[reserve].Create(client);
       if Assigned(cToken) then
       begin
         cToken.BalanceOf(addr, procedure(amount_ctoken: BigInteger; err: IError)
@@ -353,7 +353,7 @@ class procedure TCompound.WithdrawEx(
   amount  : BigInteger;
   callback: TAsyncReceiptEx);
 begin
-  var cToken := cTokenClass[reserve].Create(client);
+  const cToken = cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
   try
     cToken.RedeemUnderlying(from, amount, procedure(rcpt: ITxReceipt; err: IError)

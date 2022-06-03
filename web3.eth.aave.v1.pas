@@ -179,7 +179,7 @@ class procedure TAave.Approve(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  var aap := TAaveAddressesProvider.Create(client);
+  const aap = TAaveAddressesProvider.Create(client);
   if Assigned(aap) then
   try
     aap.GetLendingPoolCore(procedure(core: TAddress; err: IError)
@@ -196,7 +196,7 @@ begin
           callback(nil, err);
           EXIT;
         end;
-        var erc20 := TERC20.Create(client, addr);
+        const erc20 = TERC20.Create(client, addr);
         if Assigned(erc20) then
         begin
           erc20.ApproveEx(from, core, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -232,7 +232,7 @@ class procedure TAave.APY(
   _period : TPeriod;
   callback: TAsyncFloat);
 begin
-  var aap := TAaveAddressesProvider.Create(client);
+  const aap = TAaveAddressesProvider.Create(client);
   if Assigned(aap) then
   try
     aap.GetLendingPool(procedure(addr: TAddress; err: IError)
@@ -242,7 +242,7 @@ begin
         callback(0, err);
         EXIT;
       end;
-      var pool := TAaveLendingPool.Create(client, addr);
+      const pool = TAaveLendingPool.Create(client, addr);
       if Assigned(pool) then
       try
         pool.LiquidityRate(reserve, procedure(qty: BigInteger; err: IError)
@@ -277,7 +277,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var aap := TAaveAddressesProvider.Create(client);
+    const aap = TAaveAddressesProvider.Create(client);
     if Assigned(aap) then
     try
       aap.GetLendingPool(procedure(addr: TAddress; err: IError)
@@ -287,7 +287,7 @@ begin
           callback(nil, err);
           EXIT;
         end;
-        var pool := TAaveLendingPool.Create(client, addr);
+        const pool = TAaveLendingPool.Create(client, addr);
         if Assigned(pool) then
         try
           pool.Deposit(from, reserve, amount, callback);
@@ -308,7 +308,7 @@ class procedure TAave.Balance(
   reserve : TReserve;
   callback: TAsyncQuantity);
 begin
-  var aAp := TAaveAddressesProvider.Create(client);
+  const aAp = TAaveAddressesProvider.Create(client);
   if Assigned(aAp) then
   try
     aAp.GetLendingPool(procedure(addr: TAddress; err: IError)
@@ -318,7 +318,7 @@ begin
         callback(0, err);
         EXIT;
       end;
-      var aPool := TAaveLendingPool.Create(client, addr);
+      const aPool = TAaveLendingPool.Create(client, addr);
       if Assigned(aPool) then
       try
         aPool.aTokenAddress(reserve, procedure(addr: TAddress; err: IError)
@@ -328,7 +328,7 @@ begin
             callback(0, err);
             EXIT;
           end;
-          var aToken := TaToken.Create(client, addr);
+          const aToken = TaToken.Create(client, addr);
           if Assigned(aToken) then
           try
             aToken.BalanceOf(owner, callback);
@@ -376,7 +376,7 @@ class procedure TAave.WithdrawEx(
   amount  : BigInteger;
   callback: TAsyncReceiptEx);
 begin
-  var aAp := TAaveAddressesProvider.Create(client);
+  const aAp = TAaveAddressesProvider.Create(client);
   if Assigned(aAp) then
   try
     aAp.GetLendingPool(procedure(addr: TAddress; err: IError)
@@ -386,7 +386,7 @@ begin
         callback(nil, 0, err);
         EXIT;
       end;
-      var aPool := TAaveLendingPool.Create(client, addr);
+      const aPool = TAaveLendingPool.Create(client, addr);
       if Assigned(aPool) then
       try
         aPool.aTokenAddress(reserve, procedure(addr: TAddress; err: IError)
@@ -396,7 +396,7 @@ begin
             callback(nil, 0, err);
             EXIT;
           end;
-          var aToken := TaToken.Create(client, addr);
+          const aToken = TaToken.Create(client, addr);
           if Assigned(aToken) then
           try
             if Assigned(err) then

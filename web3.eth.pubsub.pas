@@ -93,8 +93,6 @@ procedure subscribe(
   notification: TAsyncJsonObject;
   onError     : TAsyncError;
   onDisconnect: TProc);
-var
-  result: string;
 begin
   client.OnError(onError);
   client.OnDisconnect(onDisconnect);
@@ -107,7 +105,7 @@ begin
       EXIT;
     end;
 
-    result := web3.json.getPropAsStr(resp, 'result');
+    const result = web3.json.getPropAsStr(resp, 'result');
     callback(result, nil);
 
     client.Subscribe(result, notification);
@@ -118,8 +116,6 @@ procedure unsubscribe(
   client   : IWeb3Ex;
   const sub: string;
   callback : TAsyncBoolean);
-var
-  result: Boolean;
 begin
   client.Call('eth_unsubscribe', [sub], procedure(resp: TJsonObject; err: IError)
   begin
@@ -129,7 +125,7 @@ begin
       EXIT;
     end;
 
-    result := web3.json.getPropAsStr(resp, 'result').Equals('true');
+    const result = web3.json.getPropAsStr(resp, 'result').Equals('true');
     callback(result, nil);
 
     if result then
@@ -138,15 +134,12 @@ begin
 end;
 
 function blockNumber(notification: TJsonObject): BigInteger;
-var
-  params : TJsonObject;
-  _result: TJsonObject;
 begin
   Result := 0;
-  params := web3.json.getPropAsObj(notification, 'params');
+  const params = web3.json.getPropAsObj(notification, 'params');
   if Assigned(params) then
   begin
-    _result := web3.json.getPropAsObj(params, 'result');
+    const _result = web3.json.getPropAsObj(params, 'result');
     if Assigned(_result) then
       Result := web3.json.getPropAsStr(_result, 'number');
   end;

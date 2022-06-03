@@ -183,7 +183,7 @@ class procedure TFulcrum.Approve(
   amount  : BigInteger;
   callback: TAsyncReceipt);
 begin
-  var iToken := iTokenClass[reserve].Create(client);
+  const iToken = iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
   begin
     iToken.LoanTokenAddress(procedure(addr: TAddress; err: IError)
@@ -194,7 +194,7 @@ begin
           callback(nil, err);
           EXIT;
         end;
-        var erc20 := TERC20.Create(client, addr);
+        const erc20 = TERC20.Create(client, addr);
         if Assigned(erc20) then
         begin
           erc20.ApproveEx(from, iToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -219,7 +219,7 @@ class procedure TFulcrum.TokenToUnderlying(
   amount  : BigInteger;
   callback: TAsyncQuantity);
 begin
-  var iToken := iTokenClass[reserve].Create(client);
+  const iToken = iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
   try
     iToken.TokenPrice(procedure(price: BigInteger; err: IError)
@@ -240,7 +240,7 @@ class procedure TFulcrum.UnderlyingToToken(
   amount  : BIgInteger;
   callback: TAsyncQuantity);
 begin
-  var iToken := iTokenClass[reserve].Create(client);
+  const iToken = iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
   try
     iToken.TokenPrice(procedure(price: BigInteger; err: IError)
@@ -272,7 +272,7 @@ class procedure TFulcrum.APY(
   _period : TPeriod;
   callback: TAsyncFloat);
 begin
-  var iToken := iTokenClass[reserve].Create(client);
+  const iToken = iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
   try
     iToken.SupplyInterestRate(procedure(value: BigInteger; err: IError)
@@ -303,7 +303,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var iToken := iTokenClass[reserve].Create(client);
+    const iToken = iTokenClass[reserve].Create(client);
     if Assigned(iToken) then
     try
       iToken.Mint(from, amount, callback);
@@ -320,9 +320,9 @@ class procedure TFulcrum.Balance(
   reserve : TReserve;
   callback: TAsyncQuantity);
 begin
-  var BalanceOf := procedure(callback: TAsyncQuantity)
+  const BalanceOf = procedure(callback: TAsyncQuantity)
   begin
-    var iToken := iTokenClass[reserve].Create(client);
+    const iToken = iTokenClass[reserve].Create(client);
     if Assigned(iToken) then
     try
       iToken.AssetBalanceOf(owner, callback);
@@ -331,9 +331,9 @@ begin
     end;
   end;
 
-  var Decimals := procedure(callback: TAsyncQuantity)
+  const Decimals = procedure(callback: TAsyncQuantity)
   begin
-    var iToken := iTokenClass[reserve].Create(client);
+    const iToken = iTokenClass[reserve].Create(client);
     if Assigned(iToken) then
     try
       iToken.Decimals(callback);
@@ -378,7 +378,7 @@ begin
       callback(nil, 0, err);
       EXIT;
     end;
-    var iToken := iTokenClass[reserve].Create(client);
+    const iToken = iTokenClass[reserve].Create(client);
     if Assigned(iToken) then
     begin
       // step #1: get the iToken balance
@@ -429,7 +429,7 @@ begin
       callback(nil, 0, err);
       EXIT;
     end;
-    var iToken := iTokenClass[reserve].Create(client);
+    const iToken = iTokenClass[reserve].Create(client);
     if Assigned(iToken) then
     try
       // step #2: redeem iToken-amount in exchange for the underlying asset

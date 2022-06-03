@@ -76,53 +76,38 @@ function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPri
 implementation
 
 function getCurveFromKeyType(aKeyType: TKeyType): IX9ECParameters;
-var
-  curveName: string;
 begin
-  curveName := GetEnumName(TypeInfo(TKeyType), Ord(aKeyType));
-  Result    := TCustomNamedCurves.GetByName(curveName);
+  const curveName = GetEnumName(TypeInfo(TKeyType), Ord(aKeyType));
+  Result := TCustomNamedCurves.GetByName(curveName);
 end;
 
 function privateKeyFromByteArray(const algorithm: string; aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
-var
-  domain: IECDomainParameters;
-  curve : IX9ECParameters;
-  privD : TBigInteger;
 begin
-  curve  := getCurveFromKeyType(aKeyType);
-  domain := TECDomainParameters.Create(curve.Curve, curve.G, curve.N, curve.H, curve.GetSeed);
-  privD  := TBigInteger.Create(1, aPrivKey);
+  const curve : IX9ECParameters = getCurveFromKeyType(aKeyType);
+  const domain: IECDomainParameters = TECDomainParameters.Create(curve.Curve, curve.G, curve.N, curve.H, curve.GetSeed);
+  const privD = TBigInteger.Create(1, aPrivKey);
   Result := TECPrivateKeyParameters.Create(algorithm, privD, domain);
 end;
 
 function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
-var
-  params: IECPublicKeyParameters;
 begin
-  params := TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
+  const params: IECPublicKeyParameters = TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
   Result := params.Q.AffineXCoord.ToBigInteger.ToByteArrayUnsigned
           + params.Q.AffineYCoord.ToBigInteger.ToByteArrayUnsigned;
 end;
 
 function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;
-var
-  secureRandom    : ISecureRandom;
-  customCurve     : IX9ECParameters;
-  domainParams    : IECDomainParameters;
-  keyPairGenerator: IECKeyPairGenerator;
-  keyGenParams    : IECKeyGenerationParameters;
-  keyPair         : IAsymmetricCipherKeyPair;
 begin
-  secureRandom := TSecureRandom.Create;
+  const secureRandom: ISecureRandom = TSecureRandom.Create;
 
-  customCurve := getCurveFromKeyType(aKeyType);
-  domainParams := TECDomainParameters.Create(customCurve.Curve,
+  const customCurve : IX9ECParameters = getCurveFromKeyType(aKeyType);
+  const domainParams: IECDomainParameters = TECDomainParameters.Create(customCurve.Curve,
     customCurve.G, customCurve.N, customCurve.H, customCurve.GetSeed);
-  keyPairGenerator := TECKeyPairGenerator.Create(algorithm);
-  keyGenParams := TECKeyGenerationParameters.Create(domainParams, secureRandom);
+  const keyPairGenerator: IECKeyPairGenerator = TECKeyPairGenerator.Create(algorithm);
+  const keyGenParams: IECKeyGenerationParameters = TECKeyGenerationParameters.Create(domainParams, secureRandom);
   keyPairGenerator.Init(keyGenParams);
 
-  keyPair := keyPairGenerator.GenerateKeyPair;
+  const keyPair: IAsymmetricCipherKeyPair = keyPairGenerator.GenerateKeyPair;
   Result := keyPair.Private as IECPrivateKeyParameters;
 end;
 
@@ -136,10 +121,8 @@ function TECDsaSignerEx.GenerateSignature(aKeyType: TKeyType; const msg: TCrypto
   end;
 
   function isLowS(const s: TBigInteger): Boolean;
-  var
-    halfCurveOrder: TBigInteger;
   begin
-    halfCurveOrder := curveOrder.ShiftRight(1);
+    const halfCurveOrder = curveOrder.ShiftRight(1);
     Result := s.CompareTo(halfCurveOrder) <= 0;
   end;
 
@@ -149,25 +132,22 @@ function TECDsaSignerEx.GenerateSignature(aKeyType: TKeyType; const msg: TCrypto
       aSignature.s := curveOrder.Subtract(aSignature.s);
   end;
 
-var
-  ec: IECDomainParameters;
-  base: IECMultiplier;
-  n, e, d, k: TBigInteger;
-  p: IECPoint;
 begin
-  ec := Fkey.parameters;
-  n := ec.n;
-  e := CalculateE(n, msg);
-  d := (Fkey as IECPrivateKeyParameters).d;
+  const ec: IECDomainParameters = Fkey.parameters;
+  const n = ec.n;
+  const e = CalculateE(n, msg);
+  const d = (Fkey as IECPrivateKeyParameters).d;
 
   if FkCalculator.IsDeterministic then
     FkCalculator.Init(n, d, msg)
   else
     FkCalculator.Init(n, Frandom);
 
-  base := CreateBasePointMultiplier;
+  const base: IECMultiplier = CreateBasePointMultiplier;
 
+  var p: IECPoint;
   repeat // Generate s
+    var k: TBigInteger;
     repeat // Generate r
       k := FkCalculator.NextK;
       p := base.Multiply(ec.G, k).Normalize;

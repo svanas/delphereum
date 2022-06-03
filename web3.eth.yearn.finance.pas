@@ -127,10 +127,8 @@ class procedure TyEarnCustom.Approve(
   yToken  : TyTokenClass;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  token: TyToken;
 begin
-  token := yToken.Create(client);
+  const token = yToken.Create(client);
   if Assigned(token) then
   begin
     token.ApproveUnderlying(from, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -149,10 +147,8 @@ class procedure TyEarnCustom.BalanceOf(
   yToken  : TyTokenClass;
   owner   : TAddress;
   callback: TAsyncQuantity);
-var
-  token: TyToken;
 begin
-  token := yToken.Create(client);
+  const token = yToken.Create(client);
   try
     token.BalanceOf(owner, callback);
   finally
@@ -165,10 +161,8 @@ class procedure TyEarnCustom.TokenToUnderlying(
   yToken  : TyTokenClass;
   amount  : BigInteger;
   callback: TAsyncQuantity);
-var
-  token: TyToken;
 begin
-  token := yToken.Create(client);
+  const token = yToken.Create(client);
   try
     token.TokenToUnderlying(amount, callback);
   finally
@@ -181,10 +175,8 @@ class procedure TyEarnCustom.UnderlyingToToken(
   yToken  : TyTokenClass;
   amount  : BIgInteger;
   callback: TAsyncQuantity);
-var
-  token: TyToken;
 begin
-  token := yToken.Create(client);
+  const token = yToken.Create(client);
   try
     token.UnderlyingToToken(amount, callback);
   finally
@@ -197,10 +189,8 @@ class procedure TyEarnCustom._APY(
   yToken  : TyTokenClass;
   period  : TPeriod;
   callback: TAsyncFloat);
-var
-  token: TyToken;
 begin
-  token := yToken.Create(client);
+  const token = yToken.Create(client);
   if Assigned(token) then
   begin
     token.APY(period, procedure(apy: Double; err: IError)
@@ -220,8 +210,6 @@ class procedure TyEarnCustom._Deposit(
   yToken  : TyTokenClass;
   amount  : BigInteger;
   callback: TAsyncReceipt);
-var
-  token: TyToken;
 begin
   Self.Approve(client, from, yToken, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
@@ -230,7 +218,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    token := yToken.Create(client);
+    const token = yToken.Create(client);
     try
       token.Deposit(from, amount, callback);
     finally
@@ -244,10 +232,8 @@ class procedure TyEarnCustom._Balance(
   owner   : TAddress;
   yToken  : TyTokenClass;
   callback: TAsyncQuantity);
-var
-  token: TyToken;
 begin
-  token := yToken.Create(client);
+  const token = yToken.Create(client);
   try
     // step #1: get the yToken balance
     token.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
@@ -274,8 +260,6 @@ class procedure TyEarnCustom._Withdraw(
   from    : TPrivateKey;
   yToken  : TyTokenClass;
   callback: TAsyncReceiptEx);
-var
-  token: TyToken;
 begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
@@ -289,7 +273,7 @@ begin
           callback(nil, 0, nil)
         else
         begin
-          token := yToken.Create(client);
+          const token = yToken.Create(client);
           try
             // step #2: withdraw yToken-amount in exchange for the underlying asset.
             token.Withdraw(from, balance, procedure(rcpt: ITxReceipt; err: IError)
@@ -320,8 +304,6 @@ class procedure TyEarnCustom._WithdrawEx(
   yToken  : TyTokenClass;
   amount  : BigInteger;
   callback: TAsyncReceiptEx);
-var
-  token: TyToken;
 begin
   // step #1: from Underlying-amount to yToken-amount
   Self.UnderlyingToToken(client, yToken, amount, procedure(input: BigInteger; err: IError)
@@ -331,7 +313,7 @@ begin
       callback(nil, 0, err);
       EXIT;
     end;
-    token := yToken.Create(client);
+    const token = yToken.Create(client);
     try
       // step #2: withdraw yToken-amount in exchange for the underlying asset.
       token.Withdraw(from, input, procedure(rcpt: ITxReceipt; err: IError)
@@ -373,8 +355,6 @@ begin
 end;
 
 procedure TyToken.ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-var
-  erc20: TERC20;
 begin
   Self.Token(procedure(addr: TAddress; err: IError)
   begin
@@ -383,7 +363,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    erc20 := TERC20.Create(client, addr);
+    const erc20 = TERC20.Create(client, addr);
     if Assigned(erc20) then
     begin
       erc20.ApproveEx(from, Self.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)

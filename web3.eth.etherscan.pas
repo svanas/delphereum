@@ -158,7 +158,8 @@ const
     'https://api.ftmscan.com/api?apikey=%s',                   // Fantom
     'https://api-testnet.ftmscan.com/api?apikey=%s',           // Fantom_test_net
     'https://api.arbiscan.io/api?apikey=%s',                   // Arbitrum
-    'https://api-testnet.arbiscan.io/api?apikey=%s'            // Arbitrum_test_net
+    'https://api-testnet.arbiscan.io/api?apikey=%s',           // Arbitrum_test_net
+    'https://api-sepolia.etherscan.io/api?apikey=%s'           // Sepolia
   );
 begin
   Result := ENDPOINT[chain];
@@ -261,10 +262,8 @@ begin
 end;
 
 function TContractSymbol.&Type: TSymbolType;
-var
-  S: string;
 begin
-  S := getPropAsStr(FJsonValue, 'type');
+  const S = getPropAsStr(FJsonValue, 'type');
   for Result := System.Low(TSymbolType) to High(TSymbolType) do
     if SameText(GetEnumName(TypeInfo(TSymbolType), Integer(Result)), S) then
       EXIT;
@@ -282,10 +281,8 @@ begin
 end;
 
 function TContractSymbol.StateMutability: TStateMutability;
-var
-  S: string;
 begin
-  S := getPropAsStr(FJsonValue, 'stateMutability');
+  const S = getPropAsStr(FJsonValue, 'stateMutability');
   for Result := System.Low(TStateMutability) to High(TStateMutability) do
     if SameText(GetEnumName(TypeInfo(TStateMutability), Integer(Result)), S) then
       EXIT;
@@ -348,7 +345,7 @@ function TContractABI.IndexOf(
 begin
   for Result := 0 to Pred(Count) do
   begin
-    var Item := Self.Item(Result);
+    const Item = Self.Item(Result);
     if  (Item.Name = Name)
     and (Item.&Type = &Type)
     and (Item.Inputs.Count = InputCount) then
@@ -364,7 +361,7 @@ function TContractABI.IndexOf(
 begin
   for Result := 0 to Pred(Count) do
   begin
-    var Item := Self.Item(Result);
+    const Item = Self.Item(Result);
     if  (Item.Name = Name)
     and (Item.&Type = &Type)
     and (Item.StateMutability = StateMutability) then
@@ -381,7 +378,7 @@ function TContractABI.IndexOf(
 begin
   for Result := 0 to Pred(Count) do
   begin
-    var Item := Self.Item(Result);
+    const Item = Self.Item(Result);
     if  (Item.Name = Name)
     and (Item.&Type = &Type)
     and (Item.Inputs.Count = InputCount)
@@ -509,15 +506,13 @@ begin
   Etherscan.Get(chain, apiKey,
     Format('&module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
   procedure(resp: TJsonObject; err: IError)
-  var
-    status: Integer;
   begin
     if Assigned(err) then
     begin
       callback(0, err);
       EXIT;
     end;
-    status := web3.json.getPropAsInt(resp, 'status');
+    const status = web3.json.getPropAsInt(resp, 'status');
     if status = 0 then
       callback(0, TEtherscanError.Create(status, resp))
     else
@@ -546,22 +541,19 @@ begin
   Etherscan.Get(chain, apiKey,
     Format('&module=account&action=tokentx&address=%s&sort=desc', [address]),
   procedure(resp: TJsonObject; err: IError)
-  var
-    status: Integer;
-    &array: TJsonArray;
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    status := web3.json.getPropAsInt(resp, 'status');
+    const status = web3.json.getPropAsInt(resp, 'status');
     if status = 0 then
     begin
       callback(nil, TEtherscanError.Create(status, resp));
       EXIT;
     end;
-    &array := web3.json.getPropAsArr(resp, 'result');
+    const &array = web3.json.getPropAsArr(resp, 'result');
     if not Assigned(&array) then
     begin
       callback(nil, TEtherscanError.Create(status, nil));
@@ -588,12 +580,10 @@ procedure getContractABI(
   contract    : TAddress;
   const apiKey: string;
   callback    : TAsyncContractABI);
-var
-  I: Integer;
 begin
   ContractCache.Enter;
   try
-    I := ContractCache.IndexOf(chain, contract);
+    const I = ContractCache.IndexOf(chain, contract);
     if I > -1 then
     begin
       callback(ContractCache.Get(I), nil);
@@ -611,20 +601,20 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var status := web3.json.getPropAsInt(resp, 'status');
+    const status = web3.json.getPropAsInt(resp, 'status');
     if status = 0 then
     begin
       callback(nil, TEtherscanError.Create(status, resp));
       EXIT;
     end;
-    var &result := unmarshal(web3.json.getPropAsStr(resp, 'result'));
+    const &result = unmarshal(web3.json.getPropAsStr(resp, 'result'));
     if not Assigned(&result) then
     begin
       callback(nil, TEtherscanError.Create(status, nil));
       EXIT;
     end;
     try
-      var abi := TContractABI.Create(chain, contract, &result as TJsonArray);
+      const abi = TContractABI.Create(chain, contract, &result as TJsonArray);
       ContractCache.Enter;
       try
         ContractCache.Add(abi);

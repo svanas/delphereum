@@ -116,10 +116,8 @@ const
     '1.000001',
     '1.0000001',
     '1.00000001');
-var
-  I: Integer;
 begin
-  for I := System.Low(ethers) to System.High(ethers) do
+  for var I := System.Low(ethers) to System.High(ethers) do
     Assert.AreEqual(web3.eth.utils.fromWei(web3.eth.utils.toWei(ethers[I], ether), ether), ethers[I]);
 end;
 

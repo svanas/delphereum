@@ -196,7 +196,7 @@ class procedure TdYdX.TokenAddress(
   reserve : TReserve;
   callback: TAsyncAddress);
 begin
-  var dYdX := TSoloMargin.Create(client);
+  const dYdX = TSoloMargin.Create(client);
   if Assigned(dYdX) then
   try
     dYdX.GetMarket(TSoloMargin.marketId[reserve], procedure(market: ISoloMarket; err: IError)
@@ -226,7 +226,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var erc20 := TERC20.Create(client, addr);
+    const erc20 = TERC20.Create(client, addr);
     if Assigned(erc20) then
     begin
       erc20.ApproveEx(from, TSoloMargin.DeployedAt(client.Chain), amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -260,7 +260,7 @@ class procedure TdYdX.APY(
 const
   SECONDS_PER_YEAR = 31536000;
 begin
-  var dYdX := TSoloMargin.Create(client);
+  const dYdX = TSoloMargin.Create(client);
   if Assigned(dYdX) then
   begin
     dYdX.GetMarketSupplyInterestRate(TSoloMargin.marketId[reserve], procedure(qty: Double; err: IError)
@@ -292,7 +292,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var dYdX := TSoloMargin.Create(client);
+    const dYdX = TSoloMargin.Create(client);
     if Assigned(dYdX) then
     try
       dYdX.Deposit(from, TSoloMargin.marketId[reserve], amount, callback);
@@ -308,7 +308,7 @@ class procedure TdYdX.Balance(
   reserve : TReserve;
   callback: TAsyncQuantity);
 begin
-  var dYdX := TSoloMargin.Create(client);
+  const dYdX = TSoloMargin.Create(client);
   if Assigned(dYdX) then
   try
     dYdX.GetAccountWei(owner, TSoloMargin.marketId[reserve], callback);
@@ -347,7 +347,7 @@ class procedure TdYdX.WithdrawEx(
   amount  : BigInteger;
   callback: TAsyncReceiptEx);
 begin
-  var dYdX := TSoloMargin.Create(client);
+  const dYdX = TSoloMargin.Create(client);
   if Assigned(dYdX) then
   try
     dYdX.Withdraw(from, TSoloMargin.marketId[reserve], amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -549,8 +549,8 @@ begin
       callback(0, err);
       EXIT;
     end;
-    var totalSupply := market.TotalPar.Supply.AsDouble * market.Index.Supply;
-    var totalBorrow := market.TotalPar.Borrow.AsDouble * market.Index.Borrow;
+    const totalSupply = market.TotalPar.Supply.AsDouble * market.Index.Supply;
+    const totalBorrow = market.TotalPar.Borrow.AsDouble * market.Index.Borrow;
     callback(totalBorrow / totalSupply, nil);
   end);
 end;

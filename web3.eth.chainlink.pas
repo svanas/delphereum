@@ -60,7 +60,7 @@ uses
 
 procedure ETH_USD(client: IWeb3; callback: TAsyncFloat);
 begin
-  var coincap := procedure(callback: TAsyncFloat)
+  const coincap = procedure(callback: TAsyncFloat)
   begin
     web3.coincap.ticker('ethereum', procedure(const ticker: ITicker; err: IError)
     begin

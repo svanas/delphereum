@@ -140,7 +140,7 @@ end;
 
 procedure TToken.Balance(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
 begin
-  var erc20 := TERC20.Create(client, Self.Address);
+  const erc20 = TERC20.Create(client, Self.Address);
   try
     erc20.BalanceOf(owner, callback);
   finally
@@ -229,10 +229,12 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var result: TTokens;
-    SetLength(result, arr.Count);
-    for var I := 0 to Pred(arr.Count) do
-      result[I] := TToken.Create(arr[I] as TJsonObject);
+    const result = (function: TTokens
+    begin
+      SetLength(Result, arr.Count);
+      for var I := 0 to Pred(arr.Count) do
+        Result[I] := TToken.Create(arr[I] as TJsonObject);
+    end)();
     callback(result, nil);
   end);
 end;
@@ -257,7 +259,8 @@ const
     { Fantom            } 'https://raw.githubusercontent.com/SpookySwap/spooky-info/master/src/constants/token/spookyswap.json',
     { Fantom_test_net   } '',
     { Arbitrum          } 'https://bridge.arbitrum.io/token-list-42161.json',
-    { Arbitrum_test_net } 'https://bridge.arbitrum.io/token-list-421611.json'
+    { Arbitrum_test_net } 'https://bridge.arbitrum.io/token-list-421611.json',
+    { Sepolia           } ''
   );
   TOKENS_RINKEBY: string =
   '[{' +
@@ -300,7 +303,7 @@ begin
     begin
       if chain = Rinkeby then
       begin
-        var arr := TJsonObject.ParseJsonValue(TOKENS_RINKEBY) as TJsonArray;
+        const arr = TJsonObject.ParseJsonValue(TOKENS_RINKEBY) as TJsonArray;
         if Assigned(arr) then
         try
           for var token2 in arr do

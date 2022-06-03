@@ -109,12 +109,10 @@ begin
 end;
 
 class function TCustomJsonRpc.FormatArgs(args: array of const): string;
-var
-  arg: TVarRec;
 begin
   Result := '[';
   try
-    for arg in args do
+    for var arg in args do
     begin
       if Result.Length > 1 then
         Result := Result + ', ';

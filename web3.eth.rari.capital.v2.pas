@@ -170,7 +170,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var erc20 := TERC20.Create(client, reserveAddr);
+    const erc20 = TERC20.Create(client, reserveAddr);
     if Assigned(erc20) then
     begin
       erc20.ApproveEx(from, RariPoolManager[reserve].DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -223,7 +223,7 @@ begin
       callback(apy, err);
       EXIT;
     end;
-    var manager := RariPoolManager[reserve].Create(client);
+    const manager = RariPoolManager[reserve].Create(client);
     if Assigned(manager) then
     begin
       manager.APY(period, procedure(apy: Double; err: IError)
@@ -257,7 +257,7 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var manager := RariPoolManager[reserve].Create(client);
+    const manager = RariPoolManager[reserve].Create(client);
     try
       manager.Deposit(from, reserve.Symbol, amount, callback);
     finally
@@ -272,7 +272,7 @@ class procedure TRari.Balance(
   reserve : TReserve;
   callback: TAsyncQuantity);
 begin
-  var manager := RariPoolManager[reserve].Create(client);
+  const manager = RariPoolManager[reserve].Create(client);
   if Assigned(manager) then
   try
     manager.BalanceOf(owner, procedure(usd: BigInteger; err: IError)
@@ -303,7 +303,7 @@ begin
       callback(nil, 0, err);
       EXIT;
     end;
-    var token := TERC20.Create(client, RariPoolManager[reserve].PoolToken);
+    const token = TERC20.Create(client, RariPoolManager[reserve].PoolToken);
     if Assigned(token) then
     begin
       // step #1: get the pool token balance
@@ -331,7 +331,7 @@ begin
                 callback(nil, 0, err);
                 EXIT;
               end;
-              var manager := RariPoolManager[reserve].Create(client);
+              const manager = RariPoolManager[reserve].Create(client);
               try
                 // step #4: withdraws funds from the pool in exchange for pool tokens
                 manager.Withdraw(from, reserve.Symbol, input, procedure(rcpt: ITxReceipt; err: IError)
@@ -421,7 +421,7 @@ procedure TCustomRariPoolManager.GetExchangeRate(
   const block: string;
   callback   : TAsyncFloat);
 begin
-  var client := Self.Client;
+  const client: IWeb3 = Self.Client;
   Self.GetFundBalance(block, procedure(balance: BigInteger; err: IError)
   begin
     if Assigned(err) then
@@ -429,7 +429,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    var token := TERC20.Create(client, Self.PoolToken);
+    const token = TERC20.Create(client, Self.PoolToken);
     try
       token.TotalSupply(block, procedure(totalSupply: BigInteger; err: IError)
       begin

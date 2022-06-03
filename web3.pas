@@ -54,7 +54,8 @@ type
     Fantom,
     Fantom_test_net,
     Arbitrum,
-    Arbitrum_test_net
+    Arbitrum_test_net,
+    Sepolia
   );
 
   TChainHelper = record helper for TChain
@@ -306,24 +307,25 @@ function TChainHelper.Id: Integer;
 const
   // https://chainid.network/
   CHAIN_ID: array[TChain] of Integer = (
-    1,     // Ethereum
-    3,     // Ropsten
-    4,     // Rinkeby
-    42,    // Kovan
-    5,     // Goerli
-    10,    // Optimism
-    69,    // Optimism_test_net
-    30,    // RSK
-    31,    // RSK_test_net
-    56,    // BSC
-    97,    // BSC_test_net
-    100,   // Gnosis
-    137,   // Polygon,
-    80001, // Polygon_test_net
-    250,   // Fantom
-    4002,  // Fantom_test_net
-    42161, // Arbitrum
-    421611 // Arbitrum_test_net
+    1,       // Ethereum
+    3,       // Ropsten
+    4,       // Rinkeby
+    42,      // Kovan
+    5,       // Goerli
+    10,      // Optimism
+    69,      // Optimism_test_net
+    30,      // RSK
+    31,      // RSK_test_net
+    56,      // BSC
+    97,      // BSC_test_net
+    100,     // Gnosis
+    137,     // Polygon,
+    80001,   // Polygon_test_net
+    250,     // Fantom
+    4002,    // Fantom_test_net
+    42161,   // Arbitrum
+    421611,  // Arbitrum_test_net
+    11155111 // Sepolia
   );
 begin
   Result := CHAIN_ID[Self];
@@ -357,7 +359,8 @@ const
     0, // Fantom
     0, // Fantom_test_net
     0, // Arbitrum
-    0  // Arbitrum_test_net
+    0, // Arbitrum_test_net
+    2  // Sepolia
   );
 begin
   Result := TX_TYPE[Self];
@@ -383,7 +386,8 @@ const
     'https://ftmscan.com',                   // Fantom
     'https://testnet.ftmscan.com',           // Fantom_test_net
     'https://explorer.arbitrum.io',          // Arbitrum
-    'https://rinkeby-explorer.arbitrum.io'   // Arbitrum_test_net
+    'https://rinkeby-explorer.arbitrum.io',  // Arbitrum_test_net
+    'https://sepolia.etherscan.io'           // Sepolia
   );
 begin
   Result := BLOCK_EXPLORER_URL[Self];
@@ -468,17 +472,13 @@ procedure TCustomWeb3.CanSignTransaction(
   callback    : TSignatureRequestResult);
 resourcestring
   RS_SIGNATURE_REQUEST = 'Your signature is being requested.'
-        + #13#10#13#10 + 'Network'   + #9 + ': %s'
-              + #13#10 + 'From   '   + #9 + ': %s'
-              + #13#10 + 'To     '   + #9 + ': %s'
-              + #13#10 + 'Gas price' + #9 + ': %s Gwei'
-              + #13#10 + 'Estimate'  + #9 + ': %s gas units'
-              + #13#10 + 'Gas fee'   + #9 + ': $ %.2f'
+        + #13#10#13#10 + 'Network: %s'
+              + #13#10 + 'From: %s'
+              + #13#10 + 'To: %s'
+              + #13#10 + 'Gas price: %s Gwei'
+              + #13#10 + 'Gas estimate: %s units'
+              + #13#10 + 'Gas fee: $ %.2f'
         + #13#10#13#10 + 'Do you approve of this request?';
-var
-  client     : IWeb3;
-  chainName  : string;
-  modalResult: Integer;
 begin
   if Assigned(FOnSignatureRequest) then
   begin
@@ -486,8 +486,8 @@ begin
     EXIT;
   end;
 
-  client    := Self;
-  chainName := GetEnumName(TypeInfo(TChain), Ord(Chain));
+  const client: IWeb3 = Self;
+  const chainName = GetEnumName(TypeInfo(TChain), Ord(Chain));
 
   from.ToString(client, procedure(const from: string; err: IError)
   begin
@@ -510,6 +510,7 @@ begin
           callback(False, err);
           EXIT;
         end;
+        var modalResult: Integer;
         TThread.Synchronize(nil, procedure
         begin
 {$WARN SYMBOL_DEPRECATED OFF}

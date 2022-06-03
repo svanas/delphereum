@@ -117,15 +117,13 @@ end;
 procedure TFactory.GetPair(tokenA, tokenB: TAddress; callback: TAsyncAddress);
 begin
   call(Client, Contract, 'getPair(address,address)', [tokenA, tokenB], procedure(const hex: string; err: IError)
-  var
-    pair: TAddress;
   begin
     if Assigned(err) then
     begin
       callback(EMPTY_ADDRESS, err);
       EXIT;
     end;
-    pair := TAddress.New(hex);
+    const pair = TAddress.New(hex);
     if pair.IsZero then
     begin
       callback(EMPTY_ADDRESS, TError.Create('%s does not exist', [tokenA]));
@@ -164,10 +162,8 @@ procedure TRouter02.SwapExactTokensForETH(
   &to         : TAddress;      // Recipient of the ETH.
   deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
   callback    : TAsyncReceipt);
-var
-  erc20: TERC20;
 begin
-  erc20 := TERC20.Create(Self.Client, token0);
+  const erc20 = TERC20.Create(Self.Client, token0);
   if Assigned(erc20) then
   begin
     erc20.ApproveEx(from, Self.Contract, amountIn, procedure(rcpt: ITxReceipt; err: IError)
@@ -310,9 +306,6 @@ end;
 
 // Execute a GraphQL query, return the result as a float (if any)
 procedure TPair.Execute(const field: string; callback: TAsyncFloat);
-var
-  data,
-  pair: TJsonObject;
 begin
   web3.graph.execute(UNISWAP_V2, Query(field), procedure(resp: TJsonObject; err: IError)
   begin
@@ -321,10 +314,10 @@ begin
       callback(0, err);
       EXIT;
     end;
-    data := web3.json.getPropAsObj(resp, 'data');
+    const data = web3.json.getPropAsObj(resp, 'data');
     if Assigned(data) then
     begin
-      pair := web3.json.getPropAsObj(data, 'pair');
+      const pair = web3.json.getPropAsObj(data, 'pair');
       if Assigned(pair) then
       begin
         callback(EthToFloat(web3.json.getPropAsStr(pair, field)), nil);

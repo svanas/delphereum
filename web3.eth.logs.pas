@@ -82,42 +82,35 @@ begin
 end;
 
 procedure TLog.Load(tx: TJsonValue);
-var
-  tpcs: TJsonArray;
-  tpc : Integer;
-  buf : TBytes;
-  arg : TArg;
-  last: PArg;
 begin
   FBlockNumber := web3.json.getPropAsStr(tx, 'blockNumber');
   // load the "topics"
-  tpcs := web3.json.getPropAsArr(tx, 'topics');
+  const tpcs = web3.json.getPropAsArr(tx, 'topics');
   if Assigned(tpcs) then
-    for tpc := 0 to Pred(tpcs.Count) do
+    for var tpc := 0 to Pred(tpcs.Count) do
     begin
-      buf := web3.utils.fromHex(tpcs.Items[tpc].Value);
+      const buf = web3.utils.fromHex(tpcs.Items[tpc].Value);
       if Length(buf) >= SizeOf(TArg) then
       begin
+        var arg: TArg;
         Move(buf[0], arg.Inner[0], SizeOf(TArg));
         FTopics[tpc] := arg;
       end;
     end;
   // load the "data"
-  buf := web3.utils.fromHex(web3.json.getPropAsStr(tx, 'data'));
+  var buf := web3.utils.fromHex(web3.json.getPropAsStr(tx, 'data'));
   while Length(buf) >= SizeOf(TArg) do
   begin
-    last := Data.Add;
+    const last = Data.Add;
     Move(buf[0], last^.Inner[0], SizeOf(TArg));
     Delete(buf, 0, SizeOf(TArg));
   end;
 end;
 
 function TLog.isEvent(const name: string): Boolean;
-var
-  buf: TBytes;
-  arg: TArg;
 begin
-  buf := web3.utils.sha3(web3.utils.toHex(name));
+  const buf = web3.utils.sha3(web3.utils.toHex(name));
+  var arg: TArg;
   Move(buf[0], arg.Inner[0], SizeOf(TArg));
   Result := CompareMem(@FTopics[0], @arg, SizeOf(TArg));
 end;
@@ -151,13 +144,9 @@ end;
 { private functions }
 
 function getAsArr(client: IWeb3; fromBlock: BigInteger; address: TAddress): TJsonArray;
-var
-  &in : TJsonObject;
-  &out: TJsonObject;
-  arr : TJsonArray;
 begin
   Result := nil;
-  &in := web3.json.unmarshal(Format(
+  const &in = web3.json.unmarshal(Format(
     '{"fromBlock": "%s", "toBlock": %s, "address": %s}', [
       web3.utils.toHex(fromBlock, [zeroAs0x0]),
       web3.json.quoteString(BLOCK_LATEST, '"'),
@@ -165,10 +154,10 @@ begin
     ]
   )) as TJsonObject;
   try
-    &out := client.Call('eth_getLogs', [&in]);
+    const &out = client.Call('eth_getLogs', [&in]);
     if Assigned(&out) then
     try
-      arr := web3.json.getPropAsArr(&out, 'result');
+      const arr = web3.json.getPropAsArr(&out, 'result');
       if Assigned(arr) then
         Result := arr.Clone as TJsonArray;
     finally
@@ -180,18 +169,14 @@ begin
 end;
 
 function getAsLog(client: IWeb3; fromBlock: BigInteger; address: TAddress): TLogs;
-var
-  arr : TJsonArray;
-  itm : TJsonValue;
-  last: PLog;
 begin
   SetLength(Result, 0);
-  arr := getAsArr(client, fromBlock, address);
+  const arr = getAsArr(client, fromBlock, address);
   if Assigned(arr) then
   try
-    for itm in arr do
+    for var itm in arr do
     begin
-      last := Result.Add;
+      const last = Result.Add;
       last.Load(itm);
     end;
   finally
@@ -204,19 +189,15 @@ end;
 function get(client: IWeb3; address: TAddress; callback: TAsyncLog): ITask;
 begin
   Result := TTask.Create(procedure
-  var
-    bn  : BigInteger;
-    log : TLog;
-    logs: TLogs;
   begin
-    bn := web3.eth.blockNumber(client);
+    var bn := web3.eth.blockNumber(client);
     while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
     begin
       try
         TTask.CurrentTask.Wait(500);
       except end;
-      logs := web3.eth.logs.getAsLog(client, bn, address);
-      for log in logs do
+      const logs = web3.eth.logs.getAsLog(client, bn, address);
+      for var log in logs do
       begin
         bn := BigInteger.Max(bn, log.BlockNumber.Succ);
         callback(log);

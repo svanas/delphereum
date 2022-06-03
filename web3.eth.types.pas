@@ -161,12 +161,10 @@ end;
 function TArg.toHex(const prefix: string): string;
 const
   Digits = '0123456789ABCDEF';
-var
-  I: Integer;
 begin
   Result := StringOfChar('0', Length(Inner) * 2);
   try
-    for I := 0 to Length(Inner) - 1 do
+    for var I := 0 to Length(Inner) - 1 do
     begin
       Result[2 * I + 1] := Digits[(Inner[I] shr 4)  + 1];
       Result[2 * I + 2] := Digits[(Inner[I] and $F) + 1];
@@ -214,15 +212,13 @@ begin
 end;
 
 class function TAddressHelper.New(const hex: string): TAddress;
-var
-  buf: TBytes;
 begin
   if not web3.utils.isHex(hex) then
   begin
     Result := EMPTY_ADDRESS;
     EXIT;
   end;
-  buf := web3.utils.fromHex(hex);
+  var buf := web3.utils.fromHex(hex);
   if Length(buf) = 20 then
     Result := TAddress(hex)
   else
@@ -246,13 +242,9 @@ begin
 end;
 
 procedure TAddressHelper.ToString(client: IWeb3; callback: TAsyncString; abbreviated: Boolean);
-var
-  addr: TAddress;
 begin
-  addr := Self;
+  const addr: TAddress = Self;
   web3.eth.ens.reverse(client, addr, procedure(const name: string; err: IError)
-  var
-    output: string;
   begin
     if Assigned(err) then
     begin
@@ -260,12 +252,15 @@ begin
       EXIT;
     end;
 
-    if  (name <> '')
-    and (name.ToLower <> '0x')
-    and (name.ToLower <> '0x0000000000000000000000000000000000000000') then
-      output := name
-    else
-      output := string(addr);
+    var output := (function: string
+    begin
+      if  (name <> '')
+      and (name.ToLower <> '0x')
+      and (name.ToLower <> '0x0000000000000000000000000000000000000000') then
+        Result := name
+      else
+        Result := string(addr);
+    end)();
 
     if abbreviated then
       if isHex(output) then
@@ -312,13 +307,10 @@ begin
 end;
 
 procedure TPrivateKeyHelper.Address(callback: TAsyncAddress);
-var
-  pubKey: TBytes;
-  buffer: TBytes;
 begin
   try
-    pubKey := web3.crypto.publicKeyFromPrivateKey(Self.Parameters);
-    buffer := web3.utils.sha3(pubKey);
+    const pubKey = web3.crypto.publicKeyFromPrivateKey(Self.Parameters);
+    var buffer := web3.utils.sha3(pubKey);
     Delete(buffer, 0, 12);
     callback(TAddress.New(web3.utils.toHex(buffer)), nil);
   except
@@ -352,26 +344,19 @@ begin
 end;
 
 function TTupleHelper.ToArray: TArray<TArg>;
-var
-  len: Integer;
-  idx: Integer;
 begin
   Result := [];
   if Length(Self) < 3 then
     EXIT;
-  len := Self[1].toInt;
+  const len = Self[1].toInt;
   if len = 0 then
     EXIT;
-  for idx := 2 to High(Self) do
+  for var idx := 2 to High(Self) do
     Result := Result + [Self[idx]];
   SetLength(Result, len);
 end;
 
 function TTupleHelper.ToString: string;
-var
-  SL: TStrings;
-  len: Integer;
-  idx: Integer;
 begin
   Result := '';
 
@@ -380,7 +365,7 @@ begin
 
   if Self.Strings then
   begin
-    SL := Self.ToStrings;
+    const SL = Self.ToStrings;
     if Assigned(SL) then
     try
       Result := TrimRight(SL.Text);
@@ -392,44 +377,37 @@ begin
 
   if Length(Self) < 3 then
     EXIT;
-  len := Self[1].toInt;
+  const len = Self[1].toInt;
   if len = 0 then
     EXIT;
-  for idx := 2 to High(Self) do
+  for var idx := 2 to High(Self) do
     Result := Result + Self[idx].toString;
   SetLength(Result, len);
 end;
 
 function TTupleHelper.ToStrings: TStrings;
-var
-  str: string;
-  len,
-  idx,
-  ndx: Integer;
 begin
   Result := nil;
   if Length(Self) < 3 then
     EXIT;
-  len := Self[1].toInt;
+  var len := Self[1].toInt;
   if len = 0 then
     EXIT;
   Result := TStringList.Create;
-  for idx := 2 to len + 1 do
+  for var idx := 2 to len + 1 do
   begin
-    ndx := Self[idx].toInt div SizeOf(TArg) + 2;
+    const ndx = Self[idx].toInt div SizeOf(TArg) + 2;
     len := Self[ndx].toInt;
-    str := Self[ndx + 1].toString;
+    var str := Self[ndx + 1].toString;
     SetLength(str, len);
     Result.Add(str);
   end;
 end;
 
 class function TTupleHelper.From(const hex: string): TTuple;
-var
-  buf: TBytes;
-  tup: TTuple;
 begin
-  buf := web3.utils.fromHex(hex);
+  var buf: TBytes := web3.utils.fromHex(hex);
+  var tup: TTuple;
   while Length(buf) >= 32 do
   begin
     SetLength(tup, Length(tup) + 1);
@@ -440,11 +418,9 @@ begin
 end;
 
 procedure TTupleHelper.Enumerate(callback: TAsyncArg; done: TProc);
-type
-  TNext = reference to procedure(idx: Integer; arr: TArray<TArg>);
-var
-  Next: TNext;
 begin
+  var Next: TProc<Integer, TArray<TArg>>;
+
   Next := procedure(idx: Integer; arr: TArray<TArg>)
   begin
     if idx >= Length(arr) then

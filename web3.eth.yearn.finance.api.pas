@@ -114,7 +114,7 @@ end;
 function TYearnVault.Token: TAddress;
 begin
   Result := EMPTY_ADDRESS;
-  var token := getPropAsObj(FJsonValue, 'token');
+  const token = getPropAsObj(FJsonValue, 'token');
   if Assigned(token) then
     Result := TAddress.New(getPropAsStr(token, 'address'));
 end;
@@ -122,7 +122,7 @@ end;
 function TYearnVault.APY: Double;
 begin
   Result := 0;
-  var apy := getPropAsObj(FJsonValue, 'apy');
+  const apy = getPropAsObj(FJsonValue, 'apy');
   if Assigned(apy) then
      Result := getPropAsDouble(apy, 'net_apy', Result) * 100;
 end;
@@ -140,7 +140,7 @@ end;
 function TYearnVault.&Type: TVaultType;
 begin
   Result := vUnknown;
-  var &type := getPropAsStr(FJsonValue, 'type');
+  const &type = getPropAsStr(FJsonValue, 'type');
   if &type = 'v1' then
     Result := v1
   else
@@ -151,7 +151,7 @@ end;
 function TYearnVault.Migration: IMigration;
 begin
   Result := nil;
-  var migration := getPropAsObj(FJsonValue, 'migration');
+  const migration = getPropAsObj(FJsonValue, 'migration');
   if Assigned(migration) then
     Result := TMigration.Create(migration);
 end;
@@ -167,10 +167,12 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    var result: TArray<IYearnVault>;
-    SetLength(result, arr.Count);
-    for var I := 0 to Pred(arr.Count) do
-      result[I] := TYearnVault.Create(arr[I] as TJsonObject);
+    const result = (function: TArray<IYearnVault>
+    begin
+      SetLength(Result, arr.Count);
+      for var I := 0 to Pred(arr.Count) do
+        Result[I] := TYearnVault.Create(arr[I] as TJsonObject);
+    end)();
     callback(result, nil);
   end);
 end;
@@ -192,7 +194,7 @@ begin
     for var vault in vaults do
       if vault.Endorsed and vault.Token.SameAs(reserve) and (vault.&Type = &type) then
       begin
-        var migration := vault.Migration;
+        const migration = vault.Migration;
         if (Assigned(migration) and not migration.Available) or not Assigned(migration) then
         begin
           callback(vault, nil);

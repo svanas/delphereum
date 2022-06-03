@@ -148,10 +148,8 @@ const
     'txCancel',    // A new transaction has been submitted with the same nonce, a higher gas price, a value of zero and sent to an external address (not a contract)
     'txDropped'    // Transaction was dropped from the mempool without being added to a block
   );
-var
-  eventCode: string;
 begin
-  eventCode := getPropAsStr(event, 'eventCode');
+  const eventCode = getPropAsStr(event, 'eventCode');
   if eventCode <> '' then
     for Result := System.Low(TEventCode) to High(TEventCode) do
       if EVENT_CODE[Result] = eventCode then
@@ -160,13 +158,11 @@ begin
 end;
 
 function getTransaction(const event: TJsonObject): TJsonObject;
-var
-  contractCall: TJsonObject;
 begin
   Result := getPropAsObj(event, 'transaction');
   if Assigned(Result) then
   begin
-    contractCall := getPropAsObj(event, 'contractCall');
+    const contractCall = getPropAsObj(event, 'contractCall');
     if Assigned(contractCall) then
       Result.AddPair('contractCall', contractCall.Clone as TJsonObject);
   end;
@@ -196,7 +192,8 @@ const
     '',            // Fantom
     'fantom-main', // Fantom_test_net
     '',            // Arbitrum
-    ''             // Arbitrum_test_net
+    '',            // Arbitrum_test_net
+    ''             // Sepolia
   );
 begin
   Result := Format('{' +
