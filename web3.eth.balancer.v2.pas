@@ -29,6 +29,8 @@ unit web3.eth.balancer.v2;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -78,8 +80,6 @@ type
     function Amount(Value: BigInteger): TSwapStep;
   end;
 
-  TAsyncAssetDeltas = reference to procedure(deltas: TArray<BigInteger>; err: IError);
-
   TVault = class(TCustomContract)
   public
     constructor Create(aClient: IWeb3); reintroduce;
@@ -103,11 +103,9 @@ type
       kind    : TSwapKind;
       swaps   : TArray<ISwapStep>;
       assets  : TArray<TAddress>;
-      callback: TAsyncAssetDeltas);
+      callback: TProc<TArray<BigInteger>, IError>);
+    procedure WETH(callback: TAsyncAddress);
   end;
-
-// get the pool id for a single swap between two tokens
-procedure getPoolId(chain: TChain; asset0, asset1: TAddress; callback: TAsyncString);
 
 // get the Balancer token list
 procedure tokens(chain: TChain; callback: TAsyncTokens);
@@ -123,7 +121,7 @@ procedure swap(
   deadline: BigInteger;  // your transaction will revert if it is still pending after this Unix epoch
   callback: TAsyncReceipt);
 
-// easy access function: simulate the trade between two tokens in one pool, returning Vault asset deltas.
+// easy access function: simulate the trade between two tokens, returning Vault asset deltas.
 procedure simulate(
   client  : IWeb3;
   owner   : TAddress;
@@ -131,7 +129,7 @@ procedure simulate(
   assetIn : TAddress;
   assetOut: TAddress;
   amount  : BigInteger;
-  callback: TAsyncAssetDeltas);
+  callback: TProc<TArray<BigInteger>, IError>);
 
 implementation
 
@@ -140,10 +138,8 @@ implementation
 uses
   // Delphi
   System.Classes,
-  System.DateUtils,
   System.Generics.Collections,
   System.JSON,
-  System.SysUtils,
   System.Types,
   // web3
   web3.eth,
@@ -360,7 +356,7 @@ procedure TVault.QueryBatchSwap(
   kind    : TSwapKind;
   swaps   : TArray<ISwapStep>;
   assets  : TArray<TAddress>;
-  callback: TAsyncAssetDeltas);
+  callback: TProc<TArray<BigInteger>, IError>);
 begin
   const funds: IContractStruct = TFundManagement.Create;
   with funds as TFundManagement do
@@ -402,6 +398,17 @@ begin
       );
     end
   );
+end;
+
+procedure TVault.WETH(callback: TAsyncAddress);
+begin
+  call(Client, Contract, 'WETH()', [], procedure(const hex: string; err: IError)
+  begin
+    if Assigned(err) then
+      callback(EMPTY_ADDRESS, err)
+    else
+      callback(TAddress.New(hex), nil);
+  end);
 end;
 
 {----------- get the pool id for a single swap between two tokens -------------}
@@ -486,23 +493,28 @@ begin
   case chain of
     Kovan:
     begin
-      var tokens: TTokens;
-      const RS = TResourceStream.Create(hInstance, 'BALANCER_V2_TOKENLIST_KOVAN', RT_RCDATA);
-      try
-        var buf: TBytes;
-        SetLength(buf, RS.Size);
-        RS.Read(buf[0], RS.Size);
-        const arr = TJsonObject.ParseJsonValue(TEncoding.UTF8.GetString(buf)) as TJsonArray;
-        if Assigned(arr) then
+      const tokens = (function: TTokens
+      begin
+        Result := [];
+        const RS = TResourceStream.Create(hInstance, 'BALANCER_V2_TOKENLIST_KOVAN', RT_RCDATA);
         try
-          for var token in arr do
-            tokens := tokens + [web3.eth.tokenlists.token(token as TJsonObject)];
+          const buf = (function: TBytes
+          begin
+            SetLength(Result, RS.Size);
+            RS.Read(Result[0], RS.Size);
+          end)();
+          const arr = TJsonObject.ParseJsonValue(TEncoding.UTF8.GetString(buf)) as TJsonArray;
+          if Assigned(arr) then
+          try
+            for var token in arr do
+              Result := Result + [web3.eth.tokenlists.token(token as TJsonObject)];
+          finally
+            arr.Free;
+          end;
         finally
-          arr.Free;
+          RS.Free;
         end;
-      finally
-        RS.Free;
-      end;
+      end)();
       callback(tokens, nil);
     end;
     Polygon, Arbitrum:
@@ -585,6 +597,159 @@ begin
   end);
 end;
 
+{---------- easy access function: returns the Vault's WETH instance -----------}
+
+procedure weth(client: IWeb3; callback: TAsyncAddress);
+begin
+  const vault = TVault.Create(client);
+  try
+    vault.WETH(callback);
+  finally
+    vault.Free;
+  end;
+end;
+
+{-------------- router function: computes the steps for a trade ---------------}
+
+type
+  TPool = record
+    Id      : TBytes32;
+    AssetIn : TAddress;
+    AssetOut: TAddress;
+    constructor Create(aId: TBytes32; aAssetIn, aAssetOut: TAddress);
+  end;
+
+constructor TPool.Create(aId: TBytes32; aAssetIn: TAddress; aAssetOut: TAddress);
+begin
+  Self.Id       := aId;
+  Self.AssetIn  := aAssetIn;
+  Self.AssetOut := aAssetOut;
+end;
+
+type
+  IPools = interface
+    function ToAssets(kind: TSwapKind): TArray<TAddress>;
+    function ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
+  end;
+
+  TPools = class(TInterfacedObject, IPools)
+  strict private
+    Inner: TArray<TPool>;
+  public
+    constructor Create(pools: TArray<TPool>);
+    function ToAssets(kind: TSwapKind): TArray<TAddress>;
+    function ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
+  end;
+
+constructor TPools.Create(pools: TArray<TPool>);
+begin
+  inherited Create;
+  Self.Inner := pools;
+end;
+
+function TPools.ToAssets(kind: TSwapKind): TArray<TAddress>;
+begin
+  Result := [];
+  if Length(Self.Inner) = 0 then
+    EXIT;
+  if kind = GivenOut then
+  begin
+    var I := High(Self.Inner);
+    while I > -1 do
+    begin
+      Result := Result + [Self.Inner[I].AssetOut];
+      Dec(I);
+    end;
+    Result := Result + [self.Inner[0].AssetIn];
+  end
+  else
+  begin
+    var I := 0;
+    while I < Length(Self.Inner) do
+    begin
+      Result := Result + [Self.Inner[I].AssetIn];
+      Inc(I);
+    end;
+    Result := Result + [Self.Inner[High(Self.Inner)].AssetOut];
+  end;
+end;
+
+function TPools.ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
+begin
+  Result := [];
+  if Length(Self.Inner) = 0 then
+    EXIT;
+  var I := 0;
+  if kind = GivenOut then
+    I := High(Self.Inner);
+  while ((kind = GivenOut) and (I > -1)) or ((kind = GivenIn) and (I < Length(Self.Inner))) do
+  begin
+    Result := Result + [
+      TSwapStep.Create
+        .PoolId(Self.Inner[I].Id)
+        .AssetInIndex(I)
+        .AssetOutIndex(I + 1)
+        .Amount((function: BigInteger
+        begin
+          if ((kind = GivenIn) and (I = 0)) or ((kind = GivenOut) and (I = High(Self.Inner))) then
+            Result := amount
+          else
+            Result := 0;
+        end)())
+    ];
+    if kind = GivenOut then
+      Dec(I)
+    else
+      Inc(I);
+  end;
+end;
+
+procedure pools(
+  client  : IWeb3;
+  assetIn : TAddress;
+  assetOut: TAddress;
+  callback: TProc<IPools, IError>);
+begin
+  // step #1: get the pool id for a single swap
+  getPoolId(client.Chain, assetIn, assetOut, procedure(const poolId: string; err: IError)
+  begin
+    if not Assigned(err) then
+      callback(TPools.Create([
+        TPool.Create(web3.utils.fromHex32(poolId), assetIn, assetOut)
+      ]), nil)
+    else
+      // step #2: get the Vault's WETH instance
+      weth(client, procedure(weth: TAddress; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          if assetIn.SameAs(weth) or assetOut.SameAs(weth) then
+            callback(nil, TPoolDoesNotExist.Create)
+          else
+            // step #3: get the pool IDs for a batch swap
+            getPoolId(client.Chain, assetIn, weth, procedure(const pool1: string; err: IError)
+            begin
+              if Assigned(err) then
+                callback(nil, err)
+              else
+                getPoolId(client.Chain, weth, assetOut, procedure(const pool2: string; err: IError)
+                begin
+                  if Assigned(err) then
+                    callback(nil, err)
+                  else
+                    callback(TPools.Create([
+                      TPool.Create(web3.utils.fromHex32(pool1), assetIn, weth),
+                      TPool.Create(web3.utils.fromHex32(pool2), weth, assetOut)
+                    ]), nil);
+                end);
+            end);
+      end);
+  end);
+end;
+
+{-------- easy access function: simulate the trade between two tokens ---------}
+
 procedure simulate(
   client  : IWeb3;
   owner   : TAddress;
@@ -592,10 +757,10 @@ procedure simulate(
   assetIn : TAddress;
   assetOut: TAddress;
   amount  : BigInteger;
-  callback: TAsyncAssetDeltas);
+  callback: TProc<TArray<BigInteger>, IError>);
 begin
-  // step #1: get the pool id for a single swap
-  getPoolId(client.Chain, assetIn, assetOut, procedure(const poolId: string; err: IError)
+  // step #1: get the pool IDs for a trade
+  pools(client, assetIn, assetOut, procedure(pools: IPools; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -608,14 +773,8 @@ begin
       vault.QueryBatchSwap(
         owner,
         kind,
-        [
-          TSwapStep.Create
-            .PoolId(web3.utils.fromHex32(poolId))
-            .AssetInIndex(0)
-            .AssetOutIndex(1)
-            .Amount(amount)
-        ],
-        [assetIn, assetOut],
+        pools.ToSwapSteps(kind, amount),
+        pools.ToAssets(kind),
         callback
       );
     finally
