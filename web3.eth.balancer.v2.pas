@@ -110,7 +110,17 @@ type
 // get the Balancer token list
 procedure tokens(chain: TChain; callback: TAsyncTokens);
 
-// easy access function: make a trade between two tokens in one pool, saving ~6,000 gas.
+// easy access function: simulate a trade between two tokens, returning Vault asset deltas.
+procedure simulate(
+  client  : IWeb3;
+  owner   : TAddress;
+  kind    : TSwapKind;
+  assetIn : TAddress;
+  assetOut: TAddress;
+  amount  : BigInteger;
+  callback: TProc<TArray<BigInteger>, IError>);
+
+// easy access function: make a trade between two tokens.
 procedure swap(
   client  : IWeb3;
   owner   : TPrivateKey; // owner of the tokens we are sending to the pool
@@ -120,16 +130,6 @@ procedure swap(
   amount  : BigInteger;  // the amount of tokens we (a) are sending to the pool, or (b) want to receive from the pool
   deadline: BigInteger;  // your transaction will revert if it is still pending after this Unix epoch
   callback: TAsyncReceipt);
-
-// easy access function: simulate the trade between two tokens, returning Vault asset deltas.
-procedure simulate(
-  client  : IWeb3;
-  owner   : TAddress;
-  kind    : TSwapKind;
-  assetIn : TAddress;
-  assetOut: TAddress;
-  amount  : BigInteger;
-  callback: TProc<TArray<BigInteger>, IError>);
 
 implementation
 
@@ -538,65 +538,6 @@ begin
   end;
 end;
 
-{----- easy access function: make a trade between two tokens in one pool ------}
-
-procedure swap(
-  client  : IWeb3;
-  owner   : TPrivateKey;
-  kind    : TSwapKind;
-  assetIn : TAddress;
-  assetOut: TAddress;
-  amount  : BigInteger;
-  deadline: BigInteger;
-  callback: TAsyncReceipt);
-begin
-  // step #1: get the pool id for a single swap
-  getPoolId(client.Chain, assetIn, assetOut, procedure(const poolId: string; err: IError)
-  begin
-    if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    // step #2: grant token spend allowance to the vault
-    TERC20.Create(client, assetIn).ApproveEx(owner, TVault.DeployedAt, web3.Infinite, procedure(rcpt: ITxReceipt; err: IError)
-    begin
-      if Assigned(err) then
-      begin
-        callback(nil, err);
-        EXIT;
-      end;
-      // step #3: execute a single swap
-      const vault = TVault.Create(client);
-      try
-        vault.Swap(
-          owner,
-          // initialize which pool we're trading with and what kind of swap we want to perform
-          TSingleSwap.Create
-            .PoolId(web3.utils.fromHex32(poolId))
-            .Kind(kind)
-            .AssetIn(assetIn)
-            .AssetOut(assetOut)
-            .Amount(amount),
-          (
-            function: BigInteger
-            begin
-              if kind = GivenIn then
-                Result := 0
-              else
-                Result := web3.Infinite;
-            end
-          )(),
-          deadline,
-          callback
-        );
-      finally
-        vault.Free;
-      end;
-    end);
-  end);
-end;
-
 {---------- easy access function: returns the Vault's WETH instance -----------}
 
 procedure weth(client: IWeb3; callback: TAsyncAddress);
@@ -612,77 +553,116 @@ end;
 {-------------- router function: computes the steps for a trade ---------------}
 
 type
-  TPool = record
-    Id      : TBytes32;
-    AssetIn : TAddress;
-    AssetOut: TAddress;
+  IPool = interface
+    function Id      : TBytes32;
+    function AssetIn : TAddress;
+    function AssetOut: TAddress;
+  end;
+
+  TPool = class(TInterfacedObject, IPool)
+  strict private
+    FId      : TBytes32;
+    FAssetIn : TAddress;
+    FAssetOut: TAddress;
+  public
     constructor Create(aId: TBytes32; aAssetIn, aAssetOut: TAddress);
+    function Id      : TBytes32;
+    function AssetIn : TAddress;
+    function AssetOut: TAddress;
   end;
 
 constructor TPool.Create(aId: TBytes32; aAssetIn: TAddress; aAssetOut: TAddress);
 begin
-  Self.Id       := aId;
-  Self.AssetIn  := aAssetIn;
-  Self.AssetOut := aAssetOut;
+  inherited Create;
+  Self.FId       := aId;
+  Self.FAssetIn  := aAssetIn;
+  Self.FAssetOut := aAssetOut;
+end;
+
+function TPool.Id: TBytes32;
+begin
+  Result := FId;
+end;
+
+function TPool.AssetIn: TAddress;
+begin
+  Result := FAssetIn;
+end;
+
+function TPool.AssetOut: TAddress;
+begin
+  Result := FAssetOut;
 end;
 
 type
   IPools = interface
+    function First: IPool;
+    function Length: Integer;
     function ToAssets(kind: TSwapKind): TArray<TAddress>;
+    function ToLimits(kind: TSwapKind): TArray<BigInteger>;
     function ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
   end;
 
   TPools = class(TInterfacedObject, IPools)
   strict private
-    Inner: TArray<TPool>;
+    Inner: TArray<IPool>;
   public
-    constructor Create(pools: TArray<TPool>);
+    constructor Create(const pools: TArray<IPool>);
+    function First: IPool;
+    function Length: Integer;
     function ToAssets(kind: TSwapKind): TArray<TAddress>;
+    function ToLimits(kind: TSwapKind): TArray<BigInteger>;
     function ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
   end;
 
-constructor TPools.Create(pools: TArray<TPool>);
+constructor TPools.Create(const pools: TArray<IPool>);
 begin
   inherited Create;
   Self.Inner := pools;
 end;
 
+function TPools.First: IPool;
+begin
+  if Self.Length > 0 then
+    Result := Self.Inner[0]
+  else
+    Result := nil;
+end;
+
+function TPools.Length: Integer;
+begin
+  Result := System.Length(Self.Inner);
+end;
+
 function TPools.ToAssets(kind: TSwapKind): TArray<TAddress>;
 begin
   Result := [];
-  if Length(Self.Inner) = 0 then
+  if Self.Length = 0 then
     EXIT;
+  for var I := 0 to Pred(Self.Length) do
+    Result := Result + [Self.Inner[I].AssetIn];
+  Result := Result + [Self.Inner[High(Self.Inner)].AssetOut];
+end;
+
+function TPools.ToLimits(kind: TSwapKind): TArray<BigInteger>;
+begin
+  Result := [];
+  if Self.Length = 0 then
+    EXIT;
+  SetLength(Result, Self.Length + 1);
   if kind = GivenOut then
-  begin
-    var I := High(Self.Inner);
-    while I > -1 do
-    begin
-      Result := Result + [Self.Inner[I].AssetOut];
-      Dec(I);
-    end;
-    Result := Result + [self.Inner[0].AssetIn];
-  end
-  else
-  begin
-    var I := 0;
-    while I < Length(Self.Inner) do
-    begin
-      Result := Result + [Self.Inner[I].AssetIn];
-      Inc(I);
-    end;
-    Result := Result + [Self.Inner[High(Self.Inner)].AssetOut];
-  end;
+    Result[High(Result)] := web3.Infinite;
 end;
 
 function TPools.ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
 begin
   Result := [];
-  if Length(Self.Inner) = 0 then
+  if Self.Length = 0 then
     EXIT;
   var I := 0;
   if kind = GivenOut then
     I := High(Self.Inner);
-  while ((kind = GivenOut) and (I > -1)) or ((kind = GivenIn) and (I < Length(Self.Inner))) do
+  while ((kind = GivenOut) and (I > -1)) or ((kind = GivenIn) and (I < Self.Length)) do
   begin
     Result := Result + [
       TSwapStep.Create
@@ -704,7 +684,7 @@ begin
   end;
 end;
 
-procedure pools(
+procedure getPools(
   client  : IWeb3;
   assetIn : TAddress;
   assetOut: TAddress;
@@ -748,7 +728,7 @@ begin
   end);
 end;
 
-{-------- easy access function: simulate the trade between two tokens ---------}
+{--------- easy access function: simulate a trade between two tokens ----------}
 
 procedure simulate(
   client  : IWeb3;
@@ -760,7 +740,7 @@ procedure simulate(
   callback: TProc<TArray<BigInteger>, IError>);
 begin
   // step #1: get the pool IDs for a trade
-  pools(client, assetIn, assetOut, procedure(pools: IPools; err: IError)
+  getPools(client, assetIn, assetOut, procedure(pools: IPools; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -780,6 +760,78 @@ begin
     finally
       vault.Free;
     end;
+  end);
+end;
+
+{----------- easy access function: make a trade between two tokens ------------}
+
+procedure swap(
+  client  : IWeb3;
+  owner   : TPrivateKey;
+  kind    : TSwapKind;
+  assetIn : TAddress;
+  assetOut: TAddress;
+  amount  : BigInteger;
+  deadline: BigInteger;
+  callback: TAsyncReceipt);
+begin
+  // step #1: get the pool IDs for a trade
+  getPools(client, assetIn, assetOut, procedure(pools: IPools; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    // step #2: grant token spend allowance to the vault
+    TERC20.Create(client, assetIn).ApproveEx(owner, TVault.DeployedAt, web3.Infinite, procedure(rcpt: ITxReceipt; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        callback(nil, err);
+        EXIT;
+      end;
+      // step #3: execute a swap
+      const vault = TVault.Create(client);
+      try
+        if pools.Length > 1 then
+          // execute a batch swap
+          vault.BatchSwap(
+            owner,
+            kind,
+            pools.ToSwapSteps(kind, amount),
+            pools.ToAssets(kind),
+            pools.ToLimits(kind),
+            deadline,
+            callback
+          )
+        else
+          // execute a single swap, saving ~6,000 gas
+          vault.Swap(
+            owner,
+            // initialize which pool we're trading with and what kind of swap we want to perform
+            TSingleSwap.Create
+              .PoolId(pools.First.Id)
+              .Kind(kind)
+              .AssetIn(assetIn)
+              .AssetOut(assetOut)
+              .Amount(amount),
+            (
+              function: BigInteger
+              begin
+                if kind = GivenIn then
+                  Result := 0
+                else
+                  Result := web3.Infinite;
+              end
+            )(),
+            deadline,
+            callback
+          );
+      finally
+        vault.Free;
+      end;
+    end);
   end);
 end;
 
