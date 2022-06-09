@@ -182,13 +182,13 @@ begin
       FOnTransfer(Self,
                   log.Topic[1].toAddress, // from
                   log.Topic[2].toAddress, // to
-                  log.Data[0].toBigInt);  // value
+                  log.Data[0].toUInt256); // value
   if Assigned(FOnApproval) then
     if log.isEvent('Approval(address,address,uint256)') then
       FOnApproval(Self,
                   log.Topic[1].toAddress, // owner
                   log.Topic[2].toAddress, // spender
-                  log.Data[0].toBigInt);  // value
+                  log.Data[0].toUInt256); // value
 end;
 
 procedure TERC20.SetOnTransfer(Value: TOnTransfer);

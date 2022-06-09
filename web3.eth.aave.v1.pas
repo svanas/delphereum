@@ -512,7 +512,7 @@ begin
     if Assigned(err) then
       callback(BigInteger.Zero, err)
     else
-      callback(tup[4].toBigInt, nil);
+      callback(tup[4].toUInt256, nil);
   end);
 end;
 

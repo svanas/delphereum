@@ -52,7 +52,8 @@ type
     function toHex(const prefix: string): string;
     function toInt: Integer;
     function toInt64: Int64;
-    function toBigInt: BigInteger;
+    function toInt256: BigInteger;
+    function toUInt256: BigInteger;
     function toBoolean: Boolean;
     function toString: string;
     function toDateTime: TUnixDateTime;
@@ -185,12 +186,17 @@ begin
   Result := StrToInt64(Self.toHex('$'));
 end;
 
-function TArg.toBigInt: BigInteger;
+function TArg.toInt256: BigInteger;
 begin
   const S = Self.toHex('0x');
   Result := S;
   if Copy(S, System.Low(S), 4) = '0xFF' then
     Result := BigInteger.Zero - (web3.Infinite - Result);
+end;
+
+function TArg.toUInt256: BigInteger;
+begin
+  Result := Self.toHex('0x');
 end;
 
 function TArg.toBoolean: Boolean;

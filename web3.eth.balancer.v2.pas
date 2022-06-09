@@ -329,7 +329,7 @@ begin
         '(bytes32,uint256,uint256,uint256,bytes)[],' + // SwapSteps
         'address[],' +                                 // assets
         '(address,bool,address,bool),' +               // FundManagement
-        'uint256[],' +                                 // limits
+        'int256[],' +                                  // limits
         'uint256' +                                    // deadline
       ')',
       [
@@ -391,7 +391,7 @@ begin
           begin
             Result := [];
             if Assigned(tup) then
-              for var arg in tup.ToArray do Result := Result + [arg.toBigInt];
+              for var arg in tup.ToArray do Result := Result + [arg.toInt256];
           end
         )(),
         err
@@ -598,8 +598,8 @@ type
   IPools = interface
     function First: IPool;
     function Length: Integer;
-    function ToAssets(kind: TSwapKind): TArray<TAddress>;
-    function ToLimits(kind: TSwapKind): TArray<BigInteger>;
+    function ToAssets: TArray<TAddress>;
+    function ToLimits: TArray<BigInteger>;
     function ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
   end;
 
@@ -610,8 +610,8 @@ type
     constructor Create(const pools: TArray<IPool>);
     function First: IPool;
     function Length: Integer;
-    function ToAssets(kind: TSwapKind): TArray<TAddress>;
-    function ToLimits(kind: TSwapKind): TArray<BigInteger>;
+    function ToAssets: TArray<TAddress>;
+    function ToLimits: TArray<BigInteger>;
     function ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
   end;
 
@@ -634,7 +634,7 @@ begin
   Result := System.Length(Self.Inner);
 end;
 
-function TPools.ToAssets(kind: TSwapKind): TArray<TAddress>;
+function TPools.ToAssets: TArray<TAddress>;
 begin
   Result := [];
   if Self.Length = 0 then
@@ -644,14 +644,15 @@ begin
   Result := Result + [Self.Inner[High(Self.Inner)].AssetOut];
 end;
 
-function TPools.ToLimits(kind: TSwapKind): TArray<BigInteger>;
+// returns the minimum or maximum amount of each token the vault is allowed to transfer
+function TPools.ToLimits: TArray<BigInteger>;
 begin
   Result := [];
   if Self.Length = 0 then
     EXIT;
   SetLength(Result, Self.Length + 1);
-  if kind = GivenOut then
-    Result[High(Result)] := web3.Infinite;
+  Result[0] := web3.MaxInt256; // maximum number of tokens to send
+  Result[High(Result)] := 0;   // minimum amount of tokens to receive
 end;
 
 function TPools.ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
@@ -754,7 +755,7 @@ begin
         owner,
         kind,
         pools.ToSwapSteps(kind, amount),
-        pools.ToAssets(kind),
+        pools.ToAssets,
         callback
       );
     finally
@@ -800,8 +801,8 @@ begin
             owner,
             kind,
             pools.ToSwapSteps(kind, amount),
-            pools.ToAssets(kind),
-            pools.ToLimits(kind),
+            pools.ToAssets,
+            pools.ToLimits,
             deadline,
             callback
           )

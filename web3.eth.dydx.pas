@@ -393,15 +393,15 @@ end;
 
 function TSoloMarket.TotalPar: TSoloTotalPar;
 begin
-  Result.Borrow := FTuple[1].toBigInt;
-  Result.Supply := FTuple[2].toBigInt;
+  Result.Borrow := FTuple[1].toUInt256;
+  Result.Supply := FTuple[2].toUInt256;
 end;
 
 function TSoloMarket.Index: TSoloIndex;
 begin
   Result.Borrow     := FTuple[3].toInt64 / INTEREST_RATE_BASE;
   Result.Supply     := FTuple[4].toInt64 / INTEREST_RATE_BASE;
-  Result.LastUpdate := FTuple[5].toBigInt;
+  Result.LastUpdate := FTuple[5].toUInt256;
 end;
 
 function TSoloMarket.PriceOracle: TAddress;
@@ -451,7 +451,7 @@ class function TSoloMargin.ToBigInt(value: TTuple): BigInteger;
 begin
   if Length(value) < 2 then
     raise EdYdX.Create('not a valid dYdX integer value');
-  Result := value[1].toBigInt;
+  Result := value[1].toUInt256;
   if (not Result.IsZero) and (not value[0].toBoolean) then
     Result.Sign := -1;
 end;

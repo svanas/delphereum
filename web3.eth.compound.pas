@@ -385,16 +385,16 @@ begin
       // emitted upon a successful Mint
       FOnMint(Self,
               log.Topic[1].toAddress, // minter
-              log.Data[0].toBigInt,   // amount
-              log.Data[1].toBigInt);  // tokens
+              log.Data[0].toUInt256,  // amount
+              log.Data[1].toUInt256); // tokens
 
   if Assigned(FOnRedeem) then
     if log.isEvent('Redeem(address,uint256,uint256)') then
       // emitted upon a successful Redeem
       FOnRedeem(Self,
                 log.Topic[1].toAddress, // redeemer
-                log.Data[0].toBigInt,   // amount
-                log.Data[1].toBigInt);  // tokens
+                log.Data[0].toUInt256,  // amount
+                log.Data[1].toUInt256); // tokens
 end;
 
 procedure TcToken.SetOnMint(Value: TOnMint);
