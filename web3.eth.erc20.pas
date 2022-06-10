@@ -260,7 +260,7 @@ begin
       if dec.IsZero then
         callback(BigInteger.Create(amount), nil)
       else
-        callback(BigInteger.Create(amount * Power(10, dec.AsDouble)), nil);
+        callback(web3.utils.scale(amount, dec.AsInteger), nil);
   end);
 end;
 
@@ -274,7 +274,7 @@ begin
       if dec.IsZero then
         callback(amount.AsDouble, nil)
       else
-        callback(amount.AsDouble / Power(10, dec.AsDouble), nil);
+        callback(web3.utils.unscale(amount, dec.AsInteger), nil);
   end);
 end;
 

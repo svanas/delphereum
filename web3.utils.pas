@@ -61,6 +61,9 @@ function isHex(const prefix, str: string): Boolean; overload;
 function fromHex(hex: string): TBytes;
 function fromHex32(hex: string): TBytes32;
 
+function scale(amount: Double; decimals: Byte): BigInteger;
+function unscale(amount: BigInteger; decimals: Byte): Double;
+
 function  sha3(const hex: string): TBytes; overload;
 function  sha3(const buf: TBytes): TBytes; overload;
 procedure sha3(client: IWeb3; const hex: string; callback: TAsyncString); overload;
@@ -233,6 +236,16 @@ begin
   FillChar(Result, SizeOf(Result), 0);
   var buf := fromHex(hex);
   Move(buf[0], Result[0], Min(Length(buf), SizeOf(Result)));
+end;
+
+function scale(amount: Double; decimals: Byte): BigInteger;
+begin
+  Result := BigInteger.Create(amount * Round(Power(10, decimals)));
+end;
+
+function unscale(amount: BigInteger; decimals: Byte): Double;
+begin
+  Result := BigInteger.Divide(amount, Round(Power(10, decimals))).AsDouble;
 end;
 
 function sha3(const hex: string): TBytes;

@@ -263,7 +263,7 @@ begin
     .PoolId(web3.utils.fromHex32('0x61d5dc44849c9c87b0856a2a311536205c96c7fd000200000000000000000000'))
     .AssetIn(TAddress('0xdFCeA9088c8A88A76FF74892C1457C17dfeef9C1').ToChecksum)  // WETH
     .AssetOut(TAddress('0x41286Bb1D3E870f3F750eB7E1C25d7E48c8A1Ac7').ToChecksum) // BAL
-    .Amount(BigInteger.Create(100 * Power(10, 18)));                             // 100 BAL
+    .Amount(web3.utils.scale(100, 18));                                          // 100 BAL
   Assert.AreEqual(
     web3.eth.abi.encode(
       'swap(' +
