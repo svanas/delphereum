@@ -245,7 +245,7 @@ end;
 
 function unscale(amount: BigInteger; decimals: Byte): Double;
 begin
-  Result := BigInteger.Divide(amount, Round(Power(10, decimals))).AsDouble;
+  Result := amount.AsDouble / Round(Power(10, decimals));
 end;
 
 function sha3(const hex: string): TBytes;
