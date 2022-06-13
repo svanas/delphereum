@@ -128,6 +128,7 @@ procedure swap(
   assetIn : TAddress;    // the address of the token which we are sending to the pool
   assetOut: TAddress;    // the address of the token which we will receive in return
   amount  : BigInteger;  // the amount of tokens we (a) are sending to the pool, or (b) want to receive from the pool
+  limit   : BigInteger;  // the "other amount" aka (a) minimum amount of tokens to receive, or (b) maximum amount of tokens to send
   deadline: BigInteger;  // your transaction will revert if it is still pending after this Unix epoch
   callback: TAsyncReceipt);
 
@@ -599,7 +600,7 @@ type
     function First: IPool;
     function Length: Integer;
     function ToAssets: TArray<TAddress>;
-    function ToLimits: TArray<BigInteger>;
+    function ToLimits(kind: TSwapKind; limit: BigInteger): TArray<BigInteger>;
     function ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
   end;
 
@@ -611,7 +612,7 @@ type
     function First: IPool;
     function Length: Integer;
     function ToAssets: TArray<TAddress>;
-    function ToLimits: TArray<BigInteger>;
+    function ToLimits(kind: TSwapKind; limit: BigInteger): TArray<BigInteger>;
     function ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
   end;
 
@@ -645,14 +646,40 @@ begin
 end;
 
 // returns the minimum or maximum amount of each token the vault is allowed to transfer
-function TPools.ToLimits: TArray<BigInteger>;
+function TPools.ToLimits(kind: TSwapKind; limit: BigInteger): TArray<BigInteger>;
 begin
   Result := [];
   if Self.Length = 0 then
     EXIT;
   SetLength(Result, Self.Length + 1);
-  Result[0] := web3.MaxInt256; // maximum number of tokens to send
-  Result[High(Result)] := 0;   // minimum amount of tokens to receive
+  if Kind = GivenOut then
+  begin
+    // maximum number of tokens to send
+    Result[0] := (function: BigInteger
+    begin
+      if limit.IsZero then
+        Result := web3.MaxInt256
+      else if limit.IsNegative then
+        Result := BigInteger.Abs(limit)
+      else
+        Result := limit;
+    end)();
+    // minimum amount of tokens to receive
+    Result[High(Result)] := 0;
+  end
+  else
+  begin
+    // maximum number of tokens to send
+    Result[0] := web3.MaxInt256;
+    // minimum amount of tokens to receive
+    Result[High(Result)] := (function: BigInteger
+    begin
+      if limit.IsZero or limit.IsNegative then
+        Result := limit
+      else
+        Result := BigInteger.Negate(limit);
+    end)();
+  end;
 end;
 
 function TPools.ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
@@ -773,6 +800,7 @@ procedure swap(
   assetIn : TAddress;
   assetOut: TAddress;
   amount  : BigInteger;
+  limit   : BigInteger;
   deadline: BigInteger;
   callback: TAsyncReceipt);
 begin
@@ -802,7 +830,7 @@ begin
             kind,
             pools.ToSwapSteps(kind, amount),
             pools.ToAssets,
-            pools.ToLimits,
+            pools.ToLimits(kind, limit),
             deadline,
             callback
           )
@@ -820,10 +848,15 @@ begin
             (
               function: BigInteger
               begin
-                if kind = GivenIn then
-                  Result := 0
+                if limit.IsZero then
+                begin
+                  if kind = GivenOut then
+                    Result := web3.Infinite
+                  else
+                    Result := limit;
+                end
                 else
-                  Result := web3.Infinite;
+                  Result := BigInteger.Abs(limit);
               end
             )(),
             deadline,
