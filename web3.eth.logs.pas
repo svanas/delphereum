@@ -196,11 +196,14 @@ begin
       try
         TTask.CurrentTask.Wait(500);
       except end;
-      const logs = web3.eth.logs.getAsLog(client, bn, address);
-      for var log in logs do
+      if TTask.CurrentTask.Status <> TTaskStatus.Canceled then
       begin
-        bn := BigInteger.Max(bn, log.BlockNumber.Succ);
-        callback(log);
+        const logs = web3.eth.logs.getAsLog(client, bn, address);
+        for var log in logs do
+        begin
+          bn := BigInteger.Max(bn, log.BlockNumber.Succ);
+          callback(log);
+        end;
       end;
     end;
   end);

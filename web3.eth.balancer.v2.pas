@@ -31,6 +31,7 @@ interface
 uses
   // Delphi
   System.SysUtils,
+  System.Threading,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -79,6 +80,14 @@ type
     function AssetOutIndex(Value: Integer): TSwapStep;
     function Amount(Value: BigInteger): TSwapStep;
   end;
+
+  TOnSwap = reference to procedure(
+    BlockNo  : BigInteger;
+    PoolId   : TBytes32;
+    TokenIn  : TAddress;
+    TokenOut : TAddress;
+    AmountIn : BigInteger;
+    AmountOut: BigInteger);
 
   TVault = class(TCustomContract)
   public
@@ -132,6 +141,9 @@ procedure swap(
   deadline: BigInteger;  // your transaction will revert if it is still pending after this Unix epoch
   callback: TAsyncReceipt);
 
+// easy access function: listen for swaps between two tokens.
+function listen(client: IWeb3; callback: TOnSwap): ITask;
+
 implementation
 
 {$R 'web3.eth.balancer.v2.tokenlist.kovan.res'}
@@ -145,6 +157,7 @@ uses
   // web3
   web3.eth,
   web3.eth.erc20,
+  web3.eth.logs,
   web3.graph,
   web3.json,
   web3.utils;
@@ -866,6 +879,23 @@ begin
         vault.Free;
       end;
     end);
+  end);
+end;
+
+{---------- easy access function: listen for swaps between two tokens ---------}
+
+function listen(client: IWeb3; callback: TOnSwap): ITask;
+begin
+  Result := web3.eth.logs.get(client, TVault.DeployedAt, procedure(log: TLog)
+  begin
+    if Assigned(callback) then
+      if log.isEvent('Swap(bytes32,address,address,uint256,uint256)') then
+        callback(log.BlockNumber,        // blockNo
+                 log.Topic[1].toBytes32, // poolId
+                 log.Topic[2].toAddress, // tokenIn
+                 log.Topic[3].toAddress, // tokenOut
+                 log.Data[0].toUInt256,  // amountIn
+                 log.Data[1].toUInt256); // amountOut
   end);
 end;
 

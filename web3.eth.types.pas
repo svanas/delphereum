@@ -49,6 +49,7 @@ type
     Inner: TBytes32;
   public
     function toAddress: TAddress;
+    function toBytes32: TBytes32;
     function toHex(const prefix: string): string;
     function toInt: Integer;
     function toInt64: Int64;
@@ -158,6 +159,11 @@ uses
 function TArg.toAddress: TAddress;
 begin
   Result := TAddress.New(Self);
+end;
+
+function TArg.toBytes32: TBytes32;
+begin
+  Result := Self.Inner;
 end;
 
 function TArg.toHex(const prefix: string): string;
