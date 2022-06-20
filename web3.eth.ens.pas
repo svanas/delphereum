@@ -57,23 +57,25 @@ const
 
 function namehash(const name: string): string;
 begin
-  var node: TBytes;
-  SetLength(node, 32);
-  if name <> '' then
+  const node = (function: TBytes
   begin
-    const labels = TStringList.Create;
-    try
-      labels.Delimiter     := '.';
-      labels.DelimitedText := name;
-      for var idx := labels.Count - 1 downto 0 do
-      begin
-        const &label = TEncoding.UTF8.GetBytes(labels[idx]);
-        node := web3.utils.sha3(node + web3.utils.sha3(&label));
+    SetLength(Result, 32);
+    if name <> '' then
+    begin
+      const labels = TStringList.Create;
+      try
+        labels.Delimiter     := '.';
+        labels.DelimitedText := name;
+        for var idx := labels.Count - 1 downto 0 do
+        begin
+          const &label = TEncoding.UTF8.GetBytes(labels[idx]);
+          Result := web3.utils.sha3(Result + web3.utils.sha3(&label));
+        end;
+      finally
+        labels.Free;
       end;
-    finally
-      labels.Free;
     end;
-  end;
+  end)();
   Result := web3.utils.toHex(node);
 end;
 
