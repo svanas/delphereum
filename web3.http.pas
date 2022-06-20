@@ -61,19 +61,16 @@ function get(
   const URL: string;
   headers  : TNetHeaders;
   callback : TAsyncResponse;
-  timeout  : Integer = 60000;
   backoff  : Integer = 1): IAsyncResult; overload;
 function get(
   const URL: string;
   headers  : TNetHeaders;
   callback : TAsyncJsonObject;
-  timeout  : Integer = 60000;
   backoff  : Integer = 1): IAsyncResult; overload;
 function get(
   const URL: string;
   headers  : TNetHeaders;
   callback : TAsyncJsonArray;
-  timeout  : Integer = 60000;
   backoff  : Integer = 1) : IAsyncResult; overload;
 
 function post(
@@ -81,14 +78,12 @@ function post(
   const src: string;
   headers  : TNetHeaders;
   callback : TAsyncResponse;
-  timeout  : Integer = 60000;
   backoff  : Integer = 1): IAsyncResult; overload;
 function post(
   const URL: string;
   const src: string;
   headers  : TNetHeaders;
   callback : TAsyncJsonObject;
-  timeout  : Integer = 60000;
   backoff  : Integer = 1): IAsyncResult; overload;
 
 function post(
@@ -96,14 +91,12 @@ function post(
   source   : TMultipartFormData;
   headers  : TNetHeaders;
   callback : TAsyncResponse;
-  timeout  : Integer = 60000;
   backoff  : Integer = 1): IAsyncResult; overload;
 function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
   callback : TAsyncJsonObject;
-  timeout  : Integer = 60000;
   backoff  : Integer = 1): IAsyncResult; overload;
 
 {-------------------------- blocking function calls ---------------------------}
@@ -125,9 +118,8 @@ implementation
 
 uses
   // Delphi
-  System.DateUtils,
+  System.Math,
   System.SysUtils,
-  System.Threading,
   // web3
   web3.json,
   web3.sync;
@@ -150,74 +142,48 @@ end;
 
 {---------------------------- async function calls ----------------------------}
 
-function get(const URL: string; headers: TNetHeaders; callback: TAsyncResponse; timeout, backoff: Integer): IAsyncResult;
+function get(const URL: string; headers: TNetHeaders; callback: TAsyncResponse; backoff: Integer): IAsyncResult;
 begin
-  var task: ITask := nil;
   try
     const client = THttpClient.Create;
-
-    if timeout > 0 then
-    begin
-      task := TTask.Create(procedure
-      begin
-        const started = System.SysUtils.Now;
-        while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
-        begin
-          try
-            TTask.CurrentTask.Wait(500);
-          except end;
-          if  (TTask.CurrentTask.Status <> TTaskStatus.Canceled)
-          and (MilliSecondsBetween(System.SysUtils.Now, started) > timeout) then
-          begin
-            callback(nil, TError.Create('web3.http.get() timed out'));
-            EXIT;
-          end;
-        end;
-      end, web3.sync.ThreadPool);
-    end;
-
     Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
     begin
-      try
-        if Assigned(task) then task.Cancel;
-        try
-          const resp = THttpClient.EndAsyncHttp(aSyncResult);
-          if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+      try try
+        const resp = THttpClient.EndAsyncHttp(aSyncResult);
+        if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+        begin
+          callback(resp, nil);
+          EXIT;
+        end;
+        if resp.StatusCode = 429 then
+        begin
+          const retryAfter = Min(MAX_BACKOFF, (function: Integer
           begin
-            callback(resp, nil);
+            Result := backoff;
+            if resp.ContainsHeader('Retry-After') then
+              Result := StrToIntDef(resp.HeaderValue['Retry-After'], 0);
+          end)());
+          if retryAfter > 0 then
+          begin
+            TThread.Sleep(retryAfter * 1000);
+            get(URL, headers, callback, backoff * 2);
             EXIT;
           end;
-          if resp.StatusCode = 429 then
-          begin
-            const retryAfter = (function: Integer
-            begin
-              Result := backoff;
-              if resp.ContainsHeader('Retry-After') then
-                Result := StrToIntDef(resp.HeaderValue['Retry-After'], 0);
-            end)();
-            if (retryAfter > 0) and (retryAfter <= MAX_BACKOFF) then
-            begin
-              TThread.Sleep(retryAfter * 1000);
-              get(URL, headers, callback, timeout, backoff * 2);
-              EXIT;
-            end;
-          end;
-          callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-        except
-          on E: Exception do callback(nil, TError.Create(E.Message));
         end;
+        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+      except
+        on E: Exception do callback(nil, TError.Create(E.Message));
+      end;
       finally
         client.Free;
       end;
     end, URL, nil, headers);
-
-    if Assigned(task) then task.Start;
   except
     on E: Exception do callback(nil, TError.Create(E.Message));
   end;
 end;
 
-function get(const URL: string; headers: TNetHeaders; callback: TAsyncJsonObject; timeout, backoff: Integer): IAsyncResult;
+function get(const URL: string; headers: TNetHeaders; callback: TAsyncJsonObject; backoff: Integer): IAsyncResult;
 begin
   Result := get(URL, headers, procedure(resp: IHttpResponse; err: IError)
   begin
@@ -235,10 +201,10 @@ begin
       obj.Free;
     end;
     callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-  end, timeout, backoff);
+  end, backoff);
 end;
 
-function get(const URL: string; headers: TNetHeaders; callback: TAsyncJsonArray; timeout, backoff: Integer): IAsyncResult;
+function get(const URL: string; headers: TNetHeaders; callback: TAsyncJsonArray; backoff: Integer): IAsyncResult;
 begin
   Result := get(URL, headers, procedure(resp: IHttpResponse; err: IError)
   begin
@@ -259,7 +225,7 @@ begin
       arr.Free;
     end;
     callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-  end, timeout, backoff);
+  end, backoff);
 end;
 
 function post(
@@ -267,69 +233,42 @@ function post(
   const src: string;
   headers  : TNetHeaders;
   callback : TAsyncResponse;
-  timeout  : Integer;
   backoff  : Integer): IAsyncResult;
 begin
-  var task: ITask := nil;
   try
     const client = THttpClient.Create;
-
-    if timeout > 0 then
-    begin
-      task := TTask.Create(procedure
-      begin
-        const started = System.SysUtils.Now;
-        while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
-        begin
-          try
-            TTask.CurrentTask.Wait(500);
-          except end;
-          if  (TTask.CurrentTask.Status <> TTaskStatus.Canceled)
-          and (MilliSecondsBetween(System.SysUtils.Now, started) > timeout) then
-          begin
-            callback(nil, TError.Create('web3.http.post() timed out'));
-            EXIT;
-          end;
-        end;
-      end, web3.sync.ThreadPool);
-    end;
-
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
     begin
-      try
-        if Assigned(task) then task.Cancel;
-        try
-          const resp = THttpClient.EndAsyncHttp(aSyncResult);
-          if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+      try try
+        const resp = THttpClient.EndAsyncHttp(aSyncResult);
+        if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+        begin
+          callback(resp, nil);
+          EXIT;
+        end;
+        if resp.StatusCode = 429 then
+        begin
+          const retryAfter = Min(MAX_BACKOFF, (function: Integer
           begin
-            callback(resp, nil);
+            Result := backoff;
+            if resp.ContainsHeader('Retry-After') then
+              Result := StrToIntDef(resp.HeaderValue['Retry-After'], 0);
+          end)());
+          if retryAfter > 0 then
+          begin
+            TThread.Sleep(retryAfter * 1000);
+            post(URL, src, headers, callback, backoff * 2);
             EXIT;
           end;
-          if resp.StatusCode = 429 then
-          begin
-            const retryAfter = (function: Integer
-            begin
-              Result := backoff;
-              if resp.ContainsHeader('Retry-After') then
-                Result := StrToIntDef(resp.HeaderValue['Retry-After'], 0);
-            end)();
-            if (retryAfter > 0) and (retryAfter <= MAX_BACKOFF) then
-            begin
-              TThread.Sleep(retryAfter * 1000);
-              post(URL, src, headers, callback, timeout, backoff * 2);
-              EXIT;
-            end;
-          end;
-          callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-        except
-          on E: Exception do callback(nil, TError.Create(E.Message));
         end;
+        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+      except
+        on E: Exception do callback(nil, TError.Create(E.Message));
+      end;
       finally
         client.Free;
       end;
     end, URL, TStringStream.Create(src), nil, headers);
-
-    if Assigned(task) then task.Start;
   except
     on E: Exception do callback(nil, TError.Create(E.Message));
   end;
@@ -340,7 +279,6 @@ function post(
   const src: string;
   headers  : TNetHeaders;
   callback : TAsyncJsonObject;
-  timeout  : Integer;
   backoff  : Integer): IAsyncResult;
 begin
   Result := post(URL, src, headers, procedure(resp: IHttpResponse; err: IError)
@@ -359,7 +297,7 @@ begin
       obj.Free;
     end;
     callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-  end, timeout, backoff);
+  end, backoff);
 end;
 
 function post(
@@ -367,69 +305,42 @@ function post(
   source   : TMultipartFormData;
   headers  : TNetHeaders;
   callback : TAsyncResponse;
-  timeout  : Integer;
   backoff  : Integer): IAsyncResult;
 begin
-  var task: ITask := nil;
   try
     const client = THttpClient.Create;
-
-    if timeout > 0 then
-    begin
-      task := TTask.Create(procedure
-      begin
-        const started = System.SysUtils.Now;
-        while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
-        begin
-          try
-            TTask.CurrentTask.Wait(500);
-          except end;
-          if  (TTask.CurrentTask.Status <> TTaskStatus.Canceled)
-          and (MilliSecondsBetween(System.SysUtils.Now, started) > timeout) then
-          begin
-            callback(nil, TError.Create('web3.http.post() timed out'));
-            EXIT;
-          end;
-        end;
-      end, web3.sync.ThreadPool);
-    end;
-
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
     begin
-      try
-        if Assigned(task) then task.Cancel;
-        try
-          const resp = THttpClient.EndAsyncHttp(aSyncResult);
-          if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+      try try
+        const resp = THttpClient.EndAsyncHttp(aSyncResult);
+        if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+        begin
+          callback(resp, nil);
+          EXIT;
+        end;
+        if resp.StatusCode = 429 then
+        begin
+          const retryAfter = Min(MAX_BACKOFF, (function: Integer
           begin
-            callback(resp, nil);
+            Result := backoff;
+            if resp.ContainsHeader('Retry-After') then
+              Result := StrToIntDef(resp.HeaderValue['Retry-After'], 0);
+          end)());
+          if retryAfter > 0 then
+          begin
+            TThread.Sleep(retryAfter * 1000);
+            post(URL, source, headers, callback, backoff * 2);
             EXIT;
           end;
-          if resp.StatusCode = 429 then
-          begin
-            const retryAfter = (function: Integer
-            begin
-              Result := backoff;
-              if resp.ContainsHeader('Retry-After') then
-                Result := StrToIntDef(resp.HeaderValue['Retry-After'], 0);
-            end)();
-            if (retryAfter > 0) and (retryAfter <= MAX_BACKOFF) then
-            begin
-              TThread.Sleep(retryAfter * 1000);
-              post(URL, source, headers, callback, timeout, backoff * 2);
-              EXIT;
-            end;
-          end;
-          callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-        except
-          on E: Exception do callback(nil, TError.Create(E.Message));
         end;
+        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+      except
+        on E: Exception do callback(nil, TError.Create(E.Message));
+      end;
       finally
         client.Free;
       end;
     end, URL, source, nil, headers);
-
-    if Assigned(task) then task.Start;
   except
     on E: Exception do callback(nil, TError.Create(E.Message));
   end;
@@ -440,7 +351,6 @@ function post(
   source   : TMultipartFormData;
   headers  : TNetHeaders;
   callback : TAsyncJsonObject;
-  timeout  : Integer;
   backoff  : Integer): IAsyncResult;
 begin
   Result := post(URL, source, headers, procedure(resp: IHttpResponse; err: IError)
@@ -459,7 +369,7 @@ begin
       obj.Free;
     end;
     callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
-  end, timeout, backoff);
+  end, backoff);
 end;
 
 {-------------------------- blocking function calls ---------------------------}
@@ -478,13 +388,13 @@ begin
     Result := Assigned(output) and (output.StatusCode >= 200) and (output.StatusCode < 300);
     if (not Result) and Assigned(output) and (output.StatusCode = 429) then
     begin
-      const retryAfter = (function(const output: IHttpResponse): Integer
+      const retryAfter = Min(MAX_BACKOFF, (function(const output: IHttpResponse): Integer
       begin
         Result := backoff;
         if output.ContainsHeader('Retry-After') then
           Result := StrToIntDef(output.HeaderValue['Retry-After'], 0);
-      end)(output);
-      if (retryAfter > 0) and (retryAfter <= MAX_BACKOFF) then
+      end)(output));
+      if retryAfter > 0 then
       begin
         TThread.Sleep(retryAfter * 1000);
         Result := post(URL, src, headers, output, backoff * 2);
