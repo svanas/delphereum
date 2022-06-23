@@ -31,13 +31,13 @@ interface
 uses
   // Delphi
   System.SysUtils,
-  System.Threading,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
   web3,
   web3.eth.abi,
   web3.eth.contract,
+  web3.eth.logs,
   web3.eth.tokenlists,
   web3.eth.types;
 
@@ -142,7 +142,7 @@ procedure swap(
   callback: TAsyncReceipt);
 
 // easy access function: listen for swaps between two tokens.
-function listen(client: IWeb3; callback: TOnSwap): ITask;
+function listen(client: IWeb3; callback: TOnSwap): ILogger;
 
 implementation
 
@@ -157,7 +157,6 @@ uses
   // web3
   web3.eth,
   web3.eth.erc20,
-  web3.eth.logs,
   web3.graph,
   web3.json,
   web3.utils;
@@ -884,7 +883,7 @@ end;
 
 {---------- easy access function: listen for swaps between two tokens ---------}
 
-function listen(client: IWeb3; callback: TOnSwap): ITask;
+function listen(client: IWeb3; callback: TOnSwap): ILogger;
 begin
   Result := web3.eth.logs.get(client, TVault.DeployedAt, procedure(log: TLog)
   begin
