@@ -31,7 +31,6 @@ interface
 uses
   // Delphi
   System.SysUtils,
-  System.Threading,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -157,7 +156,7 @@ type
 
   TERC721 = class(TCustomContract, IERC721, IERC721Metadata, IERC721Enumerable)
   strict private
-    FTask: ITask;
+    FLogger: ILogger;
     FOnTransfer: TOnTransfer;
     FOnApproval: TOnApproval;
     FOnApprovalForAll: TOnApprovalForAll;
@@ -236,7 +235,7 @@ constructor TERC721.Create(aClient: IWeb3; aContract: TAddress);
 begin
   inherited Create(aClient, aContract);
 
-  FTask := web3.eth.logs.get(aClient, aContract,
+  FLogger := web3.eth.logs.get(aClient, aContract,
     procedure(log: TLog)
     begin
       if Assigned(FOnTransfer) then
@@ -262,8 +261,8 @@ end;
 
 destructor TERC721.Destroy;
 begin
-  if FTask.Status = TTaskStatus.Running then
-    FTask.Cancel;
+  if FLogger.Status in [Running, Paused] then
+    FLogger.Stop;
   inherited Destroy;
 end;
 
@@ -291,12 +290,12 @@ begin
   or Assigned(FOnApproval)
   or Assigned(FOnApprovalForAll) then
   begin
-    if FTask.Status <> TTaskStatus.Running then
-      FTask.Start;
+    if FLogger.Status in [Idle, Paused] then
+      FLogger.Start;
     EXIT;
   end;
-  if FTask.Status = TTaskStatus.Running then
-    FTask.Cancel;
+  if FLogger.Status = Running then
+    FLogger.Pause;
 end;
 
 procedure TERC721.BalanceOf(owner: TAddress; callback: TAsyncQuantity);

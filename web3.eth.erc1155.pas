@@ -29,13 +29,12 @@ unit web3.eth.erc1155;
 interface
 
 uses
-  // Delphi
-  System.Threading,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
   web3,
   web3.eth.contract,
+  web3.eth.logs,
   web3.eth.types;
 
 type
@@ -141,7 +140,7 @@ type
 
   TERC1155 = class(TCustomContract, IERC1155, IERC1155TokenReceiver, IERC1155Metadata_URI)
   strict private
-    FTask: ITask;
+    FLogger: ILogger;
     FOnTransferSingle: TOnTransferSingle;
     FOnTransferBatch : TOnTransferBatch;
     FOnApprovalForAll: TOnApprovalForAll;
@@ -230,7 +229,6 @@ uses
   // web3
   web3.eth,
   web3.eth.abi,
-  web3.eth.logs,
   web3.utils;
 
 { TERC1155}
@@ -239,7 +237,7 @@ constructor TERC1155.Create(aClient: IWeb3; aContract: TAddress);
 begin
   inherited Create(aClient, aContract);
 
-  FTask := web3.eth.logs.get(aClient, aContract,
+  FLogger := web3.eth.logs.get(aClient, aContract,
     procedure(log: TLog)
     begin
       if Assigned(FOnTransferSingle) then
@@ -272,8 +270,8 @@ end;
 
 destructor TERC1155.Destroy;
 begin
-  if FTask.Status = TTaskStatus.Running then
-    FTask.Cancel;
+  if FLogger.Status in [Running, Paused] then
+    FLogger.Stop;
   inherited Destroy;
 end;
 
@@ -301,12 +299,12 @@ begin
   or Assigned(FOnTransferBatch)
   or Assigned(FOnApprovalForAll) then
   begin
-    if FTask.Status <> TTaskStatus.Running then
-      FTask.Start;
+    if FLogger.Status in [Idle, Paused] then
+      FLogger.Start;
     EXIT;
   end;
-  if FTask.Status = TTaskStatus.Running then
-    FTask.Cancel;
+  if FLogger.Status = Running then
+    FLogger.Pause;
 end;
 
 // Transfers `value` amount of an `id` from the `owner` address to the `to` address specified (with safety call).
