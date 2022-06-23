@@ -31,7 +31,6 @@ interface
 uses
   // Delphi
   System.Math,
-  System.Threading,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -87,7 +86,7 @@ type
 
   TERC20 = class(TCustomContract, IERC20)
   strict private
-    FTask      : ITask;
+    FLogger    : ILogger;
     FOnTransfer: TOnTransfer;
     FOnApproval: TOnApproval;
     procedure SetOnTransfer(Value: TOnTransfer);
@@ -147,13 +146,13 @@ implementation
 constructor TERC20.Create(aClient: IWeb3; aContract: TAddress);
 begin
   inherited Create(aClient, aContract);
-  FTask := web3.eth.logs.get(aClient, aContract, OnLatestBlockMined);
+  FLogger := web3.eth.logs.get(aClient, aContract, OnLatestBlockMined);
 end;
 
 destructor TERC20.Destroy;
 begin
-  if FTask.Status = TTaskStatus.Running then
-    FTask.Cancel;
+  if FLogger.Status in [Running, Paused] then
+    FLogger.Stop;
   inherited Destroy;
 end;
 
@@ -161,12 +160,12 @@ procedure TERC20.EventChanged;
 begin
   if ListenForLatestBlock then
   begin
-    if not(FTask.Status in [TTaskStatus.WaitingToRun, TTaskStatus.Running]) then
-      FTask.Start;
+    if FLogger.Status in [Idle, Paused] then
+      FLogger.Start;
     EXIT;
   end;
-  if FTask.Status = TTaskStatus.Running then
-    FTask.Cancel;
+  if FLogger.Status = Running then
+    FLogger.Pause;
 end;
 
 function TERC20.ListenForLatestBlock: Boolean;

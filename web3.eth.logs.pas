@@ -31,7 +31,7 @@ interface
 uses
   // Delphi
   System.JSON,
-  System.Threading,
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -40,26 +40,33 @@ uses
 
 type
   TLog = record
-  strict private
+  private
     FBlockNumber: BigInteger;
     FTopics     : TTopics;
     FData       : TTuple;
     function  GetTopic(idx: Integer): TArg;
-  public
     procedure Load(tx: TJsonValue);
+  public
     function  isEvent(const name: string): Boolean;
     property  BlockNumber: BigInteger read FBlockNumber;
     property  Topic[idx: Integer]: TArg read GetTopic;
     property  Data: TTuple read FData;
   end;
 
-type
   PLog = ^TLog;
 
-type
-  TAsyncLog = reference to procedure(log: TLog);
+  TStatus = (Idle, Running, Paused, Stopped);
 
-function get(client: IWeb3; address: TAddress; callback: TAsyncLog): ITask;
+  ILogger = interface
+  ['{C2F29D30-00FC-4598-BEF4-59B65A9F55B5}']
+    procedure Pause;
+    procedure Start;
+    function Status: TStatus;
+    procedure Stop;
+    procedure Wait;
+  end;
+
+function get(client: IWeb3; address: TAddress; callback: TProc<TLog>): ILogger;
 
 implementation
 
@@ -67,7 +74,7 @@ uses
   // Delphi
   System.Classes,
   System.Generics.Collections,
-  System.SysUtils,
+  System.Threading,
   // web3
   web3.eth,
   web3.json,
@@ -186,21 +193,95 @@ end;
 
 { public functions }
 
-function get(client: IWeb3; address: TAddress; callback: TAsyncLog): ITask;
+type
+  TLogger = class(TTask, ILogger)
+  strict private
+    FPaused : Boolean;
+    FStopped: Boolean;
+  public
+    constructor Create(const Proc: TProc);
+    procedure Pause;
+    procedure Start;
+    function Status: TStatus;
+    procedure Stop;
+    procedure Wait;
+  end;
+
+constructor TLogger.Create(const Proc: TProc);
 begin
-  Result := TTask.Create(procedure
+  inherited Create(nil, TNotifyEvent(nil), Proc, TThreadPool.Default, nil);
+end;
+
+procedure TLogger.Pause;
+begin
+  case Self.Status of
+    Idle   : raise EInvalidOperation.Create('Cannot pause a logger that is not running');
+    Running: FPaused := True;
+    Paused : { nothing };
+    Stopped: raise EInvalidOperation.Create('Cannot pause a logger that has already stopped');
+  end;
+end;
+
+procedure TLogger.Start;
+begin
+  case Self.Status of
+    Idle   : inherited Start;
+    Running: { nothing };
+    Paused : FPaused := False;
+    Stopped: raise EInvalidOperation.Create('Cannot start a logger that has already stopped');
+  end;
+end;
+
+function TLogger.Status: TStatus;
+begin
+  Result := Idle;
+  if FStopped or (Self.GetStatus = TTaskStatus.Completed) then
+    Result := Stopped
+  else
+    if Self.GetStatus in [TTaskStatus.WaitingToRun, TTaskStatus.Running] then
+      if FPaused then
+        Result := Paused
+      else
+        Result := Running;
+end;
+
+procedure TLogger.Stop;
+begin
+  case Self.Status of
+    Idle   : raise EInvalidOperation.Create('Cannot stop a logger that is not running');
+    Running: FStopped := True;
+    Paused : FStopped := True;
+    Stopped: { nothing };
+  end;
+end;
+
+procedure TLogger.Wait;
+begin
+  if Self.Status = Paused then
+    raise EInvalidOperation.Create('Cannot wait for a paused a logger to complete')
+  else
+    inherited Wait;
+end;
+
+function get(client: IWeb3; address: TAddress; callback: TProc<TLog>): ILogger;
+begin
+  Result := TLogger.Create(procedure
   begin
     var bn := web3.eth.blockNumber(client);
-    while TTask.CurrentTask.Status <> TTaskStatus.Canceled do
+    while (TTask.CurrentTask as ILogger).Status <> Stopped do
     begin
       try
         TTask.CurrentTask.Wait(500);
       except end;
-      const logs = web3.eth.logs.getAsLog(client, bn, address);
-      for var log in logs do
+      if (TTask.CurrentTask as ILogger).Status <> Stopped then
       begin
-        bn := BigInteger.Max(bn, log.BlockNumber.Succ);
-        callback(log);
+        const logs = web3.eth.logs.getAsLog(client, bn, address);
+        for var log in logs do
+        begin
+          bn := BigInteger.Max(bn, log.BlockNumber.Succ);
+          if (TTask.CurrentTask as ILogger).Status <> Paused then
+            callback(log);
+        end;
       end;
     end;
   end);
