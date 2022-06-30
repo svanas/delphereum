@@ -53,11 +53,11 @@ end;
 function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): string;
 const
   ENDPOINT: array[TChain] of array[TProtocol] of string = (
-    { Ethereum          } ('https://eth-mainnet.alchemyapi.io/v2/%s', 'wss://eth-mainnet.ws.alchemyapi.io/v2/%s'),
-    { Ropsten           } ('https://eth-ropsten.alchemyapi.io/v2/%s', 'wss://eth-ropsten.ws.alchemyapi.io/v2/%s'),
-    { Rinkeby           } ('https://eth-rinkeby.alchemyapi.io/v2/%s', 'wss://eth-rinkeby.ws.alchemyapi.io/v2/%s'),
-    { Kovan             } ('https://eth-kovan.alchemyapi.io/v2/%s', 'wss://eth-kovan.ws.alchemyapi.io/v2/%s'),
-    { Goerli            } ('https://eth-goerli.alchemyapi.io/v2/%s', 'wss://eth-goerli.ws.alchemyapi.io/v2/%s'),
+    { Ethereum          } ('https://eth-mainnet.g.alchemy.com/v2/%s', 'wss://eth-mainnet.g.alchemy.com/v2/%s'),
+    { Ropsten           } ('https://eth-ropsten.g.alchemy.com/v2/%s', 'wss://eth-ropsten.g.alchemy.com/v2/%s'),
+    { Rinkeby           } ('https://eth-rinkeby.g.alchemy.com/v2/%s', 'wss://eth-rinkeby.g.alchemy.com/v2/%s'),
+    { Kovan             } ('https://eth-kovan.g.alchemy.com/v2/%s', 'wss://eth-kovan.g.alchemy.com/v2/%s'),
+    { Goerli            } ('https://eth-goerli.g.alchemy.com/v2/%s', 'wss://eth-goerli.g.alchemy.com/v2/%s'),
     { Optimism          } ('https://opt-mainnet.g.alchemy.com/v2/%s', 'wss://opt-mainnet.g.alchemy.com/v2/%s'),
     { Optimism_test_net } ('https://opt-kovan.g.alchemy.com/v2/y%s', 'wss://opt-kovan.g.alchemy.com/v2/%s'),
     { RSK               } ('https://public-node.rsk.co', ''),
