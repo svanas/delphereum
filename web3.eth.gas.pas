@@ -44,10 +44,10 @@ uses
   web3.json.rpc,
   web3.utils;
 
-procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity);
+procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity; allowCustom: Boolean = True);
 procedure getBaseFeePerGas(client: IWeb3; callback: TAsyncQuantity);
 procedure getMaxPriorityFeePerGas(client: IWeb3; callback: TAsyncQuantity);
-procedure getMaxFeePerGas(client: IWeb3; callback: TAsyncQuantity);
+procedure getMaxFeePerGas(client: IWeb3; callback: TAsyncQuantity; allowCustom: Boolean = True);
 
 procedure estimateGas(
   client    : IWeb3;
@@ -74,11 +74,11 @@ begin
   end);
 end;
 
-procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity);
+procedure getGasPrice(client: IWeb3; callback: TAsyncQuantity; allowCustom: Boolean);
 begin
   const info = client.GetGasStationInfo;
 
-  if info.Custom > 0 then
+  if (info.Custom > 0) and allowCustom then
   begin
     callback(info.Custom, nil);
     EXIT;
@@ -138,10 +138,10 @@ begin
   const adjustForSpeed = function(tip: BigInteger; speed: TGasPrice): BigInteger
   begin
     case speed of
-      Fastest: Result := TWei.Max(tip, 4000000000); // 4 Gwei
-      Fast   : Result := TWei.Max(tip, 3000000000); // 3 Gwei
-      Medium : Result := TWei.Max(tip, 2000000000); // 2 Gwei
-      Low    : Result := 1000000000;                // 1 Gwei
+      Fastest: Result := tip * 2;          // probably ~4 Gwei
+      Fast   : Result := tip + 1000000000; // probably ~3 Gwei
+      Medium : Result := tip;              // probably ~2 Gwei
+      Low    : Result := 1000000000;       // 1 Gwei
     end;
   end;
 
@@ -171,11 +171,11 @@ begin
   end);
 end;
 
-procedure getMaxFeePerGas(client: IWeb3; callback: TAsyncQuantity);
+procedure getMaxFeePerGas(client: IWeb3; callback: TAsyncQuantity; allowCustom: Boolean);
 begin
   const info = client.GetGasStationInfo;
 
-  if info.Custom > 0 then
+  if (info.Custom > 0) and allowCustom then
   begin
     callback(info.Custom, nil);
     EXIT;
@@ -265,7 +265,7 @@ begin
                 ]
               )
               , callback);
-          end);
+          end, False);
       end);
       EXIT;
     end;
@@ -283,7 +283,7 @@ begin
             web3.json.quoteString(toHex(gasPrice, [zeroAs0x0]), '"')
           ]
         ), callback);
-    end);
+    end, False);
   end;
 
   // do a loosely estimate first, then a strict estimate if an error occurred
