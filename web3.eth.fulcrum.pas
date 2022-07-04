@@ -257,7 +257,7 @@ end;
 
 class function TFulcrum.Name: string;
 begin
-  Result := 'Fulcrum';
+  Result := 'Ooki';
 end;
 
 class function TFulcrum.Supports(chain: TChain; reserve: TReserve): Boolean;
@@ -505,8 +505,8 @@ begin
   end);
 end;
 
-// Called to deposit assets to the iToken, which in turn mints iTokens to the lender’s wallet at the current tokenPrice() rate.
-// A prior ERC20 “approve” transaction should have been sent to the asset token for an amount greater than or equal to the specified amount.
+// Called to deposit assets to the iToken, which in turn mints iTokens to the lenderï¿½s wallet at the current tokenPrice() rate.
+// A prior ERC20 ï¿½approveï¿½ transaction should have been sent to the asset token for an amount greater than or equal to the specified amount.
 // The supplier will receive the minted iTokens.
 procedure TiToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
 begin
@@ -521,8 +521,8 @@ begin
   end);
 end;
 
-// Returns the user’s balance of the underlying asset, scaled by 1e18
-// This is the same as multiplying the user’s token balance by the token price.
+// Returns the userï¿½s balance of the underlying asset, scaled by 1e18
+// This is the same as multiplying the userï¿½s token balance by the token price.
 procedure TiToken.AssetBalanceOf(owner: TAddress; callback: TAsyncQuantity);
 begin
   web3.eth.call(Client, Contract, 'assetBalanceOf(address)', [owner], callback);
