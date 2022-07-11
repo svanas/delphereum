@@ -42,13 +42,18 @@ type
     procedure ToWei;
     [Test]
     procedure WeiToWei;
+    [Test]
+    procedure ToChecksum;
   end;
 
 implementation
 
 uses
+  // Delphi
+  System.SysUtils,
   // web3
   web3,
+  web3.eth.types,
   web3.eth.utils;
 
 procedure TTests.FromWei;
@@ -97,7 +102,7 @@ end;
 
 procedure TTests.WeiToWei;
 const
-  ethers: array[0..17] of string = (
+  TEST_CASES: array[0..17] of string = (
     '0',
     '0.1',
     '0.01',
@@ -117,8 +122,35 @@ const
     '1.0000001',
     '1.00000001');
 begin
-  for var I := System.Low(ethers) to System.High(ethers) do
-    Assert.AreEqual(web3.eth.utils.fromWei(web3.eth.utils.toWei(ethers[I], ether), ether), ethers[I]);
+  for var TEST_CASE in TEST_CASES do
+    Assert.AreEqual(
+      web3.eth.utils.fromWei(web3.eth.utils.toWei(TEST_CASE, ether), ether),
+      TEST_CASE
+    );
+end;
+
+procedure TTests.ToChecksum;
+const
+  TEST_CASES: array[0..3] of string = (
+    '0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed',
+    '0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359',
+    '0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB',
+    '0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb'
+  );
+begin
+  for var TEST_CASE in TEST_CASES do
+  begin
+    Assert.AreEqual(
+      string(TAddress.New(TEST_CASE.ToUpper).ToChecksum),
+      TEST_CASE,
+      False
+    );
+    Assert.AreEqual(
+      string(TAddress.New(TEST_CASE.ToLower).ToChecksum),
+      TEST_CASE,
+      False
+    );
+  end;
 end;
 
 initialization

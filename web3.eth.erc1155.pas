@@ -246,8 +246,8 @@ begin
             log.Topic[1].toAddress, // operator
             log.Topic[2].toAddress, // from
             log.Topic[3].toAddress, // to
-            log.Data[0].toBigInt,   // id
-            log.Data[1].toBigInt    // value
+            log.Data[0].toUInt256,  // id
+            log.Data[1].toUInt256   // value
           );
       if Assigned(FOnTransferBatch) then
         if log.isEvent('TransferBatch(address,address,address,uint256[],uint256[])') then
@@ -263,7 +263,7 @@ begin
           FOnApprovalForAll(Self,
             log.Topic[1].toAddress, // owner
             log.Topic[2].toAddress, // operator
-            log.Data[0].toBoolean   // apprpved
+            log.Data[0].toBoolean   // approved
           );
     end);
 end;

@@ -49,10 +49,12 @@ type
     Inner: TBytes32;
   public
     function toAddress: TAddress;
+    function toBytes32: TBytes32;
     function toHex(const prefix: string): string;
     function toInt: Integer;
     function toInt64: Int64;
-    function toBigInt: BigInteger;
+    function toInt256: BigInteger;
+    function toUInt256: BigInteger;
     function toBoolean: Boolean;
     function toString: string;
     function toDateTime: TUnixDateTime;
@@ -115,6 +117,7 @@ type
     class function  New(const hex: string): TAddress; overload; static;
     class procedure New(client: IWeb3; const name: string; callback: TAsyncAddress); overload; static;
     procedure ToString(client: IWeb3; callback: TAsyncString; abbreviated: Boolean = False);
+    function  ToChecksum: TAddress;
     function  Abbreviated: string;
     function  IsZero: Boolean;
     function  SameAs(const other: TAddress): Boolean;
@@ -158,6 +161,11 @@ begin
   Result := TAddress.New(Self);
 end;
 
+function TArg.toBytes32: TBytes32;
+begin
+  Result := Self.Inner;
+end;
+
 function TArg.toHex(const prefix: string): string;
 const
   Digits = '0123456789ABCDEF';
@@ -184,7 +192,15 @@ begin
   Result := StrToInt64(Self.toHex('$'));
 end;
 
-function TArg.toBigInt: BigInteger;
+function TArg.toInt256: BigInteger;
+begin
+  const S = Self.toHex('0x');
+  Result := S;
+  if Copy(S, System.Low(S), 4) = '0xFF' then
+    Result := BigInteger.Zero - (web3.Infinite - Result);
+end;
+
+function TArg.toUInt256: BigInteger;
 begin
   Result := Self.toHex('0x');
 end;
@@ -268,6 +284,24 @@ begin
 
     callback(output, nil);
   end);
+end;
+
+function TAddressHelper.ToChecksum: TAddress;
+begin
+  Result := '0x';
+  // take lowercase hex address sans 0x as input
+  var input := string(Self).ToLower;
+  while Copy(input, System.Low(input), 2).ToLower = '0x' do
+    Delete(input, System.Low(input), 2);
+  // treat the hex address as UTF-8 for keccak256 hashing
+  const hash = web3.utils.toHex('', web3.utils.sha3(TEncoding.UTF8.GetBytes(input)));
+  // iterate over each character in the hex address
+  for var I := System.Low(input) to High(input) do
+    // check if the corresponding hex digit (nibble) in the hash is 8 or higher
+    if CharInSet(input[I], ['a', 'b', 'c', 'd', 'e', 'f']) and (StrToInt('$' + hash[I]) > 7) then
+      Result := TAddress(string(Result) + input.ToUpper[I])
+    else
+      Result := TAddress(string(Result) + input[I]);
 end;
 
 function TAddressHelper.Abbreviated: string;

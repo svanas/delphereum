@@ -520,7 +520,7 @@ begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(tup[3].toBigInt, nil);
+      callback(tup[3].toUInt256, nil);
   end);
 end;
 

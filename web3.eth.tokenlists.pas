@@ -30,6 +30,7 @@ interface
 
 uses
   // Delphi
+  System.JSON,
   System.SysUtils,
   System.Types,
   // web3
@@ -64,12 +65,13 @@ function tokens(const source: string; callback: TAsyncJsonArray): IAsyncResult; 
 function tokens(const source: string; callback: TAsyncTokens): IAsyncResult; overload;
 function tokens(chain: TChain; callback: TAsyncTokens): IAsyncResult; overload;
 
+function token(const aJsonObject: TJsonObject): IToken;
+
 implementation
 
 uses
   // Delphi
   System.Generics.Collections,
-  System.JSON,
   // web3
   web3.eth.erc20,
   web3.http,
@@ -328,6 +330,11 @@ begin
       callback(result, nil);
     end);
   end);
+end;
+
+function token(const aJsonObject: TJsonObject): IToken;
+begin
+  Result := TToken.Create(aJsonObject);
 end;
 
 end.

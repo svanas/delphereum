@@ -241,15 +241,15 @@ begin
       if Assigned(FOnTransfer) then
         if log.isEvent('Transfer(address,address,uint256)') then
           FOnTransfer(Self,
-                      log.Topic[1].toAddress, // from
-                      log.Topic[2].toAddress, // to
-                      log.Topic[3].toBigInt); // tokenId
+                      log.Topic[1].toAddress,  // from
+                      log.Topic[2].toAddress,  // to
+                      log.Topic[3].toUInt256); // tokenId
       if Assigned(FOnApproval) then
         if log.isEvent('Approval(address,address,uint256)') then
           FOnApproval(Self,
-                      log.Topic[1].toAddress, // owner
-                      log.Topic[2].toAddress, // spender
-                      log.Topic[3].toBigInt); // tokenId
+                      log.Topic[1].toAddress,  // owner
+                      log.Topic[2].toAddress,  // spender
+                      log.Topic[3].toUInt256); // tokenId
       if Assigned(FOnApprovalForAll) then
         if log.isEvent('ApprovalForAll(address,address,bool)') then
           FOnApprovalForAll(Self,

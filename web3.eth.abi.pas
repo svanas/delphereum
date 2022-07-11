@@ -39,6 +39,11 @@ uses
 type
   TContractArray = TList<Variant>;
 
+  IContractStruct = interface
+  ['{CA0C794D-6280-4AB1-9E91-4DE3443DFD1B}']
+    function Tuple: TArray<Variant>;
+  end;
+
 function tuple(args: array of Variant): Variant;
 
 function &array(args: array of Variant): TContractArray; overload;
@@ -137,6 +142,12 @@ function encode(const func: string; args: array of const): string;
     begin
       Result := False;
       case FindVarData(arg)^.VType of
+        varUnknown:
+        begin
+          var struct: IContractStruct;
+          if Supports(arg, IContractStruct, struct) then
+            Result := isDynamic(tuple(struct.Tuple));
+        end;
         varOleStr,
         varStrArg,
         varUStrArg,
@@ -161,7 +172,11 @@ function encode(const func: string; args: array of const): string;
       begin
         Result := VarArrayHighBound(arg, 1) - VarArrayLowBound(arg, 1) + 1;
         for var I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
-          Result := Result + varArrayCount(VarArrayGet(arg, [I]));
+        begin
+          const itm = VarArrayGet(arg, [I]);
+          if VarIsArray(itm) then
+            Result := Result + varArrayCount(itm) - 1;
+        end;
       end;
     end;
 
@@ -189,6 +204,12 @@ function encode(const func: string; args: array of const): string;
           Result := encodeArg(string(arg));
         varBoolean:
           Result := encodeArg(Boolean(arg));
+        varUnknown:
+        begin
+          var struct: IContractStruct;
+          if Supports(arg, IContractStruct, struct) then
+            Result := encodeArg(tuple(struct.Tuple));
+        end;
       else
         if VarIsArray(arg) then // tuple
         begin
@@ -229,6 +250,12 @@ function encode(const func: string; args: array of const): string;
           Result := encodeArg(string(arg.VUnicodeString));
         vtVariant:
           Result := encodeArg(arg.VVariant^);
+        vtInterface:
+        begin
+          var struct: IContractStruct;
+          if Supports(IInterface(arg.VInterface), IContractStruct, struct) then
+            Result := encodeArg(tuple(struct.Tuple));
+        end;
         vtObject:
           if arg.VObject is TContractArray then // array
           begin
@@ -260,6 +287,12 @@ function encode(const func: string; args: array of const): string;
           Result := isDynamic(arg.VVariant^);
         vtObject:
           Result := arg.VObject is TContractArray;
+        vtInterface:
+        begin
+          var struct: IContractStruct;
+          if Supports(IInterface(arg.VInterface), IContractStruct, struct) then
+            Result := isDynamic(tuple(struct.Tuple));
+        end;
         vtString, vtWideString, vtUnicodeString:
         begin
           var S: string;
@@ -276,10 +309,31 @@ function encode(const func: string; args: array of const): string;
       end;
     end;
 
+    function len(args: array of const): Integer;
+
+      function len(const arg: TVarRec): Integer;
+      begin
+        Result := 1;
+        if arg.VType = vtInterface then
+        begin
+          var struct: IContractStruct;
+          if Supports(IInterface(arg.VInterface), IContractStruct, struct) then
+          begin
+            const T = tuple(struct.Tuple);
+            if not isDynamic(T) then Result := varArrayCount(T);
+          end;
+        end;
+      end;
+
+    begin
+      Result := 0;
+      for var arg in args do Result := Result + len(arg);
+    end;
+
   begin
     Result := [];
     var suffix: TBytes;
-    var offset: Integer := Length(args) * 32;
+    var offset: Integer := len(args) * 32;
     for var arg in args do
     begin
       const curr = encodeArg(arg);
