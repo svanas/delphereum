@@ -144,9 +144,9 @@ function encode(const func: string; args: array of const): string;
       case FindVarData(arg)^.VType of
         varUnknown:
         begin
-          var S: IContractStruct;
-          if Supports(arg, IContractStruct, S) then
-            Result := isDynamic(tuple(S.Tuple));
+          var struct: IContractStruct;
+          if Supports(arg, IContractStruct, struct) then
+            Result := isDynamic(tuple(struct.Tuple));
         end;
         varOleStr,
         varStrArg,
@@ -172,7 +172,11 @@ function encode(const func: string; args: array of const): string;
       begin
         Result := VarArrayHighBound(arg, 1) - VarArrayLowBound(arg, 1) + 1;
         for var I := VarArrayLowBound(arg, 1) to VarArrayHighBound(arg, 1) do
-          Result := Result + varArrayCount(VarArrayGet(arg, [I]));
+        begin
+          const itm = VarArrayGet(arg, [I]);
+          if VarIsArray(itm) then
+            Result := Result + varArrayCount(itm) - 1;
+        end;
       end;
     end;
 
@@ -312,10 +316,10 @@ function encode(const func: string; args: array of const): string;
         Result := 1;
         if arg.VType = vtInterface then
         begin
-          var S: IContractStruct;
-          if Supports(IInterface(arg.VInterface), IContractStruct, S) then
+          var struct: IContractStruct;
+          if Supports(IInterface(arg.VInterface), IContractStruct, struct) then
           begin
-            const T = tuple(S.Tuple);
+            const T = tuple(struct.Tuple);
             if not isDynamic(T) then Result := varArrayCount(T);
           end;
         end;
