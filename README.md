@@ -75,12 +75,13 @@ SimpleBaseLib4Pascal
 9. [A 3-minute Smart Contract and Delphi - Part 2](https://medium.com/@svanas/a-3-minute-smart-contract-and-delphi-part-2-446925faa47b)
 10. [QuikNode, Ethereum and Delphi](https://medium.com/@svanas/quiknode-ethereum-and-delphi-f7bfc9671c23)
 11. [Delphi and the Ethereum Dark Forest](https://svanas.medium.com/delphi-and-the-ethereum-dark-forest-5b430da3ad93)
+12. [Swap one token for another in Delphi](https://svanas.medium.com/swap-one-token-for-another-in-delphi-bcb999c47f7)
 
 ## Case study
 
 ### 1. Migratooor
 
-[Migratooor](https://github.com/svanas/migratooor) transfers all your tokens from one wallet to another. You can download Migratooor [for macOS and Windows](https://github.com/svanas/migratooor/releases/latest).
+[Migratooor](https://github.com/svanas/migratooor) transfers all your tokens from one wallet to another. You can download Migratooor [for macOS or Windows](https://github.com/svanas/migratooor/releases/latest).
 
 ### 2. Bankless
 
@@ -96,7 +97,7 @@ You can download Bankless [for Windows](https://www.dropbox.com/s/fgjl5zmfnuw7h0
 
 ### 4. NFT
 
-[NFT](https://github.com/svanas/NFT) is a simple "Hello World" example project, demonstrating how to enumerate over the NFTs in a token contract and display the associated image for each and every one of them.
+[NFT](https://github.com/svanas/NFT) is another "Hello World" example project, demonstrating how to enumerate over the NFTs in a token contract and display the associated image for each and every one of them.
 
 ## License
 
