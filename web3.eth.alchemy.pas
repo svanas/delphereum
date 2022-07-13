@@ -59,7 +59,7 @@ const
     { Kovan             } ('https://eth-kovan.g.alchemy.com/v2/%s', 'wss://eth-kovan.g.alchemy.com/v2/%s'),
     { Goerli            } ('https://eth-goerli.g.alchemy.com/v2/%s', 'wss://eth-goerli.g.alchemy.com/v2/%s'),
     { Optimism          } ('https://opt-mainnet.g.alchemy.com/v2/%s', 'wss://opt-mainnet.g.alchemy.com/v2/%s'),
-    { Optimism_test_net } ('https://opt-kovan.g.alchemy.com/v2/y%s', 'wss://opt-kovan.g.alchemy.com/v2/%s'),
+    { Optimism_test_net } ('https://opt-goerli.g.alchemy.com/v2/%s', 'wss://opt-goerli.g.alchemy.com/v2/%s'),
     { RSK               } ('https://public-node.rsk.co', ''),
     { RSK_test_net      } ('https://public-node.testnet.rsk.co', ''),
     { BSC               } ('https://bsc-dataseed.binance.org', ''),

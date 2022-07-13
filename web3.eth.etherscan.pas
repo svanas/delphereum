@@ -141,25 +141,25 @@ uses
 function endpoint(chain: TChain; const apiKey: string): string;
 const
   ENDPOINT: array[TChain] of string = (
-    'https://api.etherscan.io/api?apikey=%s',                  // Ethereum
-    'https://api-ropsten.etherscan.io/api?apikey=%s',          // Ropsten
-    'https://api-rinkeby.etherscan.io/api?apikey=%s',          // Rinkeby
-    'https://api-kovan.etherscan.io/api?apikey=%s',            // Kovan
-    'https://api-goerli.etherscan.io/api?apikey=%s',           // Goerli
-    'https://api-optimistic.etherscan.io/api?apikey=%s',       // Optimism
-    'https://api-kovan-optimistic.etherscan.io/api?apikey=%s', // Optimism_test_net
-    '',                                                        // RSK
-    '',                                                        // RSK_test_net
-    'https://api.bscscan.com/api?apikey=%s',                   // BSC
-    'https://api-testnet.bscscan.com/api?apikey=%s',           // BSC_test_net
-    '',                                                        // Gnosis
-    'https://api.polygonscan.com/api?apikey=%s',               // Polygon
-    'https://api-testnet.polygonscan.com/api?apikey=%s',       // Polygon_test_net
-    'https://api.ftmscan.com/api?apikey=%s',                   // Fantom
-    'https://api-testnet.ftmscan.com/api?apikey=%s',           // Fantom_test_net
-    'https://api.arbiscan.io/api?apikey=%s',                   // Arbitrum
-    'https://api-testnet.arbiscan.io/api?apikey=%s',           // Arbitrum_test_net
-    'https://api-sepolia.etherscan.io/api?apikey=%s'           // Sepolia
+    'https://api.etherscan.io/api?apikey=%s',                   // Ethereum
+    'https://api-ropsten.etherscan.io/api?apikey=%s',           // Ropsten
+    'https://api-rinkeby.etherscan.io/api?apikey=%s',           // Rinkeby
+    'https://api-kovan.etherscan.io/api?apikey=%s',             // Kovan
+    'https://api-goerli.etherscan.io/api?apikey=%s',            // Goerli
+    'https://api-optimistic.etherscan.io/api?apikey=%s',        // Optimism
+    'https://api-goerli-optimistic.etherscan.io/api?apikey=%s', // Optimism_test_net
+    '',                                                         // RSK
+    '',                                                         // RSK_test_net
+    'https://api.bscscan.com/api?apikey=%s',                    // BSC
+    'https://api-testnet.bscscan.com/api?apikey=%s',            // BSC_test_net
+    '',                                                         // Gnosis
+    'https://api.polygonscan.com/api?apikey=%s',                // Polygon
+    'https://api-testnet.polygonscan.com/api?apikey=%s',        // Polygon_test_net
+    'https://api.ftmscan.com/api?apikey=%s',                    // Fantom
+    'https://api-testnet.ftmscan.com/api?apikey=%s',            // Fantom_test_net
+    'https://api.arbiscan.io/api?apikey=%s',                    // Arbitrum
+    'https://api-testnet.arbiscan.io/api?apikey=%s',            // Arbitrum_test_net
+    'https://api-sepolia.etherscan.io/api?apikey=%s'            // Sepolia
   );
 begin
   Result := ENDPOINT[chain];
