@@ -53,14 +53,17 @@ implementation
 uses
   // Delphi
   System.Math,
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
   web3.coincap;
 
 procedure ETH_USD(client: IWeb3; callback: TAsyncFloat);
+var
+  coincap: TProc<TAsyncFloat>;
 begin
-  const coincap = procedure(callback: TAsyncFloat)
+  coincap := procedure(callback: TAsyncFloat)
   begin
     web3.coincap.ticker('ethereum', procedure(const ticker: ITicker; err: IError)
     begin

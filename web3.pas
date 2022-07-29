@@ -498,24 +498,21 @@ begin
     EXIT;
   end;
 
-  const client: IWeb3 = Self;
-  const chainName = GetEnumName(TypeInfo(TChain), Ord(Chain));
-
-  from.ToString(client, procedure(const from: string; err: IError)
+  from.ToString(Self, procedure(const from: string; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(False, err);
       EXIT;
     end;
-    &to.ToString(client, procedure(const &to: string; err: IError)
+    &to.ToString(Self, procedure(const &to: string; err: IError)
     begin
       if Assigned(err) then
       begin
         callback(False, err);
         EXIT;
       end;
-      web3.eth.chainlink.ETH_USD(client, procedure(price: Double; err: IError)
+      web3.eth.chainlink.ETH_USD(Self, procedure(price: Double; err: IError)
       begin
         if Assigned(err) then
         begin
@@ -529,7 +526,7 @@ begin
           modalResult := MessageDlg(Format(
             RS_SIGNATURE_REQUEST,
             [
-              chainName,                                                  // Network
+              GetEnumName(TypeInfo(TChain), Ord(Chain)),                  // Network
               from,                                                       // From
               &to,                                                        // To
               fromWei(gasPrice, gwei, 2),                                 // Gas price (gwei)
