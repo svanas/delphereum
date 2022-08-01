@@ -471,8 +471,10 @@ procedure write(
   const func: string;
   args      : array of const;
   callback  : TAsyncTxHash);
+var
+  data: string;
 begin
-  const data = web3.eth.abi.encode(func, args);
+  data := web3.eth.abi.encode(func, args);
   from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
@@ -496,8 +498,10 @@ procedure write(
   const func: string;
   args      : array of const;
   callback  : TAsyncReceipt);
+var
+  data: string;
 begin
-  const data = web3.eth.abi.encode(func, args);
+  data := web3.eth.abi.encode(func, args);
   from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then

@@ -134,8 +134,10 @@ begin
 end;
 
 procedure getMaxPriorityFeePerGas(client: IWeb3; callback: TAsyncQuantity);
+var
+  adjustForSpeed: TFunc<BigInteger, TGasPrice, BigInteger>; // (input, speed) -> output
 begin
-  const adjustForSpeed = function(tip: BigInteger; speed: TGasPrice): BigInteger
+  adjustForSpeed := function(tip: BigInteger; speed: TGasPrice): BigInteger
   begin
     case speed of
       Fastest: Result := tip * 2;          // probably ~4 Gwei
@@ -211,9 +213,15 @@ procedure estimateGas(
   from, &to : TAddress;
   const data: string;
   callback  : TAsyncQuantity);
+type
+  Teth_estimateGas = reference to procedure(client: IWeb3; const json: string; callback: TAsyncQuantity);
+  TdoEstimateGasEx = reference to procedure(client: IWeb3; from, &to: TAddress; &strict: Boolean; callback: TAsyncQuantity);
+var
+  eth_estimateGas: Teth_estimateGas;
+  doEstimateGasEx: TdoEstimateGasEx;
 begin
   // estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
-  const eth_estimateGas = procedure(client: IWeb3; const json: string; callback: TAsyncQuantity)
+  eth_estimateGas := procedure(client: IWeb3; const json: string; callback: TAsyncQuantity)
   begin
     const obj = web3.json.unmarshal(json) as TJsonObject;
     try
@@ -232,7 +240,7 @@ begin
   end;
 
   // if strict, then factor in your gas price (otherwise ignore your gas price while estimating gas)
-  const &do = procedure(client: IWeb3; from, &to: TAddress; &strict: Boolean; callback: TAsyncQuantity)
+  doEstimateGasEx := procedure(client: IWeb3; from, &to: TAddress; &strict: Boolean; callback: TAsyncQuantity)
   begin
     if not &strict then
     begin
@@ -287,10 +295,10 @@ begin
   end;
 
   // do a loosely estimate first, then a strict estimate if an error occurred
-  &do(client, from, &to, False, procedure(qty: BigInteger; err: IError)
+  doEstimateGasEx(client, from, &to, False, procedure(qty: BigInteger; err: IError)
   begin
     if Assigned(err) then
-      &do(client, from, &to, True, callback)
+      doEstimateGasEx(client, from, &to, True, callback)
     else
       callback(qty, nil);
   end);

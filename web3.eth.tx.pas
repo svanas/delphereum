@@ -413,6 +413,8 @@ end;
 
 // send raw transaction, get the receipt, and get the reason if the transaction failed.
 procedure sendTransaction(client: IWeb3; const raw: string; callback: TAsyncReceipt);
+var
+  onReceiptReceived: TAsyncReceipt;
 begin
   // send the raw transaction
   sendTransaction(client, raw, procedure(hash: TTxHash; err: IError)
@@ -423,7 +425,6 @@ begin
       EXIT;
     end;
     // get the transaction receipt
-    var onReceiptReceived: TAsyncReceipt;
     onReceiptReceived := procedure(rcpt: ITxReceipt; err: IError)
     begin
       if Assigned(err) then
