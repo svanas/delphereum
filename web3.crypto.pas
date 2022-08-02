@@ -92,8 +92,8 @@ end;
 function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
 begin
   const params: IECPublicKeyParameters = TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
-  Result := params.Q.AffineXCoord.ToBigInteger.ToByteArrayUnsigned
-          + params.Q.AffineYCoord.ToBigInteger.ToByteArrayUnsigned;
+  Result := params.Q.AffineXCoord.ToBigInteger.ToByteArray
+          + params.Q.AffineYCoord.ToBigInteger.ToByteArray;
 end;
 
 function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;
