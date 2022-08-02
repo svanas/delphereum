@@ -39,6 +39,7 @@ uses
   DUnitX.TestFramework,
   web3.coincap in '..\web3.coincap.pas',
   web3.crypto in '..\web3.crypto.pas',
+  web3.crypto.tests in '..\web3.crypto.tests.pas',
   web3.eth.aave.v1 in '..\web3.eth.aave.v1.pas',
   web3.eth.aave.v2 in '..\web3.eth.aave.v2.pas',
   web3.eth.abi in '..\web3.eth.abi.pas',
