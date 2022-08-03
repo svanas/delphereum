@@ -336,7 +336,7 @@ const
     250,     // Fantom
     4002,    // Fantom_test_net
     42161,   // Arbitrum
-    421611,  // Arbitrum_test_net
+    421613,  // Arbitrum_test_net
     11155111 // Sepolia
   );
 begin
@@ -381,25 +381,25 @@ end;
 function TChainHelper.BlockExplorerURL: string;
 const
   BLOCK_EXPLORER_URL: array[TChain] of string = (
-    'https://etherscan.io',                   // Ethereum
-    'https://ropsten.etherscan.io',           // Ropsten
-    'https://rinkeby.etherscan.io',           // Rinkeby
-    'https://kovan.etherscan.io',             // Kovan
-    'https://goerli.etherscan.io',            // Goerli
-    'https://optimistic.etherscan.io',        // Optimism
-    'https://goerli-optimistic.etherscan.io', // Optimism_test_net
-    'https://explorer.rsk.co',                // RSK
-    'https://explorer.testnet.rsk.co',        // RSK_test_net
-    'https://bscscan.com',                    // BSC
-    'https://testnet.bscscan.com',            // BSC_test_net
-    'https://blockscout.com/xdai/mainnet/',   // Gnosis
-    'https://polygonscan.com',                // Polygon
-    'https://mumbai.polygonscan.com',         // Polygon_test_net
-    'https://ftmscan.com',                    // Fantom
-    'https://testnet.ftmscan.com',            // Fantom_test_net
-    'https://explorer.arbitrum.io',           // Arbitrum
-    'https://rinkeby-explorer.arbitrum.io',   // Arbitrum_test_net
-    'https://sepolia.etherscan.io'            // Sepolia
+    'https://etherscan.io',                       // Ethereum
+    'https://ropsten.etherscan.io',               // Ropsten
+    'https://rinkeby.etherscan.io',               // Rinkeby
+    'https://kovan.etherscan.io',                 // Kovan
+    'https://goerli.etherscan.io',                // Goerli
+    'https://optimistic.etherscan.io',            // Optimism
+    'https://goerli-optimistic.etherscan.io',     // Optimism_test_net
+    'https://explorer.rsk.co',                    // RSK
+    'https://explorer.testnet.rsk.co',            // RSK_test_net
+    'https://bscscan.com',                        // BSC
+    'https://testnet.bscscan.com',                // BSC_test_net
+    'https://blockscout.com/xdai/mainnet/',       // Gnosis
+    'https://polygonscan.com',                    // Polygon
+    'https://mumbai.polygonscan.com',             // Polygon_test_net
+    'https://ftmscan.com',                        // Fantom
+    'https://testnet.ftmscan.com',                // Fantom_test_net
+    'https://explorer.arbitrum.io',               // Arbitrum
+    'https://goerli-rollup-explorer.arbitrum.io', // Arbitrum_test_net
+    'https://sepolia.etherscan.io'                // Sepolia
   );
 begin
   Result := BLOCK_EXPLORER_URL[Self];
