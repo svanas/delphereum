@@ -146,7 +146,7 @@ function listen(client: IWeb3; callback: TOnSwap): ILogger;
 
 implementation
 
-{$R 'web3.eth.balancer.v2.tokenlist.kovan.res'}
+{$R 'web3.eth.balancer.v2.tokenlist.goerli.res'}
 
 uses
   // Delphi
@@ -504,12 +504,12 @@ end;
 procedure tokens(chain: TChain; callback: TAsyncTokens);
 begin
   case chain of
-    Kovan:
+    Goerli:
     begin
       const tokens = (function: TTokens
       begin
         Result := [];
-        const RS = TResourceStream.Create(hInstance, 'BALANCER_V2_TOKENLIST_KOVAN', RT_RCDATA);
+        const RS = TResourceStream.Create(hInstance, 'BALANCER_V2_TOKENLIST_GOERLI', RT_RCDATA);
         try
           const buf = (function: TBytes
           begin
