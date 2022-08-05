@@ -34,6 +34,7 @@ uses
   System.TypInfo,
   // CryptoLib4Pascal
   ClpBigInteger,
+  ClpBigIntegers,
   ClpCryptoLibTypes,
   ClpCustomNamedCurves,
   ClpECDomainParameters,
@@ -92,8 +93,8 @@ end;
 function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
 begin
   const params: IECPublicKeyParameters = TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
-  Result := params.Q.AffineXCoord.ToBigInteger.ToByteArray
-          + params.Q.AffineYCoord.ToBigInteger.ToByteArray;
+  Result := TBigIntegers.BigIntegerToBytes(params.Q.AffineXCoord.ToBigInteger, 32)
+          + TBigIntegers.BigIntegerToBytes(params.Q.AffineYCoord.ToBigInteger, 32);
 end;
 
 function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;

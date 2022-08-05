@@ -37,7 +37,9 @@ type
   TTests = class
   public
     [Test]
-    procedure PrivateKeyToPublicKey;
+    procedure PrivateKeyToPublicKey_One;
+    [Test]
+    procedure PrivateKeyToPublicKey_Two;
   end;
 
 implementation
@@ -47,7 +49,7 @@ uses
   web3,
   web3.eth.types;
 
-procedure TTests.PrivateKeyToPublicKey;
+procedure TTests.PrivateKeyToPublicKey_One;
 begin
   const privateKey: TPrivateKey = 'F6E38D3232AE5D132C5BF7A01D86A549F21E84A724D546CCAD7537E3997D0E48';
   privateKey.Address(procedure(addr: TAddress; err: IError)
@@ -56,6 +58,18 @@ begin
       Assert.Fail(err.Message)
     else
       Assert.AreEqual(string(addr), '0x8B8f64aE499E2564e97A0D1ADe36F64e3B820Fa1');
+  end);
+end;
+
+procedure TTests.PrivateKeyToPublicKey_Two;
+begin
+  const privateKey: TPrivateKey = '174510FE593B2B70A521130DB66C14030A3603FBEE8428BA81AAB48899571313';
+  privateKey.Address(procedure(addr: TAddress; err: IError)
+  begin
+    if Assigned(err) then
+      Assert.Fail(err.Message)
+    else
+      Assert.AreEqual(string(addr), '0x6ab80ed87F31B0fb567a176f7efF72c842812d2d');
   end);
 end;
 
