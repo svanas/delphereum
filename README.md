@@ -28,8 +28,8 @@ Delphereum supports [every EVM-compatible network](https://chainlist.org/), incl
 * [Arbitrum](https://arbitrum.io/)
 * [Optimism](https://optimism.io/)
 * [Polygon](https://polygon.technology/)
-* [Gnosis/xDai](https://www.xdaichain.com/)
-* [Binance Smart Chain](https://bscscan.com/)
+* [Gnosis](https://www.gnosischain.com/)
+* [BNB Chain](https://www.bnbchain.org/)
 * [Fantom](https://fantom.foundation/)
 
 ## Dependencies
