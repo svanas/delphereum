@@ -392,7 +392,7 @@ const
     'https://explorer.testnet.rsk.co',            // RSK_test_net
     'https://bscscan.com',                        // BSC
     'https://testnet.bscscan.com',                // BSC_test_net
-    'https://blockscout.com/xdai/mainnet/',       // Gnosis
+    'https://gnosisscan.io/',                     // Gnosis
     'https://polygonscan.com',                    // Polygon
     'https://mumbai.polygonscan.com',             // Polygon_test_net
     'https://ftmscan.com',                        // Fantom
