@@ -112,4 +112,4 @@ Distributed under the [GNU AGP v3.0 with Commons Clause](https://github.com/svan
 
 ## Commercial support and training
 
-Commercial support and training is available from [Stefan](https://stackoverflow.com/story/svanas).
+Commercial support and training is available from [Stefan](https://devstory.fyi/svanas).
