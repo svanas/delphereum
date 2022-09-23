@@ -108,7 +108,8 @@ Distributed under the [GNU AGP v3.0 with Commons Clause](https://github.com/svan
 * [eSeGeCe WebSockets](https://www.esegece.com/websockets)
 * [IPWorks WebSockets](https://www.nsoftware.com/ipworks/ws/)
 * [Blocknative Mempool Explorer](https://www.blocknative.com/explorer)
+* [Balancer Grants DAO](https://medium.com/@BalancerGrants/stefan-is-adding-balancer-to-delphereum-with-its-newest-grant-c0f646c9d2de)
 
 ## Commercial support and training
 
-Commercial support and training is available from [Stefan](https://stackoverflow.com/story/svanas).
+Commercial support and training is available from [Stefan](https://devstory.fyi/svanas).
