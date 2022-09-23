@@ -1,4 +1,4 @@
-{******************************************************************************}
+﻿{******************************************************************************}
 {                                                                              }
 {                                  Delphereum                                  }
 {                                                                              }
@@ -563,7 +563,7 @@ begin
     if aClient.Chain = Kovan then
       inherited Create(aClient, '0x73d0B4834Ba4ADa053d8282c02305eCdAC2304f0')
     else
-      raise EFulcrum.CreateFmt('iDAI is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
+      raise EFulcrum.CreateFmt('iDAI is not deployed on %s', [aClient.Chain.Name]);
 end;
 
 { TiUSDC }
@@ -577,7 +577,7 @@ begin
     if aClient.Chain = Kovan then
       inherited Create(aClient, '0xaaC9822F31e5Aefb32bC228DcF259F23B49B9855')
     else
-      raise EFulcrum.CreateFmt('iUSDC is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
+      raise EFulcrum.CreateFmt('iUSDC is not deployed on %s', [aClient.Chain.Name]);
 end;
 
 { TiUSDT }
@@ -591,10 +591,10 @@ begin
     if aClient.Chain = Kovan then
       inherited Create(aClient, '0x6b9F03e05423cC8D00617497890C0872FF33d4E8')
     else
-      if aClient.Chain = BSC then
+      if aClient.Chain = BNB then
         inherited Create(aClient, '0xf326b42a237086f1de4e7d68f2d2456fc787bc01')
       else
-        raise EFulcrum.CreateFmt('iUSDT is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
+        raise EFulcrum.CreateFmt('iUSDT is not deployed on %s', [aClient.Chain.Name]);
 end;
 
 end.

@@ -68,8 +68,8 @@ type
 function fromWei(wei: TWei; &to: TEthUnit; decimals: Byte = 18): string;
 function toWei(input: string; &unit: TEthUnit): TWei;
 
-function EthToFloat(const value: string): Double;
-function FloatToEth(value: Double): string;
+function DotToFloat(const value: string): Double;
+function FloatToDot(value: Double): string;
 
 implementation
 
@@ -157,14 +157,14 @@ begin
     Result := BigInteger.Negate(Result);
 end;
 
-function EthToFloat(const value: string): Double;
+function DotToFloat(const value: string): Double;
 begin
   var FS := TFormatSettings.Create;
   FS.DecimalSeparator := '.';
   Result := StrToFloat(value, FS);
 end;
 
-function FloatToEth(value: Double): string;
+function FloatToDot(value: Double): string;
 begin
   var FS := TFormatSettings.Create;
   FS.DecimalSeparator := '.';

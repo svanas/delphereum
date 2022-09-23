@@ -166,7 +166,7 @@ begin
   end;
   callback(EMPTY_ADDRESS,
     TError.Create('%s is not supported on %s', [
-      GetEnumName(TypeInfo(TReserve), Ord(reserve)), GetEnumName(TypeInfo(TChain), Ord(chain))
+      GetEnumName(TypeInfo(TReserve), Ord(reserve)), chain.Name
     ])
   );
 end;
@@ -438,7 +438,7 @@ begin
       if aClient.Chain = Ropsten then
         inherited Create(aClient, '0x1c8756FD2B28e9426CDBDcC7E3c4d64fa9A54728')
       else
-        raise EAave.CreateFmt('Aave is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
+        raise EAave.CreateFmt('Aave is not deployed on %s', [aClient.Chain.Name]);
 end;
 
 // Fetch the address of the latest implementation of the LendingPool contract.

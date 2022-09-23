@@ -53,25 +53,25 @@ end;
 function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): string;
 const
   ENDPOINT: array[TChain] of array[TProtocol] of string = (
-    { Ethereum          } ('https://eth-mainnet.g.alchemy.com/v2/%s', 'wss://eth-mainnet.g.alchemy.com/v2/%s'),
-    { Ropsten           } ('https://eth-ropsten.g.alchemy.com/v2/%s', 'wss://eth-ropsten.g.alchemy.com/v2/%s'),
-    { Rinkeby           } ('https://eth-rinkeby.g.alchemy.com/v2/%s', 'wss://eth-rinkeby.g.alchemy.com/v2/%s'),
-    { Kovan             } ('https://eth-kovan.g.alchemy.com/v2/%s', 'wss://eth-kovan.g.alchemy.com/v2/%s'),
-    { Goerli            } ('https://eth-goerli.g.alchemy.com/v2/%s', 'wss://eth-goerli.g.alchemy.com/v2/%s'),
-    { Optimism          } ('https://opt-mainnet.g.alchemy.com/v2/%s', 'wss://opt-mainnet.g.alchemy.com/v2/%s'),
-    { Optimism_test_net } ('https://opt-goerli.g.alchemy.com/v2/%s', 'wss://opt-goerli.g.alchemy.com/v2/%s'),
-    { RSK               } ('https://public-node.rsk.co', ''),
-    { RSK_test_net      } ('https://public-node.testnet.rsk.co', ''),
-    { BSC               } ('https://bsc-dataseed.binance.org', ''),
-    { BSC_test_net      } ('https://data-seed-prebsc-1-s1.binance.org:8545', ''),
-    { Gnosis            } ('https://rpc.gnosischain.com', 'wss://rpc.gnosischain.com/wss'),
-    { Polygon           } ('https://polygon-mainnet.g.alchemy.com/v2/%s', 'wss://polygon-mainnet.g.alchemy.com/v2/%s'),
-    { Polygon_test_net  } ('https://polygon-mumbai.g.alchemy.com/v2/%s', 'wss://polygon-mumbai.g.alchemy.com/v2/%s'),
-    { Fantom            } ('https://rpc.ftm.tools', ''),
-    { Fantom_test_net   } ('https://rpc.testnet.fantom.network', ''),
-    { Arbitrum          } ('https://arb-mainnet.g.alchemy.com/v2/%s', 'wss://arb-mainnet.g.alchemy.com/v2/%s'),
-    { Arbitrum_test_net } ('https://arb-goerli.g.alchemy.com/v2/%s', 'wss://arb-goerli.g.alchemy.com/v2/%s'),
-    { Sepolia           } ('https://nunki.htznr.fault.dev/rpc', 'wss://nunki.htznr.fault.dev/ws')
+    { Ethereum        } ('https://eth-mainnet.g.alchemy.com/v2/%s', 'wss://eth-mainnet.g.alchemy.com/v2/%s'),
+    { Ropsten         } ('https://eth-ropsten.g.alchemy.com/v2/%s', 'wss://eth-ropsten.g.alchemy.com/v2/%s'),
+    { Rinkeby         } ('https://eth-rinkeby.g.alchemy.com/v2/%s', 'wss://eth-rinkeby.g.alchemy.com/v2/%s'),
+    { Kovan           } ('https://eth-kovan.g.alchemy.com/v2/%s', 'wss://eth-kovan.g.alchemy.com/v2/%s'),
+    { Goerli          } ('https://eth-goerli.g.alchemy.com/v2/%s', 'wss://eth-goerli.g.alchemy.com/v2/%s'),
+    { Optimism        } ('https://opt-mainnet.g.alchemy.com/v2/%s', 'wss://opt-mainnet.g.alchemy.com/v2/%s'),
+    { OptimismGoerli  } ('https://opt-goerli.g.alchemy.com/v2/%s', 'wss://opt-goerli.g.alchemy.com/v2/%s'),
+    { RSK             } ('https://public-node.rsk.co', ''),
+    { RSK_test_net    } ('https://public-node.testnet.rsk.co', ''),
+    { BNB             } ('https://bsc-dataseed.binance.org', ''),
+    { BNB_test_net    } ('https://data-seed-prebsc-1-s1.binance.org:8545', ''),
+    { Gnosis          } ('https://rpc.gnosischain.com', 'wss://rpc.gnosischain.com/wss'),
+    { Polygon         } ('https://polygon-mainnet.g.alchemy.com/v2/%s', 'wss://polygon-mainnet.g.alchemy.com/v2/%s'),
+    { PolygonMumbai   } ('https://polygon-mumbai.g.alchemy.com/v2/%s', 'wss://polygon-mumbai.g.alchemy.com/v2/%s'),
+    { Fantom          } ('https://rpc.ftm.tools', ''),
+    { Fantom_test_net } ('https://rpc.testnet.fantom.network', ''),
+    { Arbitrum        } ('https://arb-mainnet.g.alchemy.com/v2/%s', 'wss://arb-mainnet.g.alchemy.com/v2/%s'),
+    { ArbitrumRinkeby } ('https://arb-rinkeby.g.alchemy.com/v2/%s', 'wss://arb-rinkeby.g.alchemy.com/v2/%s'),
+    { Sepolia         } ('https://nunki.htznr.fault.dev/rpc', 'wss://nunki.htznr.fault.dev/ws')
   );
 begin
   Result := ENDPOINT[chain][protocol];
@@ -80,7 +80,7 @@ begin
     Result := Format(Result, [projectId]);
     EXIT;
   end;
-  raise EAlchemy.CreateFmt('%s not supported', [GetEnumName(TypeInfo(TChain), Ord(chain))]);
+  raise EAlchemy.CreateFmt('%s not supported', [chain.Name]);
 end;
 
 end.

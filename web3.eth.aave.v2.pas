@@ -168,7 +168,7 @@ begin
   end;
   callback(EMPTY_ADDRESS,
     TError.Create('%s is not supported on %s', [
-      GetEnumName(TypeInfo(TReserve), Ord(reserve)), GetEnumName(TypeInfo(TChain), Ord(chain))
+      GetEnumName(TypeInfo(TReserve), Ord(reserve)), chain.Name
     ])
   );
 end;
@@ -551,7 +551,7 @@ begin
     if aClient.Chain = Kovan then
       inherited Create(aClient, '0x652B2937Efd0B5beA1c8d54293FC1289672AFC6b')
     else
-      raise EAave.CreateFmt('Aave is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(aClient.Chain))]);
+      raise EAave.CreateFmt('Aave is not deployed on %s', [aClient.Chain.Name]);
 end;
 
 procedure TAaveLendingPoolAddressesProvider.GetLendingPool(callback: TAsyncAddress);

@@ -43,18 +43,18 @@ type
     Kovan,
     Goerli,
     Optimism,
-    Optimism_test_net,
+    OptimismGoerli,
     RSK,
     RSK_test_net,
-    BSC,
-    BSC_test_net,
+    BNB,
+    BNB_test_net,
     Gnosis,
     Polygon,
-    Polygon_test_net,
+    PolygonMumbai,
     Fantom,
     Fantom_test_net,
     Arbitrum,
-    Arbitrum_test_net,
+    ArbitrumRinkeby,
     Sepolia
   );
 
@@ -75,7 +75,6 @@ type
   TSecurity     = (Automatic, TLS_10, TLS_11, TLS_12, TLS_13);
   TStandard     = (erc20, erc721, erc1155);
 
-type
   TStandardHelper = record helper for TStandard
     class function New(const name: string): TStandard; static;
   end;
@@ -180,6 +179,7 @@ type
     function Chain : TChain;
     function URL   : string;
     function TxType: Byte;
+    procedure LatestPrice(callback: TProc<Double, IError>);
 
     function  ETHERSCAN_API_KEY: string;
     function  GetGasStationInfo: TGasStationInfo;
@@ -202,6 +202,7 @@ type
     function Chain : TChain;
     function URL   : string;
     function TxType: Byte;
+    procedure LatestPrice(callback: TProc<Double, IError>);
 
     function  ETHERSCAN_API_KEY: string;
     function  GetGasStationInfo: TGasStationInfo;
@@ -293,6 +294,7 @@ uses
 {$ELSE}
   VCL.Dialogs,
 {$ENDIF}
+  web3.coincap,
   web3.eth.chainlink,
   web3.eth.types,
   web3.eth.utils,
@@ -317,7 +319,7 @@ end;
 
 function TChainHelper.Id: Integer;
 const
-  // https://chainid.network/
+  // https://chainlist.org
   CHAIN_ID: array[TChain] of Integer = (
     1,       // Ethereum
     3,       // Ropsten
@@ -325,18 +327,18 @@ const
     42,      // Kovan
     5,       // Goerli
     10,      // Optimism
-    420,     // Optimism_test_net
+    420,     // OptimismGoerli
     30,      // RSK
     31,      // RSK_test_net
-    56,      // BSC
-    97,      // BSC_test_net
+    56,      // BNB
+    97,      // BNB_test_net
     100,     // Gnosis
     137,     // Polygon,
-    80001,   // Polygon_test_net
+    80001,   // PolygonMumbai
     250,     // Fantom
     4002,    // Fantom_test_net
     42161,   // Arbitrum
-    421613,  // Arbitrum_test_net
+    421611,  // ArbitrumRinkeby
     11155111 // Sepolia
   );
 begin
@@ -360,18 +362,18 @@ const
     2, // Kovan
     2, // Goerli
     2, // Optimism
-    2, // Optimism_test_net
+    2, // OptimismGoerli
     0, // RSK
     0, // RSK_test_net
-    0, // BSC
-    0, // BSC_test_net
+    0, // BNB
+    0, // BNB_test_net
     2, // Gnosis
     2, // Polygon
-    2, // Polygon_test_net
+    2, // PolygonMumbai
     0, // Fantom
     0, // Fantom_test_net
     0, // Arbitrum
-    0, // Arbitrum_test_net
+    0, // ArbitrumRinkeby
     2  // Sepolia
   );
 begin
@@ -381,25 +383,25 @@ end;
 function TChainHelper.BlockExplorerURL: string;
 const
   BLOCK_EXPLORER_URL: array[TChain] of string = (
-    'https://etherscan.io',                       // Ethereum
-    'https://ropsten.etherscan.io',               // Ropsten
-    'https://rinkeby.etherscan.io',               // Rinkeby
-    'https://kovan.etherscan.io',                 // Kovan
-    'https://goerli.etherscan.io',                // Goerli
-    'https://optimistic.etherscan.io',            // Optimism
-    'https://goerli-optimistic.etherscan.io',     // Optimism_test_net
-    'https://explorer.rsk.co',                    // RSK
-    'https://explorer.testnet.rsk.co',            // RSK_test_net
-    'https://bscscan.com',                        // BSC
-    'https://testnet.bscscan.com',                // BSC_test_net
-    'https://gnosisscan.io/',                     // Gnosis
-    'https://polygonscan.com',                    // Polygon
-    'https://mumbai.polygonscan.com',             // Polygon_test_net
-    'https://ftmscan.com',                        // Fantom
-    'https://testnet.ftmscan.com',                // Fantom_test_net
-    'https://explorer.arbitrum.io',               // Arbitrum
-    'https://goerli-rollup-explorer.arbitrum.io', // Arbitrum_test_net
-    'https://sepolia.etherscan.io'                // Sepolia
+    'https://etherscan.io',                   // Ethereum
+    'https://ropsten.etherscan.io',           // Ropsten
+    'https://rinkeby.etherscan.io',           // Rinkeby
+    'https://kovan.etherscan.io',             // Kovan
+    'https://goerli.etherscan.io',            // Goerli
+    'https://optimistic.etherscan.io',        // Optimism
+    'https://goerli-optimistic.etherscan.io', // OptimismGoerli
+    'https://explorer.rsk.co',                // RSK
+    'https://explorer.testnet.rsk.co',        // RSK_test_net
+    'https://bscscan.com',                    // BNB
+    'https://testnet.bscscan.com',            // BNB_test_net
+    'https://gnosisscan.io/',                 // Gnosis
+    'https://polygonscan.com',                // Polygon
+    'https://mumbai.polygonscan.com',         // PolygonMumbai
+    'https://ftmscan.com',                    // Fantom
+    'https://testnet.ftmscan.com',            // Fantom_test_net
+    'https://explorer.arbitrum.io',           // Arbitrum
+    'https://rinkeby-explorer.arbitrum.io',   // ArbitrumRinkeby
+    'https://sepolia.etherscan.io'            // Sepolia
   );
 begin
   Result := BLOCK_EXPLORER_URL[Self];
@@ -465,6 +467,45 @@ begin
   Result := Self.FTxType;
 end;
 
+// returns the chain’s latest asset price in USD (eg. ETH-USD for Ethereum, BNB-USD for BNB Chain, MATIC-USD for Polygon, etc)
+procedure TCustomWeb3.LatestPrice(callback: TProc<Double, IError>);
+begin
+  case Self.Chain of
+    Ethereum:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419').Price(callback);
+    Ropsten, Rinkeby, Kovan, Sepolia:
+      web3.coincap.price('ethereum', callback);
+    Goerli:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e').Price(callback);
+    Optimism:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x13e3Ee699D1909E989722E753853AE30b17e08c5').Price(callback);
+    OptimismGoerli:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x57241A37733983F97C4Ab06448F244A1E0Ca0ba8').Price(callback);
+    RSK, RSK_test_net:
+      web3.coincap.price('bitcoin', callback);
+    BNB:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e').Price(callback);
+    BNB_test_net:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x143db3CEEfbdfe5631aDD3E50f7614B6ba708BA7').Price(callback);
+    Gnosis:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x678df3415fc31947dA4324eC63212874be5a82f8').Price(callback);
+    Polygon:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0').Price(callback);
+    PolygonMumbai:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada').Price(callback);
+    Fantom:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0xf4766552D15AE4d256Ad41B6cf2933482B0680dc').Price(callback);
+    Fantom_test_net:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0xe04676B9A9A2973BCb0D1478b5E1E9098BBB7f3D').Price(callback);
+    Arbitrum:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612').Price(callback);
+    ArbitrumRinkeby:
+      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f0423B1a6935dc5596e7A24d98532b67A0AeFd8').Price(callback);
+  else
+    callback(0, TError.Create('Price feed does not exist on %s', [Self.Chain.Name]));
+  end;
+end;
+
 function TCustomWeb3.ETHERSCAN_API_KEY: string;
 begin
   Result := '';
@@ -512,7 +553,7 @@ begin
         callback(False, err);
         EXIT;
       end;
-      web3.eth.chainlink.ETH_USD(Self, procedure(price: Double; err: IError)
+      Self.LatestPrice(procedure(price: Double; err: IError)
       begin
         if Assigned(err) then
         begin
@@ -526,12 +567,12 @@ begin
           modalResult := MessageDlg(Format(
             RS_SIGNATURE_REQUEST,
             [
-              GetEnumName(TypeInfo(TChain), Ord(Chain)),                  // Network
+              Self.Chain.Name,                                            // Network
               from,                                                       // From
               &to,                                                        // To
               fromWei(gasPrice, gwei, 2),                                 // Gas price (gwei)
               estimatedGas.ToString,                                      // Estimated gas (units)
-              EthToFloat(fromWei(estimatedGas * gasPrice, ether)) * price // Gas fee
+              DotToFloat(fromWei(estimatedGas * gasPrice, ether)) * price // Gas fee
             ]),
             TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
           );

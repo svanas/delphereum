@@ -109,7 +109,7 @@ type
   TAsyncTxn       = reference to procedure(txn  : ITxn;       err : IError);
   TAsyncReceipt   = reference to procedure(rcpt : ITxReceipt; err : IError);
   TAsyncReceiptEx = reference to procedure(rcpt : ITxReceipt; qty : BigInteger; err: IError);
-  TAsyncFloat     = reference to procedure(value: Double;     err : IError);
+  TAsyncFloat     = TProc<Double, IError>; // reference to procedure(value: Double;     err : IError);
 
 type
   TAddressHelper = record helper for TAddress

@@ -320,7 +320,7 @@ begin
       const pair = web3.json.getPropAsObj(data, 'pair');
       if Assigned(pair) then
       begin
-        callback(EthToFloat(web3.json.getPropAsStr(pair, field)), nil);
+        callback(DotToFloat(web3.json.getPropAsStr(pair, field)), nil);
         EXIT;
       end;
     end;

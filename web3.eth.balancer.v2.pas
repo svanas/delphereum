@@ -453,18 +453,18 @@ const
     'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-kovan-v2',    // Kovan
     'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',   // Goerli
     '',                                                                           // Optimism
-    '',                                                                           // Optimism_test_net
+    '',                                                                           // OptimismGoerli
     '',                                                                           // RSK
     '',                                                                           // RSK_test_net
-    '',                                                                           // BSC
-    '',                                                                           // BSC_test_net
+    '',                                                                           // BNB
+    '',                                                                           // BNB_test_net
     '',                                                                           // Gnosis
     'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-polygon-v2',  // Polygon
-    '',                                                                           // Polygon_test_net
+    '',                                                                           // PolygonMumbai
     '',                                                                           // Fantom
     '',                                                                           // Fantom_test_net
     'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-arbitrum-v2', // Arbitrum
-    '',                                                                           // Arbitrum_test_net
+    '',                                                                           // ArbitrumRinkeby
     ''                                                                            // Sepolia
   );
 begin

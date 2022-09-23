@@ -28,6 +28,7 @@ interface
 
 uses
   // Delphi
+  System.SysUtils,
   System.Types,
   // web3
   web3,
@@ -43,6 +44,8 @@ type
 
 function ticker(const asset: string; callback: TAsyncTicker): IAsyncResult; overload;
 function ticker(const asset: string; callback: TAsyncJsonObject): IAsyncResult; overload;
+
+function price(const asset: string; callback: TProc<Double, IError>): IAsyncResult;
 
 implementation
 
@@ -95,6 +98,17 @@ begin
     'https://api.coincap.io/v2/assets/' + TNetEncoding.URL.Encode(asset),
     [], callback
   );
+end;
+
+function price(const asset: string; callback: TProc<Double, IError>): IAsyncResult;
+begin
+  Result := ticker(asset, procedure(const ticker: ITicker; err: IError)
+  begin
+    if not Assigned(ticker) then
+      callback(0, err)
+    else
+      callback(ticker.Price, err);
+  end);
 end;
 
 end.

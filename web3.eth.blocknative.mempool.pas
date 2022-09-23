@@ -181,18 +181,18 @@ const
     'kovan',       // Kovan
     'goerli',      // Goerli
     '',            // Optimism
-    '',            // Optimism_test_net
+    '',            // OptimismGoerli
     '',            // RSK
     '',            // RSK_test_net
-    'bsc-main',    // BSC
-    '',            // BSC_test_net
+    'bsc-main',    // BNB
+    '',            // BNB_test_net
     'xdai',        // Gnosis
     'matic-main',  // Polygon
-    '',            // Polygon_test_net
+    '',            // PolygonMumbai
     '',            // Fantom
     'fantom-main', // Fantom_test_net
     '',            // Arbitrum
-    '',            // Arbitrum_test_net
+    '',            // ArbitrumRinkeby
     ''             // Sepolia
   );
 begin

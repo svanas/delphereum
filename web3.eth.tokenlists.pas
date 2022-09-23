@@ -244,25 +244,25 @@ end;
 function tokens(chain: TChain; callback: TAsyncTokens): IAsyncResult;
 const
   TOKEN_LIST: array[TChain] of string = (
-    { Ethereum          } 'https://tokens.coingecko.com/uniswap/all.json',
-    { Ropsten           } 'https://raw.githubusercontent.com/euler-xyz/euler-tokenlist/master/euler-tokenlist-ropsten.json',
-    { Rinkeby           } '',
-    { Kovan             } '',
-    { Goerli            } '',
-    { Optimism          } 'https://static.optimism.io/optimism.tokenlist.json',
-    { Optimism_test_net } '',
-    { RSK               } '',
-    { RSK_test_net      } '',
-    { BSC               } 'https://tokens.pancakeswap.finance/pancakeswap-extended.json',
-    { BSC_test_net      } '',
-    { Gnosis            } 'https://tokens.honeyswap.org',
-    { Polygon           } 'https://unpkg.com/quickswap-default-token-list@latest/build/quickswap-default.tokenlist.json',
-    { Polygon_test_net  } '',
-    { Fantom            } 'https://raw.githubusercontent.com/SpookySwap/spooky-info/master/src/constants/token/spookyswap.json',
-    { Fantom_test_net   } '',
-    { Arbitrum          } 'https://bridge.arbitrum.io/token-list-42161.json',
-    { Arbitrum_test_net } 'https://bridge.arbitrum.io/token-list-421611.json',
-    { Sepolia           } ''
+    { Ethereum        } 'https://tokens.coingecko.com/uniswap/all.json',
+    { Ropsten         } 'https://raw.githubusercontent.com/euler-xyz/euler-tokenlist/master/euler-tokenlist-ropsten.json',
+    { Rinkeby         } '',
+    { Kovan           } '',
+    { Goerli          } '',
+    { Optimism        } 'https://static.optimism.io/optimism.tokenlist.json',
+    { OptimismGoerli  } '',
+    { RSK             } '',
+    { RSK_test_net    } '',
+    { BNB             } 'https://tokens.pancakeswap.finance/pancakeswap-extended.json',
+    { BNB_test_net    } '',
+    { Gnosis          } 'https://tokens.honeyswap.org',
+    { Polygon         } 'https://unpkg.com/quickswap-default-token-list@latest/build/quickswap-default.tokenlist.json',
+    { PolygonMumbai   } '',
+    { Fantom          } 'https://raw.githubusercontent.com/SpookySwap/spooky-info/master/src/constants/token/spookyswap.json',
+    { Fantom_test_net } '',
+    { Arbitrum        } 'https://bridge.arbitrum.io/token-list-42161.json',
+    { ArbitrumRinkeby } 'https://bridge.arbitrum.io/token-list-421611.json',
+    { Sepolia         } ''
   );
   TOKENS_RINKEBY: string =
   '[{' +

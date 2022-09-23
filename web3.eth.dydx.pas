@@ -444,7 +444,7 @@ begin
     if chain = Kovan then
       Result := '0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE'
     else
-      raise EdYdx.CreateFmt('dYdX is not deployed on %s', [GetEnumName(TypeInfo(TChain), Integer(chain))]);
+      raise EdYdx.CreateFmt('dYdX is not deployed on %s', [chain.Name]);
 end;
 
 class function TSoloMargin.ToBigInt(value: TTuple): BigInteger;

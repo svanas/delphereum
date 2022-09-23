@@ -147,24 +147,24 @@ const
     'https://api-kovan.etherscan.io/api?apikey=%s',             // Kovan
     'https://api-goerli.etherscan.io/api?apikey=%s',            // Goerli
     'https://api-optimistic.etherscan.io/api?apikey=%s',        // Optimism
-    'https://api-goerli-optimistic.etherscan.io/api?apikey=%s', // Optimism_test_net
+    'https://api-goerli-optimistic.etherscan.io/api?apikey=%s', // OptimismGoerli
     '',                                                         // RSK
     '',                                                         // RSK_test_net
-    'https://api.bscscan.com/api?apikey=%s',                    // BSC
-    'https://api-testnet.bscscan.com/api?apikey=%s',            // BSC_test_net
+    'https://api.bscscan.com/api?apikey=%s',                    // BNB
+    'https://api-testnet.bscscan.com/api?apikey=%s',            // BNB_test_net
     '',                                                         // Gnosis
     'https://api.polygonscan.com/api?apikey=%s',                // Polygon
-    'https://api-testnet.polygonscan.com/api?apikey=%s',        // Polygon_test_net
+    'https://api-testnet.polygonscan.com/api?apikey=%s',        // PolygonMumbai
     'https://api.ftmscan.com/api?apikey=%s',                    // Fantom
     'https://api-testnet.ftmscan.com/api?apikey=%s',            // Fantom_test_net
     'https://api.arbiscan.io/api?apikey=%s',                    // Arbitrum
-    'https://api-testnet.arbiscan.io/api?apikey=%s',            // Arbitrum_test_net
+    'https://api-testnet.arbiscan.io/api?apikey=%s',            // ArbitrumRinkeby
     'https://api-sepolia.etherscan.io/api?apikey=%s'            // Sepolia
   );
 begin
   Result := ENDPOINT[chain];
   if Result = '' then
-    raise EEtherscan.CreateFmt('%s not supported', [GetEnumName(TypeInfo(TChain), Ord(chain))])
+    raise EEtherscan.CreateFmt('%s not supported', [chain.Name])
   else
     Result := Format(Result, [apiKey]);
 end;
