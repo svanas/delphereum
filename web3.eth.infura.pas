@@ -67,11 +67,11 @@ const
     { Gnosis          } ('https://rpc.gnosischain.com', 'wss://rpc.gnosischain.com/wss'),
     { Polygon         } ('https://polygon-mainnet.infura.io/v3/%s', ''),
     { PolygonMumbai   } ('https://polygon-mumbai.infura.io/v3/%s', ''),
-    { Fantom          } ('https://rpc.ftm.tools', ''),
+    { Fantom          } ('https://rpc.fantom.network', ''),
     { Fantom_test_net } ('https://rpc.testnet.fantom.network', ''),
     { Arbitrum        } ('https://arbitrum-mainnet.infura.io/v3/%s', ''),
     { ArbitrumRinkeby } ('https://arbitrum-rinkeby.infura.io/v3/%s', ''),
-    { Sepolia         } ('https://nunki.htznr.fault.dev/rpc', 'wss://nunki.htznr.fault.dev/ws')
+    { Sepolia         } ('https://rpc.sepolia.org', '')
   );
 begin
   Result := ENDPOINT[chain][protocol];
