@@ -126,10 +126,6 @@ type
     constructor Create;
   end;
 
-  TAsyncError      = reference to procedure(err : IError);
-  TAsyncJsonObject = reference to procedure(resp: TJsonObject; err: IError);
-  TAsyncJsonArray  = reference to procedure(resp: TJsonArray;  err: IError);
-
   IJsonRpc = interface
   ['{79B99FD7-3000-4839-96B4-6C779C25AD0C}']
     function Call(
@@ -140,7 +136,7 @@ type
       const URL   : string;
       const method: string;
       args        : array of const;
-      callback    : TAsyncJsonObject); overload;
+      callback    : TProc<TJsonObject, IError>); overload;
   end;
 
   IPubSub = interface
@@ -155,13 +151,13 @@ type
       security    : TSecurity;
       const method: string;
       args        : array of const;
-      callback    : TAsyncJsonObject); overload;
+      callback    : TProc<TJsonObject, IError>); overload;
 
-    procedure Subscribe(const subscription: string; callback: TAsyncJsonObject);
+    procedure Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
     procedure Unsubscribe(const subscription: string);
     procedure Disconnect;
 
-    function OnError(callback: TAsyncError): IPubSub;
+    function OnError(callback: TProc<IError>): IPubSub;
     function OnDisconnect(callback: TProc): IPubSub;
   end;
 
@@ -186,7 +182,7 @@ type
     procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
     function  Call(const method: string; args: array of const): TJsonObject; overload;
-    procedure Call(const method: string; args: array of const; callback: TAsyncJsonObject); overload;
+    procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload;
   end;
 
   TCustomWeb3 = class abstract(TInterfacedObject, IWeb3)
@@ -209,7 +205,7 @@ type
     procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
     function  Call(const method: string; args: array of const): TJsonObject; overload; virtual; abstract;
-    procedure Call(const method: string; args: array of const; callback: TAsyncJsonObject); overload; virtual; abstract;
+    procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; virtual; abstract;
 
     property OnGasStationInfo  : TOnGasStationInfo   read FOnGasStationInfo   write FOnGasStationInfo;
     property OnEtherscanApiKey : TOnEtherscanApiKey  read FOnEtherscanApiKey  write FOnEtherscanApiKey;
@@ -228,15 +224,15 @@ type
     constructor Create(aChain: TChain; const aURL: string; aTxType: Byte; aProtocol: IJsonRpc); overload;
 
     function  Call(const method: string; args: array of const): TJsonObject; overload; override;
-    procedure Call(const method: string; args: array of const; callback: TAsyncJsonObject); overload; override;
+    procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; override;
   end;
 
   IWeb3Ex = interface(IWeb3)
   ['{DD13EBE0-3E4E-49B8-A41D-B58C7DD0322F}']
-    procedure Subscribe(const subscription: string; callback: TAsyncJsonObject);
+    procedure Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
     procedure Unsubscribe(const subscription: string);
     procedure Disconnect;
-    function OnError(callback: TAsyncError): IWeb3Ex;
+    function OnError(callback: TProc<IError>): IWeb3Ex;
     function OnDisconnect(callback: TProc): IWeb3Ex;
   end;
 
@@ -267,13 +263,13 @@ type
       aSecurity : TSecurity = TSecurity.Automatic); overload;
 
     function  Call(const method: string; args: array of const): TJsonObject; overload; override;
-    procedure Call(const method: string; args: array of const; callback: TAsyncJsonObject); overload; override;
+    procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; override;
 
-    procedure Subscribe(const subscription: string; callback: TAsyncJsonObject);
+    procedure Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
     procedure Unsubscribe(const subscription: string);
     procedure Disconnect;
 
-    function OnError(callback: TAsyncError): IWeb3Ex;
+    function OnError(callback: TProc<IError>): IWeb3Ex;
     function OnDisconnect(callback: TProc): IWeb3Ex;
   end;
 
@@ -539,14 +535,14 @@ begin
     EXIT;
   end;
 
-  from.ToString(Self, procedure(const from: string; err: IError)
+  from.ToString(Self, procedure(from: string; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(False, err);
       EXIT;
     end;
-    &to.ToString(Self, procedure(const &to: string; err: IError)
+    &to.ToString(Self, procedure(&to: string; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -624,7 +620,7 @@ begin
   Result := Self.FProtocol.Call(Self.URL, method, args);
 end;
 
-procedure TWeb3.Call(const method: string; args: array of const; callback: TAsyncJsonObject);
+procedure TWeb3.Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>);
 begin
   Self.FProtocol.Call(Self.URL, method, args, callback);
 end;
@@ -676,12 +672,12 @@ begin
   Result := Self.FProtocol.Call(Self.URL, Self.FSecurity, method, args);
 end;
 
-procedure TWeb3Ex.Call(const method: string; args: array of const; callback: TAsyncJsonObject);
+procedure TWeb3Ex.Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>);
 begin
   Self.FProtocol.Call(Self.URL, Self.FSecurity, method, args, callback);
 end;
 
-procedure TWeb3Ex.Subscribe(const subscription: string; callback: TAsyncJsonObject);
+procedure TWeb3Ex.Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
 begin
   Self.FProtocol.Subscribe(subscription, callback);
 end;
@@ -696,7 +692,7 @@ begin
   Self.FProtocol.Disconnect;
 end;
 
-function TWeb3Ex.OnError(callback: TAsyncError): IWeb3Ex;
+function TWeb3Ex.OnError(callback: TProc<IError>): IWeb3Ex;
 begin
   Self.FProtocol.OnError(callback);
   Result := Self;

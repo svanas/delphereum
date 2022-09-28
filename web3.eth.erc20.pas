@@ -31,6 +31,7 @@ interface
 uses
   // Delphi
   System.Math,
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -55,33 +56,33 @@ type
 
   IERC20 = interface
     //------- read from contract -----------------------------------------------
-    procedure Name       (callback: TAsyncString);
-    procedure Symbol     (callback: TAsyncString);
-    procedure Decimals   (callback: TAsyncQuantity);
-    procedure TotalSupply(callback: TAsyncQuantity);
-    procedure BalanceOf  (owner: TAddress; callback: TAsyncQuantity);
-    procedure Allowance  (owner, spender: TAddress; callback: TAsyncQuantity);
+    procedure Name       (callback: TProc<string, IError>);
+    procedure Symbol     (callback: TProc<string, IError>);
+    procedure Decimals   (callback: TProc<BigInteger, IError>);
+    procedure TotalSupply(callback: TProc<BigInteger, IError>);
+    procedure BalanceOf  (owner: TAddress; callback: TProc<BigInteger, IError>);
+    procedure Allowance  (owner, spender: TAddress; callback: TProc<BigInteger, IError>);
     //------- write to contract ------------------------------------------------
     procedure Transfer(
       from    : TPrivateKey;
       &to     : TAddress;
       value   : BigInteger;
-      callback: TAsyncTxHash);
+      callback: TProc<TTxHash, IError>);
     procedure TransferEx(
       from    : TPrivateKey;
       &to     : TAddress;
       value   : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     procedure Approve(
       owner   : TPrivateKey;
       spender : TAddress;
       value   : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     procedure ApproveEx(
       owner   : TPrivateKey;
       spender : TAddress;
       value   : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
   end;
 
   TERC20 = class(TCustomContract, IERC20)
@@ -100,39 +101,39 @@ type
     destructor  Destroy; override;
 
     //------- read from contract -----------------------------------------------
-    procedure Name       (callback: TAsyncString);
-    procedure Symbol     (callback: TAsyncString);
-    procedure Decimals   (callback: TAsyncQuantity);
-    procedure TotalSupply(callback: TAsyncQuantity); overload;
-    procedure TotalSupply(const block: string; callback: TAsyncQuantity); overload;
-    procedure BalanceOf  (owner: TAddress; callback: TAsyncQuantity);
-    procedure Allowance  (owner, spender: TAddress; callback: TAsyncQuantity);
+    procedure Name       (callback: TProc<string, IError>);
+    procedure Symbol     (callback: TProc<string, IError>);
+    procedure Decimals   (callback: TProc<BigInteger, IError>);
+    procedure TotalSupply(callback: TProc<BigInteger, IError>); overload;
+    procedure TotalSupply(const block: string; callback: TProc<BigInteger, IError>); overload;
+    procedure BalanceOf  (owner: TAddress; callback: TProc<BigInteger, IError>);
+    procedure Allowance  (owner, spender: TAddress; callback: TProc<BigInteger, IError>);
 
     //------- helpers ----------------------------------------------------------
-    procedure Scale  (amount: Double; callback: TAsyncQuantity);
-    procedure Unscale(amount: BigInteger; callback: TAsyncFloat);
+    procedure Scale  (amount: Double; callback: TProc<BigInteger, IError>);
+    procedure Unscale(amount: BigInteger; callback: TProc<Double, IError>);
 
     //------- write to contract ------------------------------------------------
     procedure Transfer(
       from    : TPrivateKey;
       &to     : TAddress;
       value   : BigInteger;
-      callback: TAsyncTxHash);
+      callback: TProc<TTxHash, IError>);
     procedure TransferEx(
       from    : TPrivateKey;
       &to     : TAddress;
       value   : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     procedure Approve(
       owner   : TPrivateKey;
       spender : TAddress;
       value   : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     procedure ApproveEx(
       owner   : TPrivateKey;
       spender : TAddress;
       value   : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
 
     //------- events -----------------------------------------------------------
     property OnTransfer: TOnTransfer read FOnTransfer write SetOnTransfer;
@@ -202,7 +203,7 @@ begin
   EventChanged;
 end;
 
-procedure TERC20.Name(callback: TAsyncString);
+procedure TERC20.Name(callback: TProc<string, IError>);
 begin
   web3.eth.call(Client, Contract, 'name()', [], procedure(tup: TTuple; err: IError)
   begin
@@ -213,7 +214,7 @@ begin
   end);
 end;
 
-procedure TERC20.Symbol(callback: TAsyncString);
+procedure TERC20.Symbol(callback: TProc<string, IError>);
 begin
   web3.eth.call(Client, Contract, 'symbol()', [], procedure(tup: TTuple; err: IError)
   begin
@@ -224,32 +225,32 @@ begin
   end);
 end;
 
-procedure TERC20.Decimals(callback: TAsyncQuantity);
+procedure TERC20.Decimals(callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'decimals()', [], callback);
 end;
 
-procedure TERC20.TotalSupply(callback: TAsyncQuantity);
+procedure TERC20.TotalSupply(callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'totalSupply()', [], callback);
 end;
 
-procedure TERC20.TotalSupply(const block: string; callback: TAsyncQuantity);
+procedure TERC20.TotalSupply(const block: string; callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'totalSupply()', block, [], callback);
 end;
 
-procedure TERC20.BalanceOf(owner: TAddress; callback: TAsyncQuantity);
+procedure TERC20.BalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
 end;
 
-procedure TERC20.Allowance(owner, spender: TAddress; callback: TAsyncQuantity);
+procedure TERC20.Allowance(owner, spender: TAddress; callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'allowance(address,address)', [owner, spender], callback);
 end;
 
-procedure TERC20.Scale(amount: Double; callback: TAsyncQuantity);
+procedure TERC20.Scale(amount: Double; callback: TProc<BigInteger, IError>);
 begin
   Self.Decimals(procedure(dec: BigInteger; err: IError)
   begin
@@ -263,7 +264,7 @@ begin
   end);
 end;
 
-procedure TERC20.Unscale(amount: BigInteger; callback: TAsyncFloat);
+procedure TERC20.Unscale(amount: BigInteger; callback: TProc<Double, IError>);
 begin
   Self.Decimals(procedure(dec: BigInteger; err: IError)
   begin
@@ -281,7 +282,7 @@ procedure TERC20.Transfer(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : BigInteger;
-  callback: TAsyncTxHash);
+  callback: TProc<TTxHash, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'transfer(address,uint256)', [&to, web3.utils.toHex(value)], callback);
 end;
@@ -290,7 +291,7 @@ procedure TERC20.TransferEx(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'transfer(address,uint256)', [&to, web3.utils.toHex(value)], callback);
 end;
@@ -299,7 +300,7 @@ procedure TERC20.Approve(
   owner   : TPrivateKey;
   spender : TAddress;
   value   : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, web3.utils.toHex(value)], callback);
 end;
@@ -308,7 +309,7 @@ procedure TERC20.ApproveEx(
   owner   : TPrivateKey;
   spender : TAddress;
   value   : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   owner.Address(procedure(addr: TAddress; err: IError)
   begin

@@ -67,6 +67,7 @@ uses
   web3.eth.infura in '..\web3.eth.infura.pas',
   web3.eth.logs in '..\web3.eth.logs.pas',
   web3.eth.mstable.save.v2 in '..\web3.eth.mstable.save.v2.pas',
+  web3.eth.nodelist in '..\web3.eth.nodelist.pas',
   web3.eth.opensea in '..\web3.eth.opensea.pas',
   web3.eth.origin.dollar in '..\web3.eth.origin.dollar.pas',
   web3.eth in '..\web3.eth.pas',

@@ -30,6 +30,8 @@ interface
 
 uses
   // Delphi
+  System.JSON,
+  System.SysUtils,
   System.Types,
   // web3
   web3,
@@ -45,7 +47,7 @@ type
 const
   UNISWAP_V2 = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2';
 
-function execute(const URL, query: string; callback: TAsyncJsonObject): IAsyncResult;
+function execute(const URL, query: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
 
 implementation
 
@@ -53,12 +55,11 @@ uses
   // Delphi
   System.Classes,
   System.Generics.Collections,
-  System.JSON,
   System.Net.URLClient,
   // web3
   web3.json;
 
-function execute(const URL, query: string; callback: TAsyncJsonObject): IAsyncResult;
+function execute(const URL, query: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
 begin
   web3.http.post(
     URL,

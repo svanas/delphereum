@@ -30,6 +30,8 @@ interface
 
 uses
   // Delphi
+  System.JSON,
+  System.SysUtils,
   System.Types,
   // web3
   web3;
@@ -52,21 +54,16 @@ type
     function Migration: IMigration;
   end;
 
-  TAsyncVault  = reference to procedure(const vault: IYearnVault; err: IError);
-  TAsyncVaults = reference to procedure(vaults: TArray<IYearnVault>; err: IError);
+function vaults(chain: TChain; callback: TProc<TArray<IYearnVault>, IError>): IAsyncResult; overload;
+function vaults(chain: TChain; callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
 
-function vaults(chain: TChain; callback: TAsyncVaults): IAsyncResult; overload;
-function vaults(chain: TChain; callback: TAsyncJsonArray): IAsyncResult; overload;
-
-function latest(chain: TChain; reserve: TAddress; &type: TVaultType; callback: TAsyncVault): IAsyncResult;
+function latest(chain: TChain; reserve: TAddress; &type: TVaultType; callback: TProc<IYearnVault, IError>): IAsyncResult;
 
 implementation
 
 uses
   // Delphi
   System.Generics.Collections,
-  System.JSON,
-  System.SysUtils,
   // web3
   web3.eth,
   web3.eth.types,
@@ -158,7 +155,7 @@ end;
 
 {------------------------------ public functions ------------------------------}
 
-function vaults(chain: TChain; callback: TAsyncVaults): IAsyncResult;
+function vaults(chain: TChain; callback: TProc<TArray<IYearnVault>, IError>): IAsyncResult;
 begin
   Result := vaults(chain, procedure(arr: TJsonArray; err: IError)
   begin
@@ -177,12 +174,12 @@ begin
   end);
 end;
 
-function vaults(chain: TChain; callback: TAsyncJsonArray): IAsyncResult;
+function vaults(chain: TChain; callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
   Result := web3.http.get(Format('https://api.yearn.finance/v1/chains/%d/vaults/all', [chain.Id]), [], callback);
 end;
 
-function latest(chain: TChain; reserve: TAddress; &type: TVaultType; callback: TAsyncVault): IAsyncResult;
+function latest(chain: TChain; reserve: TAddress; &type: TVaultType; callback: TProc<IYearnVault, IError>): IAsyncResult;
 begin
   vaults(chain, procedure(vaults: TArray<IYearnVault>; err: IError)
   begin

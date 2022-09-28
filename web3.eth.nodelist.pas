@@ -30,6 +30,7 @@ interface
 
 uses
   // Delphi
+  System.JSON,
   System.SysUtils,
   System.Types,
   // web3
@@ -56,7 +57,7 @@ type
     function Length: Integer;
   end;
 
-function get(chain: TChain; callback: TAsyncJsonArray): IAsyncResult; overload;
+function get(chain: TChain; callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
 function get(chain: TChain; callback: TProc<TNodes, IError>): IAsyncResult; overload;
 
 implementation
@@ -65,7 +66,6 @@ uses
   // Delphi
   System.Classes,
   System.Generics.Collections,
-  System.JSON,
 {$IFDEF FMX}
   FMX.Dialogs,
 {$ELSE}
@@ -223,7 +223,7 @@ end;
 
 {------------------------------ public functions ------------------------------}
 
-function get(chain: TChain; callback: TAsyncJsonArray): IAsyncResult;
+function get(chain: TChain; callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
   Result := web3.http.get('https://raw.githubusercontent.com/svanas/ethereum-node-list/main/ethereum-node-list.json', [], procedure(obj: TJsonObject; err: IError)
   begin

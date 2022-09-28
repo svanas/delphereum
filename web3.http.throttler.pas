@@ -30,7 +30,9 @@ interface
 
 uses
   // Delphi
+  System.JSON,
   System.Net.URLClient,
+  System.SysUtils,
   // web3
   web3,
   web3.sync;
@@ -41,8 +43,8 @@ type
   TGet = record
     endpoint: string;
     headers : TNetHeaders;
-    callback: TAsyncJsonObject;
-    constructor Create(const aURL: string; aHeaders: TNetheaders; aCallback: TAsyncJsonObject);
+    callback: TProc<TJsonObject, IError>;
+    constructor Create(const aURL: string; aHeaders: TNetheaders; aCallback: TProc<TJsonObject, IError>);
   end;
 
   IGetter = interface
@@ -64,8 +66,8 @@ type
     endpoint: string;
     body    : string;
     headers : TNetHeaders;
-    callback: TAsyncJsonObject;
-    constructor Create(const aURL, aBody: string; aHeaders: TNetheaders; aCallback: TAsyncJsonObject);
+    callback: TProc<TJsonObject, IError>;
+    constructor Create(const aURL, aBody: string; aHeaders: TNetheaders; aCallback: TProc<TJsonObject, IError>);
   end;
 
   IThrottler = interface
@@ -88,15 +90,13 @@ implementation
 uses
   // Delphi
   System.Classes,
-  System.JSON,
   System.Math,
-  System.SysUtils,
   // web3
   web3.http;
 
 { TGet }
 
-constructor TGet.Create(const aURL: string; aHeaders: TNetHeaders; aCallback: TAsyncJsonObject);
+constructor TGet.Create(const aURL: string; aHeaders: TNetHeaders; aCallback: TProc<TJsonObject, IError>);
 begin
   Self.endpoint := aURL;
   Self.headers  := aHeaders;
@@ -151,7 +151,7 @@ end;
 
 { TPost }
 
-constructor TPost.Create(const aURL, aBody: string; aHeaders: TNetHeaders; aCallback: TAsyncJsonObject);
+constructor TPost.Create(const aURL, aBody: string; aHeaders: TNetHeaders; aCallback: TProc<TJsonObject, IError>);
 begin
   Self.endpoint := aURL;
   Self.body     := aBody;

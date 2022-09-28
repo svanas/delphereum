@@ -31,6 +31,7 @@ interface
 uses
   // Delphi
   System.JSON,
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -62,8 +63,6 @@ type
     function Value: BigInteger;
   end;
 
-  TAsyncErc20TransferEvents = reference to procedure(events: IDeserializedArray<IErc20TransferEvent>; err: IError);
-
   TSymbolType = (UnknownSymbol, &Function, &Constructor, Fallback, Event);
 
   TStateMutability = (UnknownMutability, Pure, View, NonPayable, Payable);
@@ -94,37 +93,35 @@ type
       StateMutability: TStateMutability): Integer; overload;
   end;
 
-  TAsyncContractABI = reference to procedure(abi: IContractABI; err: IError);
-
 procedure getBlockNumberByTimestamp(
   client      : IWeb3;
   timestamp   : TUnixDateTime;
-  callback    : TAsyncQuantity); overload;
+  callback    : TProc<BigInteger, IError>); overload;
 procedure getBlockNumberByTimestamp(
   chain       : TChain;
   timestamp   : TUnixDateTime;
   const apiKey: string;
-  callback    : TAsyncQuantity); overload;
+  callback    : TProc<BigInteger, IError>); overload;
 
 procedure getErc20TransferEvents(
   client      : IWeb3;
   address     : TAddress;
-  callback    : TAsyncErc20TransferEvents); overload;
+  callback    : TProc<IDeserializedArray<IErc20TransferEvent>, IError>); overload;
 procedure getErc20TransferEvents(
   chain       : TChain;
   address     : TAddress;
   const apiKey: string;
-  callback    : TAsyncErc20TransferEvents); overload;
+  callback    : TProc<IDeserializedArray<IErc20TransferEvent>, IError>); overload;
 
 procedure getContractABI(
   client      : IWeb3;
   contract    : TAddress;
-  callback    : TAsyncContractABI); overload;
+  callback    : TProc<IContractABI, IError>); overload;
 procedure getContractABI(
   chain       : TChain;
   contract    : TAddress;
   const apiKey: string;
-  callback    : TAsyncContractABI); overload;
+  callback    : TProc<IContractABI, IError>); overload;
 
 implementation
 
@@ -132,7 +129,6 @@ uses
   // Delphi
   System.Generics.Collections,
   System.NetEncoding,
-  System.SysUtils,
   System.TypInfo,
   // web3
   web3.http.throttler,
@@ -449,7 +445,7 @@ type
       chain       : TChain;
       const apiKey: string;
       const query : string;
-      callback    : TAsyncJsonObject);
+      callback    : TProc<TJsonObject, IError>);
   end;
 
 type
@@ -459,14 +455,14 @@ type
       chain       : TChain;
       const apiKey: string;
       const query : string;
-      callback    : TAsyncJsonObject);
+      callback    : TProc<TJsonObject, IError>);
   end;
 
 procedure TEtherscan.Get(
   chain       : TChain;
   const apiKey: string;
   const query : string;
-  callback    : TAsyncJsonObject);
+  callback    : TProc<TJsonObject, IError>);
 begin
   inherited Get(TGet.Create(endpoint(chain, TNetEncoding.URL.Encode(apiKey)) + query, [], callback));
 end;
@@ -488,7 +484,7 @@ end;
 procedure getBlockNumberByTimestamp(
   client   : IWeb3;
   timestamp: TUnixDateTime;
-  callback : TAsyncQuantity);
+  callback : TProc<BigInteger, IError>);
 begin
   getBlockNumberByTimestamp(
     client.Chain,
@@ -501,7 +497,7 @@ procedure getBlockNumberByTimestamp(
   chain       : TChain;
   timestamp   : TUnixDateTime;
   const apiKey: string;
-  callback    : TAsyncQuantity);
+  callback    : TProc<BigInteger, IError>);
 begin
   Etherscan.Get(chain, apiKey,
     Format('&module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
@@ -523,7 +519,7 @@ end;
 procedure getErc20TransferEvents(
   client  : IWeb3;
   address : TAddress;
-  callback: TAsyncErc20TransferEvents);
+  callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
 begin
   getErc20TransferEvents(
     client.Chain,
@@ -536,7 +532,7 @@ procedure getErc20TransferEvents(
   chain       : TChain;
   address     : TAddress;
   const apiKey: string;
-  callback    : TAsyncErc20TransferEvents);
+  callback    : TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
 begin
   Etherscan.Get(chain, apiKey,
     Format('&module=account&action=tokentx&address=%s&sort=desc', [address]),
@@ -566,7 +562,7 @@ end;
 procedure getContractABI(
   client  : IWeb3;
   contract: TAddress;
-  callback: TAsyncContractABI);
+  callback: TProc<IContractABI, IError>);
 begin
   getContractABI(
     client.Chain,
@@ -579,7 +575,7 @@ procedure getContractABI(
   chain       : TChain;
   contract    : TAddress;
   const apiKey: string;
-  callback    : TAsyncContractABI);
+  callback    : TProc<IContractABI, IError>);
 begin
   ContractCache.Enter;
   try

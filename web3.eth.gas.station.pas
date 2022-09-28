@@ -30,6 +30,8 @@ interface
 
 uses
   // Delphi
+  System.JSON,
+  System.SysUtils,
   System.Types,
   // web3
   web3,
@@ -43,20 +45,17 @@ type
     function SafeLow: TWei; // expected to be mined in < 30 minutes
   end;
 
-  TAsyncGasPrice = reference to procedure(price: IGasPrice; err: IError);
-
 function getGasPrice(
   const apiKey: string;
-  callback    : TAsyncGasPrice): IAsyncResult; overload;
+  callback    : TProc<IGasPrice, IError>): IAsyncResult; overload;
 function getGasPrice(
   const apiKey: string;
-  callback    : TAsyncJsonObject): IAsyncResult; overload;
+  callback    : TProc<TJsonObject, IError>): IAsyncResult; overload;
 
 implementation
 
 uses
   // Delphi
-  System.JSON,
   System.NetEncoding,
   // web3
   web3.eth.utils,
@@ -91,7 +90,7 @@ begin
   Result := toWei(FloatToDot(getPropAsDouble(FJsonValue, 'safeLow') / 10), gwei);
 end;
 
-function getGasPrice(const apiKey: string; callback: TAsyncGasPrice): IAsyncResult;
+function getGasPrice(const apiKey: string; callback: TProc<IGasPrice, IError>): IAsyncResult;
 begin
   Result := getGasPrice(apiKey, procedure(obj: TJsonObject; err: IError)
   begin
@@ -102,7 +101,7 @@ begin
   end);
 end;
 
-function getGasPrice(const apiKey: string; callback: TAsyncJsonObject): IAsyncResult;
+function getGasPrice(const apiKey: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
 begin
   Result := web3.http.get(
     'https://ethgasstation.info/api/ethgasAPI.json?api-key=' + TNetEncoding.URL.Encode(apiKey),

@@ -35,6 +35,7 @@ uses
   System.Net.HttpClient,
   System.Net.Mime,
   System.Net.URLClient,
+  System.SysUtils,
   System.Types,
   // web3
   web3;
@@ -53,50 +54,48 @@ type
     function StatusCode: Integer;
   end;
 
-  TAsyncResponse = reference to procedure(resp: IHttpResponse; err: IError);
-
 {---------------------------- async function calls ----------------------------}
 
 function get(
   const URL: string;
   headers  : TNetHeaders;
-  callback : TAsyncResponse;
+  callback : TProc<IHttpResponse, IError>;
   backoff  : Integer = 1): IAsyncResult; overload;
 function get(
   const URL: string;
   headers  : TNetHeaders;
-  callback : TAsyncJsonObject;
+  callback : TProc<TJsonObject, IError>;
   backoff  : Integer = 1): IAsyncResult; overload;
 function get(
   const URL: string;
   headers  : TNetHeaders;
-  callback : TAsyncJsonArray;
+  callback : TProc<TJsonArray, IError>;
   backoff  : Integer = 1) : IAsyncResult; overload;
 
 function post(
   const URL: string;
   const src: string;
   headers  : TNetHeaders;
-  callback : TAsyncResponse;
+  callback : TProc<IHttpResponse, IError>;
   backoff  : Integer = 1): IAsyncResult; overload;
 function post(
   const URL: string;
   const src: string;
   headers  : TNetHeaders;
-  callback : TAsyncJsonObject;
+  callback : TProc<TJsonObject, IError>;
   backoff  : Integer = 1): IAsyncResult; overload;
 
 function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
-  callback : TAsyncResponse;
+  callback : TProc<IHttpResponse, IError>;
   backoff  : Integer = 1): IAsyncResult; overload;
 function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
-  callback : TAsyncJsonObject;
+  callback : TProc<TJsonObject, IError>;
   backoff  : Integer = 1): IAsyncResult; overload;
 
 {-------------------------- blocking function calls ---------------------------}
@@ -119,7 +118,6 @@ implementation
 uses
   // Delphi
   System.Math,
-  System.SysUtils,
   // web3
   web3.json,
   web3.sync;
@@ -142,7 +140,7 @@ end;
 
 {---------------------------- async function calls ----------------------------}
 
-function get(const URL: string; headers: TNetHeaders; callback: TAsyncResponse; backoff: Integer): IAsyncResult;
+function get(const URL: string; headers: TNetHeaders; callback: TProc<IHttpResponse, IError>; backoff: Integer): IAsyncResult;
 begin
   try
     const client = THttpClient.Create;
@@ -183,7 +181,7 @@ begin
   end;
 end;
 
-function get(const URL: string; headers: TNetHeaders; callback: TAsyncJsonObject; backoff: Integer): IAsyncResult;
+function get(const URL: string; headers: TNetHeaders; callback: TProc<TJsonObject, IError>; backoff: Integer): IAsyncResult;
 begin
   Result := get(URL, headers, procedure(resp: IHttpResponse; err: IError)
   begin
@@ -204,7 +202,7 @@ begin
   end, backoff);
 end;
 
-function get(const URL: string; headers: TNetHeaders; callback: TAsyncJsonArray; backoff: Integer): IAsyncResult;
+function get(const URL: string; headers: TNetHeaders; callback: TProc<TJsonArray, IError>; backoff: Integer): IAsyncResult;
 begin
   Result := get(URL, headers, procedure(resp: IHttpResponse; err: IError)
   begin
@@ -232,7 +230,7 @@ function post(
   const URL: string;
   const src: string;
   headers  : TNetHeaders;
-  callback : TAsyncResponse;
+  callback : TProc<IHttpResponse, IError>;
   backoff  : Integer): IAsyncResult;
 begin
   try
@@ -278,7 +276,7 @@ function post(
   const URL: string;
   const src: string;
   headers  : TNetHeaders;
-  callback : TAsyncJsonObject;
+  callback : TProc<TJsonObject, IError>;
   backoff  : Integer): IAsyncResult;
 begin
   Result := post(URL, src, headers, procedure(resp: IHttpResponse; err: IError)
@@ -304,7 +302,7 @@ function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
-  callback : TAsyncResponse;
+  callback : TProc<IHttpResponse, IError>;
   backoff  : Integer): IAsyncResult;
 begin
   try
@@ -350,7 +348,7 @@ function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
-  callback : TAsyncJsonObject;
+  callback : TProc<TJsonObject, IError>;
   backoff  : Integer): IAsyncResult;
 begin
   Result := post(URL, source, headers, procedure(resp: IHttpResponse; err: IError)

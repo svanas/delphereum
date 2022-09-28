@@ -29,6 +29,8 @@ unit web3.eth.rari.capital.v2;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -49,7 +51,7 @@ type
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
   public
     class function Name: string; override;
     class function Supports(
@@ -59,29 +61,29 @@ type
       client  : IWeb3;
       reserve : TReserve;
       period  : TPeriod;
-      callback: TAsyncFloat); override;
+      callback: TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); override;
+      callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
       client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncQuantity); override;
+      callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
       _client : IWeb3;
       _from   : TPrivateKey;
       _reserve: TReserve;
       _amount : BigInteger;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
   TCustomRariPoolManager = class abstract(TCustomContract)
@@ -92,28 +94,28 @@ type
     // Address where the pool token is deployed.
     class function PoolToken: TAddress; virtual; abstract;
     // Returns the total balance in USD (scaled by 1e18) supplied by `owner`.
-    procedure BalanceOf(owner: TAddress; callback: TAsyncQuantity);
+    procedure BalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
     // Returns an array of currency codes currently accepted for deposits.
-    procedure GetAcceptedCurrencies(callback: TAsyncTuple);
+    procedure GetAcceptedCurrencies(callback: TProc<TTuple, IError>);
     // Returns the total balance supplied by users to the pool.
     // (all pool token holders' funds but not unclaimed fees) in USD (scaled by 1e18).
-    procedure GetFundBalance(const block: string; callback: TAsyncQuantity);
+    procedure GetFundBalance(const block: string; callback: TProc<BigInteger, IError>);
     // Deposits funds to the pool in exchange for pool tokens.
     procedure Deposit(
       from: TPrivateKey;          // supplier of the funds, and receiver of pool tokens.
       const currencyCode: string; // The currency code of the token to be deposited.
       amount: BigInteger;         // The amount of tokens to be deposited.
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     // Withdraws funds from the pool in exchange for pool tokens.
     procedure Withdraw(
       from: TPrivateKey;          // supplier of pool tokens, and receiver of the funds.
       const currencyCode: string; // The currency code of the token to be withdrawn.
       amount: BigInteger;         // The amount of tokens to be withdrawn.
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     // Get the exchange rate of pool tokens in USD (scaled by 1e18).
-    procedure GetExchangeRate(const block: string; callback: TAsyncFloat);
+    procedure GetExchangeRate(const block: string; callback: TProc<Double, IError>);
     // Returns the annual yield as a percentage.
-    procedure APY(period: TPeriod; callback: TAsyncFloat);
+    procedure APY(period: TPeriod; callback: TProc<Double, IError>);
   end;
 
   TRariPoolManagerUSDC = class(TCustomRariPoolManager)
@@ -137,7 +139,6 @@ implementation
 uses
   // Delphi
   System.Math,
-  System.SysUtils,
   System.Types,
   // web3
   web3.eth.rari.capital.api;
@@ -161,7 +162,7 @@ class procedure TRari.Approve(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   reserve.Address(client.Chain, procedure(reserveAddr: TAddress; err: IError)
   begin
@@ -199,9 +200,9 @@ class procedure TRari.APY(
   client  : IWeb3;
   reserve : TReserve;
   period  : TPeriod;
-  callback: TAsyncFloat);
+  callback: TProc<Double, IError>);
 
-  function getAPY(reserve: TReserve; callback: TAsyncFloat): IAsyncResult;
+  function getAPY(reserve: TReserve; callback: TProc<Double, IError>): IAsyncResult;
   begin
     Result := web3.eth.rari.capital.api.stats(procedure(stats: IRariStats; err: IError)
     begin
@@ -248,7 +249,7 @@ class procedure TRari.Deposit(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
@@ -270,7 +271,7 @@ class procedure TRari.Balance(
   client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const manager = RariPoolManager[reserve].Create(client);
   if Assigned(manager) then
@@ -294,7 +295,7 @@ class procedure TRari.Withdraw(
   client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   from.Address(procedure(owner: TAddress; err: IError)
   begin
@@ -359,7 +360,7 @@ class procedure TRari.WithdrawEx(
   _from   : TPrivateKey;
   _reserve: TReserve;
   _amount : BigInteger;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   callback(nil, 0, TNotImplemented.Create);
 end;
@@ -372,20 +373,20 @@ begin
 end;
 
 // Returns the total balance in USD (scaled by 1e18) supplied by `owner`.
-procedure TCustomRariPoolManager.BalanceOf(owner: TAddress; callback: TAsyncQuantity);
+procedure TCustomRariPoolManager.BalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
 end;
 
 // Returns an array of currency codes currently accepted for deposits.
-procedure TCustomRariPoolManager.GetAcceptedCurrencies(callback: TAsyncTuple);
+procedure TCustomRariPoolManager.GetAcceptedCurrencies(callback: TProc<TTuple, IError>);
 begin
   web3.eth.call(Client, Contract, 'getAcceptedCurrencies()', [], callback);
 end;
 
 // Returns the total balance supplied by users to the pool.
 // (all pool token holders' funds but not unclaimed fees) in USD (scaled by 1e18).
-procedure TCustomRariPoolManager.GetFundBalance(const block: string; callback: TAsyncQuantity);
+procedure TCustomRariPoolManager.GetFundBalance(const block: string; callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'getFundBalance()', block, [], callback);
 end;
@@ -396,7 +397,7 @@ procedure TCustomRariPoolManager.Deposit(
   from: TPrivateKey;          // supplier of the funds, and receiver of pool tokens.
   const currencyCode: string; // The currency code of the token to be deposited.
   amount: BigInteger;         // The amount of tokens to be deposited.
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract,
     'deposit(string,uint256)',
@@ -409,7 +410,7 @@ procedure TCustomRariPoolManager.Withdraw(
   from: TPrivateKey;          // supplier of pool tokens, and receiver of the funds.
   const currencyCode: string; // The currency code of the token to be withdrawn.
   amount: BigInteger;         // The amount of tokens to be withdrawn.
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract,
     'withdraw(string,uint256)',
@@ -419,7 +420,7 @@ end;
 // Get the exchange rate of pool tokens in USD (scaled by 1e18).
 procedure TCustomRariPoolManager.GetExchangeRate(
   const block: string;
-  callback   : TAsyncFloat);
+  callback   : TProc<Double, IError>);
 begin
   const client: IWeb3 = Self.Client;
   Self.GetFundBalance(block, procedure(balance: BigInteger; err: IError)
@@ -447,7 +448,7 @@ begin
 end;
 
 // Returns the annual yield as a percentage.
-procedure TCustomRariPoolManager.APY(period: TPeriod; callback: TAsyncFloat);
+procedure TCustomRariPoolManager.APY(period: TPeriod; callback: TProc<Double, IError>);
 begin
   Self.GetExchangeRate(BLOCK_LATEST, procedure(currRate: Double; err: IError)
   begin

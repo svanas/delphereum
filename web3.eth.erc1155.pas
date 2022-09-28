@@ -29,6 +29,8 @@ unit web3.eth.erc1155;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -46,71 +48,71 @@ type
       &to     : TAddress;    // Target address
       id      : BigInteger;  // ID of the token type
       value   : BigInteger;  // Transfer amount
-      callback: TAsyncTxHash);
+      callback: TProc<TTxHash, IError>);
     procedure SafeTransferFromEx(
       owner   : TPrivateKey; // Source address
       &to     : TAddress;    // Target address
       id      : BigInteger;  // ID of the token type
       value   : BigInteger;  // Transfer amount
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     // Transfers `values` amount(s) of `IDs` from the `owner` address to the `to` address specified (with safety call).
     procedure SafeBatchTransferFrom(
       owner   : TPrivateKey;         // Source address
       &to     : TAddress;            // Target address
       IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
       values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
-      callback: TAsyncTxHash);
+      callback: TProc<TTxHash, IError>);
     procedure SafeBatchTransferFromEx(
       owner   : TPrivateKey;         // Source address
       &to     : TAddress;            // Target address
       IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
       values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     // Get the balance of an account's tokens.
     procedure BalanceOf(
-      owner   : TAddress;        // The address of the token holder
-      id      : BigInteger;      // ID of the token
-      callback: TAsyncQuantity); // The owner's balance of the token type requested
+      owner   : TAddress;                   // The address of the token holder
+      id      : BigInteger;                 // ID of the token
+      callback: TProc<BigInteger, IError>); // The owner's balance of the token type requested
     // Get the balance of multiple account/token pairs
     procedure BalanceOfBatch(
-      owners  : array of TAddress;   // The addresses of the token holders
-      IDs     : array of BigInteger; // IDs of the tokens
-      callback: TAsyncTuple);        // The owner's balance of the token types requested i.e. balance for each (owner, id) pair
+      owners  : array of TAddress;      // The addresses of the token holders
+      IDs     : array of BigInteger;    // IDs of the tokens
+      callback: TProc<TTuple, IError>); // The owner's balance of the token types requested i.e. balance for each (owner, id) pair
     // Enable or disable approval for a third party ("operator") to manage all of the caller's tokens.
     procedure SetApprovalForAll(
       owner    : TPrivateKey; // The token holder
       &operator: TAddress;    // Address to add to the set of authorized operators
       approved : Boolean;     // True if the operator is approved, False to revoke approval
-      callback : TAsyncReceipt);
+      callback : TProc<ITxReceipt, IError>);
     // Queries the approval status of an operator for a given owner.
     procedure IsApprovedForAll(
-      owner    : TAddress;       // The owner of the tokens
-      &operator: TAddress;       // Address of authorized operator
-      callback : TAsyncBoolean); // True if the operator is approved, False if not
+      owner    : TAddress;                // The owner of the tokens
+      &operator: TAddress;                // Address of authorized operator
+      callback : TProc<Boolean, IError>); // True if the operator is approved, False if not
   end;
 
   IERC1155TokenReceiver = interface
     // Handle the receipt of a single ERC1155 token type.
     procedure OnERC1155Received(
-      &operator: TAddress;       // The address which initiated the transfer (i.e. msg.sender)
-      from     : TAddress;       // The address which previously owned the token
-      id       : BigInteger;     // The ID of the token being transferred
-      value    : BigInteger;     // The amount of tokens being transferred
-      callback : TAsyncBytes32); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
+      &operator: TAddress;                 // The address which initiated the transfer (i.e. msg.sender)
+      from     : TAddress;                 // The address which previously owned the token
+      id       : BigInteger;               // The ID of the token being transferred
+      value    : BigInteger;               // The amount of tokens being transferred
+      callback : TProc<TBytes32, IError>); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
     // Handle the receipt of multiple ERC1155 token types.
     procedure OnERC1155BatchReceived(
-      &operator: TAddress;            // The address which initiated the batch transfer (i.e. msg.sender)
-      from     : TAddress;            // The address which previously owned the token
-      IDs      : array of BigInteger; // An array containing ids of each token being transferred (order and length must match _values array)
-      values   : array of BigInteger; // An array containing amounts of each token being transferred (order and length must match _ids array)
-      callback : TAsyncBytes32);      // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
+      &operator: TAddress;                 // The address which initiated the batch transfer (i.e. msg.sender)
+      from     : TAddress;                 // The address which previously owned the token
+      IDs      : array of BigInteger;      // An array containing ids of each token being transferred (order and length must match _values array)
+      values   : array of BigInteger;      // An array containing amounts of each token being transferred (order and length must match _ids array)
+      callback : TProc<TBytes32, IError>); // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
   end;
 
   IERC1155Metadata_URI = interface
     // A distinct Uniform Resource Identifier (URI) for a given token.
     procedure URI(
-      id      : BigInteger;    // ID of the token
-      callback: TAsyncString); // points to a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema"
+      id      : BigInteger;             // ID of the token
+      callback: TProc<string, IError>); // points to a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema"
   end;
 
   // Emitted when `value` tokens of token type `id` are transferred from `from` to `to` by `operator`.
@@ -158,65 +160,65 @@ type
       &to     : TAddress;    // Target address
       id      : BigInteger;  // ID of the token type
       value   : BigInteger;  // Transfer amount
-      callback: TAsyncTxHash);
+      callback: TProc<TTxHash, IError>);
     procedure SafeTransferFromEx(
       owner   : TPrivateKey; // Source address
       &to     : TAddress;    // Target address
       id      : BigInteger;  // ID of the token type
       value   : BigInteger;  // Transfer amount
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     // Transfers `values` amount(s) of `IDs` from the `owner` address to the `to` address specified (with safety call).
     procedure SafeBatchTransferFrom(
       owner   : TPrivateKey;         // Source address
       &to     : TAddress;            // Target address
       IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
       values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
-      callback: TAsyncTxHash);
+      callback: TProc<TTxHash, IError>);
     procedure SafeBatchTransferFromEx(
       owner   : TPrivateKey;         // Source address
       &to     : TAddress;            // Target address
       IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
       values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     // Get the balance of an account's tokens.
     procedure BalanceOf(
-      owner   : TAddress;        // The address of the token holder
-      id      : BigInteger;      // ID of the token
-      callback: TAsyncQuantity); // The owner's balance of the token type requested
+      owner   : TAddress;                   // The address of the token holder
+      id      : BigInteger;                 // ID of the token
+      callback: TProc<BigInteger, IError>); // The owner's balance of the token type requested
     // Get the balance of multiple account/token pairs
     procedure BalanceOfBatch(
-      owners  : array of TAddress;   // The addresses of the token holders
-      IDs     : array of BigInteger; // IDs of the tokens
-      callback: TAsyncTuple);        // The owner's balance of the token types requested i.e. balance for each (owner, id) pair
+      owners  : array of TAddress;      // The addresses of the token holders
+      IDs     : array of BigInteger;    // IDs of the tokens
+      callback: TProc<TTuple, IError>); // The owner's balance of the token types requested i.e. balance for each (owner, id) pair
     // Enable or disable approval for a third party ("operator") to manage all of the caller's tokens.
     procedure SetApprovalForAll(
       owner    : TPrivateKey; // The token holder
       &operator: TAddress;    // Address to add to the set of authorized operators
       approved : Boolean;     // True if the operator is approved, False to revoke approval
-      callback : TAsyncReceipt);
+      callback : TProc<ITxReceipt, IError>);
     // Queries the approval status of an operator for a given owner.
     procedure IsApprovedForAll(
-      owner    : TAddress;       // The owner of the tokens
-      &operator: TAddress;       // Address of authorized operator
-      callback : TAsyncBoolean); // True if the operator is approved, False if not
+      owner    : TAddress;                // The owner of the tokens
+      &operator: TAddress;                // Address of authorized operator
+      callback : TProc<Boolean, IError>); // True if the operator is approved, False if not
     // Handle the receipt of a single ERC1155 token type.
     procedure OnERC1155Received(
-      &operator: TAddress;       // The address which initiated the transfer (i.e. msg.sender)
-      from     : TAddress;       // The address which previously owned the token
-      id       : BigInteger;     // The ID of the token being transferred
-      value    : BigInteger;     // The amount of tokens being transferred
-      callback : TAsyncBytes32); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
+      &operator: TAddress;                 // The address which initiated the transfer (i.e. msg.sender)
+      from     : TAddress;                 // The address which previously owned the token
+      id       : BigInteger;               // The ID of the token being transferred
+      value    : BigInteger;               // The amount of tokens being transferred
+      callback : TProc<TBytes32, IError>); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
     // Handle the receipt of multiple ERC1155 token types.
     procedure OnERC1155BatchReceived(
-      &operator: TAddress;            // The address which initiated the batch transfer (i.e. msg.sender)
-      from     : TAddress;            // The address which previously owned the token
-      IDs      : array of BigInteger; // An array containing ids of each token being transferred (order and length must match _values array)
-      values   : array of BigInteger; // An array containing amounts of each token being transferred (order and length must match _ids array)
-      callback : TAsyncBytes32);      // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
+      &operator: TAddress;                 // The address which initiated the batch transfer (i.e. msg.sender)
+      from     : TAddress;                 // The address which previously owned the token
+      IDs      : array of BigInteger;      // An array containing ids of each token being transferred (order and length must match _values array)
+      values   : array of BigInteger;      // An array containing amounts of each token being transferred (order and length must match _ids array)
+      callback : TProc<TBytes32, IError>); // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
     // A distinct Uniform Resource Identifier (URI) for a given token.
     procedure URI(
-      id      : BigInteger;    // ID of the token
-      callback: TAsyncString); // points to a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema"
+      id      : BigInteger;             // ID of the token
+      callback: TProc<string, IError>); // points to a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema"
     // events
     property OnTransferSingle: TOnTransferSingle read FOnTransferSingle write SetOnTransferSingle;
     property OnTransferBatch : TOnTransferBatch  read FOnTransferBatch  write SetOnTransferBatch;
@@ -313,7 +315,7 @@ procedure TERC1155.SafeTransferFrom(
   &to     : TAddress;    // Target address
   id      : BigInteger;  // ID of the token type
   value   : BigInteger;  // Transfer amount
-  callback: TAsyncTxHash);
+  callback: TProc<TTxHash, IError>);
 begin
   owner.Address(procedure(from: TAddress; err: IError)
   begin
@@ -336,7 +338,7 @@ procedure TERC1155.SafeTransferFromEx(
   &to     : TAddress;    // Target address
   id      : BigInteger;  // ID of the token type
   value   : BigInteger;  // Transfer amount
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   owner.Address(procedure(from: TAddress; err: IError)
   begin
@@ -360,7 +362,7 @@ procedure TERC1155.SafeBatchTransferFrom(
   &to     : TAddress;            // Target address
   IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
   values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
-  callback: TAsyncTxHash);
+  callback: TProc<TTxHash, IError>);
 begin
   const _IDs    = &array(IDs);
   const _values = &array(values);
@@ -385,7 +387,7 @@ procedure TERC1155.SafeBatchTransferFromEx(
   &to     : TAddress;            // Target address
   IDs     : array of BigInteger; // IDs of each token type (order and length must match `values` array)
   values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   const _IDs    = &array(IDs);
   const _values = &array(values);
@@ -407,9 +409,9 @@ end;
 
 // Get the balance of an account's tokens.
 procedure TERC1155.BalanceOf(
-  owner   : TAddress;        // The address of the token holder
-  id      : BigInteger;      // ID of the token
-  callback: TAsyncQuantity); // The owner's balance of the token type requested
+  owner   : TAddress;                   // The address of the token holder
+  id      : BigInteger;                 // ID of the token
+  callback: TProc<BigInteger, IError>); // The owner's balance of the token type requested
 begin
   web3.eth.call(
     Self.Client,
@@ -422,9 +424,9 @@ end;
 
 // Get the balance of multiple account/token pairs
 procedure TERC1155.BalanceOfBatch(
-  owners  : array of TAddress;   // The addresses of the token holders
-  IDs     : array of BigInteger; // IDs of the tokens
-  callback: TAsyncTuple);        // The owner's balance of the token types requested i.e. balance for each (owner, id) pair
+  owners  : array of TAddress;      // The addresses of the token holders
+  IDs     : array of BigInteger;    // IDs of the tokens
+  callback: TProc<TTuple, IError>); // The owner's balance of the token types requested i.e. balance for each (owner, id) pair
 begin
   web3.eth.call(
     Self.Client,
@@ -440,7 +442,7 @@ procedure TERC1155.SetApprovalForAll(
   owner    : TPrivateKey; // The token holder
   &operator: TAddress;    // Address to add to the set of authorized operators
   approved : Boolean;     // True if the operator is approved, False to revoke approval
-  callback : TAsyncReceipt);
+  callback : TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(
     Self.Client,
@@ -454,9 +456,9 @@ end;
 
 // Queries the approval status of an operator for a given owner.
 procedure TERC1155.IsApprovedForAll(
-  owner    : TAddress;       // The owner of the tokens
-  &operator: TAddress;       // Address of authorized operator
-  callback : TAsyncBoolean); // True if the operator is approved, False if not
+  owner    : TAddress;                // The owner of the tokens
+  &operator: TAddress;                // Address of authorized operator
+  callback : TProc<Boolean, IError>); // True if the operator is approved, False if not
 begin
   web3.eth.call(
     Self.Client,
@@ -469,11 +471,11 @@ end;
 
 // Handle the receipt of a single ERC1155 token type.
 procedure TERC1155.OnERC1155Received(
-  &operator: TAddress;       // The address which initiated the transfer (i.e. msg.sender)
-  from     : TAddress;       // The address which previously owned the token
-  id       : BigInteger;     // The ID of the token being transferred
-  value    : BigInteger;     // The amount of tokens being transferred
-  callback : TAsyncBytes32); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
+  &operator: TAddress;                 // The address which initiated the transfer (i.e. msg.sender)
+  from     : TAddress;                 // The address which previously owned the token
+  id       : BigInteger;               // The ID of the token being transferred
+  value    : BigInteger;               // The amount of tokens being transferred
+  callback : TProc<TBytes32, IError>); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
 begin
   web3.eth.call(
     Self.Client,
@@ -486,11 +488,11 @@ end;
 
 // Handle the receipt of multiple ERC1155 token types.
 procedure TERC1155.OnERC1155BatchReceived(
-  &operator: TAddress;            // The address which initiated the batch transfer (i.e. msg.sender)
-  from     : TAddress;            // The address which previously owned the token
-  IDs      : array of BigInteger; // An array containing ids of each token being transferred (order and length must match _values array)
-  values   : array of BigInteger; // An array containing amounts of each token being transferred (order and length must match _ids array)
-  callback : TAsyncBytes32);      // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
+  &operator: TAddress;                 // The address which initiated the batch transfer (i.e. msg.sender)
+  from     : TAddress;                 // The address which previously owned the token
+  IDs      : array of BigInteger;      // An array containing ids of each token being transferred (order and length must match _values array)
+  values   : array of BigInteger;      // An array containing amounts of each token being transferred (order and length must match _ids array)
+  callback : TProc<TBytes32, IError>); // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
 begin
   web3.eth.call(
     Self.Client,
@@ -503,8 +505,8 @@ end;
 
 // A distinct Uniform Resource Identifier (URI) for a given token.
 procedure TERC1155.URI(
-  id      : BigInteger;    // ID of the token
-  callback: TAsyncString); // points to a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema"
+  id      : BigInteger;             // ID of the token
+  callback: TProc<string, IError>); // points to a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema"
 begin
   web3.eth.call(
     Self.Client,

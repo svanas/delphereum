@@ -92,8 +92,8 @@ type
   protected
     FChain  : TChain;
     FApiKey : string;
-    FOnEvent: TAsyncJsonObject;
-    FOnError: TAsyncError;
+    FOnEvent: TProc<TJsonObject, IError>;
+    FOnError: TProc<IError>;
     FOnDisconnect: TProc;
     function CreatePayload(
       const categoryCode: string;
@@ -101,21 +101,21 @@ type
   public
     class function Subscribe(
       const chain  : TChain;
-      const apiKey : string;           // your blocknative API key
-      const address: TAddress;         // address to watch
-      onEvent      : TAsyncJsonObject; // continuous events (or a blocknative error)
-      onError      : TAsyncError;      // non-blocknative-error handler (probably a socket error)
-      onDisconnect : TProc             // connection closed
+      const apiKey : string;                     // your blocknative API key
+      const address: TAddress;                   // address to watch
+      onEvent      : TProc<TJsonObject, IError>; // continuous events (or a blocknative error)
+      onError      : TProc<IError>;              // non-blocknative-error handler (probably a socket error)
+      onDisconnect : TProc                       // connection closed
     ): IMempool; overload; virtual; abstract;
     class function Subscribe(
       const chain  : TChain;
-      const apiKey : string;           // your blocknative API key
-      const address: TAddress;         // address to watch
-      const filters: IFilters;         // an array of valid filters. please see: https://github.com/deitch/searchjs
-      const abi    : TJsonArray;       // a valid ABI that will be used to decode input data for transactions
-      onEvent      : TAsyncJsonObject; // continuous events (or a blocknative error)
-      onError      : TAsyncError;      // non-blocknative-error handler (probably a socket error)
-      onDisconnect : TProc             // connection closed
+      const apiKey : string;                     // your blocknative API key
+      const address: TAddress;                   // address to watch
+      const filters: IFilters;                   // an array of valid filters. please see: https://github.com/deitch/searchjs
+      const abi    : TJsonArray;                 // a valid ABI that will be used to decode input data for transactions
+      onEvent      : TProc<TJsonObject, IError>; // continuous events (or a blocknative error)
+      onError      : TProc<IError>;              // non-blocknative-error handler (probably a socket error)
+      onDisconnect : TProc                       // connection closed
     ): IMempool; overload; virtual; abstract;
   end;
 

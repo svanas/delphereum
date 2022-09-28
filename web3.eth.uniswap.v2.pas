@@ -52,7 +52,7 @@ type
   TFactory = class(TCustomContract)
   public
     constructor Create(aClient: IWeb3); reintroduce;
-    procedure GetPair(tokenA, tokenB: TAddress; callback: TAsyncAddress);
+    procedure GetPair(tokenA, tokenB: TAddress; callback: TProc<TAddress, IError>);
   end;
 
   TRouter02 = class(TCustomContract)
@@ -65,7 +65,7 @@ type
       token1      : TAddress;      // The address of the pair token with the higher sort order.
       &to         : TAddress;      // Recipient of the ETH.
       deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
-      callback    : TAsyncReceipt); overload;
+      callback    : TProc<ITxReceipt, IError>); overload;
     procedure SwapExactETHForTokens(
       from        : TPrivateKey;   // Sender of ETH.
       amountIn    : BigInteger;    // The amount of ETH to send.
@@ -73,35 +73,35 @@ type
       token       : TAddress;      // The token address.
       &to         : TAddress;      // Recipient of the output tokens.
       deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
-      callback    : TAsyncReceipt); overload;
+      callback    : TProc<ITxReceipt, IError>); overload;
   public
     constructor Create(aClient: IWeb3); reintroduce;
-    procedure WETH(callback: TAsyncAddress);
+    procedure WETH(callback: TProc<TAddress, IError>);
     procedure SwapExactTokensForETH(
       owner       : TPrivateKey; // Sender of the token, and recipient of the ETH.
       amountIn    : BigInteger;  // The amount of input tokens to send.
       amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
       token       : TAddress;    // The address of the token you wish to swap.
       minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
-      callback    : TAsyncReceipt); overload;
+      callback    : TProc<ITxReceipt, IError>); overload;
     procedure SwapExactETHForTokens(
       owner       : TPrivateKey; // Sender of ETH.
       amountIn    : BigInteger;  // The amount of ETH to send.
       amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
       token       : TAddress;    // The token address.
       minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
-      callback    : TAsyncReceipt); overload;
+      callback    : TProc<ITxReceipt, IError>); overload;
   end;
 
   TPair = class(TERC20)
   protected
     function  Query  (const field: string): string;
-    procedure Execute(const field: string; callback: TAsyncFloat);
+    procedure Execute(const field: string; callback: TProc<Double, IError>);
   public
-    procedure Token0(callback: TAsyncAddress);
-    procedure Token1(callback: TAsyncAddress);
-    procedure Token0Price(callback: TAsyncFloat);
-    procedure Token1Price(callback: TAsyncFloat);
+    procedure Token0(callback: TProc<TAddress, IError>);
+    procedure Token1(callback: TProc<TAddress, IError>);
+    procedure Token0Price(callback: TProc<Double, IError>);
+    procedure Token1Price(callback: TProc<Double, IError>);
   end;
 
 implementation
@@ -114,9 +114,9 @@ begin
 end;
 
 // Returns the address of the pair for tokenA and tokenB, if it has been created, else 0x0
-procedure TFactory.GetPair(tokenA, tokenB: TAddress; callback: TAsyncAddress);
+procedure TFactory.GetPair(tokenA, tokenB: TAddress; callback: TProc<TAddress, IError>);
 begin
-  call(Client, Contract, 'getPair(address,address)', [tokenA, tokenB], procedure(const hex: string; err: IError)
+  call(Client, Contract, 'getPair(address,address)', [tokenA, tokenB], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -141,9 +141,9 @@ begin
 end;
 
 // Returns the canonical WETH address; see https://blog.0xproject.com/canonical-weth-a9aa7d0279dd
-procedure TRouter02.WETH(callback: TAsyncAddress);
+procedure TRouter02.WETH(callback: TProc<TAddress, IError>);
 begin
-  call(Client, Contract, 'WETH()', [], procedure(const hex: string; err: IError)
+  call(Client, Contract, 'WETH()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
@@ -161,7 +161,7 @@ procedure TRouter02.SwapExactTokensForETH(
   token1      : TAddress;      // The address of the pair token with the higher sort order.
   &to         : TAddress;      // Recipient of the ETH.
   deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
-  callback    : TAsyncReceipt);
+  callback    : TProc<ITxReceipt, IError>);
 begin
   const erc20 = TERC20.Create(Self.Client, token0);
   if Assigned(erc20) then
@@ -192,7 +192,7 @@ procedure TRouter02.SwapExactETHForTokens(
   token       : TAddress;      // The token address.
   &to         : TAddress;      // Recipient of the output tokens.
   deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
-  callback    : TAsyncReceipt);
+  callback    : TProc<ITxReceipt, IError>);
 begin
   Self.WETH(procedure(WETH: TAddress; err: IError)
   begin
@@ -219,7 +219,7 @@ procedure TRouter02.SwapExactTokensForETH(
   amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
   token       : TAddress;    // The address of the token you wish to swap.
   minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
-  callback    : TAsyncReceipt);
+  callback    : TProc<ITxReceipt, IError>);
 begin
   Self.WETH(procedure(WETH: TAddress; err: IError)
   begin
@@ -251,7 +251,7 @@ procedure TRouter02.SwapExactETHForTokens(
   amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
   token       : TAddress;    // The token address.
   minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
-  callback    : TAsyncReceipt);
+  callback    : TProc<ITxReceipt, IError>);
 begin
   owner.Address(procedure(&to: TAddress; err: IError)
   begin
@@ -275,9 +275,9 @@ end;
 { TPair }
 
 // Returns the address of the pair token with the lower sort order.
-procedure TPair.Token0(callback: TAsyncAddress);
+procedure TPair.Token0(callback: TProc<TAddress, IError>);
 begin
-  call(Client, Contract, 'token0()', [], procedure(const hex: string; err: IError)
+  call(Client, Contract, 'token0()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
@@ -287,9 +287,9 @@ begin
 end;
 
 // Returns the address of the pair token with the higher sort order.
-procedure TPair.Token1(callback: TAsyncAddress);
+procedure TPair.Token1(callback: TProc<TAddress, IError>);
 begin
-  call(Client, Contract, 'token1()', [], procedure(const hex: string; err: IError)
+  call(Client, Contract, 'token1()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
@@ -305,7 +305,7 @@ begin
 end;
 
 // Execute a GraphQL query, return the result as a float (if any)
-procedure TPair.Execute(const field: string; callback: TAsyncFloat);
+procedure TPair.Execute(const field: string; callback: TProc<Double, IError>);
 begin
   web3.graph.execute(UNISWAP_V2, Query(field), procedure(resp: TJsonObject; err: IError)
   begin
@@ -329,13 +329,13 @@ begin
 end;
 
 // Token0 per Token1
-procedure TPair.Token0Price(callback: TAsyncFloat);
+procedure TPair.Token0Price(callback: TProc<Double, IError>);
 begin
   Execute('token0Price', callback);
 end;
 
 // Token1 per Token0
-procedure TPair.Token1Price(callback: TAsyncFloat);
+procedure TPair.Token1Price(callback: TProc<Double, IError>);
 begin
   Execute('token1Price', callback);
 end;

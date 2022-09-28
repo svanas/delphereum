@@ -28,6 +28,7 @@ interface
 
 uses
   // Delphi
+  System.JSON,
   System.SysUtils,
   System.Types,
   // web3
@@ -40,10 +41,8 @@ type
     function Price : Double; // volume-weighted price based on real-time market data, translated to USD
   end;
 
-  TAsyncTicker = reference to procedure(const ticker: ITicker; err: IError);
-
-function ticker(const asset: string; callback: TAsyncTicker): IAsyncResult; overload;
-function ticker(const asset: string; callback: TAsyncJsonObject): IAsyncResult; overload;
+function ticker(const asset: string; callback: TProc<ITicker, IError>): IAsyncResult; overload;
+function ticker(const asset: string; callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
 
 function price(const asset: string; callback: TProc<Double, IError>): IAsyncResult;
 
@@ -51,7 +50,6 @@ implementation
 
 uses
   // Delphi
-  System.JSON,
   System.NetEncoding,
   // web3
   web3.json;
@@ -73,7 +71,7 @@ begin
   Result := getPropAsDouble(FJsonValue, 'priceUsd');
 end;
 
-function ticker(const asset: string; callback: TAsyncTicker): IAsyncResult;
+function ticker(const asset: string; callback: TProc<ITicker, IError>): IAsyncResult;
 begin
   Result := ticker(asset, procedure(obj: TJsonObject; err: IError)
   begin
@@ -92,7 +90,7 @@ begin
   end);
 end;
 
-function ticker(const asset: string; callback: TAsyncJsonObject): IAsyncResult;
+function ticker(const asset: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
 begin
   Result := web3.http.get(
     'https://api.coincap.io/v2/assets/' + TNetEncoding.URL.Encode(asset),
@@ -102,7 +100,7 @@ end;
 
 function price(const asset: string; callback: TProc<Double, IError>): IAsyncResult;
 begin
-  Result := ticker(asset, procedure(const ticker: ITicker; err: IError)
+  Result := ticker(asset, procedure(ticker: ITicker; err: IError)
   begin
     if not Assigned(ticker) then
       callback(0, err)

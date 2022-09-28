@@ -36,6 +36,8 @@ unit web3.eth.fulcrum;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -57,17 +59,17 @@ type
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     class procedure TokenToUnderlying(
       client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncQuantity);
+      callback: TProc<BigInteger, IError>);
     class procedure UnderlyingToToken(
       client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncQuantity);
+      callback: TProc<BigInteger, IError>);
   public
     class function Name: string; override;
     class function Supports(
@@ -77,29 +79,29 @@ type
       client  : IWeb3;
       reserve : TReserve;
       _period : TPeriod;
-      callback: TAsyncFloat); override;
+      callback: TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); override;
+      callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
       client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncQuantity); override;
+      callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
   TOnMint = reference to procedure(
@@ -127,13 +129,13 @@ type
   public
     constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
-    procedure AssetBalanceOf(owner: TAddress; callback: TAsyncQuantity);
-    procedure LoanTokenAddress(callback: TAsyncAddress);
-    procedure SupplyInterestRate(callback: TAsyncQuantity);
-    procedure TokenPrice(callback: TAsyncQuantity);
+    procedure AssetBalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
+    procedure LoanTokenAddress(callback: TProc<TAddress, IError>);
+    procedure SupplyInterestRate(callback: TProc<BigInteger, IError>);
+    procedure TokenPrice(callback: TProc<BigInteger, IError>);
     //------- write to contract ------------------------------------------------
-    procedure Burn(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-    procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+    procedure Burn(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
     //------- events -----------------------------------------------------------
     property OnMint: TOnMint read FOnMint write SetOnMint;
     property OnBurn: TOnBurn read FOnBurn write SetOnBurn;
@@ -181,7 +183,7 @@ class procedure TFulcrum.Approve(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   const iToken = iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
@@ -217,7 +219,7 @@ class procedure TFulcrum.TokenToUnderlying(
   client  : IWeb3;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const iToken = iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
@@ -238,7 +240,7 @@ class procedure TFulcrum.UnderlyingToToken(
   client  : IWeb3;
   reserve : TReserve;
   amount  : BIgInteger;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const iToken = iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
@@ -270,7 +272,7 @@ class procedure TFulcrum.APY(
   client  : IWeb3;
   reserve : TReserve;
   _period : TPeriod;
-  callback: TAsyncFloat);
+  callback: TProc<Double, IError>);
 begin
   const iToken = iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
@@ -293,7 +295,7 @@ class procedure TFulcrum.Deposit(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   // Before supplying an asset, we must first approve the iToken.
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -318,9 +320,9 @@ class procedure TFulcrum.Balance(
   client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
-  const BalanceOf = procedure(callback: TAsyncQuantity)
+  const BalanceOf = procedure(callback: TProc<BigInteger, IError>)
   begin
     const iToken = iTokenClass[reserve].Create(client);
     if Assigned(iToken) then
@@ -331,7 +333,7 @@ begin
     end;
   end;
 
-  const Decimals = procedure(callback: TAsyncQuantity)
+  const Decimals = procedure(callback: TProc<BigInteger, IError>)
   begin
     const iToken = iTokenClass[reserve].Create(client);
     if Assigned(iToken) then
@@ -369,7 +371,7 @@ class procedure TFulcrum.Withdraw(
   client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
@@ -419,7 +421,7 @@ class procedure TFulcrum.WithdrawEx(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   // step #1: from underlying-amount to iToken-amount
   UnderlyingToToken(client, reserve, amount, procedure(input: BigInteger; err: IError)
@@ -492,7 +494,7 @@ end;
 
 // Called to redeem owned iTokens for an equivalent amount of the underlying asset, at the current tokenPrice() rate.
 // The supplier will receive the asset proceeds.
-procedure TiToken.Burn(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+procedure TiToken.Burn(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
@@ -508,7 +510,7 @@ end;
 // Called to deposit assets to the iToken, which in turn mints iTokens to the lender�s wallet at the current tokenPrice() rate.
 // A prior ERC20 �approve� transaction should have been sent to the asset token for an amount greater than or equal to the specified amount.
 // The supplier will receive the minted iTokens.
-procedure TiToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+procedure TiToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
@@ -523,15 +525,15 @@ end;
 
 // Returns the user�s balance of the underlying asset, scaled by 1e18
 // This is the same as multiplying the user�s token balance by the token price.
-procedure TiToken.AssetBalanceOf(owner: TAddress; callback: TAsyncQuantity);
+procedure TiToken.AssetBalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'assetBalanceOf(address)', [owner], callback);
 end;
 
 // Returns the underlying asset contract address for this iToken.
-procedure TiToken.LoanTokenAddress(callback: TAsyncAddress);
+procedure TiToken.LoanTokenAddress(callback: TProc<TAddress, IError>);
 begin
-  web3.eth.call(Client, Contract, 'loanTokenAddress()', [], procedure(const hex: string; err: IError)
+  web3.eth.call(Client, Contract, 'loanTokenAddress()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
@@ -541,13 +543,13 @@ begin
 end;
 
 // Returns the aggregate rate that all lenders are receiving from borrowers, scaled by 1e18
-procedure TiToken.SupplyInterestRate(callback: TAsyncQuantity);
+procedure TiToken.SupplyInterestRate(callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'supplyInterestRate()', [], callback);
 end;
 
 // Returns the current price of the iToken, scaled by 1e18
-procedure TiToken.TokenPrice(callback: TAsyncQuantity);
+procedure TiToken.TokenPrice(callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'tokenPrice()', [], callback);
 end;

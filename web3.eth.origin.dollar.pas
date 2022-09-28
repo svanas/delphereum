@@ -29,6 +29,8 @@ unit web3.eth.origin.dollar;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -46,7 +48,7 @@ type
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
   public
     class function Name: string; override;
     class function Supports(
@@ -56,29 +58,29 @@ type
       client  : IWeb3;
       _reserve: TReserve;
       period  : TPeriod;
-      callback: TAsyncFloat); override;
+      callback: TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); override;
+      callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
       client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncQuantity); override;
+      callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
       client  : IWeb3;
       from    : TPrivateKey;
       _reserve: TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
 type
@@ -90,19 +92,19 @@ type
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     procedure Redeem(
       from    : TPrivateKey;
       amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
   end;
 
 type
   TOriginDollar = class(TERC20)
   public
     constructor Create(aClient: IWeb3); reintroduce;
-    procedure RebasingCreditsPerToken(const block: string; callback: TAsyncQuantity);
-    procedure APY(period: TPeriod; callback: TAsyncFloat);
+    procedure RebasingCreditsPerToken(const block: string; callback: TProc<BigInteger, IError>);
+    procedure APY(period: TPeriod; callback: TProc<Double, IError>);
   end;
 
 implementation
@@ -120,7 +122,7 @@ class procedure TOrigin.Approve(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   reserve.Address(client.Chain, procedure(reserveAddr: TAddress; err: IError)
   begin
@@ -158,7 +160,7 @@ class procedure TOrigin.APY(
   client  : IWeb3;
   _reserve: TReserve;
   period  : TPeriod;
-  callback: TAsyncFloat);
+  callback: TProc<Double, IError>);
 begin
   const ousd = TOriginDollar.Create(client);
   if Assigned(ousd) then
@@ -179,7 +181,7 @@ class procedure TOrigin.Deposit(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   Self.Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
@@ -201,7 +203,7 @@ class procedure TOrigin.Balance(
   client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const ousd = TOriginDollar.Create(client);
   try
@@ -224,7 +226,7 @@ class procedure TOrigin.Withdraw(
   client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   Self.Balance(client, from, reserve, procedure(balance: BigInteger; err: IError)
   begin
@@ -240,7 +242,7 @@ class procedure TOrigin.WithdrawEx(
   from    : TPrivateKey;
   _reserve: TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   const vault = TOriginVault.Create(client);
   try
@@ -272,7 +274,7 @@ procedure TOriginVault.Mint(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   reserve.Address(Client.Chain, procedure(reserveAddr: TAddress; err: IError)
   begin
@@ -297,7 +299,7 @@ end;
 procedure TOriginVault.Redeem(
   from    : TPrivateKey;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(
     Client,
@@ -319,12 +321,12 @@ begin
   inherited Create(aClient, '0x2A8e1E676Ec238d8A992307B495b45B3fEAa5e86');
 end;
 
-procedure TOriginDollar.RebasingCreditsPerToken(const block: string; callback: TAsyncQuantity);
+procedure TOriginDollar.RebasingCreditsPerToken(const block: string; callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'rebasingCreditsPerToken()', block, [], callback);
 end;
 
-procedure TOriginDollar.APY(period: TPeriod; callback: TAsyncFloat);
+procedure TOriginDollar.APY(period: TPeriod; callback: TProc<Double, IError>);
 begin
   Self.RebasingCreditsPerToken(BLOCK_LATEST, procedure(curr: BigInteger; err: IError)
   begin

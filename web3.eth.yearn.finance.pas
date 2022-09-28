@@ -29,6 +29,8 @@ unit web3.eth.yearn.finance;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -50,74 +52,70 @@ type
       from    : TPrivateKey;
       yToken  : TyTokenClass;
       amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     class procedure BalanceOf(
       client  : IWeb3;
       yToken  : TyTokenClass;
       owner   : TAddress;
-      callback: TAsyncQuantity);
+      callback: TProc<BigInteger, IError>);
     class procedure TokenToUnderlying(
       client  : IWeb3;
       yToken  : TyTokenClass;
       amount  : BigInteger;
-      callback: TAsyncQuantity);
+      callback: TProc<BigInteger, IError>);
     class procedure UnderlyingToToken(
       client  : IWeb3;
       yToken  : TyTokenClass;
       amount  : BigInteger;
-      callback: TAsyncQuantity);
+      callback: TProc<BigInteger, IError>);
   strict protected
     class procedure _APY(
       client  : IWeb3;
       yToken  : TyTokenClass;
       period  : TPeriod;
-      callback: TAsyncFloat);
+      callback: TProc<Double, IError>);
     class procedure _Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
       yToken  : TyTokenClass;
       amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     class procedure _Balance(
       client  : IWeb3;
       owner   : TAddress;
       yToken  : TyTokenClass;
-      callback: TAsyncQuantity);
+      callback: TProc<BigInteger, IError>);
     class procedure _Withdraw(
       client  : IWeb3;
       from    : TPrivateKey;
       yToken  : TyTokenClass;
-      callback: TAsyncReceiptEx);
+      callback: TProc<ITxReceipt, BigInteger, IError>);
     class procedure _WithdrawEx(
       client  : IWeb3;
       from    : TPrivateKey;
       yToken  : TyTokenClass;
       amount  : BigInteger;
-      callback: TAsyncReceiptEx);
+      callback: TProc<ITxReceipt, BigInteger, IError>);
   end;
 
   TyToken = class abstract(TERC20)
   public
     constructor Create(aClient: IWeb3); reintroduce;
     //------- read from contract -----------------------------------------------
-    procedure Token(callback: TAsyncAddress);
-    procedure GetPricePerFullShare(const block: string; callback: TAsyncQuantity);
+    procedure Token(callback: TProc<TAddress, IError>);
+    procedure GetPricePerFullShare(const block: string; callback: TProc<BigInteger, IError>);
     //------- helpers ----------------------------------------------------------
     class function DeployedAt: TAddress; virtual; abstract;
-    procedure ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-    procedure TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
-    procedure UnderlyingToToken(amount: BigInteger; callback: TAsyncQuantity);
-    procedure APY(period: TPeriod; callback: TAsyncFloat);
+    procedure ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure TokenToUnderlying(amount: BigInteger; callback: TProc<BigInteger, IError>);
+    procedure UnderlyingToToken(amount: BigInteger; callback: TProc<BigInteger, IError>);
+    procedure APY(period: TPeriod; callback: TProc<Double, IError>);
     //------- write to contract ------------------------------------------------
-    procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-    procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+    procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
   end;
 
 implementation
-
-uses
-  // Delphi
-  System.SysUtils;
 
 { TyEarnCustom }
 
@@ -126,7 +124,7 @@ class procedure TyEarnCustom.Approve(
   from    : TPrivateKey;
   yToken  : TyTokenClass;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   const token = yToken.Create(client);
   if Assigned(token) then
@@ -146,7 +144,7 @@ class procedure TyEarnCustom.BalanceOf(
   client  : IWeb3;
   yToken  : TyTokenClass;
   owner   : TAddress;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const token = yToken.Create(client);
   try
@@ -160,7 +158,7 @@ class procedure TyEarnCustom.TokenToUnderlying(
   client  : IWeb3;
   yToken  : TyTokenClass;
   amount  : BigInteger;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const token = yToken.Create(client);
   try
@@ -174,7 +172,7 @@ class procedure TyEarnCustom.UnderlyingToToken(
   client  : IWeb3;
   yToken  : TyTokenClass;
   amount  : BIgInteger;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const token = yToken.Create(client);
   try
@@ -188,7 +186,7 @@ class procedure TyEarnCustom._APY(
   client  : IWeb3;
   yToken  : TyTokenClass;
   period  : TPeriod;
-  callback: TAsyncFloat);
+  callback: TProc<Double, IError>);
 begin
   const token = yToken.Create(client);
   if Assigned(token) then
@@ -209,7 +207,7 @@ class procedure TyEarnCustom._Deposit(
   from    : TPrivateKey;
   yToken  : TyTokenClass;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   Self.Approve(client, from, yToken, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
@@ -231,7 +229,7 @@ class procedure TyEarnCustom._Balance(
   client  : IWeb3;
   owner   : TAddress;
   yToken  : TyTokenClass;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const token = yToken.Create(client);
   try
@@ -259,7 +257,7 @@ class procedure TyEarnCustom._Withdraw(
   client  : IWeb3;
   from    : TPrivateKey;
   yToken  : TyTokenClass;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
@@ -303,7 +301,7 @@ class procedure TyEarnCustom._WithdrawEx(
   from    : TPrivateKey;
   yToken  : TyTokenClass;
   amount  : BigInteger;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   // step #1: from Underlying-amount to yToken-amount
   Self.UnderlyingToToken(client, yToken, amount, procedure(input: BigInteger; err: IError)
@@ -337,9 +335,9 @@ begin
 end;
 
 // Returns the underlying asset contract address for this yToken.
-procedure TyToken.Token(callback: TAsyncAddress);
+procedure TyToken.Token(callback: TProc<TAddress, IError>);
 begin
-  web3.eth.call(Client, Contract, 'token()', [], procedure(const hex: string; err: IError)
+  web3.eth.call(Client, Contract, 'token()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
@@ -349,12 +347,12 @@ begin
 end;
 
 // Current yToken price, in underlying (eg. DAI) terms.
-procedure TyToken.GetPricePerFullShare(const block: string; callback: TAsyncQuantity);
+procedure TyToken.GetPricePerFullShare(const block: string; callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'getPricePerFullShare()', block, [], callback);
 end;
 
-procedure TyToken.ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+procedure TyToken.ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   Self.Token(procedure(addr: TAddress; err: IError)
   begin
@@ -378,7 +376,7 @@ begin
   end);
 end;
 
-procedure TyToken.TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
+procedure TyToken.TokenToUnderlying(amount: BigInteger; callback: TProc<BigInteger, IError>);
 begin
   Self.GetPricePerFullShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
   begin
@@ -389,7 +387,7 @@ begin
   end);
 end;
 
-procedure TyToken.UnderlyingToToken(amount: BIgInteger; callback: TAsyncQuantity);
+procedure TyToken.UnderlyingToToken(amount: BIgInteger; callback: TProc<BigInteger, IError>);
 begin
   Self.GetPricePerFullShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
   begin
@@ -400,7 +398,7 @@ begin
   end);
 end;
 
-procedure TyToken.APY(period: TPeriod; callback: TAsyncFloat);
+procedure TyToken.APY(period: TPeriod; callback: TProc<Double, IError>);
 begin
   Self.GetPricePerFullShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
   begin
@@ -429,12 +427,12 @@ begin
   end);
 end;
 
-procedure TyToken.Deposit(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+procedure TyToken.Deposit(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'deposit(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
-procedure TyToken.Withdraw(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+procedure TyToken.Withdraw(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'withdraw(uint256)', [web3.utils.toHex(amount)], callback);
 end;

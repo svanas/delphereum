@@ -66,7 +66,7 @@ function unscale(amount: BigInteger; decimals: Byte): Double;
 
 function  sha3(const hex: string): TBytes; overload;
 function  sha3(const buf: TBytes): TBytes; overload;
-procedure sha3(client: IWeb3; const hex: string; callback: TAsyncString); overload;
+procedure sha3(client: IWeb3; const hex: string; callback: TProc<string, IError>); overload;
 
 implementation
 
@@ -263,7 +263,7 @@ begin
   end;
 end;
 
-procedure sha3(client: IWeb3; const hex: string; callback: TAsyncString);
+procedure sha3(client: IWeb3; const hex: string; callback: TProc<string, IError>);
 begin
   client.Call('web3_sha3', [hex], procedure(resp: TJsonObject; err: IError)
   begin

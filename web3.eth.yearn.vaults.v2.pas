@@ -29,6 +29,8 @@ unit web3.eth.yearn.vaults.v2;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -46,21 +48,21 @@ type
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     class procedure LpTokenToUnderlyingAmount(
       client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncQuantity);
+      callback: TProc<BigInteger, IError>);
     class procedure UnderlyingToLpTokenAmount(
       client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncQuantity);
+      callback: TProc<BigInteger, IError>);
     class procedure UnderlyingToLpTokenAddress(
       client  : IWeb3;
       reserve : TReserve;
-      callback: TAsyncAddress);
+      callback: TProc<TAddress, IError>);
   public
     class function Name: string; override;
     class function Supports(
@@ -70,55 +72,53 @@ type
       client  : IWeb3;
       reserve : TReserve;
       period  : TPeriod;
-      callback: TAsyncFloat); override;
+      callback: TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); override;
+      callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
       client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncQuantity); override;
+      callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
 type
   TyVaultRegistry = class;
 
-  TAsyncRegistry = reference to procedure(reg: TyVaultRegistry; err: IError);
-
   TyVaultRegistry = class(TCustomContract)
   public
-    class procedure Create(client: IWeb3; callback: TAsyncRegistry); reintroduce;
-    procedure LatestVault(reserve: TAddress; callback: TAsyncAddress);
+    class procedure Create(client: IWeb3; callback: TProc<TyVaultRegistry, IError>); reintroduce;
+    procedure LatestVault(reserve: TAddress; callback: TProc<TAddress, IError>);
   end;
 
 type
   TyVaultToken = class abstract(TERC20)
   public
     //------- read from contract -----------------------------------------------
-    procedure PricePerShare(const block: string; callback: TAsyncQuantity);
-    procedure PricePerShareEx(const block: string; callback: TAsyncFloat);
+    procedure PricePerShare(const block: string; callback: TProc<BigInteger, IError>);
+    procedure PricePerShareEx(const block: string; callback: TProc<Double, IError>);
     //------- helpers ----------------------------------------------------------
-    procedure TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
-    procedure UnderlyingToToken(amount: BigInteger; callback: TAsyncQuantity);
-    procedure APY(period: TPeriod; callback: TAsyncFloat);
+    procedure TokenToUnderlying(amount: BigInteger; callback: TProc<BigInteger, IError>);
+    procedure UnderlyingToToken(amount: BigInteger; callback: TProc<BigInteger, IError>);
+    procedure APY(period: TPeriod; callback: TProc<Double, IError>);
     //------- write to contract ------------------------------------------------
-    procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-    procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+    procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
   end;
 
 implementation
@@ -139,7 +139,7 @@ class procedure TyVaultV2.Approve(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   Self.UnderlyingToLpTokenAddress(client, reserve, procedure(lpTokenAddr: TAddress; err: IError)
   begin
@@ -175,7 +175,7 @@ class procedure TyVaultV2.LpTokenToUnderlyingAmount(
   client  : IWeb3;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   Self.UnderlyingToLpTokenAddress(client, reserve, procedure(lpTokenAddr: TAddress; err: IError)
   begin
@@ -202,7 +202,7 @@ class procedure TyVaultV2.UnderlyingToLpTokenAmount(
   client  : IWeb3;
   reserve : TReserve;
   amount  : BIgInteger;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   Self.UnderlyingToLpTokenAddress(client, reserve, procedure(lpTokenAddr: TAddress; err: IError)
   begin
@@ -228,7 +228,7 @@ end;
 class procedure TyVaultV2.UnderlyingToLpTokenAddress(
   client  : IWeb3;
   reserve : TReserve;
-  callback: TAsyncAddress);
+  callback: TProc<TAddress, IError>);
 begin
   reserve.Address(client.Chain, procedure(reserveAddr: TAddress; err: IError)
   begin
@@ -238,7 +238,7 @@ begin
       EXIT;
     end;
     // step #1: use the yearn API
-    web3.eth.yearn.finance.api.latest(client.Chain, reserveAddr, v2, procedure(const vault: IYearnVault; err: IError)
+    web3.eth.yearn.finance.api.latest(client.Chain, reserveAddr, v2, procedure(vault: IYearnVault; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -283,7 +283,7 @@ class procedure TyVaultV2.APY(
   client  : IWeb3;
   reserve : TReserve;
   period  : TPeriod;
-  callback: TAsyncFloat);
+  callback: TProc<Double, IError>);
 begin
   reserve.Address(client.Chain, procedure(reserveAddr: TAddress; err: IError)
   begin
@@ -293,7 +293,7 @@ begin
       EXIT;
     end;
     // step #1: use the yearn API
-    web3.eth.yearn.finance.api.latest(client.Chain, reserveAddr, v2, procedure(const vault: IYearnVault; err: IError)
+    web3.eth.yearn.finance.api.latest(client.Chain, reserveAddr, v2, procedure(vault: IYearnVault; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -342,7 +342,7 @@ class procedure TyVaultV2.Deposit(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   Self.Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
@@ -372,7 +372,7 @@ class procedure TyVaultV2.Balance(
   client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   Self.UnderlyingToLpTokenAddress(client, reserve, procedure(lpTokenAddr: TAddress; err: IError)
   begin
@@ -410,7 +410,7 @@ class procedure TyVaultV2.Withdraw(
   client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   Self.UnderlyingToLpTokenAddress(client, reserve, procedure(lpTokenAddr: TAddress; err: IError)
   begin
@@ -461,7 +461,7 @@ class procedure TyVaultV2.WithdrawEx(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   // step #1: from Underlying-amount to yVaultToken-amount
   Self.UnderlyingToLpTokenAmount(client, reserve, amount, procedure(input: BigInteger; err: IError)
@@ -498,7 +498,7 @@ end;
 
 { TyVaultRegistry }
 
-class procedure TyVaultRegistry.Create(client: IWeb3; callback: TAsyncRegistry);
+class procedure TyVaultRegistry.Create(client: IWeb3; callback: TProc<TyVaultRegistry, IError>);
 begin
   TAddress.New(client, 'v2.registry.ychad.eth', procedure(addr: TAddress; err: IError)
   begin
@@ -509,9 +509,9 @@ begin
   end);
 end;
 
-procedure TyVaultRegistry.LatestVault(reserve: TAddress; callback: TAsyncAddress);
+procedure TyVaultRegistry.LatestVault(reserve: TAddress; callback: TProc<TAddress, IError>);
 begin
-  web3.eth.call(Client, Contract, 'latestVault(address)', [reserve], procedure(const hex: string; err: IError)
+  web3.eth.call(Client, Contract, 'latestVault(address)', [reserve], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
@@ -522,12 +522,12 @@ end;
 
 { TyVaultToken }
 
-procedure TyVaultToken.PricePerShare(const block: string; callback: TAsyncQuantity);
+procedure TyVaultToken.PricePerShare(const block: string; callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'pricePerShare()', block, [], callback);
 end;
 
-procedure TyVaultToken.PricePerShareEx(const block: string; callback: TAsyncFloat);
+procedure TyVaultToken.PricePerShareEx(const block: string; callback: TProc<Double, IError>);
 begin
   Self.PricePerShare(block, procedure(price: BigInteger; err: IError)
   begin
@@ -546,7 +546,7 @@ begin
   end);
 end;
 
-procedure TyVaultToken.TokenToUnderlying(amount: BigInteger; callback: TAsyncQuantity);
+procedure TyVaultToken.TokenToUnderlying(amount: BigInteger; callback: TProc<BigInteger, IError>);
 begin
   Self.PricePerShareEx(BLOCK_LATEST, procedure(price: Double; err: IError)
   begin
@@ -557,7 +557,7 @@ begin
   end);
 end;
 
-procedure TyVaultToken.UnderlyingToToken(amount: BigInteger; callback: TAsyncQuantity);
+procedure TyVaultToken.UnderlyingToToken(amount: BigInteger; callback: TProc<BigInteger, IError>);
 begin
   Self.PricePerShareEx(BLOCK_LATEST, procedure(price: Double; err: IError)
   begin
@@ -568,7 +568,7 @@ begin
   end);
 end;
 
-procedure TyVaultToken.APY(period: TPeriod; callback: TAsyncFloat);
+procedure TyVaultToken.APY(period: TPeriod; callback: TProc<Double, IError>);
 begin
   Self.PricePerShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
   begin
@@ -600,12 +600,12 @@ begin
   end);
 end;
 
-procedure TyVaultToken.Deposit(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+procedure TyVaultToken.Deposit(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'deposit(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
-procedure TyVaultToken.Withdraw(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+procedure TyVaultToken.Withdraw(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'withdraw(uint256)', [web3.utils.toHex(amount)], callback);
 end;

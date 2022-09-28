@@ -27,6 +27,10 @@ unit web3.eth.chainlink;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // web3
   web3,
   web3.eth,
@@ -36,30 +40,28 @@ uses
 type
   TAggregatorV3 = class(TCustomContract)
   public
-    procedure LatestRoundData(callback: TAsyncTuple);
-    procedure Decimals(callback: TAsyncQuantity);
-    procedure Price(callback: TAsyncFloat);
+    procedure LatestRoundData(callback: TProc<TTuple, IError>);
+    procedure Decimals(callback: TProc<BigInteger, IError>);
+    procedure Price(callback: TProc<Double, IError>);
   end;
 
 implementation
 
 uses
   // Delphi
-  System.Math,
-  // Velthuis' BigNumbers
-  Velthuis.BigIntegers;
+  System.Math;
 
-procedure TAggregatorV3.LatestRoundData(callback: TAsyncTuple);
+procedure TAggregatorV3.LatestRoundData(callback: TProc<TTuple, IError>);
 begin
   web3.eth.call(Client, Contract, 'latestRoundData()', [], callback);
 end;
 
-procedure TAggregatorV3.Decimals(callback: TAsyncQuantity);
+procedure TAggregatorV3.Decimals(callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'decimals()', [], callback);
 end;
 
-procedure TAggregatorV3.Price(callback: TAsyncFloat);
+procedure TAggregatorV3.Price(callback: TProc<Double, IError>);
 begin
   Self.LatestRoundData(procedure(tup: TTuple; err: IError)
   begin

@@ -34,6 +34,8 @@ unit web3.eth.compound;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -53,7 +55,7 @@ type
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
   public
     class function Name: string; override;
     class function Supports(
@@ -63,29 +65,29 @@ type
       client  : IWeb3;
       reserve : TReserve;
       _period : TPeriod;
-      callback: TAsyncFloat); override;
+      callback: TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); override;
+      callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
       client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncQuantity); override;
+      callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
   TOnMint = reference to procedure(
@@ -111,15 +113,15 @@ type
   public
     constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
-    procedure APY(callback: TAsyncQuantity);
-    procedure BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
-    procedure ExchangeRateCurrent(callback: TAsyncQuantity);
-    procedure SupplyRatePerBlock(callback: TAsyncQuantity);
-    procedure Underlying(callback: TAsyncAddress);
+    procedure APY(callback: TProc<BigInteger, IError>);
+    procedure BalanceOfUnderlying(owner: TAddress; callback: TProc<BigInteger, IError>);
+    procedure ExchangeRateCurrent(callback: TProc<BigInteger, IError>);
+    procedure SupplyRatePerBlock(callback: TProc<BigInteger, IError>);
+    procedure Underlying(callback: TProc<TAddress, IError>);
     //------- write to contract ------------------------------------------------
-    procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-    procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
-    procedure RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+    procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
     //------- https://compound.finance/docs/ctokens#ctoken-events --------------
     property OnMint  : TOnMint   read FOnMint   write SetOnMint;
     property OnRedeem: TOnRedeem read FOnRedeem write SetOnRedeem;
@@ -186,7 +188,7 @@ class procedure TCompound.Approve(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   const cToken = cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
@@ -239,7 +241,7 @@ class procedure TCompound.APY(
   client  : IWeb3;
   reserve : TReserve;
   _period : TPeriod;
-  callback: TAsyncFloat);
+  callback: TProc<Double, IError>);
 begin
   const cToken = cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
@@ -262,7 +264,7 @@ class procedure TCompound.Deposit(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   // Before supplying an asset, we must first approve the cToken.
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -287,7 +289,7 @@ class procedure TCompound.Balance(
   client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const cToken = cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
@@ -303,7 +305,7 @@ class procedure TCompound.Withdraw(
   client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   Balance(client, from, reserve, procedure(amount_underlying: BigInteger; err: IError)
   begin
@@ -351,7 +353,7 @@ class procedure TCompound.WithdrawEx(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   const cToken = cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
@@ -410,7 +412,7 @@ begin
 end;
 
 // returns the annual percentage yield for this cToken, scaled by 1e18
-procedure TcToken.APY(callback: TAsyncQuantity);
+procedure TcToken.APY(callback: TProc<BigInteger, IError>);
 begin
   SupplyRatePerBlock(procedure(qty: BigInteger; err: IError)
   begin
@@ -427,14 +429,14 @@ begin
 end;
 
 // returns how much underlying ERC20 tokens your cToken balance entitles you to.
-procedure TcToken.BalanceOfUnderlying(owner: TAddress; callback: TAsyncQuantity);
+procedure TcToken.BalanceOfUnderlying(owner: TAddress; callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'balanceOfUnderlying(address)', [owner], callback);
 end;
 
 // returns the current exchange rate of cToken to underlying ERC20 token, scaled by 1e18
 // please note that the exchange rate of underlying to cToken increases over time.
-procedure TcToken.ExchangeRateCurrent(callback: TAsyncQuantity);
+procedure TcToken.ExchangeRateCurrent(callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'exchangeRateCurrent()', [], procedure(qty: BigInteger; err: IError)
   begin
@@ -449,7 +451,7 @@ end;
 // the cTokens are transferred to the wallet of the supplier.
 // please note you needs to first call the approve function on the underlying token's contract.
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
-procedure TcToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+procedure TcToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract,
     'mint(uint256)', [web3.utils.toHex(amount)], callback);
@@ -458,7 +460,7 @@ end;
 // redeems specified amount of cTokens in exchange for the underlying ERC20 tokens.
 // the ERC20 tokens are transferred to the wallet of the supplier.
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
-procedure TcToken.Redeem(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+procedure TcToken.Redeem(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(
     Client, from, Contract,
@@ -468,7 +470,7 @@ end;
 // redeems cTokens in exchange for the specified amount of underlying ERC20 tokens.
 // the ERC20 tokens are transferred to the wallet of the supplier.
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
-procedure TcToken.RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TAsyncReceipt);
+procedure TcToken.RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(
     Client, from, Contract,
@@ -476,7 +478,7 @@ begin
 end;
 
 // returns the current per-block supply interest rate for this cToken, scaled by 1e18
-procedure TcToken.SupplyRatePerBlock(callback: TAsyncQuantity);
+procedure TcToken.SupplyRatePerBlock(callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'supplyRatePerBlock()', [], procedure(qty: BigInteger; err: IError)
   begin
@@ -488,9 +490,9 @@ begin
 end;
 
 // Returns the underlying asset contract address for this cToken.
-procedure TcToken.Underlying(callback: TAsyncAddress);
+procedure TcToken.Underlying(callback: TProc<TAddress, IError>);
 begin
-  web3.eth.call(Client, Contract, 'underlying()', [], procedure(const hex: string; err: IError)
+  web3.eth.call(Client, Contract, 'underlying()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)

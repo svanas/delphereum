@@ -29,6 +29,8 @@ unit web3.eth.defi;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -42,10 +44,10 @@ type
   TReserveHelper = record helper for TReserve
     function  Symbol  : string;
     function  Decimals: Double;
-    procedure Address(chain: TChain; callback: TAsyncAddress);
+    procedure Address(chain: TChain; callback: TProc<TAddress, IError>);
     function  Scale(amount: Double): BigInteger;
     function  Unscale(amount: BigInteger): Double;
-    procedure BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
+    procedure BalanceOf(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
   end;
 
   TPeriod = (oneDay, threeDays, oneWeek, twoWeeks, oneMonth);
@@ -69,42 +71,40 @@ type
       client  : IWeb3;
       reserve : TReserve;
       period  : TPeriod;
-      callback: TAsyncFloat); virtual; abstract;
+      callback: TProc<Double, IError>); virtual; abstract;
     // Deposits an underlying asset into the lending pool.
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); virtual; abstract;
+      callback: TProc<ITxReceipt, IError>); virtual; abstract;
     // Returns how much underlying assets you are entitled to.
     class procedure Balance(
       client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncQuantity); virtual; abstract;
+      callback: TProc<BigInteger, IError>); virtual; abstract;
     // Withdraws your underlying asset from the lending pool.
     class procedure Withdraw(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceiptEx); virtual; abstract;
+      callback: TProc<ITxReceipt, BigInteger, IError>); virtual; abstract;
     class procedure WithdrawEx(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceiptEx); virtual; abstract;
+      callback: TProc<ITxReceipt, BigInteger, IError>); virtual; abstract;
   end;
 
   TLendingProtocolClass = class of TLendingProtocol;
-  TAsyncLendingProtocol = reference to procedure(proto: TLendingProtocolClass; err: IError);
 
 implementation
 
 uses
   // Delphi
-  System.SysUtils,
   System.TypInfo,
   // web3
   web3.eth;
@@ -157,7 +157,7 @@ begin
     Result := 1e18;
 end;
 
-procedure TReserveHelper.Address(chain: TChain; callback: TAsyncAddress);
+procedure TReserveHelper.Address(chain: TChain; callback: TProc<TAddress, IError>);
 begin
   if chain = Fantom then
   begin
@@ -192,7 +192,7 @@ begin
   Result := amount.AsDouble / Self.Decimals;
 end;
 
-procedure TReserveHelper.BalanceOf(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
+procedure TReserveHelper.BalanceOf(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
 begin
   Self.Address(client.Chain, procedure(token: TAddress; err: IError)
   begin

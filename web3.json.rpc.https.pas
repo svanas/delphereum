@@ -31,6 +31,7 @@ interface
 uses
   // Delphi
   System.JSON,
+  System.SysUtils,
   // web3
   web3,
   web3.http.throttler,
@@ -49,7 +50,7 @@ type
       const URL   : string;
       const method: string;
       args        : array of const;
-      callback    : TAsyncJsonObject); overload;
+      callback    : TProc<TJsonObject, IError>); overload;
     constructor Create; overload;
     constructor Create(const throttler: IThrottler); overload;
   end;
@@ -109,9 +110,9 @@ procedure TJsonRpcHttps.Call(
   const URL   : string;
   const method: string;
   args        : array of const;
-  callback    : TAsyncJsonObject);
+  callback    : TProc<TJsonObject, IError>);
 begin
-  const handler: TAsyncJsonObject = procedure(resp: TJsonObject; err: IError)
+  const handler: TProc<TJsonObject, IError> = procedure(resp: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin

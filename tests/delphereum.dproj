@@ -177,6 +177,7 @@
         <DCCReference Include="..\web3.eth.infura.pas"/>
         <DCCReference Include="..\web3.eth.logs.pas"/>
         <DCCReference Include="..\web3.eth.mstable.save.v2.pas"/>
+        <DCCReference Include="..\web3.eth.nodelist.pas"/>
         <DCCReference Include="..\web3.eth.opensea.pas"/>
         <DCCReference Include="..\web3.eth.origin.dollar.pas"/>
         <DCCReference Include="..\web3.eth.pas"/>

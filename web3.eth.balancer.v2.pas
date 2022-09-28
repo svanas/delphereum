@@ -98,7 +98,7 @@ type
       swap    : ISingleSwap;
       limit   : BigInteger;
       deadline: BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     procedure BatchSwap(
       owner   : TPrivateKey;
       kind    : TSwapKind;
@@ -106,18 +106,18 @@ type
       assets  : TArray<TAddress>;
       limits  : TArray<BigInteger>;
       deadline: BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     procedure QueryBatchSwap(
       owner   : TAddress;
       kind    : TSwapKind;
       swaps   : TArray<ISwapStep>;
       assets  : TArray<TAddress>;
       callback: TProc<TArray<BigInteger>, IError>);
-    procedure WETH(callback: TAsyncAddress);
+    procedure WETH(callback: TProc<TAddress, IError>);
   end;
 
 // get the Balancer token list
-procedure tokens(chain: TChain; callback: TAsyncTokens);
+procedure tokens(chain: TChain; callback: TProc<TTokens, IError>);
 
 // easy access function: simulate a trade between two tokens, returning Vault asset deltas.
 procedure simulate(
@@ -139,7 +139,7 @@ procedure swap(
   amount  : BigInteger;  // the amount of tokens we (a) are sending to the pool, or (b) want to receive from the pool
   limit   : BigInteger;  // the "other amount" aka (a) minimum amount of tokens to receive, or (b) maximum amount of tokens to send
   deadline: BigInteger;  // your transaction will revert if it is still pending after this Unix epoch
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 
 // easy access function: listen for swaps between two tokens.
 function listen(client: IWeb3; callback: TOnSwap): ILogger;
@@ -286,7 +286,7 @@ procedure TVault.Swap(
   swap    : ISingleSwap;
   limit   : BigInteger;
   deadline: BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   owner.Address(procedure(addr: TAddress; err: IError)
   begin
@@ -321,7 +321,7 @@ procedure TVault.BatchSwap(
   assets  : TArray<TAddress>;
   limits  : TArray<BigInteger>;
   deadline: BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   owner.Address(procedure(addr: TAddress; err: IError)
   begin
@@ -413,9 +413,9 @@ begin
   );
 end;
 
-procedure TVault.WETH(callback: TAsyncAddress);
+procedure TVault.WETH(callback: TProc<TAddress, IError>);
 begin
-  call(Client, Contract, 'WETH()', [], procedure(const hex: string; err: IError)
+  call(Client, Contract, 'WETH()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
@@ -442,7 +442,7 @@ begin
   inherited Create('Pool does not exist');
 end;
 
-procedure getPoolId(chain: TChain; asset0, asset1: TAddress; callback: TAsyncString);
+procedure getPoolId(chain: TChain; asset0, asset1: TAddress; callback: TProc<string, IError>);
 const
   QUERY = '{"query":"{pools(where: {tokensList: [\"%s\", \"%s\"]}, orderBy: totalLiquidity, orderDirection: desc) { id }}"}';
 const
@@ -468,7 +468,7 @@ const
     ''                                                                            // Sepolia
   );
 begin
-  const execute = procedure(token0, token1: TAddress; callback: TAsyncString)
+  const execute = procedure(token0, token1: TAddress; callback: TProc<string, IError>)
   begin
     web3.graph.execute(SUBGRAPH[chain], Format(QUERY, [string(token0), string(token1)]), procedure(resp: TJsonObject; err: IError)
     begin
@@ -490,7 +490,7 @@ begin
       callback('', TPoolDoesNotExist.Create);
     end);
   end;
-  execute(asset0, asset1, procedure(const id: string; err: IError)
+  execute(asset0, asset1, procedure(id: string; err: IError)
   begin
     if Assigned(err) and Supports(err, IPoolDoesNotExist) then
       execute(asset1, asset0, callback)
@@ -501,7 +501,7 @@ end;
 
 {------------------------ get the Balancer token list -------------------------}
 
-procedure tokens(chain: TChain; callback: TAsyncTokens);
+procedure tokens(chain: TChain; callback: TProc<TTokens, IError>);
 begin
   case chain of
     Goerli:
@@ -553,7 +553,7 @@ end;
 
 {---------- easy access function: returns the Vault's WETH instance -----------}
 
-procedure weth(client: IWeb3; callback: TAsyncAddress);
+procedure weth(client: IWeb3; callback: TProc<TAddress, IError>);
 begin
   const vault = TVault.Create(client);
   try
@@ -731,7 +731,7 @@ procedure getPools(
   callback: TProc<IPools, IError>);
 begin
   // step #1: get the pool id for a single swap
-  getPoolId(client.Chain, assetIn, assetOut, procedure(const poolId: string; err: IError)
+  getPoolId(client.Chain, assetIn, assetOut, procedure(poolId: string; err: IError)
   begin
     if not Assigned(err) then
       callback(TPools.Create([
@@ -748,12 +748,12 @@ begin
             callback(nil, TPoolDoesNotExist.Create)
           else
             // step #3: get the pool IDs for a batch swap
-            getPoolId(client.Chain, assetIn, weth, procedure(const pool1: string; err: IError)
+            getPoolId(client.Chain, assetIn, weth, procedure(pool1: string; err: IError)
             begin
               if Assigned(err) then
                 callback(nil, err)
               else
-                getPoolId(client.Chain, weth, assetOut, procedure(const pool2: string; err: IError)
+                getPoolId(client.Chain, weth, assetOut, procedure(pool2: string; err: IError)
                 begin
                   if Assigned(err) then
                     callback(nil, err)
@@ -814,7 +814,7 @@ procedure swap(
   amount  : BigInteger;
   limit   : BigInteger;
   deadline: BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   // step #1: get the pool IDs for a trade
   getPools(client, assetIn, assetOut, procedure(pools: IPools; err: IError)

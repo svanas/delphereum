@@ -59,16 +59,16 @@ type
     constructor Create(
       const chain : TChain;
       const apiKey: string;
-      onEvent     : TAsyncJsonObject;
-      onError     : TAsyncError;
+      onEvent     : TProc<TJsonObject, IError>;
+      onError     : TProc<IError>;
       onDisconnect: TProc);
     destructor Destroy; override;
     class function Subscribe(
       const chain  : TChain;
       const apiKey : string;
       const address: TAddress;
-      onEvent      : TAsyncJsonObject;
-      onError      : TAsyncError;
+      onEvent      : TProc<TJsonObject, IError>;
+      onError      : TProc<IError>;
       onDisconnect : TProc): IMempool; overload; override;
     class function Subscribe(
       const chain  : TChain;
@@ -76,8 +76,8 @@ type
       const address: TAddress;
       const filters: IFilters;
       const abi    : TJsonArray;
-      onEvent      : TAsyncJsonObject;
-      onError      : TAsyncError;
+      onEvent      : TProc<TJsonObject, IError>;
+      onError      : TProc<IError>;
       onDisconnect : TProc): IMempool; overload; override;
     procedure Unsubscribe(const address: TAddress);
     procedure Initialize;
@@ -90,8 +90,8 @@ implementation
 constructor TSgcMempool.Create(
   const chain : TChain;
   const apiKey: string;
-  onEvent     : TAsyncJsonObject;
-  onError     : TAsyncError;
+  onEvent     : TProc<TJsonObject, IError>;
+  onError     : TProc<IError>;
   onDisconnect: TProc);
 begin
   inherited Create;
@@ -200,8 +200,8 @@ class function TSgcMempool.Subscribe(
   const chain  : TChain;
   const apiKey : string;
   const address: TAddress;
-  onEvent      : TAsyncJsonObject;
-  onError      : TAsyncError;
+  onEvent      : TProc<TJsonObject, IError>;
+  onError      : TProc<IError>;
   onDisconnect : TProc): IMempool;
 begin
   const &output = TSgcMempool.Create(
@@ -232,8 +232,8 @@ class function TSgcMempool.Subscribe(
   const address: TAddress;
   const filters: IFilters;
   const abi    : TJsonArray;
-  onEvent      : TAsyncJsonObject;
-  onError      : TAsyncError;
+  onEvent      : TProc<TJsonObject, IError>;
+  onError      : TProc<IError>;
   onDisconnect : TProc): IMempool;
 begin
   const &output = TSgcMempool.Create(

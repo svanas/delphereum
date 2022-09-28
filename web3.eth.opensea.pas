@@ -30,6 +30,7 @@ interface
 
 uses
   // Delphi
+  System.JSON,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
@@ -53,17 +54,14 @@ type
     function Length: Integer;
   end;
 
-  TAsyncNFTs = reference to procedure(NFTs: TNFTs; err: IError);
-
-procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TAsyncJsonArray); overload;
-procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TAsyncNFTs); overload;
+procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TJsonArray, IError>); overload;
+procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TNFTs, IError>); overload;
 
 implementation
 
 uses
   // Delphi
   System.Generics.Collections,
-  System.JSON,
   System.Net.URLClient,
   // web3
   web3.eth.types,
@@ -181,7 +179,7 @@ begin
     Result := 'https://api.opensea.io/api/v1/'
 end;
 
-procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TAsyncJsonArray); overload;
+procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TJsonArray, IError>); overload;
 begin
   var result := TJsonArray.Create;
 
@@ -217,7 +215,7 @@ begin
   get(baseURL(chain) + 'assets?owner=' + string(owner), result);
 end;
 
-procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TAsyncNFTs);
+procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TNFTs, IError>);
 begin
   NFTs(chain, apiKey, owner, procedure(arr: TJsonArray; err: IError)
   begin

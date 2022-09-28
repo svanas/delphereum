@@ -51,15 +51,15 @@ type
 procedure subscribe(
   client      : IWeb3Ex;
   subscription: TSubscription;
-  callback    : TAsyncString;     // one-time callback (subscribed, or a JSON-RPC error)
-  notification: TAsyncJsonObject; // continuous notifications (or a JSON-RPC error)
-  onError     : TAsyncError;      // non-JSON-RPC-error handler (probably a socket error)
-  onDisconnect: TProc);           // connection closed
+  callback    : TProc<string, IError>;      // one-time callback (subscribed, or a JSON-RPC error)
+  notification: TProc<TJsonObject, IError>; // continuous notifications (or a JSON-RPC error)
+  onError     : TProc<IError>;              // non-JSON-RPC-error handler (probably a socket error)
+  onDisconnect: TProc);                     // connection closed
 
 procedure unsubscribe(
   client   : IWeb3Ex;
-  const sub: string;         // as returned by the eth_subscribe callback
-  callback : TAsyncBoolean); // true if successful, otherwise false
+  const sub: string;                  // as returned by the eth_subscribe callback
+  callback : TProc<Boolean, IError>); // true if successful, otherwise false
 
 function blockNumber(notification: TJsonObject): BigInteger;
 
@@ -89,9 +89,9 @@ end;
 procedure subscribe(
   client      : IWeb3Ex;
   subscription: TSubscription;
-  callback    : TAsyncString;
-  notification: TAsyncJsonObject;
-  onError     : TAsyncError;
+  callback    : TProc<string, IError>;
+  notification: TProc<TJsonObject, IError>;
+  onError     : TProc<IError>;
   onDisconnect: TProc);
 begin
   client.OnError(onError);
@@ -115,7 +115,7 @@ end;
 procedure unsubscribe(
   client   : IWeb3Ex;
   const sub: string;
-  callback : TAsyncBoolean);
+  callback : TProc<Boolean, IError>);
 begin
   client.Call('eth_unsubscribe', [sub], procedure(resp: TJsonObject; err: IError)
   begin

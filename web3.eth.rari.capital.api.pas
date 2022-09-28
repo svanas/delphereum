@@ -30,6 +30,8 @@ interface
 
 uses
   // Delphi
+  System.JSON,
+  System.SysUtils,
   System.Types,
   // web3
   web3,
@@ -43,16 +45,12 @@ type
     function DaiPoolAPY   : Double;
   end;
 
-  TAsyncRariStats = reference to procedure(stats: IRariStats; err: IError);
-
-function stats(callback: TAsyncRariStats) : IAsyncResult; overload;
-function stats(callback: TAsyncJsonObject): IAsyncResult; overload;
+function stats(callback: TProc<IRariStats, IError>): IAsyncResult; overload;
+function stats(callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
 
 implementation
 
 uses
-  // Delphi
-  System.JSON,
   // web3
   web3.json;
 
@@ -89,7 +87,7 @@ end;
 
 {------------------------------ global functions ------------------------------}
 
-function stats(callback: TAsyncRariStats) : IAsyncResult;
+function stats(callback: TProc<IRariStats, IError>): IAsyncResult;
 begin
   Result := stats(procedure(obj: TJsonObject; err: IError)
   begin
@@ -100,7 +98,7 @@ begin
   end);
 end;
 
-function stats(callback: TAsyncJsonObject): IAsyncResult;
+function stats(callback: TProc<TJsonObject, IError>): IAsyncResult;
 begin
   Result := web3.http.get('https://v2.rari.capital/api/stats', [], callback);
 end;

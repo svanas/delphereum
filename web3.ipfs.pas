@@ -30,6 +30,9 @@ interface
 
 uses
   // Delphi
+  System.JSON,
+  System.Net.HttpClient,
+  System.SysUtils,
   System.Types,
   // web3
   web3,
@@ -42,7 +45,6 @@ type
     Infura,
     Cloudflare);
 
-type
   IFile = interface
     function Name: string;
     function Hash: string;
@@ -50,26 +52,22 @@ type
     function Endpoint(Gateway: TGateway): string;
   end;
 
-type
-  TAsyncFile = reference to procedure(F: IFile; E: IError);
+function add(const fileName: string; callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
+function add(const fileName: string; callback: TProc<IFile, IError>): IAsyncResult; overload;
 
-function add(const fileName: string; callback: TAsyncJsonObject): IAsyncResult; overload;
-function add(const fileName: string; callback: TAsyncFile): IAsyncResult; overload;
+function add(const apiHost, fileName: string; callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
+function add(const apiHost, fileName: string; callback: TProc<IFile, IError>): IAsyncResult; overload;
 
-function add(const apiHost, fileName: string; callback: TAsyncJsonObject): IAsyncResult; overload;
-function add(const apiHost, fileName: string; callback: TAsyncFile): IAsyncResult; overload;
+function pin(const hash: string; callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
+function pin(const apiHost, hash: string; callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
 
-function pin(const hash: string; callback: TAsyncJsonObject): IAsyncResult; overload;
-function pin(const apiHost, hash: string; callback: TAsyncJsonObject): IAsyncResult; overload;
-
-function cat(const hash: string; callback: TAsyncResponse): IAsyncResult; overload;
-function cat(const apiHost, hash: string; callback: TAsyncResponse): IAsyncResult; overload;
+function cat(const hash: string; callback: TProc<IHttpResponse, IError>): IAsyncResult; overload;
+function cat(const apiHost, hash: string; callback: TProc<IHttpResponse, IError>): IAsyncResult; overload;
 
 implementation
 
 uses
   // Delphi
-  System.JSON,
   System.NetEncoding,
   System.Net.Mime,
   System.Net.URLClient,
@@ -116,17 +114,17 @@ end;
 
 { global functions }
 
-function add(const fileName: string; callback: TAsyncJsonObject): IAsyncResult;
+function add(const fileName: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
 begin
   Result := add('https://ipfs.infura.io:5001', fileName, callback);
 end;
 
-function add(const fileName: string; callback: TAsyncFile): IAsyncResult;
+function add(const fileName: string; callback: TProc<IFile, IError>): IAsyncResult;
 begin
   Result := add('https://ipfs.infura.io:5001', fileName, callback);
 end;
 
-function add(const apiHost, fileName: string; callback: TAsyncJsonObject): IAsyncResult;
+function add(const apiHost, fileName: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
 begin
   const source = TMultipartFormData.Create;
   source.AddFile('file', fileName);
@@ -138,7 +136,7 @@ begin
   );
 end;
 
-function add(const apiHost, fileName: string; callback: TAsyncFile): IAsyncResult;
+function add(const apiHost, fileName: string; callback: TProc<IFile, IError>): IAsyncResult;
 begin
   Result := add(apiHost, fileName, procedure(obj: TJsonObject; err: IError)
   begin
@@ -151,12 +149,12 @@ begin
   end);
 end;
 
-function pin(const hash: string; callback: TAsyncJsonObject): IAsyncResult;
+function pin(const hash: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
 begin
   Result := pin('https://ipfs.infura.io:5001', hash, callback);
 end;
 
-function pin(const apiHost, hash: string; callback: TAsyncJsonObject): IAsyncResult;
+function pin(const apiHost, hash: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
 begin
   Result := web3.http.get(
     apiHost + '/api/v0/pin/add?arg=' + TNetEncoding.URL.Encode(hash),
@@ -164,12 +162,12 @@ begin
   );
 end;
 
-function cat(const hash: string; callback: TAsyncResponse): IAsyncResult;
+function cat(const hash: string; callback: TProc<IHttpResponse, IError>): IAsyncResult;
 begin
   Result := cat('https://ipfs.infura.io:5001', hash, callback);
 end;
 
-function cat(const apiHost, hash: string; callback: TAsyncResponse): IAsyncResult;
+function cat(const apiHost, hash: string; callback: TProc<IHttpResponse, IError>): IAsyncResult;
 begin
   Result := web3.http.get(
     apiHost + '/api/v0/cat?arg=' + TNetEncoding.URL.Encode(hash),

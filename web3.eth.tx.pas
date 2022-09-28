@@ -68,7 +68,7 @@ type
 procedure getNonce(
   client  : IWeb3;
   address : TAddress;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 
 procedure signTransaction(
   client      : IWeb3;
@@ -79,7 +79,7 @@ procedure signTransaction(
   const data  : string;
   gasLimit    : BigInteger;
   estimatedGas: BigInteger;
-  callback    : TAsyncString);
+  callback    : TProc<string, IError>);
 
 function signTransactionLegacy(
   chainId   : Integer;
@@ -106,13 +106,13 @@ function signTransactionType2(
 procedure sendTransaction(
   client   : IWeb3;
   const raw: string;
-  callback : TAsyncTxHash); overload;
+  callback : TProc<TTxHash, IError>); overload;
 
 // send raw transaction, get the receipt, and get the reason if the transaction failed.
 procedure sendTransaction(
   client   : IWeb3;
   const raw: string;
-  callback : TAsyncReceipt); overload;
+  callback : TProc<ITxReceipt, IError>); overload;
 
 // 1. calculate the nonce, then
 // 2. sign the transaction, then
@@ -122,7 +122,7 @@ procedure sendTransaction(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : TWei;
-  callback: TAsyncTxHash); overload;
+  callback: TProc<TTxHash, IError>); overload;
 
 // 1. calculate the nonce, then
 // 2. sign the transaction, then
@@ -134,32 +134,32 @@ procedure sendTransaction(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : TWei;
-  callback: TAsyncReceipt); overload;
+  callback: TProc<ITxReceipt, IError>); overload;
 
 // returns the information about a transaction requested by transaction hash.
 procedure getTransaction(
   client  : IWeb3;
   hash    : TTxHash;
-  callback: TAsyncTxn);
+  callback: TProc<ITxn, IError>);
 
 // returns the receipt of a transaction by transaction hash.
 procedure getTransactionReceipt(
   client  : IWeb3;
   hash    : TTxHash;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 
 // get the revert reason for a failed transaction.
 procedure getTransactionRevertReason(
   client  : IWeb3;
   rcpt    : ITxReceipt;
-  callback: TAsyncString);
+  callback: TProc<string, IError>);
 
 // cancel a pending transaction
 procedure cancelTransaction(
   client  : IWeb3;
   from    : TPrivateKey;
   nonce   : BigInteger;
-  callback: TAsyncTxHash); overload;
+  callback: TProc<TTxHash, IError>); overload;
 
 implementation
 
@@ -189,7 +189,7 @@ end;
 procedure getNonce(
   client  : IWeb3;
   address : TAddress;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   Nonce.Enter;
   try
@@ -227,7 +227,7 @@ procedure signTransaction(
   const data  : string;
   gasLimit    : BigInteger;
   estimatedGas: BigInteger;
-  callback    : TAsyncString);
+  callback    : TProc<string, IError>);
 resourcestring
   RS_SIGNATURE_DENIED = 'User denied transaction signature';
 begin
@@ -400,7 +400,7 @@ begin
 end;
 
 // send raw (aka signed) transaction.
-procedure sendTransaction(client: IWeb3; const raw: string; callback: TAsyncTxHash);
+procedure sendTransaction(client: IWeb3; const raw: string; callback: TProc<TTxHash, IError>);
 begin
   client.Call('eth_sendRawTransaction', [raw], procedure(resp: TJsonObject; err: IError)
   begin
@@ -412,9 +412,9 @@ begin
 end;
 
 // send raw transaction, get the receipt, and get the reason if the transaction failed.
-procedure sendTransaction(client: IWeb3; const raw: string; callback: TAsyncReceipt);
+procedure sendTransaction(client: IWeb3; const raw: string; callback: TProc<ITxReceipt, IError>);
 var
-  onReceiptReceived: TAsyncReceipt;
+  onReceiptReceived: TProc<ITxReceipt, IError>;
 begin
   // send the raw transaction
   sendTransaction(client, raw, procedure(hash: TTxHash; err: IError)
@@ -444,7 +444,7 @@ begin
         callback(rcpt, nil);
         EXIT;
       end;
-      getTransactionRevertReason(client, rcpt, procedure(const reason: string; err: IError)
+      getTransactionRevertReason(client, rcpt, procedure(reason: string; err: IError)
       begin
         if Assigned(err) then
           callback(rcpt, TTxError.Create(hash, err.Message))
@@ -464,7 +464,7 @@ procedure sendTransaction(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : TWei;
-  callback: TAsyncTxHash);
+  callback: TProc<TTxHash, IError>);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
@@ -476,7 +476,7 @@ begin
         if Assigned(err) then
           callback('', err)
         else
-          signTransaction(client, nonce, from, &to, value, '', 21000, 21000, procedure(const sig: string; err: IError)
+          signTransaction(client, nonce, from, &to, value, '', 21000, 21000, procedure(sig: string; err: IError)
           begin
             if Assigned(err) then
               callback('', err)
@@ -503,7 +503,7 @@ procedure sendTransaction(
   from    : TPrivateKey;
   &to     : TAddress;
   value   : TWei;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
@@ -515,7 +515,7 @@ begin
         if Assigned(err) then
           callback(nil, err)
         else
-          signTransaction(client, nonce, from, &to, value, '', 21000, 21000, procedure(const sig: string; err: IError)
+          signTransaction(client, nonce, from, &to, value, '', 21000, 21000, procedure(sig: string; err: IError)
           begin
             if Assigned(err) then
               callback(nil, err)
@@ -618,7 +618,7 @@ begin
 end;
 
 // returns the information about a transaction requested by transaction hash.
-procedure getTransaction(client: IWeb3; hash: TTxHash; callback: TAsyncTxn);
+procedure getTransaction(client: IWeb3; hash: TTxHash; callback: TProc<ITxn, IError>);
 begin
   client.Call('eth_getTransactionByHash', [hash], procedure(resp: TJsonObject; err: IError)
   begin
@@ -685,7 +685,7 @@ begin
 end;
 
 // returns the receipt of a transaction by transaction hash.
-procedure getTransactionReceipt(client: IWeb3; hash: TTxHash; callback: TAsyncReceipt);
+procedure getTransactionReceipt(client: IWeb3; hash: TTxHash; callback: TProc<ITxReceipt, IError>);
 begin
   client.Call('eth_getTransactionReceipt', [hash], procedure(resp: TJsonObject; err: IError)
   begin
@@ -708,7 +708,7 @@ resourcestring
   TX_UNKNOWN_ERROR = 'Unknown error encountered during contract execution';
 
 // get the revert reason for a failed transaction.
-procedure getTransactionRevertReason(client: IWeb3; rcpt: ITxReceipt; callback: TAsyncString);
+procedure getTransactionRevertReason(client: IWeb3; rcpt: ITxReceipt; callback: TProc<string, IError>);
 begin
   if rcpt.status then
   begin
@@ -802,14 +802,14 @@ procedure cancelTransaction(
   client  : IWeb3;
   from    : TPrivateKey;
   nonce   : BigInteger;
-  callback: TAsyncTxHash);
+  callback: TProc<TTxHash, IError>);
 begin
   from.Address(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
     else
-      signTransaction(client, nonce, from, addr, 0, '', 21000, 21000, procedure(const sig: string; err: IError)
+      signTransaction(client, nonce, from, addr, 0, '', 21000, 21000, procedure(sig: string; err: IError)
       begin
         if Assigned(err) then
           callback('', err)

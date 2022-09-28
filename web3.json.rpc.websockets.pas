@@ -39,7 +39,7 @@ uses
 type
   TJsonRpcWebSocket = class abstract(TCustomJsonRpc, IPubSub)
   strict protected
-    FOnError: TAsyncError;
+    FOnError: TProc<IError>;
     FOnDisconnect: TProc;
   public
     function Call(
@@ -52,19 +52,19 @@ type
       security    : TSecurity;
       const method: string;
       args        : array of const;
-      callback    : TAsyncJsonObject); overload; virtual; abstract;
+      callback    : TProc<TJsonObject, IError>); overload; virtual; abstract;
 
-    procedure Subscribe(const subscription: string; callback: TAsyncJsonObject); virtual; abstract;
+    procedure Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>); virtual; abstract;
     procedure Unsubscribe(const subscription: string); virtual; abstract;
     procedure Disconnect; virtual; abstract;
 
-    function OnError(Value: TAsyncError): IPubSub;
+    function OnError(Value: TProc<IError>): IPubSub;
     function OnDisconnect(Value: TProc): IPubSub;
   end;
 
 implementation
 
-function TJsonRpcWebSocket.OnError(Value: TAsyncError): IPubSub;
+function TJsonRpcWebSocket.OnError(Value: TProc<IError>): IPubSub;
 begin
   Self.FOnError := Value;
   Result := Self;

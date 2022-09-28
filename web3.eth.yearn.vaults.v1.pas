@@ -29,6 +29,8 @@ unit web3.eth.yearn.vaults.v1;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -44,17 +46,17 @@ type
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt);
+      callback: TProc<ITxReceipt, IError>);
     class procedure TokenToUnderlying(
       client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncQuantity);
+      callback: TProc<BigInteger, IError>);
     class procedure UnderlyingToToken(
       client  : IWeb3;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncQuantity);
+      callback: TProc<BigInteger, IError>);
   public
     class function Name: string; override;
     class function Supports(
@@ -64,29 +66,29 @@ type
       client  : IWeb3;
       reserve : TReserve;
       period  : TPeriod;
-      callback: TAsyncFloat); override;
+      callback: TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceipt); override;
+      callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
       client  : IWeb3;
       owner   : TAddress;
       reserve : TReserve;
-      callback: TAsyncQuantity); override;
+      callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
       client  : IWeb3;
       from    : TPrivateKey;
       reserve : TReserve;
       amount  : BigInteger;
-      callback: TAsyncReceiptEx); override;
+      callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
 implementation
@@ -140,7 +142,7 @@ class procedure TyVaultV1.Approve(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
@@ -160,7 +162,7 @@ class procedure TyVaultV1.TokenToUnderlying(
   client  : IWeb3;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
@@ -175,7 +177,7 @@ class procedure TyVaultV1.UnderlyingToToken(
   client  : IWeb3;
   reserve : TReserve;
   amount  : BIgInteger;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
@@ -200,7 +202,7 @@ class procedure TyVaultV1.APY(
   client  : IWeb3;
   reserve : TReserve;
   period  : TPeriod;
-  callback: TAsyncFloat);
+  callback: TProc<Double, IError>);
 begin
   const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
@@ -221,7 +223,7 @@ class procedure TyVaultV1.Deposit(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceipt);
+  callback: TProc<ITxReceipt, IError>);
 begin
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
@@ -244,7 +246,7 @@ class procedure TyVaultV1.Balance(
   client  : IWeb3;
   owner   : TAddress;
   reserve : TReserve;
-  callback: TAsyncQuantity);
+  callback: TProc<BigInteger, IError>);
 begin
   const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
@@ -275,7 +277,7 @@ class procedure TyVaultV1.Withdraw(
   client  : IWeb3;
   from    : TPrivateKey;
   reserve : TReserve;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
@@ -318,7 +320,7 @@ class procedure TyVaultV1.WithdrawEx(
   from    : TPrivateKey;
   reserve : TReserve;
   amount  : BigInteger;
-  callback: TAsyncReceiptEx);
+  callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   // step #1: from Underlying-amount to yToken-amount
   UnderlyingToToken(client, reserve, amount, procedure(input: BigInteger; err: IError)

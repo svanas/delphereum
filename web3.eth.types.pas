@@ -44,7 +44,6 @@ uses
 type
   TBytes32 = array[0..31] of Byte;
 
-type
   TArg = record
     Inner: TBytes32;
   public
@@ -60,12 +59,10 @@ type
     function toDateTime: TUnixDateTime;
   end;
 
-type
   PArg    = ^TArg;
   TTuple  = TArray<TArg>;
   TTopics = array[0..3] of TArg;
 
-type
   IBlock = interface
     function ToString: string;
     function baseFeePerGas: TWei;
@@ -85,7 +82,6 @@ type
     function value: TWei;                // value transferred in Wei.
   end;
 
-type
   ITxReceipt = interface
     function ToString: string;
     function txHash: TTxHash;         // hash of the transaction.
@@ -96,42 +92,24 @@ type
     function effectiveGasPrice: TWei; // eip-1559-only
   end;
 
-type
-  TAsyncString    = reference to procedure(const str: string; err : IError);
-  TAsyncQuantity  = reference to procedure(qty  : BigInteger; err : IError);
-  TAsyncBoolean   = reference to procedure(bool : Boolean;    err : IError);
-  TAsyncAddress   = reference to procedure(addr : TAddress;   err : IError);
-  TAsyncBytes32   = reference to procedure(bytes: TBytes32;   err : IError);
-  TAsyncArg       = reference to procedure(arg  : TArg;       next: TProc);
-  TAsyncTuple     = reference to procedure(tup  : TTuple;     err : IError);
-  TAsyncTxHash    = reference to procedure(hash : TTxHash;    err : IError);
-  TAsyncBlock     = reference to procedure(block: IBlock;     err : IError);
-  TAsyncTxn       = reference to procedure(txn  : ITxn;       err : IError);
-  TAsyncReceipt   = reference to procedure(rcpt : ITxReceipt; err : IError);
-  TAsyncReceiptEx = reference to procedure(rcpt : ITxReceipt; qty : BigInteger; err: IError);
-  TAsyncFloat     = TProc<Double, IError>; // reference to procedure(value: Double;     err : IError);
-
-type
   TAddressHelper = record helper for TAddress
     class function  New(arg: TArg): TAddress; overload; static;
     class function  New(const hex: string): TAddress; overload; static;
-    class procedure New(client: IWeb3; const name: string; callback: TAsyncAddress); overload; static;
-    procedure ToString(client: IWeb3; callback: TAsyncString; abbreviated: Boolean = False);
+    class procedure New(client: IWeb3; const name: string; callback: TProc<TAddress, IError>); overload; static;
+    procedure ToString(client: IWeb3; callback: TProc<string, IError>; abbreviated: Boolean = False);
     function  ToChecksum: TAddress;
     function  Abbreviated: string;
     function  IsZero: Boolean;
     function  SameAs(const other: TAddress): Boolean;
   end;
 
-type
   TPrivateKeyHelper = record helper for TPrivateKey
     class function Generate: TPrivateKey; static;
     class function New(params: IECPrivateKeyParameters): TPrivateKey; static;
     function Parameters: IECPrivateKeyParameters;
-    procedure Address(callback: TAsyncAddress);
+    procedure Address(callback: TProc<TAddress, IError>);
   end;
 
-type
   TTupleHelper = record helper for TTuple
     function Add: PArg;
     function Last: PArg;
@@ -141,7 +119,7 @@ type
     function ToString: string;
     function ToStrings: TStrings;
     class function From(const hex: string): TTuple;
-    procedure Enumerate(callback: TAsyncArg; done: TProc);
+    procedure Enumerate(callback: TProc<TArg, TProc>; done: TProc);
   end;
 
 implementation
@@ -249,7 +227,7 @@ begin
       Result := TAddress(web3.utils.toHex(Copy(buf, Length(buf) - 20, 20)));
 end;
 
-class procedure TAddressHelper.New(client: IWeb3; const name: string; callback: TAsyncAddress);
+class procedure TAddressHelper.New(client: IWeb3; const name: string; callback: TProc<TAddress, IError>);
 begin
   if web3.utils.isHex(name) then
     callback(New(name), nil)
@@ -257,10 +235,10 @@ begin
     web3.eth.ens.addr(client, name, callback);
 end;
 
-procedure TAddressHelper.ToString(client: IWeb3; callback: TAsyncString; abbreviated: Boolean);
+procedure TAddressHelper.ToString(client: IWeb3; callback: TProc<string, IError>; abbreviated: Boolean);
 begin
   const addr: TAddress = Self;
-  web3.eth.ens.reverse(client, addr, procedure(const name: string; err: IError)
+  web3.eth.ens.reverse(client, addr, procedure(name: string; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -340,7 +318,7 @@ begin
   Result := web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, fromHex(string(Self)));
 end;
 
-procedure TPrivateKeyHelper.Address(callback: TAsyncAddress);
+procedure TPrivateKeyHelper.Address(callback: TProc<TAddress, IError>);
 begin
   try
     const pubKey = web3.crypto.publicKeyFromPrivateKey(Self.Parameters);
@@ -451,7 +429,7 @@ begin
   Result := tup;
 end;
 
-procedure TTupleHelper.Enumerate(callback: TAsyncArg; done: TProc);
+procedure TTupleHelper.Enumerate(callback: TProc<TArg, TProc>; done: TProc);
 begin
   var Next: TProc<Integer, TArray<TArg>>;
 

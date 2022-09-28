@@ -33,6 +33,8 @@ uses
   System.JSON,
   System.SysUtils,
   System.Types,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // web3
   web3,
   web3.eth.types;
@@ -45,7 +47,7 @@ type
     function Symbol: string;
     function Decimals: Integer;
     function LogoURI: string;
-    procedure Balance(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
+    procedure Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
   end;
 
   TTokens = TArray<IToken>;
@@ -56,14 +58,12 @@ type
     function Length: Integer;
   end;
 
-  TAsyncTokens = reference to procedure(tokens: TTokens; err: IError);
+function count(const source: string; callback: TProc<BigInteger, IError>): IAsyncResult; overload;
+function count(chain: TChain; callback: TProc<BigInteger, IError>): IAsyncResult; overload;
 
-function count(const source: string; callback: TAsyncQuantity): IAsyncResult; overload;
-function count(chain: TChain; callback: TAsyncQuantity): IAsyncResult; overload;
-
-function tokens(const source: string; callback: TAsyncJsonArray): IAsyncResult; overload;
-function tokens(const source: string; callback: TAsyncTokens): IAsyncResult; overload;
-function tokens(chain: TChain; callback: TAsyncTokens): IAsyncResult; overload;
+function tokens(const source: string; callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
+function tokens(const source: string; callback: TProc<TTokens, IError>): IAsyncResult; overload;
+function tokens(chain: TChain; callback: TProc<TTokens, IError>): IAsyncResult; overload;
 
 function token(const aJsonObject: TJsonObject): IToken;
 
@@ -95,7 +95,7 @@ type
     function Symbol: string;
     function Decimals: Integer;
     function LogoURI: string;
-    procedure Balance(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
+    procedure Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
     constructor Create(const aJsonValue: TJsonObject); override;
   end;
 
@@ -140,7 +140,7 @@ begin
   Result := FLogoURI;
 end;
 
-procedure TToken.Balance(client: IWeb3; owner: TAddress; callback: TAsyncQuantity);
+procedure TToken.Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
 begin
   const erc20 = TERC20.Create(client, Self.Address);
   try
@@ -193,7 +193,7 @@ end;
 
 {------------------------------ public functions ------------------------------}
 
-function count(const source: string; callback: TAsyncQuantity): IAsyncResult;
+function count(const source: string; callback: TProc<BigInteger, IError>): IAsyncResult;
 begin
   Result := tokens(source, procedure(arr: TJsonArray; err: IError)
   begin
@@ -206,7 +206,7 @@ begin
   end);
 end;
 
-function count(chain: TChain; callback: TAsyncQuantity): IAsyncResult;
+function count(chain: TChain; callback: TProc<BigInteger, IError>): IAsyncResult;
 begin
   Result := tokens(chain, procedure(tokens: TTokens; err: IError)
   begin
@@ -214,7 +214,7 @@ begin
   end);
 end;
 
-function tokens(const source: string; callback: TAsyncJsonArray): IAsyncResult;
+function tokens(const source: string; callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
   Result := web3.http.get(source, [], procedure(obj: TJsonObject; err: IError)
   begin
@@ -222,7 +222,7 @@ begin
   end);
 end;
 
-function tokens(const source: string; callback: TAsyncTokens): IAsyncResult;
+function tokens(const source: string; callback: TProc<TTokens, IError>): IAsyncResult;
 begin
   Result := tokens(source, procedure(arr: TJsonArray; err: IError)
   begin
@@ -241,7 +241,7 @@ begin
   end);
 end;
 
-function tokens(chain: TChain; callback: TAsyncTokens): IAsyncResult;
+function tokens(chain: TChain; callback: TProc<TTokens, IError>): IAsyncResult;
 const
   TOKEN_LIST: array[TChain] of string = (
     { Ethereum        } 'https://tokens.coingecko.com/uniswap/all.json',
