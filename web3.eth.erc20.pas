@@ -95,7 +95,7 @@ type
   protected
     procedure EventChanged;
     function  ListenForLatestBlock: Boolean; virtual;
-    procedure OnLatestBlockMined(log: TLog); virtual;
+    procedure OnLatestBlockMined(log: PLog; err: IError); virtual;
   public
     constructor Create(aClient: IWeb3; aContract: TAddress); override;
     destructor  Destroy; override;
@@ -175,20 +175,24 @@ begin
          or Assigned(FOnApproval);
 end;
 
-procedure TERC20.OnLatestBlockMined(log: TLog);
+procedure TERC20.OnLatestBlockMined(log: PLog; err: IError);
 begin
+  if not Assigned(log) then
+    EXIT;
+
   if Assigned(FOnTransfer) then
-    if log.isEvent('Transfer(address,address,uint256)') then
+    if log^.isEvent('Transfer(address,address,uint256)') then
       FOnTransfer(Self,
-                  log.Topic[1].toAddress, // from
-                  log.Topic[2].toAddress, // to
-                  log.Data[0].toUInt256); // value
+                  log^.Topic[1].toAddress, // from
+                  log^.Topic[2].toAddress, // to
+                  log^.Data[0].toUInt256); // value
+
   if Assigned(FOnApproval) then
-    if log.isEvent('Approval(address,address,uint256)') then
+    if log^.isEvent('Approval(address,address,uint256)') then
       FOnApproval(Self,
-                  log.Topic[1].toAddress, // owner
-                  log.Topic[2].toAddress, // spender
-                  log.Data[0].toUInt256); // value
+                  log^.Topic[1].toAddress, // owner
+                  log^.Topic[2].toAddress, // spender
+                  log^.Data[0].toUInt256); // value
 end;
 
 procedure TERC20.SetOnTransfer(Value: TOnTransfer);
@@ -311,23 +315,21 @@ procedure TERC20.ApproveEx(
   value   : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  owner.Address(procedure(addr: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, err)
-    else
-      Allowance(addr, spender, procedure(approved: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
-          callback(nil, err)
+  const address = owner.GetAddress;
+  if address.IsErr then
+    callback(nil, address.Error)
+  else
+    Allowance(address.Value, spender, procedure(approved: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, err)
+      else
+        if ((value = 0) and (approved = 0))
+        or ((value > 0) and (approved >= value)) then
+          callback(nil, nil)
         else
-          if ((value = 0) and (approved = 0))
-          or ((value > 0) and (approved >= value)) then
-            callback(nil, nil)
-          else
-            Approve(owner, spender, value, callback);
-      end);
-  end);
+          Approve(owner, spender, value, callback);
+    end);
 end;
 
 end.

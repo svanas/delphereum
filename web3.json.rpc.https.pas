@@ -45,7 +45,7 @@ type
     function Call(
       const URL   : string;
       const method: string;
-      args        : array of const): TJsonObject; overload;
+      args        : array of const): IResult<TJsonObject>; overload;
     procedure Call(
       const URL   : string;
       const method: string;
@@ -81,29 +81,25 @@ end;
 function TJsonRpcHttps.Call(
   const URL   : string;
   const method: string;
-  args        : array of const): TJsonObject;
+  args        : array of const): IResult<TJsonObject>;
 begin
-  Result := nil;
-  var resp: TJsonValue;
-  web3.http.post(
-    URL,
-    CreatePayload(method, args),
-    [TNetHeader.Create('Content-Type', 'application/json')],
-    resp
-  );
-  if Assigned(resp) then
+  const response = web3.http.post(URL, CreatePayload(method, args));
+  if Assigned(response.Value) then
   try
-    // did we receive an error? then translate that into an exception
-    const error = web3.json.getPropAsObj(resp, 'error');
+    // did we receive an error? then translate that into an IError
+    const error = web3.json.getPropAsObj(response.Value, 'error');
     if Assigned(error) then
-      raise EJsonRpc.Create(
+      Result := TResult<TJsonObject>.Err(nil, TJsonRpcError.Create(
         web3.json.getPropAsInt(error, 'code'),
         web3.json.getPropAsStr(error, 'message')
-      );
-    Result := resp.Clone as TJsonObject;
+      ))
+    else
+      Result := TResult<TJsonObject>.Ok(response.Value.Clone as TJsonObject);
+    EXIT;
   finally
-    resp.Free;
+    response.Value.Free;
   end;
+  Result := TResult<TJsonObject>.Err(nil, response.Error);
 end;
 
 procedure TJsonRpcHttps.Call(

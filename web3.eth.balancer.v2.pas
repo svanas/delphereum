@@ -288,30 +288,28 @@ procedure TVault.Swap(
   deadline: BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  owner.Address(procedure(addr: TAddress; err: IError)
+  const address = owner.GetAddress;
+  if address.IsErr then
   begin
-    if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    const funds: IContractStruct = TFundManagement.Create;
-    with funds as TFundManagement do
-    begin
-      Sender    := addr.ToChecksum;
-      Recipient := addr.ToChecksum;
-    end;
-    web3.eth.write(Client, owner, Contract,
-      'swap(' +
-        '(bytes32,uint8,address,address,uint256,bytes),' + // SingleSwap
-        '(address,bool,address,bool),' +                   // FundManagement
-        'uint256,' +                                       // limit
-        'uint256' +                                        // deadline
-      ')',
-      [swap, funds, web3.utils.toHex(limit), web3.utils.toHex(deadline)],
-      callback
-    );
-  end);
+    callback(nil, address.Error);
+    EXIT;
+  end;
+  const funds: IContractStruct = TFundManagement.Create;
+  with funds as TFundManagement do
+  begin
+    Sender    := address.Value.ToChecksum;
+    Recipient := address.Value.ToChecksum;
+  end;
+  web3.eth.write(Client, owner, Contract,
+    'swap(' +
+      '(bytes32,uint8,address,address,uint256,bytes),' + // SingleSwap
+      '(address,bool,address,bool),' +                   // FundManagement
+      'uint256,' +                                       // limit
+      'uint256' +                                        // deadline
+    ')',
+    [swap, funds, web3.utils.toHex(limit), web3.utils.toHex(deadline)],
+    callback
+  );
 end;
 
 procedure TVault.BatchSwap(
@@ -323,45 +321,43 @@ procedure TVault.BatchSwap(
   deadline: BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  owner.Address(procedure(addr: TAddress; err: IError)
+  const address = owner.GetAddress;
+  if address.IsErr then
   begin
-    if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    const funds: IContractStruct = TFundManagement.Create;
-    with funds as TFundManagement do
-    begin
-      Sender    := addr.ToChecksum;
-      Recipient := addr.ToChecksum;
-    end;
-    web3.eth.write(Client, owner, Contract,
-      'batchSwap(' +
-        'uint8,' +                                     // kind
-        '(bytes32,uint256,uint256,uint256,bytes)[],' + // SwapSteps
-        'address[],' +                                 // assets
-        '(address,bool,address,bool),' +               // FundManagement
-        'int256[],' +                                  // limits
-        'uint256' +                                    // deadline
-      ')',
-      [
-        Ord(kind),
-        (
-          function: TContractArray
-          begin
-            Result := TContractArray.Create;
-            for var swap in swaps do Result.Add(swap);
-          end
-        )(),
-        &array(assets),
-        funds,
-        &array(limits),
-        web3.utils.toHex(deadline)
-      ],
-      callback
-    );
-  end);
+    callback(nil, address.Error);
+    EXIT;
+  end;
+  const funds: IContractStruct = TFundManagement.Create;
+  with funds as TFundManagement do
+  begin
+    Sender    := address.Value.ToChecksum;
+    Recipient := address.Value.ToChecksum;
+  end;
+  web3.eth.write(Client, owner, Contract,
+    'batchSwap(' +
+      'uint8,' +                                     // kind
+      '(bytes32,uint256,uint256,uint256,bytes)[],' + // SwapSteps
+      'address[],' +                                 // assets
+      '(address,bool,address,bool),' +               // FundManagement
+      'int256[],' +                                  // limits
+      'uint256' +                                    // deadline
+    ')',
+    [
+      Ord(kind),
+      (
+        function: TContractArray
+        begin
+          Result := TContractArray.Create;
+          for var swap in swaps do Result.Add(swap);
+        end
+      )(),
+      &array(assets),
+      funds,
+      &array(limits),
+      web3.utils.toHex(deadline)
+    ],
+    callback
+  );
 end;
 
 procedure TVault.QueryBatchSwap(
@@ -470,14 +466,14 @@ const
 begin
   const execute = procedure(token0, token1: TAddress; callback: TProc<string, IError>)
   begin
-    web3.graph.execute(SUBGRAPH[chain], Format(QUERY, [string(token0), string(token1)]), procedure(resp: TJsonObject; err: IError)
+    web3.graph.execute(SUBGRAPH[chain], Format(QUERY, [string(token0), string(token1)]), procedure(response: TJsonObject; err: IError)
     begin
       if Assigned(err) then
       begin
         callback('', err);
         EXIT;
       end;
-      const data = web3.json.getPropAsObj(resp, 'data');
+      const data = web3.json.getPropAsObj(response, 'data');
       if Assigned(data) then
       begin
         const pools = web3.json.getPropAsArr(data, 'pools');
@@ -885,16 +881,16 @@ end;
 
 function listen(client: IWeb3; callback: TOnSwap): ILogger;
 begin
-  Result := web3.eth.logs.get(client, TVault.DeployedAt, procedure(log: TLog)
+  Result := web3.eth.logs.get(client, TVault.DeployedAt, procedure(log: PLog; err: IError)
   begin
-    if Assigned(callback) then
-      if log.isEvent('Swap(bytes32,address,address,uint256,uint256)') then
-        callback(log.BlockNumber,        // blockNo
-                 log.Topic[1].toBytes32, // poolId
-                 log.Topic[2].toAddress, // tokenIn
-                 log.Topic[3].toAddress, // tokenOut
-                 log.Data[0].toUInt256,  // amountIn
-                 log.Data[1].toUInt256); // amountOut
+    if Assigned(log) and Assigned(callback) then
+      if log^.isEvent('Swap(bytes32,address,address,uint256,uint256)') then
+        callback(log^.BlockNumber,        // blockNo
+                 log^.Topic[1].toBytes32, // poolId
+                 log^.Topic[2].toAddress, // tokenIn
+                 log^.Topic[3].toAddress, // tokenOut
+                 log^.Data[0].toUInt256,  // amountIn
+                 log^.Data[1].toUInt256); // amountOut
   end);
 end;
 

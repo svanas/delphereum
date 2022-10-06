@@ -221,28 +221,26 @@ procedure TRouter02.SwapExactTokensForETH(
   minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
   callback    : TProc<ITxReceipt, IError>);
 begin
-  Self.WETH(procedure(WETH: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, err)
-    else
-      owner.Address(procedure(addr: TAddress; err: IError)
-      begin
-        if Assigned(err) then
-          callback(nil, err)
-        else
-          Self.SwapExactTokensForETH(
-            owner,
-            amountIn,
-            amountOutMin,
-            token,
-            WETH,
-            addr,
-            DateTimeToUnix(IncMinute(System.SysUtils.Now, minutes), False),
-            callback
-          );
-      end);
-  end);
+  const receiver = owner.GetAddress;
+  if receiver.IsErr then
+    callback(nil, receiver.Error)
+  else
+    Self.WETH(procedure(WETH: TAddress; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, err)
+      else
+        Self.SwapExactTokensForETH(
+          owner,
+          amountIn,
+          amountOutMin,
+          token,
+          WETH,
+          receiver.Value,
+          DateTimeToUnix(IncMinute(System.SysUtils.Now, minutes), False),
+          callback
+        );
+    end);
 end;
 
 procedure TRouter02.SwapExactETHForTokens(
@@ -253,23 +251,19 @@ procedure TRouter02.SwapExactETHForTokens(
   minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
   callback    : TProc<ITxReceipt, IError>);
 begin
-  owner.Address(procedure(&to: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
+  const receiver = owner.GetAddress;
+  if receiver.IsErr then
+    callback(nil, receiver.Error)
+  else
     Self.SwapExactETHForTokens(
       owner,
       amountIn,
       amountOutMin,
       token,
-      &to,
+      receiver.Value,
       DateTimeToUnix(IncMinute(System.SysUtils.Now, minutes), False),
       callback
     );
-  end);
 end;
 
 { TPair }
@@ -307,14 +301,14 @@ end;
 // Execute a GraphQL query, return the result as a float (if any)
 procedure TPair.Execute(const field: string; callback: TProc<Double, IError>);
 begin
-  web3.graph.execute(UNISWAP_V2, Query(field), procedure(resp: TJsonObject; err: IError)
+  web3.graph.execute(UNISWAP_V2, Query(field), procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(0, err);
       EXIT;
     end;
-    const data = web3.json.getPropAsObj(resp, 'data');
+    const data = web3.json.getPropAsObj(response, 'data');
     if Assigned(data) then
     begin
       const pair = web3.json.getPropAsObj(data, 'pair');

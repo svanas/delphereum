@@ -48,15 +48,12 @@ uses
   web3.utils;
 
 type
-  EAave = class(EWeb3);
-
   // Global helper functions
   TAave = class(TLendingProtocol)
   protected
-    class procedure UNDERLYING_ADDRESS(
+    class function GET_RESERVE_ADDRESS(
       chain   : TChain;
-      reserve : TReserve;
-      callback: TProc<TAddress, IError>);
+      reserve : TReserve): IResult<TAddress>;
     class procedure Approve(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -140,32 +137,32 @@ implementation
 { TAave }
 
 // Returns the ERC-20 contract address of the underlying asset.
-class procedure TAave.UNDERLYING_ADDRESS(chain: TChain; reserve: TReserve; callback: TProc<TAddress, IError>);
+class function TAave.GET_RESERVE_ADDRESS(chain: TChain; reserve: TReserve): IResult<TAddress>;
 begin
   if chain = Ethereum then
   begin
-    reserve.Address(chain, callback);
+    Result := reserve.Address(chain);
     EXIT;
   end;
   if (chain = Kovan) and (reserve in [DAI, USDC, USDT]) then
   begin
     case reserve of
-      DAI : callback('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD', nil);
-      USDC: callback('0xe22da380ee6B445bb8273C81944ADEB6E8450422', nil);
-      USDT: callback('0x13512979ADE267AB5100878E2e0f485B568328a4', nil);
+      DAI : Result := TResult<TAddress>.Ok('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD');
+      USDC: Result := TResult<TAddress>.Ok('0xe22da380ee6B445bb8273C81944ADEB6E8450422');
+      USDT: Result := TResult<TAddress>.Ok('0x13512979ADE267AB5100878E2e0f485B568328a4');
     end;
     EXIT;
   end;
   if (chain = Ropsten) and (reserve in [DAI, USDC, USDT]) then
   begin
     case reserve of
-      DAI : callback('0xf80A32A835F79D7787E8a8ee5721D0fEaFd78108', nil);
-      USDC: callback('0x851dEf71f0e6A903375C1e536Bd9ff1684BAD802', nil);
-      USDT: callback('0xB404c51BBC10dcBE948077F18a4B8E553D160084', nil);
+      DAI : Result := TResult<TAddress>.Ok('0xf80A32A835F79D7787E8a8ee5721D0fEaFd78108');
+      USDC: Result := TResult<TAddress>.Ok('0x851dEf71f0e6A903375C1e536Bd9ff1684BAD802');
+      USDT: Result := TResult<TAddress>.Ok('0xB404c51BBC10dcBE948077F18a4B8E553D160084');
     end;
     EXIT;
   end;
-  callback(EMPTY_ADDRESS,
+  Result := TResult<TAddress>.Err(EMPTY_ADDRESS,
     TError.Create('%s is not supported on %s', [
       GetEnumName(TypeInfo(TReserve), Ord(reserve)), chain.Name
     ])
@@ -190,26 +187,24 @@ begin
         callback(nil, err);
         EXIT;
       end;
-      UNDERLYING_ADDRESS(client.Chain, reserve, procedure(addr: TAddress; err: IError)
+      const underlying = GET_RESERVE_ADDRESS(client.Chain, reserve);
+      if underlying.IsErr then
       begin
-        if Assigned(err) then
+        callback(nil, underlying.Error);
+        EXIT;
+      end;
+      const erc20 = TERC20.Create(client, underlying.Value);
+      if Assigned(erc20) then
+      begin
+        erc20.ApproveEx(from, core, amount, procedure(rcpt: ITxReceipt; err: IError)
         begin
-          callback(nil, err);
-          EXIT;
-        end;
-        const erc20 = TERC20.Create(client, addr);
-        if Assigned(erc20) then
-        begin
-          erc20.ApproveEx(from, core, amount, procedure(rcpt: ITxReceipt; err: IError)
-          begin
-            try
-              callback(rcpt, err);
-            finally
-              erc20.Free;
-            end;
-          end);
-        end;
-      end);
+          try
+            callback(rcpt, err);
+          finally
+            erc20.Free;
+          end;
+        end);
+      end;
     end);
   finally
     aap.Free;
@@ -353,21 +348,17 @@ class procedure TAave.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  from.Address(procedure(addr: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-    begin
-      callback(nil, 0, err);
-      EXIT;
-    end;
-    Balance(client, addr, reserve, procedure(amount: BigInteger; err: IError)
+  const owner = from.GetAddress;
+  if owner.IsErr then
+    callback(nil, 0, owner.Error)
+  else
+    Balance(client, owner.Value, reserve, procedure(amount: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(nil, 0, err)
       else
         WithdrawEx(client, from, reserve, amount, callback);
     end);
-  end);
 end;
 
 class procedure TAave.WithdrawEx(
@@ -430,16 +421,13 @@ end;
 constructor TAaveAddressesProvider.Create(aClient: IWeb3);
 begin
   // https://docs.aave.com/developers/developing-on-aave/deployed-contract-instances
-  if aClient.Chain = Ethereum then
-    inherited Create(aClient, '0x24a42fD28C976A61Df5D00D0599C34c4f90748c8')
+  if aClient.Chain = Kovan then
+    inherited Create(aClient, '0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5')
   else
-    if aClient.Chain = Kovan then
-      inherited Create(aClient, '0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5')
+    if aClient.Chain = Ropsten then
+      inherited Create(aClient, '0x1c8756FD2B28e9426CDBDcC7E3c4d64fa9A54728')
     else
-      if aClient.Chain = Ropsten then
-        inherited Create(aClient, '0x1c8756FD2B28e9426CDBDcC7E3c4d64fa9A54728')
-      else
-        raise EAave.CreateFmt('Aave is not deployed on %s', [aClient.Chain.Name]);
+      inherited Create(aClient, '0x24a42fD28C976A61Df5D00D0599C34c4f90748c8');
 end;
 
 // Fetch the address of the latest implementation of the LendingPool contract.
@@ -481,28 +469,24 @@ procedure TAaveLendingPool.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  TAave.UNDERLYING_ADDRESS(Client.Chain, reserve, procedure(addr: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, err)
-    else
-      web3.eth.write(
-        Client, from, Contract,
-        'deposit(address,uint256,uint16)',
-        [addr, web3.utils.toHex(amount), 42], callback);
-  end);
+  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  if underlying.IsErr then
+    callback(nil, underlying.Error)
+  else
+    web3.eth.write(
+      Client, from, Contract,
+      'deposit(address,uint256,uint16)',
+      [underlying.Value, web3.utils.toHex(amount), 42], callback);
 end;
 
 // https://docs.aave.com/developers/developing-on-aave/the-protocol/lendingpool#getreservedata
 procedure TAaveLendingPool.GetReserveData(reserve: TReserve; callback: TProc<TTuple, IError>);
 begin
-  TAave.UNDERLYING_ADDRESS(Client.Chain, reserve, procedure(addr: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, err)
-    else
-      web3.eth.call(Client, Contract, 'getReserveData(address)', [addr], callback);
-  end);
+  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  if underlying.IsErr then
+    callback(nil, underlying.Error)
+  else
+    web3.eth.call(Client, Contract, 'getReserveData(address)', [underlying.Value], callback);
 end;
 
 // Returns current yearly interest (APY) earned by the depositors, in Ray units.

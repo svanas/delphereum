@@ -37,14 +37,14 @@ uses
   web3,
   web3.utils;
 
-function encode(item: Integer): TBytes; overload;
-function encode(const item: string): TBytes; overload;
-function encode(item: TVarRec): TBytes; overload;
-function encode(items: array of const): TBytes; overload;
+function encode(item: Integer): IResult<TBytes>; overload;
+function encode(const item: string): IResult<TBytes>; overload;
+function encode(item: TVarRec): IResult<TBytes>; overload;
+function encode(items: array of const): IResult<TBytes>; overload;
 
 implementation
 
-function encodeLength(len, offset: Integer): TBytes;
+function encodeLength(len, offset: Integer): IResult<TBytes>;
 
   function toBinary(x: Integer): TBytes;
   begin
@@ -60,30 +60,35 @@ function encodeLength(len, offset: Integer): TBytes;
 
 begin
   if len < 56 then
-    Result := [len + offset]
+    Result := TResult<TBytes>.Ok([len + offset])
   else
     if len < Power(256, 8) then
     begin
       const bin = toBinary(len);
-      Result := [Length(bin) + offset + 55] + bin;
+      Result := TResult<TBytes>.Ok([Length(bin) + offset + 55] + bin);
     end
     else
-      raise EWeb3.Create('RLP input is too long.');
+      Result := TResult<TBytes>.Err([], 'RLP input is too long');
 end;
 
-function encodeItem(const item: TBytes): TBytes; overload;
+function encodeItem(const item: TBytes): IResult<TBytes>; overload;
 begin
   const len = Length(item);
   if (len = 1) and (item[0] < $80) then
-    Result := item
-  else
-    Result := encodeLength(len, $80) + item;
+  begin
+    Result := TResult<TBytes>.Ok(item);
+    EXIT;
+  end;
+  Result := encodeLength(len, $80);
+  if Result.IsOk then
+    Result := TResult<TBytes>.Ok(Result.Value + item);
 end;
 
-function encodeItem(const item: Variant): TBytes; overload;
+function encodeItem(const item: Variant): IResult<TBytes>; overload;
 begin
-  Result := [];
   case FindVarData(item)^.VType of
+    varEmpty:
+      Result := TResult<TBytes>.Ok([]);
     varSmallint,
     varShortInt,
     varInteger:
@@ -97,14 +102,24 @@ begin
   else
     if VarIsArray(item) then
     begin
+      var output: TBytes := [];
       for var I := VarArrayLowBound(item, 1) to VarArrayHighBound(item, 1) do
-        Result := Result + encodeItem(VarArrayGet(item, [I]));
-      Result := encodeLength(Length(Result), $c0) + Result;
-    end;
+      begin
+        Result := encodeItem(VarArrayGet(item, [I]));
+        if Result.IsErr then
+          EXIT;
+        output := output + Result.Value;
+      end;
+      Result := encodeLength(Length(output), $c0);
+      if Result.IsOk then
+        Result := TResult<TBytes>.Ok(Result.Value + output);
+    end
+    else
+      Result := TResult<TBytes>.Err([], 'Cannot RLP-encode item');
   end;
 end;
 
-function encode(item: Integer): TBytes;
+function encode(item: Integer): IResult<TBytes>;
 begin
   var arg: TVarRec;
   arg.VType := vtInteger;
@@ -112,7 +127,7 @@ begin
   Result := encode(arg);
 end;
 
-function encode(const item: string): TBytes;
+function encode(const item: string): IResult<TBytes>;
 begin
   var arg: TVarRec;
   arg.VType := vtUnicodeString;
@@ -120,7 +135,7 @@ begin
   Result := encode(arg);
 end;
 
-function encode(item: TVarRec): TBytes;
+function encode(item: TVarRec): IResult<TBytes>;
 begin
   if item.VType = vtVariant then
     Result := encodeItem(item.VVariant^)
@@ -128,12 +143,19 @@ begin
     Result := encodeItem(web3.utils.fromHex(web3.utils.toHex(item)));
 end;
 
-function encode(items: array of const): TBytes;
+function encode(items: array of const): IResult<TBytes>;
 begin
-  Result := [];
+  var output: TBytes := [];
   for var item in items do
-    Result := Result + encode(item);
-  Result := encodeLength(Length(Result), $c0) + Result;
+  begin
+    Result := encode(item);
+    if Result.IsErr then
+      EXIT;
+    output := output + Result.Value;
+  end;
+  Result := encodeLength(Length(output), $c0);
+  if Result.IsOk then
+    Result := TResult<TBytes>.Ok(Result.Value + output);
 end;
 
 end.

@@ -53,7 +53,7 @@ const
   EMPTY_ADDRESS: TAddress = '0x0000000000000000000000000000000000000000';
   EMPTY_BYTES32: TBytes32 = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
-function  blockNumber(client: IWeb3): BigInteger; overload;                          // blocking
+function  blockNumber(client: IWeb3): IResult<BigInteger>; overload;                 // blocking
 procedure blockNumber(client: IWeb3; callback: TProc<BigInteger, IError>); overload; // async
 
 procedure getBlockByNumber(client: IWeb3; callback: TProc<IBlock, IError>); overload;
@@ -166,25 +166,27 @@ uses
   web3.json.rpc,
   web3.utils;
 
-function blockNumber(client: IWeb3): BigInteger;
+function blockNumber(client: IWeb3): IResult<BigInteger>;
 begin
-  const obj = client.Call('eth_blockNumber', []);
-  if Assigned(obj) then
+  const response = client.Call('eth_blockNumber', []);
+  if Assigned(response.Value) then
   try
-    Result := web3.json.getPropAsStr(obj, 'result');
+    Result := TResult<BigInteger>.Ok(web3.json.getPropAsStr(response.Value, 'result'));
+    EXIT;
   finally
-    obj.Free;
+    Response.Value.Free;
   end;
+  Result := TResult<BigInteger>.Err(0, response.Error);
 end;
 
 procedure blockNumber(client: IWeb3; callback: TProc<BigInteger, IError>);
 begin
-  client.Call('eth_blockNumber', [], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_blockNumber', [], procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(web3.json.getPropAsStr(resp, 'result'), nil);
+      callback(web3.json.getPropAsStr(response, 'result'), nil);
   end);
 end;
 
@@ -212,12 +214,12 @@ end;
 
 procedure getBlockByNumber(client: IWeb3; const block: string; callback: TProc<IBlock, IError>);
 begin
-  client.Call('eth_getBlockByNumber', [block, False], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_getBlockByNumber', [block, False], procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
     else
-      callback(TBlock.Create(web3.json.getPropAsObj(resp, 'result')), nil);
+      callback(TBlock.Create(web3.json.getPropAsObj(response, 'result')), nil);
   end);
 end;
 
@@ -228,12 +230,12 @@ end;
 
 procedure getBalance(client: IWeb3; address: TAddress; const block: string; callback: TProc<BigInteger, IError>);
 begin
-  client.Call('eth_getBalance', [address, block], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_getBalance', [address, block], procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(web3.json.getPropAsStr(resp, 'result'), nil);
+      callback(web3.json.getPropAsStr(response, 'result'), nil);
   end);
 end;
 
@@ -245,12 +247,12 @@ end;
 // returns the number of transations *sent* from an address
 procedure getTransactionCount(client: IWeb3; address: TAddress; const block: string; callback: TProc<BigInteger, IError>);
 begin
-  client.Call('eth_getTransactionCount', [address, block], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_getTransactionCount', [address, block], procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(web3.json.getPropAsStr(resp, 'result'), nil);
+      callback(web3.json.getPropAsStr(response, 'result'), nil);
   end);
 end;
 
@@ -283,12 +285,12 @@ begin
   )) as TJsonObject;
   try
     // step #3: execute a message call (without creating a transaction on the blockchain)
-    client.Call('eth_call', [obj, block], procedure(resp: TJsonObject; err: IError)
+    client.Call('eth_call', [obj, block], procedure(response: TJsonObject; err: IError)
     begin
       if Assigned(err) then
         callback('', err)
       else
-        callback(web3.json.getPropAsStr(resp, 'result'), nil);
+        callback(web3.json.getPropAsStr(response, 'result'), nil);
     end);
   finally
     obj.Free;
@@ -476,22 +478,20 @@ procedure write(
   const func: string;
   args      : array of const;
   callback  : TProc<TTxHash, IError>);
-var
-  data: string;
 begin
-  data := web3.eth.abi.encode(func, args);
-  from.Address(procedure(addr: TAddress; err: IError)
+  const sender = from.GetAddress;
+  if sender.IsErr then
+  begin
+    callback('', sender.Error);
+    EXIT;
+  end;
+  const data = web3.eth.abi.encode(func, args);
+  web3.eth.gas.estimateGas(client, sender.Value, &to, data, procedure(estimatedGas: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
     else
-      web3.eth.gas.estimateGas(client, addr, &to, data, procedure(estimatedGas: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
-          callback('', err)
-        else
-          write(client, from, &to, value, data, estimatedGas, callback);
-      end);
+      write(client, from, &to, value, data, estimatedGas, callback);
   end);
 end;
 
@@ -503,22 +503,20 @@ procedure write(
   const func: string;
   args      : array of const;
   callback  : TProc<ITxReceipt, IError>);
-var
-  data: string;
 begin
-  data := web3.eth.abi.encode(func, args);
-  from.Address(procedure(addr: TAddress; err: IError)
+  const sender = from.GetAddress;
+  if sender.IsErr then
+  begin
+    callback(nil, sender.Error);
+    EXIT;
+  end;
+  const data = web3.eth.abi.encode(func, args);
+  web3.eth.gas.estimateGas(client, sender.Value, &to, data, procedure(estimatedGas: BigInteger; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
     else
-      web3.eth.gas.estimateGas(client, addr, &to, data, procedure(estimatedGas: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
-          callback(nil, err)
-        else
-          write(client, from, &to, value, data, estimatedGas, callback);
-      end);
+      write(client, from, &to, value, data, estimatedGas, callback);
   end);
 end;
 
@@ -531,19 +529,17 @@ procedure sign(
   estimatedGas: BigInteger;
   callback    : TProc<string, IError>);
 begin
-  from.Address(procedure(addr: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback('', err)
-    else
-      web3.eth.tx.getNonce(client, addr, procedure(nonce: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
-          callback('', err)
-        else
-          signTransaction(client, nonce, from, &to, value, data, 2 * estimatedGas, estimatedGas, callback);
-      end);
-  end);
+  const sender = from.GetAddress;
+  if sender.IsErr then
+    callback('', sender.Error)
+  else
+    web3.eth.tx.getNonce(client, sender.Value, procedure(nonce: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback('', err)
+      else
+        signTransaction(client, nonce, from, &to, value, data, 2 * estimatedGas, estimatedGas, callback);
+    end);
 end;
 
 procedure write(

@@ -148,26 +148,24 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    reserve.Address(client.Chain, procedure(reserveAddr: TAddress; err: IError)
+    const underlying = reserve.Address(client.Chain);
+    if underlying.IsErr then
     begin
-      if Assigned(err) then
+      callback(nil, underlying.Error);
+      EXIT;
+    end;
+    const erc20 = TERC20.Create(client, underlying.Value);
+    if Assigned(erc20) then
+    begin
+      erc20.ApproveEx(from, lpTokenAddr, amount, procedure(rcpt: ITxReceipt; err: IError)
       begin
-        callback(nil, err);
-        EXIT;
-      end;
-      const underlying = TERC20.Create(client, reserveAddr);
-      if Assigned(underlying) then
-      begin
-        underlying.ApproveEx(from, lpTokenAddr, amount, procedure(rcpt: ITxReceipt; err: IError)
-        begin
-          try
-            callback(rcpt, err);
-          finally
-            underlying.Free;
-          end;
-        end);
-      end;
-    end);
+        try
+          callback(rcpt, err);
+        finally
+          erc20.Free;
+        end;
+      end);
+    end;
   end);
 end;
 
@@ -230,38 +228,36 @@ class procedure TyVaultV2.UnderlyingToLpTokenAddress(
   reserve : TReserve;
   callback: TProc<TAddress, IError>);
 begin
-  reserve.Address(client.Chain, procedure(reserveAddr: TAddress; err: IError)
+  const underlying = reserve.Address(client.Chain);
+  if underlying.IsErr then
+  begin
+    callback(EMPTY_ADDRESS, underlying.Error);
+    EXIT;
+  end;
+  // step #1: use the yearn API
+  web3.eth.yearn.finance.api.latest(client.Chain, underlying.Value, v2, procedure(vault: IYearnVault; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(EMPTY_ADDRESS, err);
       EXIT;
     end;
-    // step #1: use the yearn API
-    web3.eth.yearn.finance.api.latest(client.Chain, reserveAddr, v2, procedure(vault: IYearnVault; err: IError)
+    if Assigned(vault) then
     begin
-      if Assigned(err) then
-      begin
-        callback(EMPTY_ADDRESS, err);
+      callback(vault.Address, err);
+      EXIT;
+    end;
+    // step #2; if the yearn API didn't work, use the on-chain registry
+    TyVaultRegistry.Create(client, procedure(reg: TyVaultRegistry; err: IError)
+    begin
+      if Assigned(reg) then
+      try
+        reg.LatestVault(underlying.Value, callback);
         EXIT;
+      finally
+        reg.Free;
       end;
-      if Assigned(vault) then
-      begin
-        callback(vault.Address, err);
-        EXIT;
-      end;
-      // step #2; if the yearn API didn't work, use the on-chain registry
-      TyVaultRegistry.Create(client, procedure(reg: TyVaultRegistry; err: IError)
-      begin
-        if Assigned(reg) then
-        try
-          reg.LatestVault(reserveAddr, callback);
-          EXIT;
-        finally
-          reg.Free;
-        end;
-        callback(EMPTY_ADDRESS, err);
-      end);
+      callback(EMPTY_ADDRESS, err);
     end);
   end);
 end;
@@ -285,54 +281,52 @@ class procedure TyVaultV2.APY(
   period  : TPeriod;
   callback: TProc<Double, IError>);
 begin
-  reserve.Address(client.Chain, procedure(reserveAddr: TAddress; err: IError)
+  const underlying = reserve.Address(client.Chain);
+  if underlying.IsErr then
+  begin
+    callback(0, underlying.Error);
+    EXIT;
+  end;
+  // step #1: use the yearn API
+  web3.eth.yearn.finance.api.latest(client.Chain, underlying.Value, v2, procedure(vault: IYearnVault; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(0, err);
       EXIT;
     end;
-    // step #1: use the yearn API
-    web3.eth.yearn.finance.api.latest(client.Chain, reserveAddr, v2, procedure(vault: IYearnVault; err: IError)
+    if Assigned(vault) then
+    begin
+      callback(vault.APY, err);
+      EXIT;
+    end;
+    // step #2; if the yearn API didn't work, use the on-chain smart contract
+    Self.UnderlyingToLpTokenAddress(client, reserve, procedure(lpTokenAddr: TAddress; err: IError)
     begin
       if Assigned(err) then
       begin
         callback(0, err);
         EXIT;
       end;
-      if Assigned(vault) then
+      const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
+      if Assigned(yVaultToken) then
       begin
-        callback(vault.APY, err);
-        EXIT;
-      end;
-      // step #2; if the yearn API didn't work, use the on-chain smart contract
-      Self.UnderlyingToLpTokenAddress(client, reserve, procedure(lpTokenAddr: TAddress; err: IError)
-      begin
-        if Assigned(err) then
+        yVaultToken.APY(period, procedure(apy: Double; err: IError)
         begin
-          callback(0, err);
-          EXIT;
-        end;
-        const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
-        if Assigned(yVaultToken) then
-        begin
-          yVaultToken.APY(period, procedure(apy: Double; err: IError)
-          begin
-            try
-              if Assigned(err)
-              or (period = System.Low(TPeriod))
-              or (not(IsNaN(apy) or IsInfinite(apy))) then
-              begin
-                callback(apy, err);
-                EXIT;
-              end;
-              Self.APY(client, reserve, Pred(period), callback);
-            finally
-              yVaultToken.Free;
+          try
+            if Assigned(err)
+            or (period = System.Low(TPeriod))
+            or (not(IsNaN(apy) or IsInfinite(apy))) then
+            begin
+              callback(apy, err);
+              EXIT;
             end;
-          end);
-        end;
-      end);
+            Self.APY(client, reserve, Pred(period), callback);
+          finally
+            yVaultToken.Free;
+          end;
+        end);
+      end;
     end);
   end);
 end;

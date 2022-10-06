@@ -109,7 +109,7 @@ type
     procedure SetOnRedeem(Value: TOnRedeem);
   protected
     function  ListenForLatestBlock: Boolean; override;
-    procedure OnLatestBlockMined(log: TLog); override;
+    procedure OnLatestBlockMined(log: PLog; err: IError); override;
   public
     constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
@@ -307,44 +307,42 @@ class procedure TCompound.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  Balance(client, from, reserve, procedure(amount_underlying: BigInteger; err: IError)
+  const owner = from.GetAddress;
+  if owner.IsErr then
+  begin
+    callback(nil, 0, owner.Error);
+    EXIT;
+  end;
+  Balance(client, owner.Value, reserve, procedure(underlyingAmount: BigInteger; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(nil, 0, err);
       EXIT;
     end;
-    from.Address(procedure(addr: TAddress; err: IError)
+    const cToken = cTokenClass[reserve].Create(client);
+    if Assigned(cToken) then
     begin
-      if Assigned(err) then
+      cToken.BalanceOf(owner.Value, procedure(cTokenAmount: BigInteger; err: IError)
       begin
-        callback(nil, 0, err);
-        EXIT;
-      end;
-      const cToken = cTokenClass[reserve].Create(client);
-      if Assigned(cToken) then
-      begin
-        cToken.BalanceOf(addr, procedure(amount_ctoken: BigInteger; err: IError)
-        begin
-          try
-            if Assigned(err) then
-            begin
-              callback(nil, 0, err);
-              EXIT;
-            end;
-            cToken.Redeem(from, amount_ctoken, procedure(rcpt: ITxReceipt; err: IError)
-            begin
-              if Assigned(err) then
-                callback(nil, 0, err)
-              else
-                callback(rcpt, amount_underlying, err);
-            end);
-          finally
-            cToken.Free;
+        try
+          if Assigned(err) then
+          begin
+            callback(nil, 0, err);
+            EXIT;
           end;
-        end);
-      end;
-    end);
+          cToken.Redeem(from, cTokenAmount, procedure(rcpt: ITxReceipt; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, 0, err)
+            else
+              callback(rcpt, underlyingAmount, err);
+          end);
+        finally
+          cToken.Free;
+        end;
+      end);
+    end;
   end);
 end;
 
@@ -378,25 +376,28 @@ begin
          or Assigned(FOnMint) or Assigned(FOnRedeem);
 end;
 
-procedure TcToken.OnLatestBlockMined(log: TLog);
+procedure TcToken.OnLatestBlockMined(log: PLog; err: IError);
 begin
-  inherited OnLatestBlockMined(log);
+  inherited OnLatestBlockMined(log, err);
+
+  if not Assigned(log) then
+    EXIT;
 
   if Assigned(FOnMint) then
-    if log.isEvent('Mint(address,uint256,uint256)') then
+    if log^.isEvent('Mint(address,uint256,uint256)') then
       // emitted upon a successful Mint
       FOnMint(Self,
-              log.Topic[1].toAddress, // minter
-              log.Data[0].toUInt256,  // amount
-              log.Data[1].toUInt256); // tokens
+              log^.Topic[1].toAddress, // minter
+              log^.Data[0].toUInt256,  // amount
+              log^.Data[1].toUInt256); // tokens
 
   if Assigned(FOnRedeem) then
-    if log.isEvent('Redeem(address,uint256,uint256)') then
+    if log^.isEvent('Redeem(address,uint256,uint256)') then
       // emitted upon a successful Redeem
       FOnRedeem(Self,
-                log.Topic[1].toAddress, // redeemer
-                log.Data[0].toUInt256,  // amount
-                log.Data[1].toUInt256); // tokens
+                log^.Topic[1].toAddress, // redeemer
+                log^.Data[0].toUInt256,  // amount
+                log^.Data[1].toUInt256); // tokens
 end;
 
 procedure TcToken.SetOnMint(Value: TOnMint);

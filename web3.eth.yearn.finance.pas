@@ -259,10 +259,12 @@ class procedure TyEarnCustom._Withdraw(
   yToken  : TyTokenClass;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  from.Address(procedure(addr: TAddress; err: IError)
-  begin
+  const owner = from.GetAddress;
+  if owner.IsErr then
+    callback(nil, 0, owner.Error)
+  else
     // step #1: get the yToken balance
-    Self.BalanceOf(client, yToken, addr, procedure(balance: BigInteger; err: IError)
+    Self.BalanceOf(client, yToken, owner.Value, procedure(balance: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(nil, 0, err)
@@ -293,7 +295,6 @@ begin
           end;
         end;
     end);
-  end);
 end;
 
 class procedure TyEarnCustom._WithdrawEx(

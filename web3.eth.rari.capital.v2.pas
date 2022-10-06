@@ -164,26 +164,24 @@ class procedure TRari.Approve(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  reserve.Address(client.Chain, procedure(reserveAddr: TAddress; err: IError)
+  const underlying = reserve.Address(client.Chain);
+  if underlying.IsErr then
   begin
-    if Assigned(err) then
+    callback(nil, underlying.Error);
+    EXIT;
+  end;
+  const erc20 = TERC20.Create(client, underlying.Value);
+  if Assigned(erc20) then
+  begin
+    erc20.ApproveEx(from, RariPoolManager[reserve].DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
     begin
-      callback(nil, err);
-      EXIT;
-    end;
-    const erc20 = TERC20.Create(client, reserveAddr);
-    if Assigned(erc20) then
-    begin
-      erc20.ApproveEx(from, RariPoolManager[reserve].DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
-      begin
-        try
-          callback(rcpt, err);
-        finally
-          erc20.Free;
-        end;
-      end);
-    end;
-  end);
+      try
+        callback(rcpt, err);
+      finally
+        erc20.Free;
+      end;
+    end);
+  end;
 end;
 
 class function TRari.Name: string;
@@ -297,62 +295,58 @@ class procedure TRari.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  from.Address(procedure(owner: TAddress; err: IError)
+  const owner = from.GetAddress;
+  if owner.IsErr then
   begin
-    if Assigned(err) then
+    callback(nil, 0, owner.Error);
+    EXIT;
+  end;
+  const token = TERC20.Create(client, RariPoolManager[reserve].PoolToken);
+  if Assigned(token) then
+    // step #1: get the pool token balance
+    token.BalanceOf(owner.Value, procedure(input: BigInteger; err: IError)
     begin
-      callback(nil, 0, err);
-      EXIT;
-    end;
-    const token = TERC20.Create(client, RariPoolManager[reserve].PoolToken);
-    if Assigned(token) then
-    begin
-      // step #1: get the pool token balance
-      token.BalanceOf(owner, procedure(input: BigInteger; err: IError)
-      begin
-        try
+      try
+        if Assigned(err) then
+        begin
+          callback(nil, 0, err);
+          EXIT;
+        end;
+        // step #2: approve the pool manager to burn pool tokens
+        token.ApproveEx(from, RariPoolManager[reserve].DeployedAt, input, procedure(rcpt: ITxReceipt; err: IError)
+        begin
           if Assigned(err) then
           begin
             callback(nil, 0, err);
             EXIT;
           end;
-          // step #2: approve the pool manager to burn pool tokens
-          token.ApproveEx(from, RariPoolManager[reserve].DeployedAt, input, procedure(rcpt: ITxReceipt; err: IError)
+          // step #3: get the USD balance
+          Self.Balance(client, owner.Value, reserve, procedure(output: BigInteger; err: IError)
           begin
             if Assigned(err) then
             begin
               callback(nil, 0, err);
               EXIT;
             end;
-            // step #3: get the USD balance
-            Self.Balance(client, owner, reserve, procedure(output: BigInteger; err: IError)
-            begin
-              if Assigned(err) then
+            const manager = RariPoolManager[reserve].Create(client);
+            try
+              // step #4: withdraws funds from the pool in exchange for pool tokens
+              manager.Withdraw(from, reserve.Symbol, input, procedure(rcpt: ITxReceipt; err: IError)
               begin
-                callback(nil, 0, err);
-                EXIT;
-              end;
-              const manager = RariPoolManager[reserve].Create(client);
-              try
-                // step #4: withdraws funds from the pool in exchange for pool tokens
-                manager.Withdraw(from, reserve.Symbol, input, procedure(rcpt: ITxReceipt; err: IError)
-                begin
-                  if Assigned(err) then
-                    callback(nil, 0, err)
-                  else
-                    callback(rcpt, output, nil);
-                end);
-              finally
-                manager.Free;
-              end;
-            end);
+                if Assigned(err) then
+                  callback(nil, 0, err)
+                else
+                  callback(rcpt, output, nil);
+              end);
+            finally
+              manager.Free;
+            end;
           end);
-        finally
-          token.Free;
-        end;
-      end);
-    end;
-  end);
+        end);
+      finally
+        token.Free;
+      end;
+    end);
 end;
 
 class procedure TRari.WithdrawEx(

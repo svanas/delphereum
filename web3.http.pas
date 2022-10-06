@@ -101,17 +101,14 @@ function post(
 {-------------------------- blocking function calls ---------------------------}
 
 function post(
-  const URL : string;
-  const src : string;
-  headers   : TNetHeaders;
-  out output: IHttpResponse;
-  backoff   : Integer = 1): Boolean; overload;
+  const URL: string;
+  const src: string;
+  headers  : TNetHeaders;
+  backoff  : Integer = 1): IResult<IHttpResponse>; overload;
 function post(
-  const URL : string;
-  const src : string;
-  headers   : TNetHeaders;
-  out output: TJsonValue;
-  backoff   : Integer = 1): Boolean; overload;
+  const URL: string;
+  const src: string;
+  backoff  : Integer = 1): IResult<TJsonValue>; overload;
 
 implementation
 
@@ -147,28 +144,25 @@ begin
     Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
     begin
       try try
-        const resp = THttpClient.EndAsyncHttp(aSyncResult);
-        if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+        const response = THttpClient.EndAsyncHttp(aSyncResult);
+        if (response.StatusCode >= 200) and (response.StatusCode < 300) then
         begin
-          callback(resp, nil);
+          callback(response, nil);
           EXIT;
         end;
-        if resp.StatusCode = 429 then
+        if response.StatusCode = 429 then
         begin
-          const retryAfter = Min(MAX_BACKOFF, (function: Integer
+          TThread.Sleep(Min(MAX_BACKOFF, (function: Integer
           begin
-            Result := backoff;
-            if resp.ContainsHeader('Retry-After') then
-              Result := StrToIntDef(resp.HeaderValue['Retry-After'], 0);
-          end)());
-          if retryAfter > 0 then
-          begin
-            TThread.Sleep(retryAfter * 1000);
-            get(URL, headers, callback, backoff * 2);
-            EXIT;
-          end;
+            if response.ContainsHeader('Retry-After') then
+              Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
+            else
+              Result := backoff;
+          end)()) * 1000);
+          get(URL, headers, callback, backoff * 2);
+          EXIT;
         end;
-        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+        callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
       except
         on E: Exception do callback(nil, TError.Create(E.Message));
       end;
@@ -183,14 +177,14 @@ end;
 
 function get(const URL: string; headers: TNetHeaders; callback: TProc<TJsonObject, IError>; backoff: Integer): IAsyncResult;
 begin
-  Result := get(URL, headers, procedure(resp: IHttpResponse; err: IError)
+  Result := get(URL, headers, procedure(response: IHttpResponse; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    const obj = web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
+    const obj = web3.json.unmarshal(response.ContentAsString(TEncoding.UTF8));
     if Assigned(obj) then
     try
       callback(obj as TJsonObject, nil);
@@ -198,20 +192,20 @@ begin
     finally
       obj.Free;
     end;
-    callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+    callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
   end, backoff);
 end;
 
 function get(const URL: string; headers: TNetHeaders; callback: TProc<TJsonArray, IError>; backoff: Integer): IAsyncResult;
 begin
-  Result := get(URL, headers, procedure(resp: IHttpResponse; err: IError)
+  Result := get(URL, headers, procedure(response: IHttpResponse; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    const arr = TJsonObject.ParseJsonValue(resp.ContentAsString(TEncoding.UTF8));
+    const arr = TJsonObject.ParseJsonValue(response.ContentAsString(TEncoding.UTF8));
     if Assigned(arr) then
     try
       if arr is TJsonArray then
@@ -222,7 +216,7 @@ begin
     finally
       arr.Free;
     end;
-    callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+    callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
   end, backoff);
 end;
 
@@ -238,28 +232,25 @@ begin
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
     begin
       try try
-        const resp = THttpClient.EndAsyncHttp(aSyncResult);
-        if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+        const response = THttpClient.EndAsyncHttp(aSyncResult);
+        if (response.StatusCode >= 200) and (response.StatusCode < 300) then
         begin
-          callback(resp, nil);
+          callback(response, nil);
           EXIT;
         end;
-        if resp.StatusCode = 429 then
+        if response.StatusCode = 429 then
         begin
-          const retryAfter = Min(MAX_BACKOFF, (function: Integer
+          TThread.Sleep(Min(MAX_BACKOFF, (function: Integer
           begin
-            Result := backoff;
-            if resp.ContainsHeader('Retry-After') then
-              Result := StrToIntDef(resp.HeaderValue['Retry-After'], 0);
-          end)());
-          if retryAfter > 0 then
-          begin
-            TThread.Sleep(retryAfter * 1000);
-            post(URL, src, headers, callback, backoff * 2);
-            EXIT;
-          end;
+            if response.ContainsHeader('Retry-After') then
+              Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
+            else
+              Result := backoff;
+          end)()) * 1000);
+          post(URL, src, headers, callback, backoff * 2);
+          EXIT;
         end;
-        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+        callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
       except
         on E: Exception do callback(nil, TError.Create(E.Message));
       end;
@@ -279,14 +270,14 @@ function post(
   callback : TProc<TJsonObject, IError>;
   backoff  : Integer): IAsyncResult;
 begin
-  Result := post(URL, src, headers, procedure(resp: IHttpResponse; err: IError)
+  Result := post(URL, src, headers, procedure(response: IHttpResponse; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    const obj = web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
+    const obj = web3.json.unmarshal(response.ContentAsString(TEncoding.UTF8));
     if Assigned(obj) then
     try
       callback(obj as TJsonObject, nil);
@@ -294,7 +285,7 @@ begin
     finally
       obj.Free;
     end;
-    callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+    callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
   end, backoff);
 end;
 
@@ -310,28 +301,25 @@ begin
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
     begin
       try try
-        const resp = THttpClient.EndAsyncHttp(aSyncResult);
-        if (resp.StatusCode >= 200) and (resp.StatusCode < 300) then
+        const response = THttpClient.EndAsyncHttp(aSyncResult);
+        if (response.StatusCode >= 200) and (response.StatusCode < 300) then
         begin
-          callback(resp, nil);
+          callback(response, nil);
           EXIT;
         end;
-        if resp.StatusCode = 429 then
+        if response.StatusCode = 429 then
         begin
-          const retryAfter = Min(MAX_BACKOFF, (function: Integer
+          TThread.Sleep(Min(MAX_BACKOFF, (function: Integer
           begin
-            Result := backoff;
-            if resp.ContainsHeader('Retry-After') then
-              Result := StrToIntDef(resp.HeaderValue['Retry-After'], 0);
-          end)());
-          if retryAfter > 0 then
-          begin
-            TThread.Sleep(retryAfter * 1000);
-            post(URL, source, headers, callback, backoff * 2);
-            EXIT;
-          end;
+            if response.ContainsHeader('Retry-After') then
+              Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
+            else
+              Result := backoff;
+          end)()) * 1000);
+          post(URL, source, headers, callback, backoff * 2);
+          EXIT;
         end;
-        callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+        callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
       except
         on E: Exception do callback(nil, TError.Create(E.Message));
       end;
@@ -351,14 +339,14 @@ function post(
   callback : TProc<TJsonObject, IError>;
   backoff  : Integer): IAsyncResult;
 begin
-  Result := post(URL, source, headers, procedure(resp: IHttpResponse; err: IError)
+  Result := post(URL, source, headers, procedure(response: IHttpResponse; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    const obj = web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8));
+    const obj = web3.json.unmarshal(response.ContentAsString(TEncoding.UTF8));
     if Assigned(obj) then
     try
       callback(obj as TJsonObject, nil);
@@ -366,58 +354,65 @@ begin
     finally
       obj.Free;
     end;
-    callback(nil, THttpError.Create(resp.StatusCode, resp.ContentAsString(TEncoding.UTF8)));
+    callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
   end, backoff);
 end;
 
 {-------------------------- blocking function calls ---------------------------}
 
 function post(
-  const URL : string;
-  const src : string;
-  headers   : TNetHeaders;
-  out output: IHttpResponse;
-  backoff   : Integer): Boolean;
+  const URL: string;
+  const src: string;
+  headers  : TNetHeaders;
+  backoff  : Integer): IResult<IHttpResponse>;
 begin
-  output := nil;
   const client = THttpClient.Create;
   try
-    output := client.Post(URL, TStringStream.Create(src), nil, headers);
-    Result := Assigned(output) and (output.StatusCode >= 200) and (output.StatusCode < 300);
-    if (not Result) and Assigned(output) and (output.StatusCode = 429) then
+    const response = client.Post(URL, TStringStream.Create(src), nil, headers);
+    if not Assigned(response) then
     begin
-      const retryAfter = Min(MAX_BACKOFF, (function(const output: IHttpResponse): Integer
-      begin
-        Result := backoff;
-        if output.ContainsHeader('Retry-After') then
-          Result := StrToIntDef(output.HeaderValue['Retry-After'], 0);
-      end)(output));
-      if retryAfter > 0 then
-      begin
-        TThread.Sleep(retryAfter * 1000);
-        Result := post(URL, src, headers, output, backoff * 2);
-      end;
+      Result := TResult<IHttpResponse>.Err(nil, 'no response');
+      EXIT;
     end;
+    if response.StatusCode = 429 then
+    begin
+      TThread.Sleep(Min(MAX_BACKOFF, (function: Integer
+      begin
+        if response.ContainsHeader('Retry-After') then
+          Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
+        else
+          Result := backoff;
+      end)()) * 1000);
+      Result := post(URL, src, headers, backoff * 2);
+      EXIT;
+    end;
+    if (response.StatusCode < 200) or (response.StatusCode >= 300) then
+    begin
+      Result := TResult<IHttpResponse>.Err(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
+      EXIT;
+    end;
+    Result := TResult<IHttpResponse>.Ok(response);
   finally
     client.Free;
   end;
 end;
 
 function post(
-  const URL : string;
-  const src : string;
-  headers   : TNetHeaders;
-  out output: TJsonValue;
-  backoff   : Integer): Boolean;
+  const URL: string;
+  const src: string;
+  backoff  : Integer): IResult<TJsonValue>;
 begin
-  output := nil;
-  var resp: IHttpResponse := nil;
-  Result := post(URL, src, headers, resp, backoff);
-  if Result then
+  const response = post(URL, src, [TNetHeader.Create('Content-Type', 'application/json')], backoff);
+  if Assigned(response.Value) then
   begin
-    output := web3.json.unmarshal(resp.ContentAsString(TEncoding.UTF8)) as TJsonObject;
-    Result := Assigned(output);
+    const value = web3.json.unmarshal(response.Value.ContentAsString(TEncoding.UTF8));
+    if Assigned(value) then
+    begin
+      Result := TResult<TJsonValue>.Ok(value);
+      EXIT;
+    end;
   end;
+  Result := TResult<TJsonValue>.Err(nil, response.Error);
 end;
 
 end.

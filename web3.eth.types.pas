@@ -107,7 +107,7 @@ type
     class function Generate: TPrivateKey; static;
     class function New(params: IECPrivateKeyParameters): TPrivateKey; static;
     function Parameters: IECPrivateKeyParameters;
-    procedure Address(callback: TProc<TAddress, IError>);
+    function GetAddress: IResult<TAddress>;
   end;
 
   TTupleHelper = record helper for TTuple
@@ -318,15 +318,15 @@ begin
   Result := web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, fromHex(string(Self)));
 end;
 
-procedure TPrivateKeyHelper.Address(callback: TProc<TAddress, IError>);
+function TPrivateKeyHelper.GetAddress: IResult<TAddress>;
 begin
   try
     const pubKey = web3.crypto.publicKeyFromPrivateKey(Self.Parameters);
     var buffer := web3.utils.sha3(pubKey);
     Delete(buffer, 0, 12);
-    callback(TAddress.New(web3.utils.toHex(buffer)), nil);
+    Result := TResult<TAddress>.Ok(TAddress.New(web3.utils.toHex(buffer)));
   except
-    callback(EMPTY_ADDRESS, TError.Create('Private key is invalid'));
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'Private key is invalid');
   end;
 end;
 

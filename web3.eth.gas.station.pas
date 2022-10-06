@@ -39,10 +39,10 @@ uses
 
 type
   IGasPrice = interface
-    function Fastest: TWei;
-    function Fast   : TWei; // expected to be mined in < 2 minutes
-    function Average: TWei; // expected to be mined in < 5 minutes
-    function SafeLow: TWei; // expected to be mined in < 30 minutes
+    function Fastest: IResult<TWei>;
+    function Fast   : IResult<TWei>; // expected to be mined in < 2 minutes
+    function Average: IResult<TWei>; // expected to be mined in < 5 minutes
+    function SafeLow: IResult<TWei>; // expected to be mined in < 30 minutes
   end;
 
 function getGasPrice(
@@ -64,28 +64,28 @@ uses
 type
   TGasPrice = class(TDeserialized<TJsonObject>, IGasPrice)
   public
-    function Fastest: TWei;
-    function Fast   : TWei;
-    function Average: TWei;
-    function SafeLow: TWei;
+    function Fastest: IResult<TWei>;
+    function Fast   : IResult<TWei>;
+    function Average: IResult<TWei>;
+    function SafeLow: IResult<TWei>;
   end;
 
-function TGasPrice.Fastest: TWei;
+function TGasPrice.Fastest: IResult<TWei>;
 begin
   Result := toWei(FloatToDot(getPropAsDouble(FJsonValue, 'fastest') / 10), gwei);
 end;
 
-function TGasPrice.Fast: TWei;
+function TGasPrice.Fast: IResult<TWei>;
 begin
   Result := toWei(FloatToDot(getPropAsDouble(FJsonValue, 'fast') / 10), gwei);
 end;
 
-function TGasPrice.Average: TWei;
+function TGasPrice.Average: IResult<TWei>;
 begin
   Result := toWei(FloatToDot(getPropAsDouble(FJsonValue, 'average') / 10), gwei);
 end;
 
-function TGasPrice.SafeLow: TWei;
+function TGasPrice.SafeLow: IResult<TWei>;
 begin
   Result := toWei(FloatToDot(getPropAsDouble(FJsonValue, 'safeLow') / 10), gwei);
 end;

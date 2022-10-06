@@ -66,7 +66,7 @@ type
     procedure Wait;
   end;
 
-function get(client: IWeb3; address: TAddress; callback: TProc<TLog>): ILogger;
+function get(client: IWeb3; address: TAddress; callback: TProc<PLog, IError>): ILogger;
 
 implementation
 
@@ -150,10 +150,9 @@ end;
 
 { private functions }
 
-function getAsArr(client: IWeb3; fromBlock: BigInteger; address: TAddress): TJsonArray;
+function getAsArr(client: IWeb3; fromBlock: BigInteger; address: TAddress): IResult<TJsonArray>;
 begin
-  Result := nil;
-  const &in = web3.json.unmarshal(Format(
+  const request = web3.json.unmarshal(Format(
     '{"fromBlock": "%s", "toBlock": %s, "address": %s}', [
       web3.utils.toHex(fromBlock, [zeroAs0x0]),
       web3.json.quoteString(BLOCK_LATEST, '"'),
@@ -161,34 +160,44 @@ begin
     ]
   )) as TJsonObject;
   try
-    const &out = client.Call('eth_getLogs', [&in]);
-    if Assigned(&out) then
+    const response = client.Call('eth_getLogs', [request]);
+    if Assigned(response.Value) then
     try
-      const arr = web3.json.getPropAsArr(&out, 'result');
+      const arr = web3.json.getPropAsArr(response.Value, 'result');
       if Assigned(arr) then
-        Result := arr.Clone as TJsonArray;
+      begin
+        Result := TResult<TJsonArray>.Ok(arr.Clone as TJsonArray);
+        EXIT;
+      end;
     finally
-      &out.Free;
+      response.Value.Free;
     end;
+    Result := TResult<TJsonArray>.Err(nil, response.Error);
   finally
-    &in.Free;
+    request.Free;
   end;
 end;
 
-function getAsLog(client: IWeb3; fromBlock: BigInteger; address: TAddress): TLogs;
+function getAsLog(client: IWeb3; fromBlock: BigInteger; address: TAddress): IResult<TLogs>;
 begin
-  SetLength(Result, 0);
   const arr = getAsArr(client, fromBlock, address);
-  if Assigned(arr) then
+  if Assigned(arr.Value) then
   try
-    for var itm in arr do
-    begin
-      const last = Result.Add;
-      last.Load(itm);
+    var logs: TLogs := [];
+    try
+      for var itm in arr.Value do
+      begin
+        const last = logs.Add;
+        last.Load(itm);
+      end;
+    finally
+      Result := TResult<TLogs>.Ok(logs);
     end;
+    EXIT;
   finally
-    arr.Free;
+    arr.Value.Free;
   end;
+  Result := TResult<TLogs>.Err([], arr.Error);
 end;
 
 { public functions }
@@ -263,11 +272,17 @@ begin
     inherited Wait;
 end;
 
-function get(client: IWeb3; address: TAddress; callback: TProc<TLog>): ILogger;
+function get(client: IWeb3; address: TAddress; callback: TProc<PLog, IError>): ILogger;
 begin
   Result := TLogger.Create(procedure
   begin
-    var bn := web3.eth.blockNumber(client);
+    const latest = web3.eth.blockNumber(client);
+    if latest.IsErr then
+    begin
+      callback(nil, latest.Error);
+      EXIT;
+    end;
+    var blockNumber := latest.Value;
     while (TTask.CurrentTask as ILogger).Status <> Stopped do
     begin
       try
@@ -275,13 +290,16 @@ begin
       except end;
       if (TTask.CurrentTask as ILogger).Status <> Stopped then
       begin
-        const logs = web3.eth.logs.getAsLog(client, bn, address);
-        for var log in logs do
-        begin
-          bn := BigInteger.Max(bn, log.BlockNumber.Succ);
-          if (TTask.CurrentTask as ILogger).Status <> Paused then
-            callback(log);
-        end;
+        const logs = web3.eth.logs.getAsLog(client, blockNumber, address);
+        if logs.IsErr then
+           callback(nil, logs.Error)
+        else
+          for var log in logs.Value do
+          begin
+            blockNumber := BigInteger.Max(blockNumber, log.BlockNumber.Succ);
+            if (TTask.CurrentTask as ILogger).Status <> Paused then
+              callback(@log, nil);
+          end;
       end;
     end;
   end);

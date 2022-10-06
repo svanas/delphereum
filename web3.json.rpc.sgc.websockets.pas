@@ -68,7 +68,7 @@ type
       const URL   : string;
       security    : TSecurity;
       const method: string;
-      args        : array of const): TJsonObject; overload; override;
+      args        : array of const): IResult<TJsonObject>; overload; override;
     procedure Call(
       const URL   : string;
       security    : TSecurity;
@@ -277,23 +277,25 @@ function TJsonRpcSgcWebSocket.Call(
   const URL   : string;
   security    : TSecurity;
   const method: string;
-  args        : array of const): TJsonObject;
+  args        : array of const): IResult<TJsonObject>;
 begin
-  Result := nil;
-  const resp = web3.json.unmarshal(Client[URL, security].WriteAndWaitData(CreatePayload(method, args)));
-  if Assigned(resp) then
+  const response = web3.json.unmarshal(Client[URL, security].WriteAndWaitData(CreatePayload(method, args)));
+  if Assigned(response) then
   try
-    // did we receive an error? then translate that into an exception
-    const error = web3.json.getPropAsObj(resp, 'error');
+    // did we receive an error? then translate that into an IError
+    const error = web3.json.getPropAsObj(response, 'error');
     if Assigned(error) then
-      raise EJsonRpc.Create(
+      Result := TResult<TJsonObject>.Err(nil, TJsonRpcError.Create(
         web3.json.getPropAsInt(error, 'code'),
         web3.json.getPropAsStr(error, 'message')
-      );
-    Result := resp.Clone as TJsonObject;
+      ))
+    else
+      Result := TResult<TJsonObject>.Ok(response.Clone as TJsonObject);
+    EXIT;
   finally
-    resp.Free;
+    response.Free;
   end;
+  Result := TResult<TJsonObject>.Err(nil, 'no response');
 end;
 
 procedure TJsonRpcSgcWebSocket.Call(

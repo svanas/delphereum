@@ -41,15 +41,11 @@ uses
   web3.eth.types;
 
 type
-  EAave = class(EWeb3);
-
-type
   TAave = class(TLendingProtocol)
   protected
-    class procedure GET_RESERVE_ADDRESS(
-      chain   : TChain;
-      reserve : TReserve;
-      callback: TProc<TAddress, IError>);
+    class function GET_RESERVE_ADDRESS(
+      chain  : TChain;
+      reserve: TReserve): IResult<TAddress>;
     class procedure UNDERLYING_TO_TOKEN(
       client  : IWeb3;
       reserve : TReserve;
@@ -98,7 +94,6 @@ type
       callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
-type
   TAaveLendingPool = class(TCustomContract)
   protected
     procedure GetReserveData(reserve: TReserve; callback: TProc<TTuple, IError>);
@@ -116,14 +111,12 @@ type
     procedure CurrentLiquidityRate(reserve: TReserve; callback: TProc<BigInteger, IError>);
   end;
 
-type
   TAaveProtocolDataProvider = class(TCustomContract)
     procedure GetReserveTokensAddresses(
       reserve : TReserve;
       callback: TProc<TTuple, IError>);
   end;
 
-type
   TAaveLendingPoolAddressesProvider = class(TCustomContract)
   public
     constructor Create(aClient: IWeb3); reintroduce;
@@ -132,7 +125,6 @@ type
     procedure GetProtocolDataProvider(callback: TProc<TAddress, IError>);
   end;
 
-type
   TaToken = class(TERC20)
   public
     procedure UNDERLYING_ASSET_ADDRESS(callback: TProc<TAddress, IError>);
@@ -149,26 +141,25 @@ uses
 
 { TAave }
 
-class procedure TAave.GET_RESERVE_ADDRESS(
-  chain   : TChain;
-  reserve : TReserve;
-  callback: TProc<TAddress, IError>);
+class function TAave.GET_RESERVE_ADDRESS(
+  chain  : TChain;
+  reserve: TReserve): IResult<TAddress>;
 begin
   if chain = Ethereum then
   begin
-    reserve.Address(chain, callback);
+    Result := reserve.Address(chain);
     EXIT;
   end;
   if (chain = Kovan) and (reserve in [DAI, USDC, USDT]) then
   begin
     case reserve of
-      DAI : callback('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD', nil);
-      USDC: callback('0xe22da380ee6B445bb8273C81944ADEB6E8450422', nil);
-      USDT: callback('0x13512979ADE267AB5100878E2e0f485B568328a4', nil);
+      DAI : Result := TResult<TAddress>.Ok('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD');
+      USDC: Result := TResult<TAddress>.Ok('0xe22da380ee6B445bb8273C81944ADEB6E8450422');
+      USDT: Result := TResult<TAddress>.Ok('0x13512979ADE267AB5100878E2e0f485B568328a4');
     end;
     EXIT;
   end;
-  callback(EMPTY_ADDRESS,
+  Result := TResult<TAddress>.Err(EMPTY_ADDRESS,
     TError.Create('%s is not supported on %s', [
       GetEnumName(TypeInfo(TReserve), Ord(reserve)), chain.Name
     ])
@@ -242,26 +233,24 @@ begin
         callback(nil, err);
         EXIT;
       end;
-      Self.GET_RESERVE_ADDRESS(client.chain, reserve, procedure(asset: TAddress; err: IError)
+      const underlying = Self.GET_RESERVE_ADDRESS(client.chain, reserve);
+      if underlying.IsErr then
       begin
-        if Assigned(err) then
+        callback(nil, underlying.Error);
+        EXIT;
+      end;
+      const erc20 = TERC20.Create(client, underlying.Value);
+      if Assigned(erc20) then
+      begin
+        erc20.ApproveEx(from, pool, amount, procedure(rcpt: ITxReceipt; err: IError)
         begin
-          callback(nil, err);
-          EXIT;
-        end;
-        const underlying = TERC20.Create(client, asset);
-        if Assigned(underlying) then
-        begin
-          underlying.ApproveEx(from, pool, amount, procedure(rcpt: ITxReceipt; err: IError)
-          begin
-            try
-              callback(rcpt, err);
-            finally
-              underlying.Free;
-            end;
-          end);
-        end;
-      end);
+          try
+            callback(rcpt, err);
+          finally
+            erc20.Free;
+          end;
+        end);
+      end;
     end);
   finally
     AP.Free;
@@ -383,23 +372,17 @@ class procedure TAave.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  from.Address(procedure(owner: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-    begin
-      callback(nil, 0, err);
-      EXIT;
-    end;
-    Self.Balance(client, owner, reserve, procedure(amount: BigInteger; err: IError)
+  const owner = from.GetAddress;
+  if owner.IsErr then
+    callback(nil, 0, owner.Error)
+  else
+    Self.Balance(client, owner.Value, reserve, procedure(amount: BigInteger; err: IError)
     begin
       if Assigned(err) then
-      begin
-        callback(nil, 0, err);
-        EXIT;
-      end;
-      Self.WithdrawEx(client, from, reserve, amount, callback);
+        callback(nil, 0, err)
+      else
+        Self.WithdrawEx(client, from, reserve, amount, callback);
     end);
-  end);
 end;
 
 class procedure TAave.WithdrawEx(
@@ -448,29 +431,23 @@ procedure TAaveLendingPool.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve, procedure(asset: TAddress; err: IError)
+  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  if underlying.IsErr then
   begin
-    if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    from.Address(procedure(receiver: TAddress; err: IError)
-    begin
-      if Assigned(err) then
-      begin
-        callback(nil, err);
-        EXIT;
-      end;
-      web3.eth.write(
-        Self.Client,
-        from,
-        Self.Contract,
-        'deposit(address,uint256,address,uint16)',
-        [asset, web3.utils.toHex(amount), receiver, 42],
-        callback);
-    end);
-  end);
+    callback(nil, underlying.Error);
+    EXIT;
+  end;
+  const receiver = from.GetAddress;
+  if receiver.IsErr then
+    callback(nil, receiver.Error)
+  else
+    web3.eth.write(
+      Self.Client,
+      from,
+      Self.Contract,
+      'deposit(address,uint256,address,uint16)',
+      [underlying.Value, web3.utils.toHex(amount), receiver.Value, 42],
+      callback);
 end;
 
 procedure TAaveLendingPool.Withdraw(
@@ -479,40 +456,32 @@ procedure TAaveLendingPool.Withdraw(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve, procedure(asset: TAddress; err: IError)
+  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  if underlying.IsErr then
   begin
-    if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    from.Address(procedure(receiver: TAddress; err: IError)
-    begin
-      if Assigned(err) then
-      begin
-        callback(nil, err);
-        EXIT;
-      end;
-      web3.eth.write(
-        Self.Client,
-        from,
-        Self.Contract,
-        'withdraw(address,uint256,address)',
-        [asset, web3.utils.toHex(amount), receiver],
-        callback);
-    end);
-  end);
+    callback(nil, underlying.Error);
+    EXIT;
+  end;
+  const receiver = from.GetAddress;
+  if receiver.IsErr then
+    callback(nil, receiver.Error)
+  else
+    web3.eth.write(
+      Self.Client,
+      from,
+      Self.Contract,
+      'withdraw(address,uint256,address)',
+      [underlying.Value, web3.utils.toHex(amount), receiver.Value],
+      callback);
 end;
 
 procedure TAaveLendingPool.GetReserveData(reserve: TReserve; callback: TProc<TTuple, IError>);
 begin
-  TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve, procedure(asset: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, err)
-    else
-      web3.eth.call(Client, Contract, 'getReserveData(address)', [asset], callback);
-  end);
+  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  if underlying.IsErr then
+    callback(nil, underlying.Error)
+  else
+    web3.eth.call(Client, Contract, 'getReserveData(address)', [underlying.Value], callback);
 end;
 
 procedure TAaveLendingPool.CurrentLiquidityRate(reserve: TReserve; callback: TProc<BigInteger, IError>);
@@ -532,28 +501,21 @@ procedure TAaveProtocolDataProvider.GetReserveTokensAddresses(
   reserve : TReserve;
   callback: TProc<TTuple, IError>);
 begin
-  TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve, procedure(asset: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    web3.eth.call(Client, Contract, 'getReserveTokensAddresses(address)', [asset], callback);
-  end);
+  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  if underlying.IsErr then
+    callback(nil, underlying.Error)
+  else
+    web3.eth.call(Client, Contract, 'getReserveTokensAddresses(address)', [underlying.Value], callback);
 end;
 
 { TAaveLendingPoolAddressesProvider }
 
 constructor TAaveLendingPoolAddressesProvider.Create(aClient: IWeb3);
 begin
-  if aClient.Chain = Ethereum then
-    inherited Create(aClient, '0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5')
+  if aClient.Chain = Kovan then
+    inherited Create(aClient, '0x652B2937Efd0B5beA1c8d54293FC1289672AFC6b')
   else
-    if aClient.Chain = Kovan then
-      inherited Create(aClient, '0x652B2937Efd0B5beA1c8d54293FC1289672AFC6b')
-    else
-      raise EAave.CreateFmt('Aave is not deployed on %s', [aClient.Chain.Name]);
+    inherited Create(aClient, '0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5');
 end;
 
 procedure TAaveLendingPoolAddressesProvider.GetLendingPool(callback: TProc<TAddress, IError>);

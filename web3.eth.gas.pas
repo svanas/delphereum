@@ -65,12 +65,12 @@ implementation
 
 procedure eth_gasPrice(client: IWeb3; callback: TProc<BigInteger, IError>);
 begin
-  client.Call('eth_gasPrice', [], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_gasPrice', [], procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(0, err)
     else
-      callback(web3.json.getPropAsStr(resp, 'result'), nil);
+      callback(web3.json.getPropAsStr(response, 'result'), nil);
   end);
 end;
 
@@ -114,10 +114,10 @@ begin
       callback(0, err)
     else
       case info.Speed of
-        Fastest: callback(price.Fastest, nil);
-        Fast   : callback(price.Fast,    nil);
-        Medium : callback(price.Average, nil);
-        Low    : callback(price.SafeLow, nil);
+        Fastest: price.Fastest.Into(callback);
+        Fast   : price.Fast.Into(callback);
+        Medium : price.Average.Into(callback);
+        Low    : price.SafeLow.Into(callback);
       end;
   end);
 end;
@@ -147,7 +147,7 @@ begin
     end;
   end;
 
-  client.Call('eth_maxPriorityFeePerGas', [], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_maxPriorityFeePerGas', [], procedure(response: TJsonObject; err: IError)
   begin
     const info = client.GetGasStationInfo;
 
@@ -169,7 +169,7 @@ begin
       EXIT;
     end;
 
-    callback(adjustForSpeed(web3.json.getPropAsStr(resp, 'result'), info.Speed), nil);
+    callback(adjustForSpeed(web3.json.getPropAsStr(response, 'result'), info.Speed), nil);
   end);
 end;
 
@@ -225,14 +225,14 @@ begin
   begin
     const obj = web3.json.unmarshal(json) as TJsonObject;
     try
-      client.Call('eth_estimateGas', [obj], procedure(resp: TJsonObject; err: IError)
+      client.Call('eth_estimateGas', [obj], procedure(response: TJsonObject; err: IError)
       begin
         if Assigned(err) then
         begin
           callback(0, err);
           EXIT;
         end;
-        callback(web3.json.getPropAsStr(resp, 'result'), nil);
+        callback(web3.json.getPropAsStr(response, 'result'), nil);
       end);
     finally
       obj.Free;

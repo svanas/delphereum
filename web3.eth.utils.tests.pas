@@ -39,7 +39,17 @@ type
     [Test]
     procedure FromWei;
     [Test]
-    procedure ToWei;
+    procedure ToWei1;
+    [Test]
+    procedure ToWei2;
+    [Test]
+    procedure ToWei3;
+    [Test]
+    procedure ToWei4;
+    [Test]
+    procedure ToWei5;
+    [Test]
+    procedure ToWei6;
     [Test]
     procedure WeiToWei;
     [Test]
@@ -74,30 +84,114 @@ begin
   );
 end;
 
-procedure TTests.ToWei;
-begin
-  Assert.IsTrue(
-        (web3.eth.utils.toWei('1', wei)      = 1)
-    and (web3.eth.utils.toWei('1', kwei)     = 1000)
-    and (web3.eth.utils.toWei('1', babbage)  = 1000)
-    and (web3.eth.utils.toWei('1', mwei)     = 1000000)
-    and (web3.eth.utils.toWei('1', lovelace) = 1000000)
-    and (web3.eth.utils.toWei('1', gwei)     = 1000000000)
-    and (web3.eth.utils.toWei('1', shannon)  = 1000000000)
-    and (web3.eth.utils.toWei('1', szabo)    = 1000000000000)
-    and (web3.eth.utils.toWei('1', finney)   = 1000000000000000)
-    and (web3.eth.utils.toWei('1', ether)    = 1000000000000000000)
-    and (web3.eth.utils.toWei('1', kether)   = TWei.Create('1000000000000000000000'))
-    and (web3.eth.utils.toWei('1', grand)    = TWei.Create('1000000000000000000000'))
-    and (web3.eth.utils.toWei('1', mether)   = TWei.Create('1000000000000000000000000'))
-    and (web3.eth.utils.toWei('1', gether)   = TWei.Create('1000000000000000000000000000'))
-    and (web3.eth.utils.toWei('1', tether)   = TWei.Create('1000000000000000000000000000000'))
-    and (web3.eth.utils.toWei('1', kwei)     = web3.eth.utils.toWei('1',    femtoether))
-    and (web3.eth.utils.toWei('1', szabo)    = web3.eth.utils.toWei('1',    microether))
-    and (web3.eth.utils.toWei('1', finney)   = web3.eth.utils.toWei('1',    milliether))
-    and (web3.eth.utils.toWei('1', milli)    = web3.eth.utils.toWei('1',    milliether))
-    and (web3.eth.utils.toWei('1', milli)    = web3.eth.utils.toWei('1000', micro))
+procedure TTests.ToWei1;
+type
+  TTestCase = record
+    &to   : TEthUnit;
+    output: string;
+  end;
+const
+  TEST_CASES: array[0..14] of TTestCase = (
+    (&to: wei;      output: '1'),
+    (&to: kwei;     output: '1000'),
+    (&to: babbage;  output: '1000'),
+    (&to: mwei;     output: '1000000'),
+    (&to: lovelace; output: '1000000'),
+    (&to: gwei;     output: '1000000000'),
+    (&to: shannon;  output: '1000000000'),
+    (&to: szabo;    output: '1000000000000'),
+    (&to: finney;   output: '1000000000000000'),
+    (&to: ether;    output: '1000000000000000000'),
+    (&to: kether;   output: '1000000000000000000000'),
+    (&to: grand;    output: '1000000000000000000000'),
+    (&to: mether;   output: '1000000000000000000000000'),
+    (&to: gether;   output: '1000000000000000000000000000'),
+    (&to: tether;   output: '1000000000000000000000000000000')
   );
+begin
+  for var TEST_CASE in TEST_CASES do
+  begin
+    const wei = web3.eth.utils.toWei('1', TEST_CASE.&to);
+    if wei.IsErr then
+      Assert.Fail(wei.Error.Message)
+    else
+      Assert.IsTrue(wei.Value = TWei.Create(TEST_CASE.output));
+  end;
+end;
+
+procedure TTests.ToWei2;
+begin
+  const wei1 = web3.eth.utils.toWei('1', kwei);
+  if wei1.IsErr then
+  begin
+    Assert.Fail(wei1.Error.Message);
+    EXIT;
+  end;
+  const wei2 = web3.eth.utils.toWei('1', femtoether);
+  if wei2.IsErr then
+    Assert.Fail(wei2.Error.Message)
+  else
+    Assert.IsTrue(wei1.Value = wei2.Value);
+end;
+
+procedure TTests.ToWei3;
+begin
+  const wei1 = web3.eth.utils.toWei('1', szabo);
+  if wei1.IsErr then
+  begin
+    Assert.Fail(wei1.Error.Message);
+    EXIT;
+  end;
+  const wei2 = web3.eth.utils.toWei('1', microether);
+  if wei2.IsErr then
+    Assert.Fail(wei2.Error.Message)
+  else
+    Assert.IsTrue(wei1.Value = wei2.Value);
+end;
+
+procedure TTests.ToWei4;
+begin
+  const wei1 = web3.eth.utils.toWei('1', finney);
+  if wei1.IsErr then
+  begin
+    Assert.Fail(wei1.Error.Message);
+    EXIT;
+  end;
+  const wei2 = web3.eth.utils.toWei('1', milliether);
+  if wei2.IsErr then
+    Assert.Fail(wei2.Error.Message)
+  else
+    Assert.IsTrue(wei1.Value = wei2.Value);
+end;
+
+procedure TTests.ToWei5;
+begin
+  const wei1 = web3.eth.utils.toWei('1', milli);
+  if wei1.IsErr then
+  begin
+    Assert.Fail(wei1.Error.Message);
+    EXIT;
+  end;
+  const wei2 = web3.eth.utils.toWei('1', milliether);
+  if wei2.IsErr then
+    Assert.Fail(wei2.Error.Message)
+  else
+    Assert.IsTrue(wei1.Value = wei2.Value);
+end;
+
+procedure TTests.ToWei6;
+begin
+  const wei1 = web3.eth.utils.toWei('1', milli);
+  if wei1.IsErr then
+  begin
+    Assert.Fail(wei1.Error.Message);
+    EXIT;
+  end;
+  const wei2 = web3.eth.utils.toWei('1000', micro);
+  if wei2.IsErr then
+    Assert.Fail(wei2.Error.Message)
+  else
+    Assert.IsTrue(wei1.Value = wei2.Value);
 end;
 
 procedure TTests.WeiToWei;
@@ -123,10 +217,13 @@ const
     '1.00000001');
 begin
   for var TEST_CASE in TEST_CASES do
-    Assert.AreEqual(
-      web3.eth.utils.fromWei(web3.eth.utils.toWei(TEST_CASE, ether), ether),
-      TEST_CASE
-    );
+  begin
+    const wei = web3.eth.utils.toWei(TEST_CASE, ether);
+    if wei.IsErr then
+      Assert.Fail(wei.Error.Message)
+    else
+      Assert.AreEqual(web3.eth.utils.fromWei(wei.Value, ether), TEST_CASE);
+  end;
 end;
 
 procedure TTests.ToChecksum;
@@ -141,15 +238,9 @@ begin
   for var TEST_CASE in TEST_CASES do
   begin
     Assert.AreEqual(
-      string(TAddress.New(TEST_CASE.ToUpper).ToChecksum),
-      TEST_CASE,
-      False
-    );
+      string(TAddress.New(TEST_CASE.ToUpper).ToChecksum), TEST_CASE, False);
     Assert.AreEqual(
-      string(TAddress.New(TEST_CASE.ToLower).ToChecksum),
-      TEST_CASE,
-      False
-    );
+      string(TAddress.New(TEST_CASE.ToLower).ToChecksum), TEST_CASE, False);
   end;
 end;
 

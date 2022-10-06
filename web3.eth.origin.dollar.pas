@@ -124,26 +124,24 @@ class procedure TOrigin.Approve(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  reserve.Address(client.Chain, procedure(reserveAddr: TAddress; err: IError)
+  const underlying = reserve.Address(client.Chain);
+  if underlying.IsErr then
   begin
-    if Assigned(err) then
+    callback(nil, underlying.Error);
+    EXIT;
+  end;
+  const erc20 = TERC20.Create(client, underlying.Value);
+  if Assigned(erc20) then
+  begin
+    erc20.ApproveEx(from, TOriginVault.DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
     begin
-      callback(nil, err);
-      EXIT;
-    end;
-    const underlying = TERC20.Create(client, reserveAddr);
-    if Assigned(underlying) then
-    begin
-      underlying.ApproveEx(from, TOriginVault.DeployedAt, amount, procedure(rcpt: ITxReceipt; err: IError)
-      begin
-        try
-          callback(rcpt, err);
-        finally
-          underlying.Free;
-        end;
-      end);
-    end;
-  end);
+      try
+        callback(rcpt, err);
+      finally
+        erc20.Free;
+      end;
+    end);
+  end;
 end;
 
 class function TOrigin.Name: string;
@@ -228,13 +226,17 @@ class procedure TOrigin.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  Self.Balance(client, from, reserve, procedure(balance: BigInteger; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, 0, err)
-    else
-      Self.WithdrawEx(client, from, reserve, balance, callback);
-  end)
+  const owner = from.GetAddress;
+  if owner.IsErr then
+    callback(nil, 0, owner.Error)
+  else
+    Self.Balance(client, owner.Value, reserve, procedure(balance: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback(nil, 0, err)
+      else
+        Self.WithdrawEx(client, from, reserve, balance, callback);
+    end)
 end;
 
 class procedure TOrigin.WithdrawEx(
@@ -276,24 +278,22 @@ procedure TOriginVault.Mint(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  reserve.Address(Client.Chain, procedure(reserveAddr: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, err)
-    else
-      web3.eth.write(
-        Client,
-        from,
-        Contract,
-        'mint(address,uint256,uint256)',
-        [
-          reserveAddr,
-          web3.utils.toHex(amount),
-          0
-        ],
-        callback
-      );
-  end);
+  const underlying = reserve.Address(Client.Chain);
+  if underlying.IsErr then
+    callback(nil, underlying.Error)
+  else
+    web3.eth.write(
+      Client,
+      from,
+      Contract,
+      'mint(address,uint256,uint256)',
+      [
+        underlying.Value,
+        web3.utils.toHex(amount),
+        0
+      ],
+      callback
+    );
 end;
 
 procedure TOriginVault.Redeem(

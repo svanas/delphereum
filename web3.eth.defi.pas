@@ -44,7 +44,7 @@ type
   TReserveHelper = record helper for TReserve
     function  Symbol  : string;
     function  Decimals: Double;
-    procedure Address(chain: TChain; callback: TProc<TAddress, IError>);
+    function  Address(chain: TChain): IResult<TAddress>;
     function  Scale(amount: Double): BigInteger;
     function  Unscale(amount: BigInteger): Double;
     procedure BalanceOf(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
@@ -157,28 +157,28 @@ begin
     Result := 1e18;
 end;
 
-procedure TReserveHelper.Address(chain: TChain; callback: TProc<TAddress, IError>);
+function TReserveHelper.Address(chain: TChain): IResult<TAddress>;
 begin
   if chain = Fantom then
   begin
     case Self of
-      DAI : callback('0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E', nil);
-      USDC: callback('0x04068DA6C83AFCFA0e13ba15A6696662335D5B75', nil);
-      USDT: callback('0x049d68029688eAbF473097a2fC38ef61633A3C7A', nil);
-      TUSD: callback('0x9879abdea01a879644185341f7af7d8343556b7a', nil);
+      DAI : Result := TResult<TAddress>.Ok('0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E');
+      USDC: Result := TResult<TAddress>.Ok('0x04068DA6C83AFCFA0e13ba15A6696662335D5B75');
+      USDT: Result := TResult<TAddress>.Ok('0x049d68029688eAbF473097a2fC38ef61633A3C7A');
+      TUSD: Result := TResult<TAddress>.Ok('0x9879abdea01a879644185341f7af7d8343556b7a');
     else
-      callback(EMPTY_ADDRESS, TSilent.Create('%s not implemented on %s', [Self.Symbol, chain.Name]));
+      Result := TResult<TAddress>.Err(EMPTY_ADDRESS, TSilent.Create('%s not implemented on %s', [Self.Symbol, chain.Name]));
     end;
     EXIT;
   end;
   case Self of
-    DAI : callback('0x6b175474e89094c44da98b954eedeac495271d0f', nil);
-    USDC: callback('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', nil);
-    USDT: callback('0xdac17f958d2ee523a2206206994597c13d831ec7', nil);
-    MUSD: callback('0xe2f2a5C287993345a840Db3B0845fbC70f5935a5', nil);
-    TUSD: callback('0x0000000000085d4780B73119b644AE5ecd22b376', nil);
+    DAI : Result := TResult<TAddress>.Ok('0x6b175474e89094c44da98b954eedeac495271d0f');
+    USDC: Result := TResult<TAddress>.Ok('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48');
+    USDT: Result := TResult<TAddress>.Ok('0xdac17f958d2ee523a2206206994597c13d831ec7');
+    MUSD: Result := TResult<TAddress>.Ok('0xe2f2a5C287993345a840Db3B0845fbC70f5935a5');
+    TUSD: Result := TResult<TAddress>.Ok('0x0000000000085d4780B73119b644AE5ecd22b376');
   else
-    callback(EMPTY_ADDRESS, TSilent.Create('%s not implemented', [Self.Symbol]));
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, TSilent.Create('%s not implemented', [Self.Symbol]));
   end;
 end;
 
@@ -194,23 +194,21 @@ end;
 
 procedure TReserveHelper.BalanceOf(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
 begin
-  Self.Address(client.Chain, procedure(token: TAddress; err: IError)
+  const address = Self.Address(client.Chain);
+  if address.IsErr then
   begin
-    if Assigned(err) then
-    begin
-      if Supports(err, ISilent) then
-        callback(0, nil)
-      else
-        callback(0, err);
-      EXIT;
-    end;
-    const erc20 = TERC20.Create(client, token);
-    try
-      erc20.BalanceOf(owner, callback);
-    finally
-      erc20.Free;
-    end;
-  end);
+    if Supports(address.Error, ISilent) then
+      callback(0, nil)
+    else
+      callback(0, address.Error);
+    EXIT;
+  end;
+  const erc20 = TERC20.Create(client, address.Value);
+  try
+    erc20.BalanceOf(owner, callback);
+  finally
+    erc20.Free;
+  end;
 end;
 
 end.

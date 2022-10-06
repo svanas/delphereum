@@ -46,7 +46,7 @@ type
       const URL   : string;
       security    : TSecurity;
       const method: string;
-      args        : array of const): TJsonObject; overload; virtual; abstract;
+      args        : array of const): IResult<TJsonObject>; overload; virtual; abstract;
     procedure Call(
       const URL   : string;
       security    : TSecurity;

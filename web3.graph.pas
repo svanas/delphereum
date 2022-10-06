@@ -61,11 +61,11 @@ uses
 
 function execute(const URL, query: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
 begin
-  web3.http.post(
+  Result := web3.http.post(
     URL,
     query,
     [TNetHeader.Create('Content-Type', 'application/graphql')],
-    procedure(resp: TJsonObject; err: IError)
+    procedure(response: TJsonObject; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -73,14 +73,14 @@ begin
         EXIT;
       end;
       // did we receive an error?
-      const errors = web3.json.getPropAsArr(resp, 'errors');
+      const errors = web3.json.getPropAsArr(response, 'errors');
       if Assigned(errors) and (errors.Count > 0) then
       begin
-        callback(resp, TGraphError.Create(web3.json.getPropAsStr(errors.Items[0], 'message')));
+        callback(response, TGraphError.Create(web3.json.getPropAsStr(errors.Items[0], 'message')));
         EXIT;
       end;
       // if we reached this far, then we have a valid response object
-      callback(resp, nil);
+      callback(response, nil);
     end
   );
 end;

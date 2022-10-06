@@ -97,7 +97,7 @@ begin
   client.OnError(onError);
   client.OnDisconnect(onDisconnect);
 
-  client.Call('eth_subscribe', [subscription.ToString], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_subscribe', [subscription.ToString], procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -105,7 +105,7 @@ begin
       EXIT;
     end;
 
-    const result = web3.json.getPropAsStr(resp, 'result');
+    const result = web3.json.getPropAsStr(response, 'result');
     callback(result, nil);
 
     client.Subscribe(result, notification);
@@ -117,7 +117,7 @@ procedure unsubscribe(
   const sub: string;
   callback : TProc<Boolean, IError>);
 begin
-  client.Call('eth_unsubscribe', [sub], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_unsubscribe', [sub], procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -125,7 +125,7 @@ begin
       EXIT;
     end;
 
-    const result = web3.json.getPropAsStr(resp, 'result').Equals('true');
+    const result = web3.json.getPropAsStr(response, 'result').Equals('true');
     callback(result, nil);
 
     if result then

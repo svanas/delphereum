@@ -79,8 +79,6 @@ type
     class function New(const name: string): TStandard; static;
   end;
 
-  EWeb3 = class(Exception);
-
   IError = interface
   ['{562C0444-B452-4552-9242-62E02B5D6DD0}']
     function Message: string;
@@ -93,6 +91,29 @@ type
     constructor Create(const Msg: string); overload;
     constructor Create(const Msg: string; const Args: array of const); overload;
     function Message: string; virtual;
+  end;
+
+  IResult<T> = interface
+    function Value: T;
+    function Error: IError;
+    function IsOk: Boolean;
+    function IsErr: Boolean;
+    procedure Into(callback: TProc<T, IError>);
+  end;
+
+  TResult<T> = class(TInterfacedObject, IResult<T>)
+  strict private
+    FValue: T;
+    FError: IError;
+  public
+    class function Ok(aValue: T): IResult<T>;
+    class function Err(aDefault: T; aError: IError): IResult<T>; overload;
+    class function Err(aDefault: T; aError: string): IResult<T>; overload;
+    function Value: T;
+    function Error: IError;
+    function IsOk: Boolean;
+    function IsErr: Boolean;
+    procedure Into(callback: TProc<T, IError>);
   end;
 
   // You can safely ignore this error and continue execution if you want
@@ -131,7 +152,7 @@ type
     function Call(
       const URL   : string;
       const method: string;
-      args        : array of const): TJsonObject; overload;
+      args        : array of const): IResult<TJsonObject>; overload;
     procedure Call(
       const URL   : string;
       const method: string;
@@ -145,7 +166,7 @@ type
       const URL   : string;
       security    : TSecurity;
       const method: string;
-      args        : array of const): TJsonObject; overload;
+      args        : array of const): IResult<TJsonObject>; overload;
     procedure Call(
       const URL   : string;
       security    : TSecurity;
@@ -181,7 +202,7 @@ type
     function  GetGasStationInfo: TGasStationInfo;
     procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
-    function  Call(const method: string; args: array of const): TJsonObject; overload;
+    function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload;
     procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload;
   end;
 
@@ -204,7 +225,7 @@ type
     function  GetGasStationInfo: TGasStationInfo;
     procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
-    function  Call(const method: string; args: array of const): TJsonObject; overload; virtual; abstract;
+    function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload; virtual; abstract;
     procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; virtual; abstract;
 
     property OnGasStationInfo  : TOnGasStationInfo   read FOnGasStationInfo   write FOnGasStationInfo;
@@ -223,7 +244,7 @@ type
     constructor Create(aChain: TChain; const aURL: string; aProtocol: IJsonRpc); overload;
     constructor Create(aChain: TChain; const aURL: string; aTxType: Byte; aProtocol: IJsonRpc); overload;
 
-    function  Call(const method: string; args: array of const): TJsonObject; overload; override;
+    function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload; override;
     procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; override;
   end;
 
@@ -262,7 +283,7 @@ type
       aProtocol : IPubSub;
       aSecurity : TSecurity = TSecurity.Automatic); overload;
 
-    function  Call(const method: string; args: array of const): TJsonObject; overload; override;
+    function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload; override;
     procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; override;
 
     procedure Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
@@ -430,6 +451,57 @@ end;
 function TError.Message: string;
 begin
   Result := FMessage;
+end;
+
+{ TResult }
+
+class function TResult<T>.Ok(aValue: T): IResult<T>;
+begin
+  const output = TResult<T>.Create;
+  output.FValue := aValue;
+  output.FError := nil;
+  Result := output;
+end;
+
+class function TResult<T>.Err(aDefault: T; aError: IError): IResult<T>;
+begin
+  const output = TResult<T>.Create;
+  output.FValue := aDefault;
+  if Assigned(aError) then
+    output.FError := aError
+  else
+    output.FError := TError.Create('an unknown error occurred');
+  Result := output;
+end;
+
+class function TResult<T>.Err(aDefault: T; aError: string): IResult<T>;
+begin
+  Result := TResult<T>.Err(aDefault, TError.Create(aError));
+end;
+
+function TResult<T>.Value: T;
+begin
+  Result := FValue;
+end;
+
+function TResult<T>.Error: IError;
+begin
+  Result := FError;
+end;
+
+function TResult<T>.IsOk: Boolean;
+begin
+  Result := not IsErr;
+end;
+
+function TResult<T>.IsErr: Boolean;
+begin
+  Result := Assigned(FError);
+end;
+
+procedure TResult<T>.Into(callback: TProc<T, IError>);
+begin
+  callback(Self.Value, Self.Error);
 end;
 
 { TNotImplemented }
@@ -615,7 +687,7 @@ begin
   Self.FProtocol := aProtocol;
 end;
 
-function TWeb3.Call(const method: string; args: array of const): TJsonObject;
+function TWeb3.Call(const method: string; args: array of const): IResult<TJsonObject>;
 begin
   Result := Self.FProtocol.Call(Self.URL, method, args);
 end;
@@ -667,7 +739,7 @@ begin
   Self.FSecurity := aSecurity;
 end;
 
-function TWeb3Ex.Call(const method: string; args: array of const): TJsonObject;
+function TWeb3Ex.Call(const method: string; args: array of const): IResult<TJsonObject>;
 begin
   Result := Self.FProtocol.Call(Self.URL, Self.FSecurity, method, args);
 end;

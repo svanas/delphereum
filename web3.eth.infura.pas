@@ -32,25 +32,21 @@ uses
   // web3
   web3;
 
-type
-  EInfura = class(EWeb3);
-
-function endpoint(chain: TChain; const projectId: string): string; overload;
-function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): string; overload;
+function endpoint(chain: TChain; const projectId: string): IResult<string>; overload;
+function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): IResult<string>; overload;
 
 implementation
 
 uses
   // Delphi
-  System.SysUtils,
-  System.TypInfo;
+  System.SysUtils;
 
-function endpoint(chain: TChain; const projectId: string): string;
+function endpoint(chain: TChain; const projectId: string): IResult<string>;
 begin
   Result := endpoint(chain, HTTPS, projectId);
 end;
 
-function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): string;
+function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): IResult<string>;
 const
   ENDPOINT: array[TChain] of array[TProtocol] of string = (
     { Ethereum        } ('https://mainnet.infura.io/v3/%s', 'wss://mainnet.infura.io/ws/v3/%s'),
@@ -74,13 +70,11 @@ const
     { Sepolia         } ('https://rpc.sepolia.org', '')
   );
 begin
-  Result := ENDPOINT[chain][protocol];
-  if Result <> '' then
-  begin
-    Result := Format(Result, [projectId]);
-    EXIT;
-  end;
-  raise EInfura.CreateFmt('%s not supported', [chain.Name]);
+  const URL = ENDPOINT[chain][protocol];
+  if URL <> '' then
+    Result := TResult<string>.Ok(Format(URL, [projectId]))
+  else
+    Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
 end.

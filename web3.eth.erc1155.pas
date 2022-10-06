@@ -240,32 +240,35 @@ begin
   inherited Create(aClient, aContract);
 
   FLogger := web3.eth.logs.get(aClient, aContract,
-    procedure(log: TLog)
+    procedure(log: PLog; err: IError)
     begin
+      if not Assigned(log) then
+        EXIT;
+
       if Assigned(FOnTransferSingle) then
-        if log.isEvent('TransferSingle(address,address,address,uint256,uint256)') then
+        if log^.isEvent('TransferSingle(address,address,address,uint256,uint256)') then
           FOnTransferSingle(Self,
-            log.Topic[1].toAddress, // operator
-            log.Topic[2].toAddress, // from
-            log.Topic[3].toAddress, // to
-            log.Data[0].toUInt256,  // id
-            log.Data[1].toUInt256   // value
+            log^.Topic[1].toAddress, // operator
+            log^.Topic[2].toAddress, // from
+            log^.Topic[3].toAddress, // to
+            log^.Data[0].toUInt256,  // id
+            log^.Data[1].toUInt256   // value
           );
       if Assigned(FOnTransferBatch) then
-        if log.isEvent('TransferBatch(address,address,address,uint256[],uint256[])') then
+        if log^.isEvent('TransferBatch(address,address,address,uint256[],uint256[])') then
           FOnTransferBatch(Self,
-            log.Topic[1].toAddress, // operator
-            log.Topic[2].toAddress, // from
-            log.Topic[3].toAddress, // to
-            [],                     // IDs
-            []                      // values
+            log^.Topic[1].toAddress, // operator
+            log^.Topic[2].toAddress, // from
+            log^.Topic[3].toAddress, // to
+            [],                      // IDs
+            []                       // values
           );
       if Assigned(FOnApprovalForAll) then
-        if log.isEvent('ApprovalForAll(address,address,bool)') then
+        if log^.isEvent('ApprovalForAll(address,address,bool)') then
           FOnApprovalForAll(Self,
-            log.Topic[1].toAddress, // owner
-            log.Topic[2].toAddress, // operator
-            log.Data[0].toBoolean   // approved
+            log^.Topic[1].toAddress, // owner
+            log^.Topic[2].toAddress, // operator
+            log^.Data[0].toBoolean   // approved
           );
     end);
 end;
@@ -317,20 +320,18 @@ procedure TERC1155.SafeTransferFrom(
   value   : BigInteger;  // Transfer amount
   callback: TProc<TTxHash, IError>);
 begin
-  owner.Address(procedure(from: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback('', err)
-    else
-      web3.eth.write(
-        Self.Client,
-        owner,
-        Self.Contract,
-        'safeTransferFrom(address,address,uint256,uint256,bytes)',
-        [from, &to, web3.utils.toHex(id), web3.utils.toHex(value), ''],
-        callback
-      );
-  end);
+  const from = owner.GetAddress;
+  if from.IsErr then
+    callback('', from.Error)
+  else
+    web3.eth.write(
+      Self.Client,
+      owner,
+      Self.Contract,
+      'safeTransferFrom(address,address,uint256,uint256,bytes)',
+      [from.Value, &to, web3.utils.toHex(id), web3.utils.toHex(value), ''],
+      callback
+    );
 end;
 
 procedure TERC1155.SafeTransferFromEx(
@@ -340,20 +341,18 @@ procedure TERC1155.SafeTransferFromEx(
   value   : BigInteger;  // Transfer amount
   callback: TProc<ITxReceipt, IError>);
 begin
-  owner.Address(procedure(from: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, err)
-    else
-      web3.eth.write(
-        Self.Client,
-        owner,
-        Self.Contract,
-        'safeTransferFrom(address,address,uint256,uint256,bytes)',
-        [from, &to, web3.utils.toHex(id), web3.utils.toHex(value), ''],
-        callback
-      );
-  end);
+  const from = owner.GetAddress;
+  if from.IsErr then
+    callback(nil, from.Error)
+  else
+    web3.eth.write(
+      Self.Client,
+      owner,
+      Self.Contract,
+      'safeTransferFrom(address,address,uint256,uint256,bytes)',
+      [from.Value, &to, web3.utils.toHex(id), web3.utils.toHex(value), ''],
+      callback
+    );
 end;
 
 // Transfers `values` amount(s) of `IDs` from the `owner` address to the `to` address specified (with safety call).
@@ -364,22 +363,18 @@ procedure TERC1155.SafeBatchTransferFrom(
   values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
   callback: TProc<TTxHash, IError>);
 begin
-  const _IDs    = &array(IDs);
-  const _values = &array(values);
-  owner.Address(procedure(from: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback('', err)
-    else
-      web3.eth.write(
-        Self.Client,
-        owner,
-        Self.Contract,
-        'safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)',
-        [from, &to, _IDs, _values, ''],
-        callback
-      );
-  end);
+  const from = owner.GetAddress;
+  if from.IsErr then
+    callback('', from.Error)
+  else
+    web3.eth.write(
+      Self.Client,
+      owner,
+      Self.Contract,
+      'safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)',
+      [from.Value, &to, &array(IDs), &array(values), ''],
+      callback
+    );
 end;
 
 procedure TERC1155.SafeBatchTransferFromEx(
@@ -389,22 +384,18 @@ procedure TERC1155.SafeBatchTransferFromEx(
   values  : array of BigInteger; // Transfer amounts per token type (order and length must match `IDs` array)
   callback: TProc<ITxReceipt, IError>);
 begin
-  const _IDs    = &array(IDs);
-  const _values = &array(values);
-  owner.Address(procedure(from: TAddress; err: IError)
-  begin
-    if Assigned(err) then
-      callback(nil, err)
-    else
-      web3.eth.write(
-        Self.Client,
-        owner,
-        Self.Contract,
-        'safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)',
-        [from, &to, _IDs, _values, ''],
-        callback
-      );
-  end);
+  const from = owner.GetAddress;
+  if from.IsErr then
+    callback(nil, from.Error)
+  else
+    web3.eth.write(
+      Self.Client,
+      owner,
+      Self.Contract,
+      'safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)',
+      [from.Value, &to, &array(IDs), &array(values), ''],
+      callback
+    );
 end;
 
 // Get the balance of an account's tokens.

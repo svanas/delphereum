@@ -32,11 +32,8 @@ uses
   // web3
   web3;
 
-type
-  EAlchemy = class(EWeb3);
-
-function endpoint(chain: TChain; const projectId: string): string; overload;
-function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): string; overload;
+function endpoint(chain: TChain; const projectId: string): IResult<string>; overload;
+function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): IResult<string>; overload;
 
 implementation
 
@@ -45,12 +42,12 @@ uses
   System.SysUtils,
   System.TypInfo;
 
-function endpoint(chain: TChain; const projectId: string): string;
+function endpoint(chain: TChain; const projectId: string): IResult<string>;
 begin
   Result := endpoint(chain, HTTPS, projectId);
 end;
 
-function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): string;
+function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): IResult<string>;
 const
   ENDPOINT: array[TChain] of array[TProtocol] of string = (
     { Ethereum        } ('https://eth-mainnet.g.alchemy.com/v2/%s', 'wss://eth-mainnet.g.alchemy.com/v2/%s'),
@@ -74,13 +71,11 @@ const
     { Sepolia         } ('https://rpc.sepolia.org', '')
   );
 begin
-  Result := ENDPOINT[chain][protocol];
-  if Result <> '' then
-  begin
-    Result := Format(Result, [projectId]);
-    EXIT;
-  end;
-  raise EAlchemy.CreateFmt('%s not supported', [chain.Name]);
+  const URL = ENDPOINT[chain][protocol];
+  if URL <> '' then
+    Result := TResult<string>.Ok(Format(URL, [projectId]))
+  else
+    Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
 end.

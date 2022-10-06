@@ -38,14 +38,6 @@ uses
   web3.sync;
 
 type
-  EJsonRpc = class(EWeb3)
-  private
-    FCode: Integer;
-  public
-    constructor Create(aCode: Integer; const aMsg: string);
-    property Code: Integer read FCode;
-  end;
-
   IJsonRpcError = interface(IError)
   ['{CA68D639-A1CF-458F-B2BF-70E5F947DD41}']
     function Code: Integer;
@@ -77,14 +69,6 @@ type
   end;
 
 implementation
-
-{ EJsonRpc }
-
-constructor EJsonRpc.Create(aCode: Integer; const aMsg: string);
-begin
-  inherited Create(aMsg);
-  FCode := aCode;
-end;
 
 { TJsonRpcError }
 

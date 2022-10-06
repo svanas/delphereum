@@ -134,7 +134,7 @@ begin
     EXIT;
   end;
   const client: IWeb3 = TWeb3.Create(Self.Chain, Self.Rpc);
-  client.Call('eth_chainId', [], procedure(resp: TJsonObject; err: IError)
+  client.Call('eth_chainId', [], procedure(response: TJsonObject; err: IError)
   begin
     if not Assigned(err) then
       callback(TOnline.Online, err)

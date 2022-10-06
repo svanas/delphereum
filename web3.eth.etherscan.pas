@@ -40,8 +40,6 @@ uses
   web3.json;
 
 type
-  EEtherscan = class(EWeb3);
-
   IEtherscanError = interface(IError)
   ['{4AAD53A6-FBD8-4FAB-83F7-6FDE0524CE5C}']
     function Status: Integer;
@@ -134,7 +132,7 @@ uses
   web3.http.throttler,
   web3.sync;
 
-function endpoint(chain: TChain; const apiKey: string): string;
+function endpoint(chain: TChain; const apiKey: string): IResult<string>;
 const
   ENDPOINT: array[TChain] of string = (
     'https://api.etherscan.io/api?apikey=%s',                   // Ethereum
@@ -158,11 +156,11 @@ const
     'https://api-sepolia.etherscan.io/api?apikey=%s'            // Sepolia
   );
 begin
-  Result := ENDPOINT[chain];
-  if Result = '' then
-    raise EEtherscan.CreateFmt('%s not supported', [chain.Name])
+  const URL = ENDPOINT[chain];
+  if URL <> '' then
+    Result := TResult<string>.Ok(Format(URL, [apiKey]))
   else
-    Result := Format(Result, [apiKey]);
+    Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
 {------------------------------ TEtherscanError -------------------------------}
@@ -464,7 +462,11 @@ procedure TEtherscan.Get(
   const query : string;
   callback    : TProc<TJsonObject, IError>);
 begin
-  inherited Get(TGet.Create(endpoint(chain, TNetEncoding.URL.Encode(apiKey)) + query, [], callback));
+  const URL = endpoint(chain, TNetEncoding.URL.Encode(apiKey));
+  if URL.IsErr then
+    callback(nil, URL.Error)
+  else
+    inherited Get(TGet.Create(URL.Value + query, [], callback));
 end;
 
 var
@@ -501,18 +503,18 @@ procedure getBlockNumberByTimestamp(
 begin
   Etherscan.Get(chain, apiKey,
     Format('&module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
-  procedure(resp: TJsonObject; err: IError)
+  procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(0, err);
       EXIT;
     end;
-    const status = web3.json.getPropAsInt(resp, 'status');
+    const status = web3.json.getPropAsInt(response, 'status');
     if status = 0 then
-      callback(0, TEtherscanError.Create(status, resp))
+      callback(0, TEtherscanError.Create(status, response))
     else
-      callback(web3.json.getPropAsBigInt(resp, 'result'), nil);
+      callback(web3.json.getPropAsBigInt(response, 'result'), nil);
   end);
 end;
 
@@ -536,20 +538,20 @@ procedure getErc20TransferEvents(
 begin
   Etherscan.Get(chain, apiKey,
     Format('&module=account&action=tokentx&address=%s&sort=desc', [address]),
-  procedure(resp: TJsonObject; err: IError)
+  procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    const status = web3.json.getPropAsInt(resp, 'status');
+    const status = web3.json.getPropAsInt(response, 'status');
     if status = 0 then
     begin
-      callback(nil, TEtherscanError.Create(status, resp));
+      callback(nil, TEtherscanError.Create(status, response));
       EXIT;
     end;
-    const &array = web3.json.getPropAsArr(resp, 'result');
+    const &array = web3.json.getPropAsArr(response, 'result');
     if not Assigned(&array) then
     begin
       callback(nil, TEtherscanError.Create(status, nil));
@@ -590,20 +592,20 @@ begin
   end;
   Etherscan.Get(chain, apiKey,
     Format('&module=contract&action=getabi&address=%s', [contract]),
-  procedure(resp: TJsonObject; err: IError)
+  procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    const status = web3.json.getPropAsInt(resp, 'status');
+    const status = web3.json.getPropAsInt(response, 'status');
     if status = 0 then
     begin
-      callback(nil, TEtherscanError.Create(status, resp));
+      callback(nil, TEtherscanError.Create(status, response));
       EXIT;
     end;
-    const &result = unmarshal(web3.json.getPropAsStr(resp, 'result'));
+    const &result = unmarshal(web3.json.getPropAsStr(response, 'result'));
     if not Assigned(&result) then
     begin
       callback(nil, TEtherscanError.Create(status, nil));
