@@ -228,11 +228,9 @@ end;
 class function TCompound.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
   Result := (
-    (reserve = TUSD) and (chain = Ethereum)
+    (reserve in [USDT, TUSD]) and (chain = Ethereum)
   ) or (
-    (reserve = USDT) and (chain in [Ethereum, Ropsten, Rinkeby, Kovan])
-  ) or (
-    (reserve in [DAI, USDC]) and (chain in [Ethereum, Ropsten, Rinkeby, Goerli, Kovan])
+    (reserve in [DAI, USDC]) and (chain in [Ethereum, Goerli])
   );
 end;
 
@@ -507,18 +505,10 @@ end;
 constructor TcDAI.Create(aClient: IWeb3);
 begin
   // https://compound.finance/docs#networks
-  case aClient.Chain of
-    Ethereum:
-      inherited Create(aClient, '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643');
-    Ropsten:
-      inherited Create(aClient, '0x6ce27497a64fffb5517aa4aee908b1e7eb63b9ff');
-    Rinkeby:
-      inherited Create(aClient, '0x6d7f0754ffeb405d23c51ce938289d4835be3b14');
-    Goerli:
-      inherited Create(aClient, '0x822397d9a55d0fefd20f5c4bcab33c5f65bd28eb');
-    Kovan:
-      inherited Create(aClient, '0xe7bc397dbd069fc7d0109c0636d06888bb50668c');
-  end;
+  if aClient.Chain = Goerli then
+    inherited Create(aClient, '0x822397d9a55d0fefd20f5c4bcab33c5f65bd28eb')
+  else
+    inherited Create(aClient, '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643');
 end;
 
 { TcUSDC }
@@ -526,18 +516,10 @@ end;
 constructor TcUSDC.Create(aClient: IWeb3);
 begin
   // https://compound.finance/docs#networks
-  case aClient.Chain of
-    Ethereum:
-      inherited Create(aClient, '0x39aa39c021dfbae8fac545936693ac917d5e7563');
-    Ropsten:
-      inherited Create(aClient, '0x20572e4c090f15667cf7378e16fad2ea0e2f3eff');
-    Rinkeby:
-      inherited Create(aClient, '0x5b281a6dda0b271e91ae35de655ad301c976edb1');
-    Goerli:
-      inherited Create(aClient, '0xcec4a43ebb02f9b80916f1c718338169d6d5c1f0');
-    Kovan:
-      inherited Create(aClient, '0xcfc9bb230f00bffdb560fce2428b4e05f3442e35');
-  end;
+  if aClient.Chain = Goerli then
+    inherited Create(aClient, '0xcec4a43ebb02f9b80916f1c718338169d6d5c1f0')
+  else
+    inherited Create(aClient, '0x39aa39c021dfbae8fac545936693ac917d5e7563');
 end;
 
 { TcUSDT }
@@ -545,16 +527,7 @@ end;
 constructor TcUSDT.Create(aClient: IWeb3);
 begin
   // https://compound.finance/docs#networks
-  case aClient.Chain of
-    Ethereum:
-      inherited Create(aClient, '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9');
-    Ropsten:
-      inherited Create(aClient, '0xb6f7f1901ffbcbadf9cd9831a032395105bc3142');
-    Rinkeby:
-      inherited Create(aClient, '0x2fb298bdbef468638ad6653ff8376575ea41e768');
-    Kovan:
-      inherited Create(aClient, '0x3f0a0ea2f86bae6362cf9799b523ba06647da018');
-  end;
+  inherited Create(aClient, '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9');
 end;
 
 { TcTUSD }

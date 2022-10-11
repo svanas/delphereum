@@ -136,9 +136,6 @@ function endpoint(chain: TChain; const apiKey: string): IResult<string>;
 const
   ENDPOINT: array[TChain] of string = (
     'https://api.etherscan.io/api?apikey=%s',                   // Ethereum
-    'https://api-ropsten.etherscan.io/api?apikey=%s',           // Ropsten
-    'https://api-rinkeby.etherscan.io/api?apikey=%s',           // Rinkeby
-    'https://api-kovan.etherscan.io/api?apikey=%s',             // Kovan
     'https://api-goerli.etherscan.io/api?apikey=%s',            // Goerli
     'https://api-optimistic.etherscan.io/api?apikey=%s',        // Optimism
     'https://api-goerli-optimistic.etherscan.io/api?apikey=%s', // OptimismGoerli

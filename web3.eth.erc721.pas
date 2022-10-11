@@ -152,7 +152,7 @@ type
     &Operator: TAddress;
     Approved : Boolean);
 
-  TForEach = TProc<BigInteger, TProc>; // (tokenId, next)
+  TForEach = TProc<BigInteger, TProc<Boolean>>; // (tokenId, next)
 
   TERC721 = class(TCustomContract, IERC721, IERC721Metadata, IERC721Enumerable)
   strict private
@@ -485,9 +485,12 @@ begin
         next(idx + 1, len);
       end
       else
-        foreach(tokenId, procedure
+        foreach(tokenId, procedure(continue: Boolean)
         begin
-          next(idx + 1, len);
+          if continue then
+            next(idx + 1, len)
+          else
+            done;
         end);
     end);
   end;

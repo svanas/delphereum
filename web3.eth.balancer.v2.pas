@@ -146,8 +146,6 @@ function listen(client: IWeb3; callback: TOnSwap): ILogger;
 
 implementation
 
-{$R 'web3.eth.balancer.v2.tokenlist.goerli.res'}
-
 uses
   // Delphi
   System.Classes,
@@ -444,9 +442,6 @@ const
 const
   SUBGRAPH: array[TChain] of string = (
     'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',          // Ethereum,
-    '',                                                                           // Ropsten
-    'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-rinkeby-v2',  // Rinkeby
-    'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-kovan-v2',    // Kovan
     'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',   // Goerli
     '',                                                                           // Optimism
     '',                                                                           // OptimismGoerli
@@ -499,35 +494,8 @@ end;
 
 procedure tokens(chain: TChain; callback: TProc<TTokens, IError>);
 begin
-  case chain of
-    Goerli:
-    begin
-      const tokens = (function: TTokens
-      begin
-        Result := [];
-        const RS = TResourceStream.Create(hInstance, 'BALANCER_V2_TOKENLIST_GOERLI', RT_RCDATA);
-        try
-          const buf = (function: TBytes
-          begin
-            SetLength(Result, RS.Size);
-            RS.Read(Result[0], RS.Size);
-          end)();
-          const arr = TJsonObject.ParseJsonValue(TEncoding.UTF8.GetString(buf)) as TJsonArray;
-          if Assigned(arr) then
-          try
-            for var token in arr do
-              Result := Result + [web3.eth.tokenlists.token(token as TJsonObject)];
-          finally
-            arr.Free;
-          end;
-        finally
-          RS.Free;
-        end;
-      end)();
-      callback(tokens, nil);
-    end;
-    Polygon, Arbitrum:
-      web3.eth.tokenlists.tokens(chain, callback);
+  if chain in [Goerli, Polygon, Arbitrum] then
+    web3.eth.tokenlists.tokens(chain, callback)
   else
     web3.eth.tokenlists.tokens('https://raw.githubusercontent.com/balancer-labs/assets/master/generated/listed.tokenlist.json', procedure(tokens: TTokens; err: IError)
     begin
@@ -544,7 +512,6 @@ begin
           Inc(I);
       callback(tokens, nil);
     end);
-  end;
 end;
 
 {---------- easy access function: returns the Vault's WETH instance -----------}

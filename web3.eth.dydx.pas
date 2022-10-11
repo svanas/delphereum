@@ -256,7 +256,7 @@ end;
 
 class function TdYdX.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain in [Ethereum, Kovan]) and (reserve in [DAI, USDC]);
+  Result := (chain = Ethereum) and (reserve in [DAI, USDC]);
 end;
 
 // Returns the annual yield as a percentage.
@@ -464,10 +464,7 @@ begin
   if chain = Ethereum then
     Result := TResult<TAddress>.Ok('0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e')
   else
-    if chain = Kovan then
-      Result := TResult<TAddress>.Ok('0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE')
-    else
-      Result := TResult<TAddress>.Err(EMPTY_ADDRESS, TError.Create('dYdX is not deployed on %s', [chain.Name]));
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, TError.Create('dYdX is not deployed on %s', [chain.Name]));
 end;
 
 class function TSoloMargin.ToBigInt(value: TTuple): IResult<BigInteger>;

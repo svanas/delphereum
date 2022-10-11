@@ -38,9 +38,6 @@ uses
 type
   TChain = (
     Ethereum,
-    Ropsten,
-    Rinkeby,
-    Kovan,
     Goerli,
     Optimism,
     OptimismGoerli,
@@ -339,9 +336,6 @@ const
   // https://chainlist.org
   CHAIN_ID: array[TChain] of Integer = (
     1,       // Ethereum
-    3,       // Ropsten
-    4,       // Rinkeby
-    42,      // Kovan
     5,       // Goerli
     10,      // Optimism
     420,     // OptimismGoerli
@@ -374,9 +368,6 @@ const
   // 2 = EIP-1559
   TX_TYPE: array[TChain] of Byte = (
     2, // Ethereum
-    2, // Ropsten
-    2, // Rinkeby
-    2, // Kovan
     2, // Goerli
     2, // Optimism
     2, // OptimismGoerli
@@ -401,9 +392,6 @@ function TChainHelper.BlockExplorerURL: string;
 const
   BLOCK_EXPLORER_URL: array[TChain] of string = (
     'https://etherscan.io',                   // Ethereum
-    'https://ropsten.etherscan.io',           // Ropsten
-    'https://rinkeby.etherscan.io',           // Rinkeby
-    'https://kovan.etherscan.io',             // Kovan
     'https://goerli.etherscan.io',            // Goerli
     'https://optimistic.etherscan.io',        // Optimism
     'https://goerli-optimistic.etherscan.io', // OptimismGoerli
@@ -541,7 +529,7 @@ begin
   case Self.Chain of
     Ethereum:
       web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419').Price(callback);
-    Ropsten, Rinkeby, Kovan, Sepolia:
+    Sepolia:
       web3.coincap.price('ethereum', callback);
     Goerli:
       web3.eth.chainlink.TAggregatorV3.Create(Self, '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e').Price(callback);

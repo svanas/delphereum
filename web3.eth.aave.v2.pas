@@ -43,9 +43,6 @@ uses
 type
   TAave = class(TLendingProtocol)
   protected
-    class function GET_RESERVE_ADDRESS(
-      chain  : TChain;
-      reserve: TReserve): IResult<TAddress>;
     class procedure UNDERLYING_TO_TOKEN(
       client  : IWeb3;
       reserve : TReserve;
@@ -141,31 +138,6 @@ uses
 
 { TAave }
 
-class function TAave.GET_RESERVE_ADDRESS(
-  chain  : TChain;
-  reserve: TReserve): IResult<TAddress>;
-begin
-  if chain = Ethereum then
-  begin
-    Result := reserve.Address(chain);
-    EXIT;
-  end;
-  if (chain = Kovan) and (reserve in [DAI, USDC, USDT]) then
-  begin
-    case reserve of
-      DAI : Result := TResult<TAddress>.Ok('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD');
-      USDC: Result := TResult<TAddress>.Ok('0xe22da380ee6B445bb8273C81944ADEB6E8450422');
-      USDT: Result := TResult<TAddress>.Ok('0x13512979ADE267AB5100878E2e0f485B568328a4');
-    end;
-    EXIT;
-  end;
-  Result := TResult<TAddress>.Err(EMPTY_ADDRESS,
-    TError.Create('%s is not supported on %s', [
-      GetEnumName(TypeInfo(TReserve), Ord(reserve)), chain.Name
-    ])
-  );
-end;
-
 class procedure TAave.UNDERLYING_TO_TOKEN(
   client  : IWeb3;
   reserve : TReserve;
@@ -233,7 +205,7 @@ begin
         callback(nil, err);
         EXIT;
       end;
-      const underlying = Self.GET_RESERVE_ADDRESS(client.chain, reserve);
+      const underlying = reserve.Address(client.chain);
       if underlying.IsErr then
       begin
         callback(nil, underlying.Error);
@@ -264,7 +236,7 @@ end;
 
 class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain in [Ethereum, Kovan]) and (reserve in [DAI, USDC, USDT]);
+  Result := (chain = Ethereum) and (reserve in [DAI, USDC, USDT]);
 end;
 
 class procedure TAave.APY(
@@ -431,7 +403,7 @@ procedure TAaveLendingPool.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  const underlying = reserve.Address(Client.Chain);
   if underlying.IsErr then
   begin
     callback(nil, underlying.Error);
@@ -456,7 +428,7 @@ procedure TAaveLendingPool.Withdraw(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  const underlying = reserve.Address(Client.Chain);
   if underlying.IsErr then
   begin
     callback(nil, underlying.Error);
@@ -477,7 +449,7 @@ end;
 
 procedure TAaveLendingPool.GetReserveData(reserve: TReserve; callback: TProc<TTuple, IError>);
 begin
-  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  const underlying = reserve.Address(Client.Chain);
   if underlying.IsErr then
     callback(nil, underlying.Error)
   else
@@ -501,7 +473,7 @@ procedure TAaveProtocolDataProvider.GetReserveTokensAddresses(
   reserve : TReserve;
   callback: TProc<TTuple, IError>);
 begin
-  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  const underlying = reserve.Address(Client.Chain);
   if underlying.IsErr then
     callback(nil, underlying.Error)
   else
@@ -512,10 +484,7 @@ end;
 
 constructor TAaveLendingPoolAddressesProvider.Create(aClient: IWeb3);
 begin
-  if aClient.Chain = Kovan then
-    inherited Create(aClient, '0x652B2937Efd0B5beA1c8d54293FC1289672AFC6b')
-  else
-    inherited Create(aClient, '0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5');
+  inherited Create(aClient, '0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5');
 end;
 
 procedure TAaveLendingPoolAddressesProvider.GetLendingPool(callback: TProc<TAddress, IError>);

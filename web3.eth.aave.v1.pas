@@ -51,9 +51,6 @@ type
   // Global helper functions
   TAave = class(TLendingProtocol)
   protected
-    class function GET_RESERVE_ADDRESS(
-      chain   : TChain;
-      reserve : TReserve): IResult<TAddress>;
     class procedure Approve(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -136,39 +133,6 @@ implementation
 
 { TAave }
 
-// Returns the ERC-20 contract address of the underlying asset.
-class function TAave.GET_RESERVE_ADDRESS(chain: TChain; reserve: TReserve): IResult<TAddress>;
-begin
-  if chain = Ethereum then
-  begin
-    Result := reserve.Address(chain);
-    EXIT;
-  end;
-  if (chain = Kovan) and (reserve in [DAI, USDC, USDT]) then
-  begin
-    case reserve of
-      DAI : Result := TResult<TAddress>.Ok('0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD');
-      USDC: Result := TResult<TAddress>.Ok('0xe22da380ee6B445bb8273C81944ADEB6E8450422');
-      USDT: Result := TResult<TAddress>.Ok('0x13512979ADE267AB5100878E2e0f485B568328a4');
-    end;
-    EXIT;
-  end;
-  if (chain = Ropsten) and (reserve in [DAI, USDC, USDT]) then
-  begin
-    case reserve of
-      DAI : Result := TResult<TAddress>.Ok('0xf80A32A835F79D7787E8a8ee5721D0fEaFd78108');
-      USDC: Result := TResult<TAddress>.Ok('0x851dEf71f0e6A903375C1e536Bd9ff1684BAD802');
-      USDT: Result := TResult<TAddress>.Ok('0xB404c51BBC10dcBE948077F18a4B8E553D160084');
-    end;
-    EXIT;
-  end;
-  Result := TResult<TAddress>.Err(EMPTY_ADDRESS,
-    TError.Create('%s is not supported on %s', [
-      GetEnumName(TypeInfo(TReserve), Ord(reserve)), chain.Name
-    ])
-  );
-end;
-
 // Approve the LendingPoolCore contract to move your asset.
 class procedure TAave.Approve(
   client  : IWeb3;
@@ -187,7 +151,7 @@ begin
         callback(nil, err);
         EXIT;
       end;
-      const underlying = GET_RESERVE_ADDRESS(client.Chain, reserve);
+      const underlying = reserve.Address(client.Chain);
       if underlying.IsErr then
       begin
         callback(nil, underlying.Error);
@@ -218,7 +182,7 @@ end;
 
 class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain in [Ethereum, Ropsten, Kovan]) and (reserve in [DAI, USDC, USDT]);
+  Result := (chain = Ethereum) and (reserve in [DAI, USDC, USDT]);
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
@@ -421,13 +385,7 @@ end;
 constructor TAaveAddressesProvider.Create(aClient: IWeb3);
 begin
   // https://docs.aave.com/developers/developing-on-aave/deployed-contract-instances
-  if aClient.Chain = Kovan then
-    inherited Create(aClient, '0x506B0B2CF20FAA8f38a4E2B524EE43e1f4458Cc5')
-  else
-    if aClient.Chain = Ropsten then
-      inherited Create(aClient, '0x1c8756FD2B28e9426CDBDcC7E3c4d64fa9A54728')
-    else
-      inherited Create(aClient, '0x24a42fD28C976A61Df5D00D0599C34c4f90748c8');
+  inherited Create(aClient, '0x24a42fD28C976A61Df5D00D0599C34c4f90748c8');
 end;
 
 // Fetch the address of the latest implementation of the LendingPool contract.
@@ -469,7 +427,7 @@ procedure TAaveLendingPool.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  const underlying = reserve.Address(Client.Chain);
   if underlying.IsErr then
     callback(nil, underlying.Error)
   else
@@ -482,7 +440,7 @@ end;
 // https://docs.aave.com/developers/developing-on-aave/the-protocol/lendingpool#getreservedata
 procedure TAaveLendingPool.GetReserveData(reserve: TReserve; callback: TProc<TTuple, IError>);
 begin
-  const underlying = TAave.GET_RESERVE_ADDRESS(Client.Chain, reserve);
+  const underlying = reserve.Address(Client.Chain);
   if underlying.IsErr then
     callback(nil, underlying.Error)
   else

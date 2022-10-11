@@ -173,10 +173,7 @@ end;
 
 function baseURL(chain: TChain): string;
 begin
-  if chain = Rinkeby then
-    Result := 'https://rinkeby-api.opensea.io/api/v1/'
-  else
-    Result := 'https://api.opensea.io/api/v1/'
+  Result := 'https://api.opensea.io/api/v1/'
 end;
 
 procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TJsonArray, IError>); overload;

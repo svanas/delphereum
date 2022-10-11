@@ -245,10 +245,7 @@ function tokens(chain: TChain; callback: TProc<TTokens, IError>): IAsyncResult;
 const
   TOKEN_LIST: array[TChain] of string = (
     { Ethereum        } 'https://tokens.coingecko.com/uniswap/all.json',
-    { Ropsten         } 'https://raw.githubusercontent.com/euler-xyz/euler-tokenlist/master/euler-tokenlist-ropsten.json',
-    { Rinkeby         } '',
-    { Kovan           } '',
-    { Goerli          } '',
+    { Goerli          } 'https://raw.githubusercontent.com/svanas/delphereum/master/web3.eth.balancer.v2.tokenlist.goerli.json',
     { Optimism        } 'https://static.optimism.io/optimism.tokenlist.json',
     { OptimismGoerli  } '',
     { RSK             } '',
@@ -264,29 +261,6 @@ const
     { ArbitrumRinkeby } 'https://bridge.arbitrum.io/token-list-421611.json',
     { Sepolia         } ''
   );
-  TOKENS_RINKEBY: string =
-  '[{' +
-    '"chainId": 4,' +
-    '"address": "0x5592ec0cfb4dbc12d3ab100b257153436a1f0fea",' +
-    '"name": "Compound DAI",' +
-    '"symbol": "DAI",' +
-    '"decimals": 18,' +
-    '"logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png"' +
-  '},{' +
-    '"chainId": 4,' +
-    '"address": "0x4dbcdf9b62e891a7cec5a2568c3f4faf9e8abe2b",' +
-    '"name": "Compound USDC",' +
-    '"symbol": "USDC",' +
-    '"decimals": 6,' +
-    '"logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"' +
-  '},{' +
-    '"chainId": 4,' +
-    '"address": "0xd9ba894e0097f8cc2bbc9d24d308b98e36dc6d02",' +
-    '"name": "Compound USDT",' +
-    '"symbol": "USDT",' +
-    '"decimals": 18,' +
-    '"logoURI": "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0xdAC17F958D2ee523a2206206994597C13D831ec7/logo.png"' +
-  '}]';
 begin
   // step #1: get the (multi-chain) Uniswap list
   Result := tokens('https://tokens.uniswap.org', procedure(tokens1: TTokens; err1: IError)
@@ -303,17 +277,6 @@ begin
     // step #2: add tokens from a chain-specific token list (if any)
     if TOKEN_LIST[chain] = '' then
     begin
-      if chain = Rinkeby then
-      begin
-        const arr = TJsonObject.ParseJsonValue(TOKENS_RINKEBY) as TJsonArray;
-        if Assigned(arr) then
-        try
-          for var token2 in arr do
-            result := result + [TToken.Create(token2 as TJsonObject)];
-        finally
-          arr.Free;
-        end;
-      end;
       callback(result, nil);
       EXIT;
     end;

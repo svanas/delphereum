@@ -51,9 +51,6 @@ function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): 
 const
   ENDPOINT: array[TChain] of array[TProtocol] of string = (
     { Ethereum        } ('https://eth-mainnet.g.alchemy.com/v2/%s', 'wss://eth-mainnet.g.alchemy.com/v2/%s'),
-    { Ropsten         } ('https://eth-ropsten.g.alchemy.com/v2/%s', 'wss://eth-ropsten.g.alchemy.com/v2/%s'),
-    { Rinkeby         } ('https://eth-rinkeby.g.alchemy.com/v2/%s', 'wss://eth-rinkeby.g.alchemy.com/v2/%s'),
-    { Kovan           } ('https://eth-kovan.g.alchemy.com/v2/%s', 'wss://eth-kovan.g.alchemy.com/v2/%s'),
     { Goerli          } ('https://eth-goerli.g.alchemy.com/v2/%s', 'wss://eth-goerli.g.alchemy.com/v2/%s'),
     { Optimism        } ('https://opt-mainnet.g.alchemy.com/v2/%s', 'wss://opt-mainnet.g.alchemy.com/v2/%s'),
     { OptimismGoerli  } ('https://opt-goerli.g.alchemy.com/v2/%s', 'wss://opt-goerli.g.alchemy.com/v2/%s'),

@@ -176,9 +176,6 @@ function TCustomMempool.CreatePayload(
 const
   NETWORK: array[TChain] of string = (
     'main',        // Ethereum,
-    'ropsten',     // Ropsten
-    'rinkeby',     // Rinkeby
-    'kovan',       // Kovan
     'goerli',      // Goerli
     '',            // Optimism
     '',            // OptimismGoerli

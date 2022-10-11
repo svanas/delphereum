@@ -239,11 +239,7 @@ end;
 
 class function TIdle.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (
-    (chain = Ethereum) and (reserve in [USDT, TUSD])
-  ) or (
-    (chain in [Ethereum, Kovan]) and (reserve in [DAI, USDC])
-  );
+  Result := (chain = Ethereum) and (reserve in [USDT, TUSD, DAI, USDC]);
 end;
 
 class procedure TIdle.APY(
@@ -472,20 +468,14 @@ end;
 
 constructor TIdleDAI.Create(aClient: IWeb3);
 begin
-  if aClient.Chain = Kovan then
-    inherited Create(aClient, '0x295CA5bC5153698162dDbcE5dF50E436a58BA21e')
-  else
-    inherited Create(aClient, '0x3fe7940616e5bc47b0775a0dccf6237893353bb4');
+  inherited Create(aClient, '0x3fe7940616e5bc47b0775a0dccf6237893353bb4');
 end;
 
 { TIdleUSDC }
 
 constructor TIdleUSDC.Create(aClient: IWeb3);
 begin
-  if aClient.Chain = Kovan then
-    inherited Create(aClient, '0x0de23D3bc385a74E2196cfE827C8a640B8774B9f')
-  else
-    inherited Create(aClient, '0x5274891bEC421B39D23760c04A6755eCB444797C');
+  inherited Create(aClient, '0x5274891bEC421B39D23760c04A6755eCB444797C');
 end;
 
 { TIdleUSDT }

@@ -50,9 +50,6 @@ function endpoint(chain: TChain; protocol: TProtocol; const projectId: string): 
 const
   ENDPOINT: array[TChain] of array[TProtocol] of string = (
     { Ethereum        } ('https://mainnet.infura.io/v3/%s', 'wss://mainnet.infura.io/ws/v3/%s'),
-    { Ropsten         } ('https://ropsten.infura.io/v3/%s', 'wss://ropsten.infura.io/ws/v3/%s'),
-    { Rinkeby         } ('https://rinkeby.infura.io/v3/%s', 'wss://rinkeby.infura.io/ws/v3/%s'),
-    { Kovan           } ('https://kovan.infura.io/v3/%s', 'wss://kovan.infura.io/ws/v3/%s'),
     { Goerli          } ('https://goerli.infura.io/v3/%s', 'wss://goerli.infura.io/ws/v3/%s'),
     { Optimism        } ('https://optimism-mainnet.infura.io/v3/%s', ''),
     { OptimismGoerli  } ('https://optimism-goerli.infura.io/v3/%s', ''),
