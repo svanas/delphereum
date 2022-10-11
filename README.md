@@ -95,9 +95,9 @@ You can download Bankless [for Windows](https://www.dropbox.com/s/fgjl5zmfnuw7h0
 
 [PubSub](https://github.com/svanas/PubSub) is a simple "Hello World" example project, demonstrating how to subscribe to an Ethereum gateway and get notified every time a new block got mined.
 
-### 4. NFT
+### 4. Enumerable
 
-[NFT](https://github.com/svanas/NFT) is another "Hello World" example project, demonstrating how to enumerate over the NFTs in a token contract and display the associated image for each and every one of them.
+[Enumerable](https://github.com/svanas/Enumerable) is another "Hello World" example project, demonstrating how to enumerate over the NFTs in an ERC-721 contract and display the associated image for each and every one of them.
 
 ## License
 
