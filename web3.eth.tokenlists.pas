@@ -65,8 +65,6 @@ function tokens(const source: string; callback: TProc<TJsonArray, IError>): IAsy
 function tokens(const source: string; callback: TProc<TTokens, IError>): IAsyncResult; overload;
 function tokens(chain: TChain; callback: TProc<TTokens, IError>): IAsyncResult; overload;
 
-function token(const aJsonObject: TJsonObject): IToken;
-
 implementation
 
 uses
@@ -293,11 +291,6 @@ begin
       callback(result, nil);
     end);
   end);
-end;
-
-function token(const aJsonObject: TJsonObject): IToken;
-begin
-  Result := TToken.Create(aJsonObject);
 end;
 
 end.

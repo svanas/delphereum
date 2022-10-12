@@ -171,14 +171,27 @@ end;
 
 {------------------------------ public functions ------------------------------}
 
-function baseURL(chain: TChain): string;
+function baseURL(chain: TChain): IResult<string>;
 begin
-  Result := 'https://api.opensea.io/api/v1/'
+  if chain = Goerli then
+    Result := TResult<string>.Ok('https://testnets-api.opensea.io/api/v1/')
+  else
+    if chain = Ethereum then
+      Result := TResult<string>.Ok('https://api.opensea.io/api/v1/')
+    else
+      Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
 procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TJsonArray, IError>); overload;
 begin
   var result := TJsonArray.Create;
+
+  const base = baseURL(chain);
+  if base.IsErr then
+  begin
+    callback(result, base.Error);
+    EXIT;
+  end;
 
   var get: TProc<string, TJsonArray>;
   get := procedure(URL: string; result: TJsonArray)
@@ -201,7 +214,7 @@ begin
         if next.StartsWith('http', True) then
           get(next, result)
         else
-          get(Format('%sassets?owner=%s&cursor=%s', [baseURL(chain), owner, next]), result);
+          get(Format('%sassets?owner=%s&cursor=%s', [base.Value, owner, next]), result);
         EXIT;
       end;
 
@@ -209,7 +222,7 @@ begin
     end);
   end;
 
-  get(baseURL(chain) + 'assets?owner=' + string(owner), result);
+  get(base.Value + 'assets?owner=' + string(owner), result);
 end;
 
 procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TNFTs, IError>);
@@ -221,13 +234,13 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    const result = (function: TNFTs
+    const output = (function: TNFTs
     begin
       SetLength(Result, arr.Count);
       for var I := 0 to Pred(arr.Count) do
         Result[I] := TNFT.Create(chain.Id, arr[I] as TJsonObject);
     end)();
-    callback(result, nil);
+    callback(output, nil);
   end);
 end;
 
