@@ -196,7 +196,13 @@ begin
   var get: TProc<string, TJsonArray>;
   get := procedure(URL: string; result: TJsonArray)
   begin
-    web3.http.get(URL, [TNetHeader.Create('X-API-KEY', apiKey)], procedure(obj: TJsonObject; err: IError)
+    web3.http.get(URL, (function: TNetHeaders
+    begin
+      if chain = Ethereum then
+        Result := [TNetHeader.Create('X-API-KEY', apiKey)]
+      else
+        Result := []
+    end)(), procedure(obj: TJsonObject; err: IError)
     begin
       if Assigned(err) then
       begin
