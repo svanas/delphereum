@@ -71,6 +71,7 @@ uses
   web3.eth.opensea in '..\web3.eth.opensea.pas',
   web3.eth.origin.dollar in '..\web3.eth.origin.dollar.pas',
   web3.eth in '..\web3.eth.pas',
+  web3.eth.nonce in '..\web3.eth.nonce.pas',
   web3.eth.pubsub in '..\web3.eth.pubsub.pas',
   web3.eth.rari.capital.api in '..\web3.eth.rari.capital.api.pas',
   web3.eth.rari.capital.v2 in '..\web3.eth.rari.capital.v2.pas',

@@ -43,6 +43,7 @@ uses
   web3.eth,
   web3.eth.crypto,
   web3.eth.gas,
+  web3.eth.nonce,
   web3.eth.types,
   web3.eth.utils,
   web3.json,
@@ -64,11 +65,6 @@ type
     constructor Create(aHash: TTxHash; const aMsg: string);
     function Hash: TTxHash;
   end;
-
-procedure getNonce(
-  client  : IWeb3;
-  address : TAddress;
-  callback: TProc<BigInteger, IError>);
 
 procedure signTransaction(
   client      : IWeb3;
@@ -174,48 +170,6 @@ end;
 function TTxError.Hash: TTxHash;
 begin
    Result := FHash;
-end;
-
-var
-  _Nonce: ICriticalBigInt;
-
-function Nonce: ICriticalBigInt;
-begin
-  if not Assigned(_Nonce) then
-    _Nonce := TCriticalBigInt.Create(-1);
-  Result := _Nonce;
-end;
-
-procedure getNonce(
-  client  : IWeb3;
-  address : TAddress;
-  callback: TProc<BigInteger, IError>);
-begin
-  Nonce.Enter;
-  try
-    if Nonce.Get > -1 then
-    begin
-      callback(Nonce.Inc, nil);
-      EXIT;
-    end;
-  finally
-    Nonce.Leave;
-  end;
-  web3.eth.getTransactionCount(client, address, procedure(cnt: BigInteger; err: IError)
-  begin
-    if Assigned(err) then
-    begin
-      callback(0, err);
-      EXIT;
-    end;
-    Nonce.Enter;
-    try
-      Nonce.Put(cnt);
-      callback(Nonce.Get, nil);
-    finally
-      Nonce.Leave;
-    end;
-  end);
 end;
 
 procedure signTransaction(
@@ -488,7 +442,7 @@ begin
   if sender.IsErr then
     callback('', sender.Error)
   else
-    web3.eth.tx.getNonce(client, sender.Value, procedure(nonce: BigInteger; err: IError)
+    web3.eth.nonce.get(client, sender.Value, procedure(nonce: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback('', err)
@@ -525,7 +479,7 @@ begin
   if sender.IsErr then
     callback(nil, sender.Error)
   else
-    web3.eth.tx.getNonce(client, sender.Value, procedure(nonce: BigInteger; err: IError)
+    web3.eth.nonce.get(client, sender.Value, procedure(nonce: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback(nil, err)

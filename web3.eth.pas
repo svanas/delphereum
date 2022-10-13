@@ -161,6 +161,7 @@ uses
   web3.eth.abi,
   web3.eth.crypto,
   web3.eth.gas,
+  web3.eth.nonce,
   web3.eth.tx,
   web3.json,
   web3.json.rpc,
@@ -533,7 +534,7 @@ begin
   if sender.IsErr then
     callback('', sender.Error)
   else
-    web3.eth.tx.getNonce(client, sender.Value, procedure(nonce: BigInteger; err: IError)
+    web3.eth.nonce.get(client, sender.Value, procedure(nonce: BigInteger; err: IError)
     begin
       if Assigned(err) then
         callback('', err)

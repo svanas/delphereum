@@ -181,6 +181,7 @@
         <DCCReference Include="..\web3.eth.opensea.pas"/>
         <DCCReference Include="..\web3.eth.origin.dollar.pas"/>
         <DCCReference Include="..\web3.eth.pas"/>
+        <DCCReference Include="..\web3.eth.nonce.pas"/>        
         <DCCReference Include="..\web3.eth.pubsub.pas"/>
         <DCCReference Include="..\web3.eth.rari.capital.api.pas"/>
         <DCCReference Include="..\web3.eth.rari.capital.v2.pas"/>
@@ -253,6 +254,12 @@
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="Win32\Debug\delphereum.exe" Configuration="Debug" Class="ProjectOutput"/>
+                <DeployFile LocalName="Win32\Debug\delphereum.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>delphereum.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
