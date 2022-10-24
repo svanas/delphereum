@@ -240,25 +240,6 @@ begin
 end;
 
 function tokens(chain: TChain; callback: TProc<TTokens, IError>): IAsyncResult;
-const
-  TOKEN_LIST: array[TChain] of string = (
-    { Ethereum        } 'https://tokens.coingecko.com/uniswap/all.json',
-    { Goerli          } 'https://raw.githubusercontent.com/svanas/delphereum/master/web3.eth.balancer.v2.tokenlist.goerli.json',
-    { Optimism        } 'https://static.optimism.io/optimism.tokenlist.json',
-    { OptimismGoerli  } '',
-    { RSK             } '',
-    { RSK_test_net    } '',
-    { BNB             } 'https://tokens.pancakeswap.finance/pancakeswap-extended.json',
-    { BNB_test_net    } '',
-    { Gnosis          } 'https://tokens.honeyswap.org',
-    { Polygon         } 'https://unpkg.com/quickswap-default-token-list@latest/build/quickswap-default.tokenlist.json',
-    { PolygonMumbai   } '',
-    { Fantom          } 'https://raw.githubusercontent.com/SpookySwap/spooky-info/master/src/constants/token/spookyswap.json',
-    { Fantom_test_net } '',
-    { Arbitrum        } 'https://bridge.arbitrum.io/token-list-42161.json',
-    { ArbitrumRinkeby } 'https://bridge.arbitrum.io/token-list-421611.json',
-    { Sepolia         } ''
-  );
 begin
   // step #1: get the (multi-chain) Uniswap list
   Result := tokens('https://tokens.uniswap.org', procedure(tokens1: TTokens; err1: IError)
@@ -273,12 +254,12 @@ begin
       if token1.ChainId = chain.Id then
         result := result + [token1];
     // step #2: add tokens from a chain-specific token list (if any)
-    if TOKEN_LIST[chain] = '' then
+    if chain.TokenList = '' then
     begin
       callback(result, nil);
       EXIT;
     end;
-    tokens(TOKEN_LIST[chain], procedure(tokens2: TTokens; err2: IError)
+    tokens(chain.TokenList, procedure(tokens2: TTokens; err2: IError)
     begin
       if Assigned(err2) or not Assigned(tokens2) then
       begin

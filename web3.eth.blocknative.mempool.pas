@@ -173,25 +173,23 @@ end;
 function TCustomMempool.CreatePayload(
   const categoryCode: string;
   const eventCode   : string): string;
-const
-  NETWORK: array[TChain] of string = (
-    'main',        // Ethereum,
-    'goerli',      // Goerli
-    '',            // Optimism
-    '',            // OptimismGoerli
-    '',            // RSK
-    '',            // RSK_test_net
-    'bsc-main',    // BNB
-    '',            // BNB_test_net
-    'xdai',        // Gnosis
-    'matic-main',  // Polygon
-    '',            // PolygonMumbai
-    '',            // Fantom
-    'fantom-main', // Fantom_test_net
-    '',            // Arbitrum
-    '',            // ArbitrumRinkeby
-    ''             // Sepolia
-  );
+
+  function NETWORK(chain: TChain): string; inline;
+  begin
+    if chain = Ethereum then
+      Result := 'main'
+    else if chain = Goerli then
+      Result := 'goerli'
+    else if chain = BNB then
+      Result := 'bsc-main'
+    else if chain = Gnosis then
+      Result := 'xdai'
+    else if chain = Polygon then
+      Result := 'matic-main'
+    else if chain = Fantom then
+      Result := 'fantom-main';
+  end;
+
 begin
   Result := Format('{' +
     '"categoryCode": "%s"' +
@@ -200,7 +198,7 @@ begin
     ',"dappId"     : "%s"' +
     ',"version"    : "0"' +
     ',"blockchain" : {"system": "ethereum", "network": "%s"}'+
-  '}', [categoryCode, eventCode, DateToISO8601(System.SysUtils.Now, False), FApiKey, NETWORK[FChain]]);
+  '}', [categoryCode, eventCode, DateToISO8601(System.SysUtils.Now, False), FApiKey, NETWORK(FChain)]);
 end;
 
 {---------------------------------- TFilters ----------------------------------}

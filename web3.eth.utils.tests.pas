@@ -87,7 +87,7 @@ end;
 procedure TTests.ToWei1;
 type
   TTestCase = record
-    &to   : TEthUnit;
+    &to   : TDenomination;
     output: string;
   end;
 const

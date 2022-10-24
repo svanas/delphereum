@@ -36,42 +36,144 @@ uses
   Velthuis.BigIntegers;
 
 type
-  TChain = (
-    Ethereum,
-    Goerli,
-    Optimism,
-    OptimismGoerli,
-    RSK,
-    RSK_test_net,
-    BNB,
-    BNB_test_net,
-    Gnosis,
-    Polygon,
-    PolygonMumbai,
-    Fantom,
-    Fantom_test_net,
-    Arbitrum,
-    ArbitrumRinkeby,
-    Sepolia
-  );
-
-  TChainHelper = record helper for TChain
-    function Id: Integer;
-    function Name: string;
-    function TxType: Byte;
-    function BlockExplorerURL: string;
-  end;
-
   TAddress      = string[42];
   TPrivateKey   = string[64];
   TSignature    = string[132];
   TWei          = BigInteger;
   TTxHash       = string[66];
   TUnixDateTime = Int64;
-  TProtocol     = (HTTPS, WebSocket);
+  TTransport    = (HTTPS, WebSocket);
   TSecurity     = (Automatic, TLS_10, TLS_11, TLS_12, TLS_13);
   TStandard     = (erc20, erc721, erc1155);
 
+  TChain = record
+    Id           : UInt32; // https://chainlist.org
+    Name         : string;
+    TxType       : Byte; // https://eips.ethereum.org/EIPS/eip-2718 (0 = Legacy, 2 = EIP-1559)
+    Gateway      : array[TTransport] of string;
+    BlockExplorer: string;
+    TokenList    : string;
+    class operator Equal(const Left, Right: TChain): Boolean;
+    class operator NotEqual(const Left, Right: TChain): Boolean;
+  end;
+  PChain = ^TChain;
+
+const
+  Ethereum: TChain = (
+    Id           : 1;
+    Name         : 'Ethereum';
+    TxType       : 2;
+    BlockExplorer: 'https://etherscan.io';
+    TokenList    : 'https://tokens.coingecko.com/uniswap/all.json'
+  );
+  Goerli: TChain = (
+    Id           : 5;
+    Name         : 'Goerli';
+    TxType       : 2;
+    BlockExplorer: 'https://goerli.etherscan.io';
+    TokenList    : 'https://raw.githubusercontent.com/svanas/delphereum/master/web3.eth.balancer.v2.tokenlist.goerli.json'
+  );
+  Optimism: TChain = (
+    Id           : 10;
+    Name         : 'Optimism';
+    TxType       : 2;
+    BlockExplorer: 'https://optimistic.etherscan.io';
+    TokenList    : 'https://static.optimism.io/optimism.tokenlist.json'
+  );
+  OptimismGoerli: TChain = (
+    Id           : 420;
+    Name         : 'Optimism Goerli';
+    TxType       : 2;
+    BlockExplorer: 'https://goerli-optimistic.etherscan.io'
+  );
+  RSK: TChain = (
+    Id           : 30;
+    Name         : 'RSK';
+    TxType       : 0;
+    Gateway      : ('https://public-node.rsk.co', '');
+    BlockExplorer: 'https://explorer.rsk.co'
+  );
+  RSK_test_net: TChain = (
+    Id           : 31;
+    Name         : 'RSK testnet';
+    TxType       : 0;
+    Gateway      : ('https://public-node.testnet.rsk.co', '');
+    BlockExplorer: 'https://explorer.testnet.rsk.co'
+  );
+  BNB: TChain = (
+    Id           : 56;
+    Name         : 'BNB Chain';
+    TxType       : 0;
+    Gateway      : ('https://bsc-dataseed.binance.org', '');
+    BlockExplorer: 'https://bscscan.com';
+    TokenList    : 'https://tokens.pancakeswap.finance/pancakeswap-extended.json'
+  );
+  BNB_test_net   : TChain = (
+    Id           : 97;
+    Name         : 'BNB Chain testnet';
+    TxType       : 0;
+    Gateway      : ('https://data-seed-prebsc-1-s1.binance.org:8545', '');
+    BlockExplorer: 'https://testnet.bscscan.com';
+  );
+  Gnosis: TChain = (
+    Id           : 100;
+    Name         : 'Gnosis Chain';
+    TxType       : 2;
+    Gateway      : ('https://rpc.gnosischain.com', 'wss://rpc.gnosischain.com/wss');
+    BlockExplorer: 'https://gnosisscan.io/';
+    TokenList    : 'https://tokens.honeyswap.org'
+  );
+  Polygon: TChain = (
+    Id           : 137;
+    Name         : 'Polygon';
+    TxType       : 2;
+    BlockExplorer: 'https://polygonscan.com';
+    TokenList    : 'https://unpkg.com/quickswap-default-token-list@latest/build/quickswap-default.tokenlist.json'
+  );
+  PolygonMumbai: TChain = (
+    Id           : 80001;
+    Name         : 'Polygon Mumbai';
+    TxType       : 2;
+    BlockExplorer: 'https://mumbai.polygonscan.com'
+  );
+  Fantom: TChain = (
+    Id           : 250;
+    Name         : 'Fantom';
+    TxType       : 0;
+    Gateway      : ('https://rpc.fantom.network', '');
+    BlockExplorer: 'https://ftmscan.com';
+    TokenList    : 'https://raw.githubusercontent.com/SpookySwap/spooky-info/master/src/constants/token/spookyswap.json'
+  );
+  Fantom_test_net: TChain = (
+    Id           : 4002;
+    Name         : 'Fantom testnet';
+    TxType       : 0;
+    Gateway      : ('https://rpc.testnet.fantom.network', '');
+    BlockExplorer: 'https://testnet.ftmscan.com';
+  );
+  Arbitrum: TChain = (
+    Id           : 42161;
+    Name         : 'Arbitrum';
+    TxType       : 0;
+    BlockExplorer: 'https://explorer.arbitrum.io';
+    TokenList    : 'https://bridge.arbitrum.io/token-list-42161.json'
+  );
+  ArbitrumRinkeby: TChain = (
+    Id           : 421611;
+    Name         : 'Arbitrum Rinkeby';
+    TxType       : 0;
+    BlockExplorer: 'https://rinkeby-explorer.arbitrum.io';
+    TokenList    : 'https://bridge.arbitrum.io/token-list-421611.json'
+  );
+  Sepolia: TChain = (
+    Id           : 11155111;
+    Name         : 'Sepolia';
+    TxType       : 2;
+    Gateway      : ('https://rpc.sepolia.org', '');
+    BlockExplorer: 'https://sepolia.etherscan.io';
+  );
+
+type
   TStandardHelper = record helper for TStandard
     class function New(const name: string): TStandard; static;
   end;
@@ -291,9 +393,10 @@ type
     function OnDisconnect(callback: TProc): IWeb3Ex;
   end;
 
-function Now: TUnixDateTime;
-function Infinite: BigInteger;
-function MaxInt256: BigInteger;
+function Now: TUnixDateTime; inline;
+function Infinite: BigInteger; inline;
+function MaxInt256: BigInteger; inline;
+function Chain(Id: Integer): IResult<PChain>; inline;
 
 implementation
 
@@ -329,87 +432,55 @@ begin
   Result := BigInteger.Create('57896044618658097711785492504343953926634992332820282019728792003956564819967');
 end;
 
-{ TChainHelper }
-
-function TChainHelper.Id: Integer;
-const
-  // https://chainlist.org
-  CHAIN_ID: array[TChain] of Integer = (
-    1,       // Ethereum
-    5,       // Goerli
-    10,      // Optimism
-    420,     // OptimismGoerli
-    30,      // RSK
-    31,      // RSK_test_net
-    56,      // BNB
-    97,      // BNB_test_net
-    100,     // Gnosis
-    137,     // Polygon,
-    80001,   // PolygonMumbai
-    250,     // Fantom
-    4002,    // Fantom_test_net
-    42161,   // Arbitrum
-    421611,  // ArbitrumRinkeby
-    11155111 // Sepolia
-  );
+function Chain(Id: Integer): IResult<PChain>;
 begin
-  Result := CHAIN_ID[Self];
+  if Id = Ethereum.Id then
+    Result := TResult<PChain>.Ok(@Ethereum)
+  else if Id = Goerli.Id then
+    Result := TResult<PChain>.Ok(@Goerli)
+  else if Id = Optimism.Id then
+    Result := TResult<PChain>.Ok(@Optimism)
+  else if Id = OptimismGoerli.Id then
+    Result := TResult<PChain>.Ok(@OptimismGoerli)
+  else if Id = RSK.Id then
+    Result := TResult<PChain>.Ok(@RSK)
+  else if Id = RSK_test_net.Id then
+    Result := TResult<PChain>.Ok(@RSK_test_net)
+  else if Id = BNB.Id then
+    Result := TResult<PChain>.Ok(@BNB)
+  else if Id = BNB_test_net.Id then
+    Result := TResult<PChain>.Ok(@BNB_test_net)
+  else if Id = Gnosis.Id then
+    Result := TResult<PChain>.Ok(@Gnosis)
+  else if Id = Polygon.Id then
+    Result := TResult<PChain>.Ok(@Polygon)
+  else if Id = PolygonMumbai.Id then
+    Result := TResult<PChain>.Ok(@PolygonMumbai)
+  else if Id = Fantom.Id then
+    Result := TResult<PChain>.Ok(@Fantom)
+  else if Id = Fantom_test_net.Id then
+    Result := TResult<PChain>.Ok(@Fantom_test_net)
+  else if Id = Arbitrum.Id then
+    Result := TResult<PChain>.Ok(@Arbitrum)
+  else if Id = ArbitrumRinkeby.Id then
+    Result := TResult<PChain>.Ok(@ArbitrumRinkeby)
+  else if Id = Sepolia.Id then
+    Result := TResult<PChain>.Ok(@Sepolia)
+  else
+    Result := TResult<PChain>.Err(nil, TError.Create('Unknown chain id: %d', [Id]));
 end;
 
-function TChainHelper.Name: string;
+
+{ TChain }
+
+class operator TChain.Equal(const Left, Right: TChain): Boolean;
 begin
-  Result := GetEnumName(TypeInfo(TChain), Integer(Self)).Replace('_', ' ');
+  Result := Left.Id = Right.Id;
 end;
 
-function TChainHelper.TxType: Byte;
-const
-  // https://eips.ethereum.org/EIPS/eip-2718
-  // 0 = Legacy
-  // 2 = EIP-1559
-  TX_TYPE: array[TChain] of Byte = (
-    2, // Ethereum
-    2, // Goerli
-    2, // Optimism
-    2, // OptimismGoerli
-    0, // RSK
-    0, // RSK_test_net
-    0, // BNB
-    0, // BNB_test_net
-    2, // Gnosis
-    2, // Polygon
-    2, // PolygonMumbai
-    0, // Fantom
-    0, // Fantom_test_net
-    0, // Arbitrum
-    0, // ArbitrumRinkeby
-    2  // Sepolia
-  );
+class operator TChain.NotEqual(const Left, Right: TChain): Boolean;
 begin
-  Result := TX_TYPE[Self];
-end;
-
-function TChainHelper.BlockExplorerURL: string;
-const
-  BLOCK_EXPLORER_URL: array[TChain] of string = (
-    'https://etherscan.io',                   // Ethereum
-    'https://goerli.etherscan.io',            // Goerli
-    'https://optimistic.etherscan.io',        // Optimism
-    'https://goerli-optimistic.etherscan.io', // OptimismGoerli
-    'https://explorer.rsk.co',                // RSK
-    'https://explorer.testnet.rsk.co',        // RSK_test_net
-    'https://bscscan.com',                    // BNB
-    'https://testnet.bscscan.com',            // BNB_test_net
-    'https://gnosisscan.io/',                 // Gnosis
-    'https://polygonscan.com',                // Polygon
-    'https://mumbai.polygonscan.com',         // PolygonMumbai
-    'https://ftmscan.com',                    // Fantom
-    'https://testnet.ftmscan.com',            // Fantom_test_net
-    'https://explorer.arbitrum.io',           // Arbitrum
-    'https://rinkeby-explorer.arbitrum.io',   // ArbitrumRinkeby
-    'https://sepolia.etherscan.io'            // Sepolia
-  );
-begin
-  Result := BLOCK_EXPLORER_URL[Self];
+  Result := Left.Id <> Right.Id;
 end;
 
 { TStandardHelper }
@@ -526,40 +597,38 @@ end;
 // returns the chain’s latest asset price in USD (eg. ETH-USD for Ethereum, BNB-USD for BNB Chain, MATIC-USD for Polygon, etc)
 procedure TCustomWeb3.LatestPrice(callback: TProc<Double, IError>);
 begin
-  case Self.Chain of
-    Ethereum:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419').Price(callback);
-    Sepolia:
-      web3.coincap.price('ethereum', callback);
-    Goerli:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e').Price(callback);
-    Optimism:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x13e3Ee699D1909E989722E753853AE30b17e08c5').Price(callback);
-    OptimismGoerli:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x57241A37733983F97C4Ab06448F244A1E0Ca0ba8').Price(callback);
-    RSK, RSK_test_net:
-      web3.coincap.price('bitcoin', callback);
-    BNB:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e').Price(callback);
-    BNB_test_net:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x143db3CEEfbdfe5631aDD3E50f7614B6ba708BA7').Price(callback);
-    Gnosis:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x678df3415fc31947dA4324eC63212874be5a82f8').Price(callback);
-    Polygon:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0').Price(callback);
-    PolygonMumbai:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada').Price(callback);
-    Fantom:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0xf4766552D15AE4d256Ad41B6cf2933482B0680dc').Price(callback);
-    Fantom_test_net:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0xe04676B9A9A2973BCb0D1478b5E1E9098BBB7f3D').Price(callback);
-    Arbitrum:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612').Price(callback);
-    ArbitrumRinkeby:
-      web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f0423B1a6935dc5596e7A24d98532b67A0AeFd8').Price(callback);
+  if Chain = Ethereum then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419').Price(callback)
+  else if Chain = Sepolia then
+    web3.coincap.price('ethereum', callback)
+  else if Chain = Goerli then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e').Price(callback)
+  else if Chain = Optimism then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x13e3Ee699D1909E989722E753853AE30b17e08c5').Price(callback)
+  else if Chain = OptimismGoerli then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x57241A37733983F97C4Ab06448F244A1E0Ca0ba8').Price(callback)
+  else if (Chain = RSK) or (Chain = RSK_test_net) then
+    web3.coincap.price('bitcoin', callback)
+  else if Chain = BNB then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e').Price(callback)
+  else if Chain = BNB_test_net then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x143db3CEEfbdfe5631aDD3E50f7614B6ba708BA7').Price(callback)
+  else if Chain = Gnosis then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x678df3415fc31947dA4324eC63212874be5a82f8').Price(callback)
+  else if Chain = Polygon then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0').Price(callback)
+  else if Chain = PolygonMumbai then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada').Price(callback)
+  else if Chain = Fantom then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xf4766552D15AE4d256Ad41B6cf2933482B0680dc').Price(callback)
+  else if Chain = Fantom_test_net then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xe04676B9A9A2973BCb0D1478b5E1E9098BBB7f3D').Price(callback)
+  else if Chain = Arbitrum then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612').Price(callback)
+  else if Chain = ArbitrumRinkeby then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f0423B1a6935dc5596e7A24d98532b67A0AeFd8').Price(callback)
   else
     callback(0, TError.Create('Price feed does not exist on %s', [Self.Chain.Name]));
-  end;
 end;
 
 function TCustomWeb3.ETHERSCAN_API_KEY: string;

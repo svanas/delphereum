@@ -133,29 +133,33 @@ uses
   web3.sync;
 
 function endpoint(chain: TChain; const apiKey: string): IResult<string>;
-const
-  ENDPOINT: array[TChain] of string = (
-    'https://api.etherscan.io/api?apikey=%s',                   // Ethereum
-    'https://api-goerli.etherscan.io/api?apikey=%s',            // Goerli
-    'https://api-optimistic.etherscan.io/api?apikey=%s',        // Optimism
-    'https://api-goerli-optimistic.etherscan.io/api?apikey=%s', // OptimismGoerli
-    '',                                                         // RSK
-    '',                                                         // RSK_test_net
-    'https://api.bscscan.com/api?apikey=%s',                    // BNB
-    'https://api-testnet.bscscan.com/api?apikey=%s',            // BNB_test_net
-    '',                                                         // Gnosis
-    'https://api.polygonscan.com/api?apikey=%s',                // Polygon
-    'https://api-testnet.polygonscan.com/api?apikey=%s',        // PolygonMumbai
-    'https://api.ftmscan.com/api?apikey=%s',                    // Fantom
-    'https://api-testnet.ftmscan.com/api?apikey=%s',            // Fantom_test_net
-    'https://api.arbiscan.io/api?apikey=%s',                    // Arbitrum
-    'https://api-testnet.arbiscan.io/api?apikey=%s',            // ArbitrumRinkeby
-    'https://api-sepolia.etherscan.io/api?apikey=%s'            // Sepolia
-  );
 begin
-  const URL = ENDPOINT[chain];
-  if URL <> '' then
-    Result := TResult<string>.Ok(Format(URL, [apiKey]))
+  if chain = Ethereum then
+    Result := TResult<string>.Ok(Format('https://api.etherscan.io/api?apikey=%s', [apiKey]))
+  else if chain = Goerli then
+    Result := TResult<string>.Ok(Format('https://api-goerli.etherscan.io/api?apikey=%s', [apiKey]))
+  else if chain = Optimism then
+    Result := TResult<string>.Ok(Format('https://api-optimistic.etherscan.io/api?apikey=%s', [apiKey]))
+  else if chain = OptimismGoerli then
+    Result := TResult<string>.Ok(Format('https://api-goerli-optimistic.etherscan.io/api?apikey=%s', [apiKey]))
+  else if chain = BNB then
+    Result := TResult<string>.Ok(Format('https://api.bscscan.com/api?apikey=%s', [apiKey]))
+  else if chain = BNB_test_net then
+    Result := TResult<string>.Ok(Format('https://api-testnet.bscscan.com/api?apikey=%s', [apiKey]))
+  else if chain = Polygon then
+    Result := TResult<string>.Ok(Format('https://api.polygonscan.com/api?apikey=%s', [apiKey]))
+  else if chain = PolygonMumbai then
+    Result := TResult<string>.Ok(Format('https://api-testnet.polygonscan.com/api?apikey=%s', [apiKey]))
+  else if chain = Fantom then
+    Result := TResult<string>.Ok(Format('https://api.ftmscan.com/api?apikey=%s', [apiKey]))
+  else if chain = Fantom_test_net then
+    Result := TResult<string>.Ok(Format('https://api-testnet.ftmscan.com/api?apikey=%s', [apiKey]))
+  else if chain = Arbitrum then
+    Result := TResult<string>.Ok(Format('https://api.arbiscan.io/api?apikey=%s', [apiKey]))
+  else if chain = ArbitrumRinkeby then
+    Result := TResult<string>.Ok(Format('https://api-testnet.arbiscan.io/api?apikey=%s', [apiKey]))
+  else if chain = Sepolia then
+    Result := TResult<string>.Ok(Format('https://api-sepolia.etherscan.io/api?apikey=%s', [apiKey]))
   else
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;

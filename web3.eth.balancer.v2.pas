@@ -439,29 +439,28 @@ end;
 procedure getPoolId(chain: TChain; asset0, asset1: TAddress; callback: TProc<string, IError>);
 const
   QUERY = '{"query":"{pools(where: {tokensList: [\"%s\", \"%s\"]}, orderBy: totalLiquidity, orderDirection: desc) { id }}"}';
-const
-  SUBGRAPH: array[TChain] of string = (
-    'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2',          // Ethereum,
-    'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2',   // Goerli
-    '',                                                                           // Optimism
-    '',                                                                           // OptimismGoerli
-    '',                                                                           // RSK
-    '',                                                                           // RSK_test_net
-    '',                                                                           // BNB
-    '',                                                                           // BNB_test_net
-    '',                                                                           // Gnosis
-    'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-polygon-v2',  // Polygon
-    '',                                                                           // PolygonMumbai
-    '',                                                                           // Fantom
-    '',                                                                           // Fantom_test_net
-    'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-arbitrum-v2', // Arbitrum
-    '',                                                                           // ArbitrumRinkeby
-    ''                                                                            // Sepolia
-  );
 begin
   const execute = procedure(token0, token1: TAddress; callback: TProc<string, IError>)
   begin
-    web3.graph.execute(SUBGRAPH[chain], Format(QUERY, [string(token0), string(token1)]), procedure(response: TJsonObject; err: IError)
+    const SUBGRAPH = (function(chain: TChain): IResult<string>
+    begin
+      if chain = Ethereum then
+        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2')
+      else if chain = Goerli then
+        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2')
+      else if chain = Polygon then
+        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-polygon-v2')
+      else if chain = Arbitrum then
+        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-arbitrum-v2')
+      else
+        Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
+    end)(chain);
+    if SUBGRAPH.IsErr then
+    begin
+      callback('', SUBGRAPH.Error);
+      EXIT;
+    end;
+    web3.graph.execute(SUBGRAPH.Value, Format(QUERY, [string(token0), string(token1)]), procedure(response: TJsonObject; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -494,7 +493,7 @@ end;
 
 procedure tokens(chain: TChain; callback: TProc<TTokens, IError>);
 begin
-  if chain in [Goerli, Polygon, Arbitrum] then
+  if chain <> Ethereum then
     web3.eth.tokenlists.tokens(chain, callback)
   else
     web3.eth.tokenlists.tokens('https://raw.githubusercontent.com/balancer-labs/assets/master/generated/listed.tokenlist.json', procedure(tokens: TTokens; err: IError)

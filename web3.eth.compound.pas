@@ -230,7 +230,7 @@ begin
   Result := (
     (reserve in [USDT, TUSD]) and (chain = Ethereum)
   ) or (
-    (reserve in [DAI, USDC]) and (chain in [Ethereum, Goerli])
+    (reserve in [DAI, USDC]) and ((chain = Ethereum) or (chain = Goerli))
   );
 end;
 

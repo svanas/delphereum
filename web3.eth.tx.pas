@@ -30,27 +30,12 @@ interface
 
 uses
   // Delphi
-  System.JSON,
   System.SysUtils,
-  System.Variants,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
-  // CryptoLib4Pascal
-  ClpBigInteger,
   // web3
   web3,
-  web3.crypto,
-  web3.eth,
-  web3.eth.crypto,
-  web3.eth.gas,
-  web3.eth.nonce,
-  web3.eth.types,
-  web3.eth.utils,
-  web3.json,
-  web3.json.rpc,
-  web3.rlp,
-  web3.sync,
-  web3.utils;
+  web3.eth.types;
 
 type
   ITxError = interface(IError)
@@ -155,9 +140,33 @@ procedure cancelTransaction(
   client  : IWeb3;
   from    : TPrivateKey;
   nonce   : BigInteger;
-  callback: TProc<TTxHash, IError>); overload;
+  callback: TProc<TTxHash, IError>);
+
+// open transaction in block explorer
+procedure openTransaction(chain: TChain; hash: TTxHash);
 
 implementation
+
+uses
+  // Delphi
+  System.JSON,
+  System.Variants,
+{$IFDEF MSWINDOWS}
+  WinAPI.ShellAPI,
+  WinAPI.Windows,
+{$ENDIF MSWINDOWS}
+{$IFDEF POSIX}
+  Posix.Stdlib,
+{$ENDIF POSIX}
+  // CryptoLib4Pascal
+  ClpBigInteger,
+  // web3
+  web3.eth.crypto,
+  web3.eth.gas,
+  web3.eth.nonce,
+  web3.json,
+  web3.rlp,
+  web3.utils;
 
 { TTxError }
 
@@ -783,6 +792,22 @@ begin
       else
         sendTransaction(client, sig, callback);
     end);
+end;
+
+procedure openTransaction(chain: TChain; hash: TTxHash);
+
+  procedure open(const URL: string); inline;
+  begin
+  {$IFDEF MSWINDOWS}
+    ShellExecute(0, 'open', PChar(URL), nil, nil, SW_SHOWNORMAL);
+  {$ENDIF MSWINDOWS}
+  {$IFDEF POSIX}
+    _system(PAnsiChar('open ' + AnsiString(URL)));
+  {$ENDIF POSIX}
+  end;
+
+begin
+  open(chain.BlockExplorer + '/tx/' + string(hash));
 end;
 
 end.

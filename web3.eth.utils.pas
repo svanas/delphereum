@@ -38,7 +38,7 @@ uses
   web3.eth.types;
 
 type
-  TEthUnit = (
+  TDenomination = (
     noether,
     wei,
     kwei,
@@ -65,8 +65,8 @@ type
     tether
   );
 
-function fromWei(wei: TWei; &to: TEthUnit; decimals: Byte = 18): string;
-function toWei(input: string; &unit: TEthUnit): IResult<TWei>;
+function fromWei(wei: TWei; &to: TDenomination; decimals: Byte = 18): string;
+function toWei(value: string; from: TDenomination): IResult<TWei>;
 
 function DotToFloat(const value: string): Double;
 function FloatToDot(value: Double): string;
@@ -74,7 +74,7 @@ function FloatToDot(value: Double): string;
 implementation
 
 const
-  UnitToWei: array[TEthUnit] of string = (
+  ToBase: array[TDenomination] of string = (
     '0',
     '1',
     '1000',
@@ -100,12 +100,12 @@ const
     '1000000000000000000000000000',
     '1000000000000000000000000000000');
 
-function fromWei(wei: TWei; &to: TEthUnit; decimals: Byte): string;
+function fromWei(wei: TWei; &to: TDenomination; decimals: Byte): string;
 begin
   Result := '';
   const negative = wei.Negative;
-  const base = UnitToWei[&to];
-  const baseLen = UnitToWei[&to].Length;
+  const base = ToBase[&to];
+  const baseLen = ToBase[&to].Length;
   if negative then
     wei := wei.Abs;
   var whole: BigInteger;
@@ -128,24 +128,24 @@ begin
     Result := '-' + Result;
 end;
 
-function toWei(input: string; &unit: TEthUnit): IResult<TWei>;
+function toWei(value: string; from: TDenomination): IResult<TWei>;
 begin
-  const base = UnitToWei[&unit];
-  const baseLen = UnitToWei[&unit].Length;
+  const base = ToBase[from];
+  const baseLen = ToBase[from].Length;
   // is it negative?
-  const negative = (input.Length > 0) and (input[System.Low(input)] = '-');
+  const negative = (value.Length > 0) and (value[System.Low(value)] = '-');
   if negative then
-    Delete(input, System.Low(input), 1);
-  if (input = '') or (input = '.') then
+    Delete(value, System.Low(value), 1);
+  if (value = '') or (value = '.') then
   begin
-    Result := TResult<TWei>.Err(0, TError.Create('Error while converting %s to wei. Invalid value.', [input]));
+    Result := TResult<TWei>.Err(0, TError.Create('Error while converting %s to wei. Invalid value.', [value]));
     EXIT;
   end;
   // split it into a whole and fractional part
-  const comps = input.Split(['.']);
+  const comps = value.Split(['.']);
   if Length(comps) > 2 then
   begin
-    Result := TResult<TWei>.Err(0, TError.Create('Error while converting %s to wei. Too many decimal points.', [input]));
+    Result := TResult<TWei>.Err(0, TError.Create('Error while converting %s to wei. Too many decimal points.', [value]));
     EXIT;
   end;
   var whole: string := comps[0];
@@ -182,3 +182,4 @@ begin
 end;
 
 end.
+
