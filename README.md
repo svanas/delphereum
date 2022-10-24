@@ -89,11 +89,11 @@ Bankless is a DeFi desktop app with the highest possible yield on your stablecoi
 
 Made with Delphi, Bankless is a small and simple dapp that makes it super easy to transfer your savings from one lending protocol to another with the click of one button.
 
-You can download Bankless [for Windows](https://www.dropbox.com/s/fgjl5zmfnuw7h0s/bankless.zip?dl=1) or [for macOS](https://apps.apple.com/us/app/id1521153171).
+You can download Bankless [for macOS](https://apps.apple.com/us/app/id1521153171).
 
 ### 3. PubSub
 
-[PubSub](https://github.com/svanas/PubSub) is a simple "Hello World" example project, demonstrating how to subscribe to an Ethereum gateway and get notified every time a new block got mined.
+[PubSub](https://github.com/svanas/PubSub) is a simple "Hello World" example project, demonstrating how to subscribe to an Ethereum gateway and get notified every time a new block got mined. You can download PubSub [for Windows](https://github.com/svanas/PubSub/releases/latest/download/Windows.zip).
 
 ### 4. Enumerable
 
