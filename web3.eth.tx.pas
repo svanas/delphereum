@@ -221,7 +221,7 @@ begin
         EXIT;
       end;
 
-      if client.TxType >= 2 then // EIP-1559
+      if client.Chain.TxType >= 2 then // EIP-1559
       begin
         web3.eth.gas.getMaxPriorityFeePerGas(client, procedure(tip: BigInteger; err: IError)
         begin

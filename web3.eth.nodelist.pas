@@ -40,7 +40,7 @@ type
   TOnline = (Unknown, Offline, Online);
 
   INode = interface
-    function Chain: TChain;
+    function Client: TWeb3;
     function Free: Boolean;
     function Name: string;
     procedure Online(callback: TProc<TOnline, IError>);
@@ -86,34 +86,34 @@ type
     FChain: TChain;
     FFree : Boolean;
     FName : string;
-    FRpc  : string;
     FTag  : IInterface;
-    FWss  : string;
+    function Rpc: string;
+    function Wss: string;
   public
-    function Chain: TChain;
+    function Client: TWeb3;
     function Free: Boolean;
     function Name: string;
     procedure Online(callback: TProc<TOnline, IError>);
-    function Rpc: string;
     function SetTag(const Value: IInterface): INode;
     function Tag: IInterface;
-    function Wss: string;
     constructor Create(aChain: TChain; const aJsonValue: TJsonObject); reintroduce;
   end;
 
 constructor TNode.Create(aChain: TChain; const aJsonValue: TJsonObject);
 begin
   inherited Create(aJsonValue);
+
   FChain := aChain;
-  FName  := getPropAsStr(aJsonValue, 'name');
-  FRpc   := getPropAsStr(aJsonValue, 'rpc');
-  FWss   := getPropAsStr(aJsonValue, 'wss');
-  FFree  := FRpc.IndexOf('$apiKey') = -1;
+  FChain.Gateway[HTTPS] := getPropAsStr(aJsonValue, 'rpc');
+  FChain.Gateway[WebSocket] := getPropAsStr(aJsonValue, 'wss');
+
+  FFree := FChain.Gateway[HTTPS].IndexOf('$apiKey') = -1;
+  FName := getPropAsStr(aJsonValue, 'name');
 end;
 
-function TNode.Chain: TChain;
+function TNode.Client: TWeb3;
 begin
-  Result := FChain;
+  Result := TWeb3.Create(Self.FChain.SetGateway(HTTPS, Self.Rpc));
 end;
 
 function TNode.Free: Boolean;
@@ -133,7 +133,7 @@ begin
     callback(TOnline.Unknown, nil);
     EXIT;
   end;
-  const client: IWeb3 = TWeb3.Create(Self.Chain, Self.Rpc);
+  const client: IWeb3 = TWeb3.Create(Self.FChain);
   client.Call('eth_chainId', [], procedure(response: TJsonObject; err: IError)
   begin
     if not Assigned(err) then
@@ -145,7 +145,7 @@ end;
 
 function TNode.Rpc: string;
 begin
-  if FRpc.IndexOf('$apiKey') > -1 then
+  if FChain.Gateway[HTTPS].IndexOf('$apiKey') > -1 then
   begin
     var apiKey: string;
     TThread.Synchronize(nil, procedure
@@ -154,10 +154,10 @@ begin
       apiKey := Trim(InputBox(Self.Name, RS_API_KEY, ''));
 {$WARN SYMBOL_DEPRECATED DEFAULT}
       if apiKey <> '' then
-        FRpc := FRpc.Replace('$apiKey', apiKey);
+        FChain.Gateway[HTTPS] := FChain.Gateway[HTTPS].Replace('$apiKey', apiKey);
     end);
   end;
-  Result := FRpc;
+  Result := FChain.Gateway[HTTPS];
 end;
 
 function TNode.SetTag(const Value: IInterface): INode;
@@ -173,7 +173,7 @@ end;
 
 function TNode.Wss: string;
 begin
-  if FWss.IndexOf('$apiKey') > -1 then
+  if FChain.Gateway[WebSocket].IndexOf('$apiKey') > -1 then
   begin
     var apiKey: string;
     TThread.Synchronize(nil, procedure
@@ -182,10 +182,10 @@ begin
       apiKey := Trim(InputBox(Self.Name, RS_API_KEY, ''));
 {$WARN SYMBOL_DEPRECATED DEFAULT}
       if apiKey <> '' then
-        FWss := FWss.Replace('$apiKey', apiKey);
+        FChain.Gateway[WebSocket] := FChain.Gateway[WebSocket].Replace('$apiKey', apiKey);
     end);
   end;
-  Result := FWss;
+  Result := FChain.Gateway[WebSocket];
 end;
 
 {------------------------------- TNodesHelper ---------------------------------}
@@ -234,7 +234,7 @@ begin
     end;
     const chains = getPropAsArr(obj, 'chains');
     for var C in chains do
-      if getPropAsInt(C, 'id') = chain.Id then
+      if getPropAsInt(C, 'id') = Integer(chain.Id) then
       begin
         callback(getPropAsArr(C, 'nodes'), nil);
         EXIT;

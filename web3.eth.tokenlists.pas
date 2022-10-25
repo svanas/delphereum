@@ -41,7 +41,7 @@ uses
 
 type
   IToken = interface
-    function ChainId: Integer;
+    function ChainId: UInt32;
     function Address: TAddress;
     function Name: string;
     function Symbol: string;
@@ -80,14 +80,14 @@ uses
 type
   TToken = class(TCustomDeserialized<TJsonObject>, IToken)
   private
-    FChainId: Integer;
+    FChainId: UInt32;
     FAddress: TAddress;
     FName: string;
     FSymbol: string;
     FDecimals: Integer;
     FLogoURI: string;
   public
-    function ChainId: Integer;
+    function ChainId: UInt32;
     function Address: TAddress;
     function Name: string;
     function Symbol: string;
@@ -108,7 +108,7 @@ begin
   FLogoURI := getPropAsStr(aJsonValue, 'logoURI');
 end;
 
-function TToken.ChainId: Integer;
+function TToken.ChainId: UInt32;
 begin
   Result := FChainId;
 end;

@@ -84,7 +84,7 @@ begin
     EXIT;
   end;
 
-  if client.TxType >= 2 then // EIP-1559
+  if client.Chain.TxType >= 2 then // EIP-1559
   begin
     getBaseFeePerGas(client, procedure(baseFee: TWei; err: IError)
     begin
@@ -251,7 +251,7 @@ begin
       EXIT;
     end;
     // construct the eip-1559 transaction call object
-    if client.TxType >= 2 then
+    if client.Chain.TxType >= 2 then
     begin
       getMaxPriorityFeePerGas(client, procedure(tip: TWei; err: IError)
       begin

@@ -55,6 +55,8 @@ type
     TokenList    : string;
     class operator Equal(const Left, Right: TChain): Boolean;
     class operator NotEqual(const Left, Right: TChain): Boolean;
+    function SetTxType(Value: Byte): TChain;
+    function SetGateway(transport: TTransport; const URI: string): TChain;
   end;
   PChain = ^TChain;
 
@@ -292,9 +294,7 @@ type
 
   IWeb3 = interface
   ['{D4C1A132-2296-40C0-B6FB-6B326EFB8A26}']
-    function Chain : TChain;
-    function URL   : string;
-    function TxType: Byte;
+    function Chain: TChain;
     procedure LatestPrice(callback: TProc<Double, IError>);
 
     function  ETHERSCAN_API_KEY: string;
@@ -307,17 +307,12 @@ type
 
   TCustomWeb3 = class abstract(TInterfacedObject, IWeb3)
   private
-    FChain : TChain;
-    FURL   : string;
-    FTxType: Byte;
-
+    FChain: TChain;
     FOnGasStationInfo  : TOnGasStationInfo;
     FOnEtherscanApiKey : TOnEtherscanApiKey;
     FOnSignatureRequest: TOnSignatureRequest;
   public
-    function Chain : TChain;
-    function URL   : string;
-    function TxType: Byte;
+    function Chain: TChain;
     procedure LatestPrice(callback: TProc<Double, IError>);
 
     function  ETHERSCAN_API_KEY: string;
@@ -338,10 +333,8 @@ type
   public
     constructor Create(const aURL: string); overload;
     constructor Create(const aURL: string; aTxType: Byte); overload;
-    constructor Create(aChain: TChain; const aURL: string); overload;
-    constructor Create(aChain: TChain; const aURL: string; aTxType: Byte); overload;
-    constructor Create(aChain: TChain; const aURL: string; aProtocol: IJsonRpc); overload;
-    constructor Create(aChain: TChain; const aURL: string; aTxType: Byte; aProtocol: IJsonRpc); overload;
+    constructor Create(aChain: TChain); overload;
+    constructor Create(aChain: TChain; aProtocol: IJsonRpc); overload;
 
     function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload; override;
     procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; override;
@@ -372,13 +365,6 @@ type
       aSecurity : TSecurity = TSecurity.Automatic); overload;
     constructor Create(
       aChain    : TChain;
-      const aURL: string;
-      aProtocol : IPubSub;
-      aSecurity : TSecurity = TSecurity.Automatic); overload;
-    constructor Create(
-      aChain    : TChain;
-      const aURL: string;
-      aTxType   : Byte;
       aProtocol : IPubSub;
       aSecurity : TSecurity = TSecurity.Automatic); overload;
 
@@ -396,7 +382,7 @@ type
 function Now: TUnixDateTime; inline;
 function Infinite: BigInteger; inline;
 function MaxInt256: BigInteger; inline;
-function Chain(Id: Integer): IResult<PChain>; inline;
+function Chain(Id: UInt32): IResult<PChain>; inline;
 
 implementation
 
@@ -432,7 +418,7 @@ begin
   Result := BigInteger.Create('57896044618658097711785492504343953926634992332820282019728792003956564819967');
 end;
 
-function Chain(Id: Integer): IResult<PChain>;
+function Chain(Id: UInt32): IResult<PChain>;
 begin
   if Id = Ethereum.Id then
     Result := TResult<PChain>.Ok(@Ethereum)
@@ -470,7 +456,6 @@ begin
     Result := TResult<PChain>.Err(nil, TError.Create('Unknown chain id: %d', [Id]));
 end;
 
-
 { TChain }
 
 class operator TChain.Equal(const Left, Right: TChain): Boolean;
@@ -481,6 +466,18 @@ end;
 class operator TChain.NotEqual(const Left, Right: TChain): Boolean;
 begin
   Result := Left.Id <> Right.Id;
+end;
+
+function TChain.SetTxType(Value: Byte): TChain;
+begin
+  Self.TxType := Value;
+  Result := Self;
+end;
+
+function TChain.SetGateway(transport: TTransport; const URI: string): TChain;
+begin
+  Self.Gateway[transport] := URI;
+  Result := Self;
 end;
 
 { TStandardHelper }
@@ -582,16 +579,6 @@ end;
 function TCustomWeb3.Chain: TChain;
 begin
   Result := Self.FChain;
-end;
-
-function TCustomWeb3.URL: string;
-begin
-  Result := Self.FURL;
-end;
-
-function TCustomWeb3.TxType: Byte;
-begin
-  Result := Self.FTxType;
 end;
 
 // returns the chain’s latest asset price in USD (eg. ETH-USD for Ethereum, BNB-USD for BNB Chain, MATIC-USD for Polygon, etc)
@@ -713,45 +700,33 @@ end;
 
 constructor TWeb3.Create(const aURL: string);
 begin
-  Self.Create(Ethereum, aURL);
+  Self.Create(Ethereum.SetGateway(HTTPS, aURL));
 end;
 
 constructor TWeb3.Create(const aURL: string; aTxType: Byte);
 begin
-  Self.Create(Ethereum, aURL, aTxType);
+  Self.Create(Ethereum.SetGateway(HTTPS, aURL).SetTxType(aTxType));
 end;
 
-constructor TWeb3.Create(aChain: TChain; const aURL: string);
+constructor TWeb3.Create(aChain: TChain);
 begin
-  Self.Create(aChain, aURL, TJsonRpcHttps.Create);
+  Self.Create(aChain, TJsonRpcHttps.Create);
 end;
 
-constructor TWeb3.Create(aChain: TChain; const aURL: string; aTxType: Byte);
-begin
-  Self.Create(aChain, aURL, aTxType, TJsonRpcHttps.Create);
-end;
-
-constructor TWeb3.Create(aChain: TChain; const aURL: string; aProtocol: IJsonRpc);
-begin
-  Self.Create(aChain, aURL, aChain.TxType, aProtocol);
-end;
-
-constructor TWeb3.Create(aChain: TChain; const aURL: string; aTxType: Byte; aProtocol: IJsonRpc);
+constructor TWeb3.Create(aChain: TChain; aProtocol: IJsonRpc);
 begin
   Self.FChain    := aChain;
-  Self.FURL      := aURL;
-  Self.FTxType   := aTxType;
   Self.FProtocol := aProtocol;
 end;
 
 function TWeb3.Call(const method: string; args: array of const): IResult<TJsonObject>;
 begin
-  Result := Self.FProtocol.Call(Self.URL, method, args);
+  Result := Self.FProtocol.Call(Self.Chain.Gateway[HTTPS], method, args);
 end;
 
 procedure TWeb3.Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>);
 begin
-  Self.FProtocol.Call(Self.URL, method, args, callback);
+  Self.FProtocol.Call(Self.Chain.Gateway[HTTPS], method, args, callback);
 end;
 
 { TWeb3Ex }
@@ -761,7 +736,7 @@ constructor TWeb3Ex.Create(
   aProtocol : IPubSub;
   aSecurity : TSecurity = TSecurity.Automatic);
 begin
-  Self.Create(Ethereum, aURL, aProtocol, aSecurity);
+  Self.Create(Ethereum.SetGateway(WebSocket, aURL), aProtocol, aSecurity);
 end;
 
 constructor TWeb3Ex.Create(
@@ -770,40 +745,27 @@ constructor TWeb3Ex.Create(
   aProtocol : IPubSub;
   aSecurity : TSecurity = TSecurity.Automatic);
 begin
-  Self.Create(Ethereum, aURL, aTxType, aProtocol, aSecurity);
+  Self.Create(Ethereum.SetGateway(WebSocket, aURL).SetTxType(aTxType), aProtocol, aSecurity);
 end;
 
 constructor TWeb3Ex.Create(
   aChain    : TChain;
-  const aURL: string;
-  aProtocol : IPubSub;
-  aSecurity : TSecurity = TSecurity.Automatic);
-begin
-  Self.Create(aChain, aURL, aChain.TxType, aProtocol, aSecurity);
-end;
-
-constructor TWeb3Ex.Create(
-  aChain    : TChain;
-  const aURL: string;
-  aTxType   : Byte;
   aProtocol : IPubSub;
   aSecurity : TSecurity = TSecurity.Automatic);
 begin
   Self.FChain    := aChain;
-  Self.FURL      := aURL;
-  Self.FTxType   := aTxType;
   Self.FProtocol := aProtocol;
   Self.FSecurity := aSecurity;
 end;
 
 function TWeb3Ex.Call(const method: string; args: array of const): IResult<TJsonObject>;
 begin
-  Result := Self.FProtocol.Call(Self.URL, Self.FSecurity, method, args);
+  Result := Self.FProtocol.Call(Self.Chain.Gateway[WebSocket], Self.FSecurity, method, args);
 end;
 
 procedure TWeb3Ex.Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>);
 begin
-  Self.FProtocol.Call(Self.URL, Self.FSecurity, method, args, callback);
+  Self.FProtocol.Call(Self.Chain.Gateway[WebSocket], Self.FSecurity, method, args, callback);
 end;
 
 procedure TWeb3Ex.Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
