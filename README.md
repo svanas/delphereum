@@ -101,7 +101,7 @@ You can download Bankless [for macOS](https://apps.apple.com/us/app/id1521153171
 
 ## License
 
-Distributed under the [GNU AGP v3.0 with Commons Clause](https://github.com/svanas/delphereum/blob/master/LICENSE) license.
+Distributed under the [GNU AGP v3.0](https://github.com/svanas/delphereum/blob/master/LICENSE) with [Commons Clause](https://commonsclause.com/) license.
 
 ## Sponsors
 
