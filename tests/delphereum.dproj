@@ -181,10 +181,8 @@
         <DCCReference Include="..\web3.eth.opensea.pas"/>
         <DCCReference Include="..\web3.eth.origin.dollar.pas"/>
         <DCCReference Include="..\web3.eth.pas"/>
-        <DCCReference Include="..\web3.eth.nonce.pas"/>        
+        <DCCReference Include="..\web3.eth.nonce.pas"/>
         <DCCReference Include="..\web3.eth.pubsub.pas"/>
-        <DCCReference Include="..\web3.eth.rari.capital.api.pas"/>
-        <DCCReference Include="..\web3.eth.rari.capital.v2.pas"/>
         <DCCReference Include="..\web3.eth.tokenlists.pas"/>
         <DCCReference Include="..\web3.eth.tx.pas"/>
         <DCCReference Include="..\web3.eth.tx.tests.pas"/>

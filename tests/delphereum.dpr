@@ -73,8 +73,6 @@ uses
   web3.eth in '..\web3.eth.pas',
   web3.eth.nonce in '..\web3.eth.nonce.pas',
   web3.eth.pubsub in '..\web3.eth.pubsub.pas',
-  web3.eth.rari.capital.api in '..\web3.eth.rari.capital.api.pas',
-  web3.eth.rari.capital.v2 in '..\web3.eth.rari.capital.v2.pas',
   web3.eth.tokenlists in '..\web3.eth.tokenlists.pas',
   web3.eth.tx in '..\web3.eth.tx.pas',
   web3.eth.tx.tests in '..\web3.eth.tx.tests.pas',
