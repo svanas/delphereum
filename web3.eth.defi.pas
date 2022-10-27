@@ -39,7 +39,7 @@ uses
   web3.eth.types;
 
 type
-  TReserve = (DAI, USDC, USDT, MUSD, TUSD);
+  TReserve = (DAI, USDC, USDT, mUSD, TUSD);
 
   TReserveHelper = record helper for TReserve
     function  Symbol  : string;
@@ -159,23 +159,16 @@ end;
 
 function TReserveHelper.Address(chain: TChain): IResult<TAddress>;
 begin
-  if chain = Fantom then
+  if chain <> Ethereum then
   begin
-    case Self of
-      DAI : Result := TResult<TAddress>.Ok('0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E');
-      USDC: Result := TResult<TAddress>.Ok('0x04068DA6C83AFCFA0e13ba15A6696662335D5B75');
-      USDT: Result := TResult<TAddress>.Ok('0x049d68029688eAbF473097a2fC38ef61633A3C7A');
-      TUSD: Result := TResult<TAddress>.Ok('0x9879abdea01a879644185341f7af7d8343556b7a');
-    else
-      Result := TResult<TAddress>.Err(EMPTY_ADDRESS, TSilent.Create('%s not implemented on %s', [Self.Symbol, chain.Name]));
-    end;
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, TSilent.Create('%s not implemented on %s', [Self.Symbol, chain.Name]));
     EXIT;
   end;
   case Self of
     DAI : Result := TResult<TAddress>.Ok('0x6b175474e89094c44da98b954eedeac495271d0f');
     USDC: Result := TResult<TAddress>.Ok('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48');
     USDT: Result := TResult<TAddress>.Ok('0xdac17f958d2ee523a2206206994597c13d831ec7');
-    MUSD: Result := TResult<TAddress>.Ok('0xe2f2a5C287993345a840Db3B0845fbC70f5935a5');
+    mUSD: Result := TResult<TAddress>.Ok('0xe2f2a5C287993345a840Db3B0845fbC70f5935a5');
     TUSD: Result := TResult<TAddress>.Ok('0x0000000000085d4780B73119b644AE5ecd22b376');
   else
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, TSilent.Create('%s not implemented', [Self.Symbol]));
