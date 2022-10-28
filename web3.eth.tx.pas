@@ -161,6 +161,7 @@ uses
   // CryptoLib4Pascal
   ClpBigInteger,
   // web3
+  web3.error,
   web3.eth.crypto,
   web3.eth.gas,
   web3.eth.nonce,
@@ -191,8 +192,6 @@ procedure signTransaction(
   gasLimit    : BigInteger;
   estimatedGas: BigInteger;
   callback    : TProc<string, IError>);
-resourcestring
-  RS_SIGNATURE_DENIED = 'User denied transaction signature';
 begin
   const sender = from.GetAddress;
   if sender.IsErr then
@@ -217,7 +216,7 @@ begin
 
       if not approved then
       begin
-        callback('', TSignatureDenied.Create(RS_SIGNATURE_DENIED));
+        callback('', TSignatureDenied.Create);
         EXIT;
       end;
 

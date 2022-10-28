@@ -150,6 +150,7 @@
         <DCCReference Include="..\web3.coincap.pas"/>
         <DCCReference Include="..\web3.crypto.pas"/>
         <DCCReference Include="..\web3.crypto.tests.pas"/>
+        <DCCReference Include="..\web3.error.pas"/>
         <DCCReference Include="..\web3.eth.aave.v1.pas"/>
         <DCCReference Include="..\web3.eth.aave.v2.pas"/>
         <DCCReference Include="..\web3.eth.abi.pas"/>

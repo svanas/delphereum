@@ -97,6 +97,7 @@ implementation
 
 uses
   // web3
+  web3.error,
   web3.eth,
   web3.eth.etherscan,
   web3.utils;

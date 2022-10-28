@@ -107,6 +107,7 @@ uses
   // Delphi
   System.TypInfo,
   // web3
+  web3.error,
   web3.eth;
 
 { TPeriodHelper }

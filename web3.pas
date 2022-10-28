@@ -217,12 +217,6 @@ type
     procedure Into(callback: TProc<T, IError>);
   end;
 
-  // You can safely ignore this error and continue execution if you want
-  ISilent = interface(IError)
-  ['{07D302E5-B5F2-479C-8606-574D2F8BCF4F}']
-  end;
-  TSilent = class(TError, ISilent);
-
   TOnEtherscanApiKey = reference to procedure(var apiKey: string);
 
   TGasPrice = (
@@ -239,14 +233,6 @@ type
     class function Average: TGasStationInfo; static;
   end;
   TOnGasStationInfo = reference to procedure(var info: TGasStationInfo);
-
-  INotImplemented = interface(IError)
-  ['{FFB9DA94-0C40-4A7C-9C47-CD790E3435A2}']
-  end;
-  TNotImplemented = class(TError, INotImplemented)
-  public
-    constructor Create;
-  end;
 
   IJsonRpc = interface
   ['{79B99FD7-3000-4839-96B4-6C779C25AD0C}']
@@ -282,11 +268,6 @@ type
     function OnError(callback: TProc<IError>): IPubSub;
     function OnDisconnect(callback: TProc): IPubSub;
   end;
-
-  ISignatureDenied = interface(IError)
-  ['{AFFFBC21-3686-44A8-9034-2B38B3001B02}']
-  end;
-  TSignatureDenied = class(TError, ISignatureDenied);
 
   TSignatureRequestResult = reference to procedure(approved: Boolean; err: IError);
   TOnSignatureRequest     = reference to procedure(from, &to: TAddress; gasPrice: TWei;
@@ -558,13 +539,6 @@ end;
 procedure TResult<T>.Into(callback: TProc<T, IError>);
 begin
   callback(Self.Value, Self.Error);
-end;
-
-{ TNotImplemented }
-
-constructor TNotImplemented.Create;
-begin
-  inherited Create('Not implemented');
 end;
 
 { TGasStationInfo }
