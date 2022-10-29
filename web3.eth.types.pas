@@ -106,6 +106,7 @@ type
   TPrivateKeyHelper = record helper for TPrivateKey
     class function Generate: TPrivateKey; static;
     class function New(params: IECPrivateKeyParameters): TPrivateKey; static;
+    class function Prompt(&public: TAddress): IResult<TPrivateKey>; static;
     function Parameters: IECPrivateKeyParameters;
     function GetAddress: IResult<TAddress>;
   end;
@@ -125,8 +126,14 @@ type
 implementation
 
 uses
+{$IFDEF FMX}
+  FMX.Dialogs,
+{$ELSE}
+  VCL.Dialogs,
+{$ENDIF}
   // web3
   web3.crypto,
+  web3.error,
   web3.eth,
   web3.eth.ens,
   web3.http,
@@ -311,6 +318,46 @@ end;
 class function TPrivateKeyHelper.New(params: IECPrivateKeyParameters): TPrivateKey;
 begin
   Result := TPrivateKey(web3.utils.toHex('', params.D.ToByteArrayUnsigned));
+end;
+
+class function TPrivateKeyHelper.Prompt(&public: TAddress): IResult<TPrivateKey>;
+begin
+  var &private: TPrivateKey;
+  TThread.Synchronize(nil, procedure
+  begin
+{$WARN SYMBOL_DEPRECATED OFF}
+    &private := TPrivateKey(Trim(InputBox(string(&public), 'Please paste your private key', '')));
+{$WARN SYMBOL_DEPRECATED DEFAULT}
+  end);
+
+  if &private = '' then
+  begin
+    Result := TResult<TPrivateKey>.Err('', TCancelled.Create);
+    EXIT;
+  end;
+
+  if (
+    (not web3.utils.isHex('', string(&private)))
+  or
+    (Length(&private) <> SizeOf(TPrivateKey) - 1)) then
+  begin
+    Result := TResult<TPrivateKey>.Err('', 'Private key is invalid');
+    EXIT;
+  end;
+
+  const address = &private.GetAddress;
+  if address.IsErr then
+  begin
+    Result := TResult<TPrivateKey>.Err('', address.Error);
+    EXIT;
+  end;
+  if address.Value.ToChecksum <> &public.ToChecksum then
+  begin
+    Result := TResult<TPrivateKey>.Err('', 'Private key is invalid');
+    EXIT;
+  end;
+
+  Result := TResult<TPrivateKey>.Ok(&private);
 end;
 
 function TPrivateKeyHelper.Parameters: IECPrivateKeyParameters;
