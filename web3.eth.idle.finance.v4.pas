@@ -147,8 +147,8 @@ const
     TIdleDAI,
     TIdleUSDC,
     TIdleUSDT,
-    nil,
-    TIdleTUSD
+    TIdleTUSD,
+    nil
   );
 
 { TIdle }

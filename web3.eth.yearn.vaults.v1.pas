@@ -131,8 +131,8 @@ const
     TyDAI,
     TyUSDC,
     TyUSDT,
-    TyMUSD,
-    TyTUSD
+    TyTUSD,
+    TyMUSD
   );
 
 { TyVaultV1 }

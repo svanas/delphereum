@@ -176,8 +176,8 @@ const
     TcDAI,
     TcUSDC,
     TcUSDT,
-    nil,
-    TcTUSD
+    TcTUSD,
+    nil
   );
 
 { TCompound }
