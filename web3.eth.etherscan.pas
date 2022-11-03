@@ -156,8 +156,8 @@ begin
     Result := TResult<string>.Ok(Format('https://api-testnet.ftmscan.com/api?apikey=%s', [apiKey]))
   else if chain = Arbitrum then
     Result := TResult<string>.Ok(Format('https://api.arbiscan.io/api?apikey=%s', [apiKey]))
-  else if chain = ArbitrumRinkeby then
-    Result := TResult<string>.Ok(Format('https://api-testnet.arbiscan.io/api?apikey=%s', [apiKey]))
+  else if chain = ArbitrumGoerli then
+    Result := TResult<string>.Ok(Format('https://goerli.arbiscan.io/api?apikey=%s', [apiKey]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('https://api-sepolia.etherscan.io/api?apikey=%s', [apiKey]))
   else

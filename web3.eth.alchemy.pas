@@ -57,8 +57,8 @@ begin
     Result := TResult<string>.Ok(Format('https://polygon-mumbai.g.alchemy.com/v2/%s', [projectId]))
   else if chain = Arbitrum then
     Result := TResult<string>.Ok(Format('https://arb-mainnet.g.alchemy.com/v2/%s', [projectId]))
-  else if chain = ArbitrumRinkeby then
-    Result := TResult<string>.Ok(Format('https://arb-rinkeby.g.alchemy.com/v2/%s', [projectId]))
+  else if chain = ArbitrumGoerli then
+    Result := TResult<string>.Ok(Format('https://arb-goerli.g.alchemy.com/v2/%s', [projectId]))
   else if chain.Gateway[TTransport.HTTPS] <> '' then
     Result := TResult<string>.Ok(chain.Gateway[TTransport.HTTPS])
   else
@@ -81,8 +81,8 @@ begin
     Result := TResult<string>.Ok(Format('wss://polygon-mumbai.g.alchemy.com/v2/%s', [projectId]))
   else if chain = Arbitrum then
     Result := TResult<string>.Ok(Format('wss://arb-mainnet.g.alchemy.com/v2/%s', [projectId]))
-  else if chain = ArbitrumRinkeby then
-    Result := TResult<string>.Ok(Format('wss://arb-rinkeby.g.alchemy.com/v2/%s', [projectId]))
+  else if chain = ArbitrumGoerli then
+    Result := TResult<string>.Ok(Format('wss://arb-goerli.g.alchemy.com/v2/%s', [projectId]))
   else if chain.Gateway[TTransport.WebSocket] <> '' then
     Result := TResult<string>.Ok(chain.Gateway[TTransport.WebSocket])
   else

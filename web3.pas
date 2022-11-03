@@ -160,12 +160,11 @@ const
     BlockExplorer: 'https://explorer.arbitrum.io';
     TokenList    : 'https://bridge.arbitrum.io/token-list-42161.json'
   );
-  ArbitrumRinkeby: TChain = (
-    Id           : 421611;
-    Name         : 'Arbitrum Rinkeby';
+  ArbitrumGoerli: TChain = (
+    Id           : 421613;
+    Name         : 'Arbitrum Goerli';
     TxType       : 0;
-    BlockExplorer: 'https://rinkeby-explorer.arbitrum.io';
-    TokenList    : 'https://bridge.arbitrum.io/token-list-421611.json'
+    BlockExplorer: 'https://goerli-rollup-explorer.arbitrum.io';
   );
   Sepolia: TChain = (
     Id           : 11155111;
@@ -429,8 +428,8 @@ begin
     Result := TResult<PChain>.Ok(@Fantom_test_net)
   else if Id = Arbitrum.Id then
     Result := TResult<PChain>.Ok(@Arbitrum)
-  else if Id = ArbitrumRinkeby.Id then
-    Result := TResult<PChain>.Ok(@ArbitrumRinkeby)
+  else if Id = ArbitrumGoerli.Id then
+    Result := TResult<PChain>.Ok(@ArbitrumGoerli)
   else if Id = Sepolia.Id then
     Result := TResult<PChain>.Ok(@Sepolia)
   else
@@ -586,8 +585,8 @@ begin
     web3.eth.chainlink.TAggregatorV3.Create(Self, '0xe04676B9A9A2973BCb0D1478b5E1E9098BBB7f3D').Price(callback)
   else if Chain = Arbitrum then
     web3.eth.chainlink.TAggregatorV3.Create(Self, '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612').Price(callback)
-  else if Chain = ArbitrumRinkeby then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f0423B1a6935dc5596e7A24d98532b67A0AeFd8').Price(callback)
+  else if Chain = ArbitrumGoerli then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08').Price(callback)
   else
     callback(0, TError.Create('Price feed does not exist on %s', [Self.Chain.Name]));
 end;
