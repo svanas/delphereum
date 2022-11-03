@@ -85,11 +85,11 @@ SimpleBaseLib4Pascal
 
 ### 2. Bankless
 
-Bankless is a DeFi desktop app with the highest possible yield on your stablecoin savings.
+[Bankless](https://github.com/svanas/bankless) is a DeFi desktop app with the highest possible yield on your stablecoin savings.
 
-Made with Delphi, Bankless is a small and simple dapp that makes it super easy to transfer your savings from one lending protocol to another with the click of one button.
+Made with Delphi, bankless is a small and simple dapp that makes it super easy to transfer your savings from one lending protocol to another with the click of one button.
 
-You can download Bankless [for macOS](https://apps.apple.com/us/app/id1521153171).
+You can download bankless for [Windows](https://github.com/svanas/bankless/releases/latest/download/Windows.zip) or [macOS](https://github.com/svanas/bankless/releases/latest/download/macOS.zip).
 
 ### 3. PubSub
 
