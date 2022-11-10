@@ -236,7 +236,7 @@ end;
 
 class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
 begin
-  Result := (chain = Ethereum) and (reserve in [DAI, USDC, USDT]);
+  Result := (chain = Ethereum) and (reserve in [DAI, USDC, USDT, TUSD]);
 end;
 
 class procedure TAave.APY(
