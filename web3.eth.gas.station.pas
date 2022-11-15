@@ -50,7 +50,7 @@ function getGasPrice(
   callback    : TProc<IGasPrice, IError>): IAsyncResult; overload;
 function getGasPrice(
   const apiKey: string;
-  callback    : TProc<TJsonObject, IError>): IAsyncResult; overload;
+  callback    : TProc<TJsonValue, IError>): IAsyncResult; overload;
 
 implementation
 
@@ -62,7 +62,7 @@ uses
   web3.json;
 
 type
-  TGasPrice = class(TDeserialized<TJsonObject>, IGasPrice)
+  TGasPrice = class(TDeserialized, IGasPrice)
   public
     function Fastest: IResult<TWei>;
     function Fast   : IResult<TWei>;
@@ -92,7 +92,7 @@ end;
 
 function getGasPrice(const apiKey: string; callback: TProc<IGasPrice, IError>): IAsyncResult;
 begin
-  Result := getGasPrice(apiKey, procedure(obj: TJsonObject; err: IError)
+  Result := getGasPrice(apiKey, procedure(obj: TJsonValue; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
@@ -101,7 +101,7 @@ begin
   end);
 end;
 
-function getGasPrice(const apiKey: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
+function getGasPrice(const apiKey: string; callback: TProc<TJsonValue, IError>): IAsyncResult;
 begin
   Result := web3.http.get(
     'https://ethgasstation.info/api/ethgasAPI.json?api-key=' + TNetEncoding.URL.Encode(apiKey),

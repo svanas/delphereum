@@ -44,9 +44,6 @@ type
 
   TGraphError = class(TError, IGraphError);
 
-const
-  UNISWAP_V2 = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2';
-
 function execute(const URL, query: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
 
 implementation
@@ -65,7 +62,7 @@ begin
     URL,
     query,
     [TNetHeader.Create('Content-Type', 'application/graphql')],
-    procedure(response: TJsonObject; err: IError)
+    procedure(response: TJsonValue; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -76,11 +73,14 @@ begin
       const errors = web3.json.getPropAsArr(response, 'errors');
       if Assigned(errors) and (errors.Count > 0) then
       begin
-        callback(response, TGraphError.Create(web3.json.getPropAsStr(errors.Items[0], 'message')));
+        callback(nil, TGraphError.Create(web3.json.getPropAsStr(errors.Items[0], 'message')));
         EXIT;
       end;
-      // if we reached this far, then we have a valid response object
-      callback(response, nil);
+      if Assigned(response) and (response is TJsonObject) then
+        // if we reached this far, then we have a valid response object
+        callback(TJsonObject(response), nil)
+      else
+        callback(nil, TGraphError.Create('not a JSON object'));
     end
   );
 end;

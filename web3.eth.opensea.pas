@@ -71,7 +71,7 @@ uses
 {----------------------------------- TToken -----------------------------------}
 
 type
-  TNFT = class(TCustomDeserialized<TJsonObject>, INFT)
+  TNFT = class(TCustomDeserialized, INFT)
   private
     FChainId : Integer;
     FAddress : TAddress;
@@ -194,6 +194,7 @@ begin
   end;
 
   var get: TProc<string, TJsonArray>;
+
   get := procedure(URL: string; result: TJsonArray)
   begin
     web3.http.get(URL, (function: TNetHeaders
@@ -202,7 +203,7 @@ begin
         Result := [TNetHeader.Create('X-API-KEY', apiKey)]
       else
         Result := []
-    end)(), procedure(obj: TJsonObject; err: IError)
+    end)(), procedure(obj: TJsonValue; err: IError)
     begin
       if Assigned(err) then
       begin

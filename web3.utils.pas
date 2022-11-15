@@ -265,12 +265,12 @@ end;
 
 procedure sha3(client: IWeb3; const hex: string; callback: TProc<string, IError>);
 begin
-  client.Call('web3_sha3', [hex], procedure(resp: TJsonObject; err: IError)
+  client.Call('web3_sha3', [hex], procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback('', err)
     else
-      callback(web3.json.getPropAsStr(resp, 'result'), nil);
+      callback(web3.json.getPropAsStr(response, 'result'), nil);
   end);
 end;
 

@@ -43,8 +43,8 @@ type
   TGet = record
     endpoint: string;
     headers : TNetHeaders;
-    callback: TProc<TJsonObject, IError>;
-    constructor Create(const aURL: string; aHeaders: TNetheaders; aCallback: TProc<TJsonObject, IError>);
+    callback: TProc<TJsonValue, IError>;
+    constructor Create(const aURL: string; aHeaders: TNetheaders; aCallback: TProc<TJsonValue, IError>);
   end;
 
   IGetter = interface
@@ -66,8 +66,8 @@ type
     endpoint: string;
     body    : string;
     headers : TNetHeaders;
-    callback: TProc<TJsonObject, IError>;
-    constructor Create(const aURL, aBody: string; aHeaders: TNetheaders; aCallback: TProc<TJsonObject, IError>);
+    callback: TProc<TJsonValue, IError>;
+    constructor Create(const aURL, aBody: string; aHeaders: TNetheaders; aCallback: TProc<TJsonValue, IError>);
   end;
 
   IThrottler = interface
@@ -96,7 +96,7 @@ uses
 
 { TGet }
 
-constructor TGet.Create(const aURL: string; aHeaders: TNetHeaders; aCallback: TProc<TJsonObject, IError>);
+constructor TGet.Create(const aURL: string; aHeaders: TNetHeaders; aCallback: TProc<TJsonValue, IError>);
 begin
   Self.endpoint := aURL;
   Self.headers  := aHeaders;
@@ -120,30 +120,32 @@ end;
 
 procedure TGetter.Get(const request: TGet);
 begin
-  var g: TProc<TGet>;
-  g := procedure(request: TGet)
+  var G: TProc<TGet>;
+
+  G := procedure(request: TGet)
   begin
-    web3.http.get(request.endpoint, request.headers, procedure(resp: TJsonObject; err: IError)
+    web3.http.get(request.endpoint, request.headers, procedure(response: TJsonValue; err: IError)
     begin
-      request.callback(resp, err);
+      request.callback(response, err);
       Queue.Enter;
       try
         Queue.Delete(0, 1);
         if Queue.Length > 0 then
         begin
           TThread.Sleep(Ceil(1000 / FReqPerSec));
-          g(Queue.First);
+          G(Queue.First);
         end;
       finally
         Queue.Leave;
       end;
     end);
   end;
+
   Queue.Enter;
   try
     Queue.Add(request);
     if Queue.Length = 1 then
-      g(Queue.First);
+      G(Queue.First);
   finally
     Queue.Leave;
   end;
@@ -151,7 +153,7 @@ end;
 
 { TPost }
 
-constructor TPost.Create(const aURL, aBody: string; aHeaders: TNetHeaders; aCallback: TProc<TJsonObject, IError>);
+constructor TPost.Create(const aURL, aBody: string; aHeaders: TNetHeaders; aCallback: TProc<TJsonValue, IError>);
 begin
   Self.endpoint := aURL;
   Self.body     := aBody;
@@ -176,30 +178,32 @@ end;
 
 procedure TThrottler.Post(const request: TPost);
 begin
-  var p: TProc<TPost>;
-  p := procedure(request: TPost)
+  var P: TProc<TPost>;
+
+  P := procedure(request: TPost)
   begin
-    web3.http.post(request.endpoint, request.body, request.headers, procedure(resp: TJsonObject; err: IError)
+    web3.http.post(request.endpoint, request.body, request.headers, procedure(response: TJsonValue; err: IError)
     begin
-      request.callback(resp, err);
+      request.callback(response, err);
       Queue.Enter;
       try
         Queue.Delete(0, 1);
         if Queue.Length > 0 then
         begin
           TThread.Sleep(Ceil(1000 / FReqPerSec));
-          p(Queue.First);
+          P(Queue.First);
         end;
       finally
         Queue.Leave;
       end;
     end);
   end;
+
   Queue.Enter;
   try
     Queue.Add(request);
     if Queue.Length = 1 then
-      p(Queue.First);
+      P(Queue.First);
   finally
     Queue.Leave;
   end;

@@ -52,14 +52,14 @@ type
     function Endpoint(Gateway: TGateway): string;
   end;
 
-function add(const fileName: string; callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
+function add(const fileName: string; callback: TProc<TJsonValue, IError>): IAsyncResult; overload;
 function add(const fileName: string; callback: TProc<IFile, IError>): IAsyncResult; overload;
 
-function add(const apiHost, fileName: string; callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
+function add(const apiHost, fileName: string; callback: TProc<TJsonValue, IError>): IAsyncResult; overload;
 function add(const apiHost, fileName: string; callback: TProc<IFile, IError>): IAsyncResult; overload;
 
-function pin(const hash: string; callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
-function pin(const apiHost, hash: string; callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
+function pin(const hash: string; callback: TProc<TJsonValue, IError>): IAsyncResult; overload;
+function pin(const apiHost, hash: string; callback: TProc<TJsonValue, IError>): IAsyncResult; overload;
 
 function cat(const hash: string; callback: TProc<IHttpResponse, IError>): IAsyncResult; overload;
 function cat(const apiHost, hash: string; callback: TProc<IHttpResponse, IError>): IAsyncResult; overload;
@@ -84,7 +84,7 @@ const
 { TFile }
 
 type
-  TFile = class(TDeserialized<TJsonObject>, IFile)
+  TFile = class(TDeserialized, IFile)
   public
     function Name: string;
     function Hash: string;
@@ -114,7 +114,7 @@ end;
 
 { global functions }
 
-function add(const fileName: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
+function add(const fileName: string; callback: TProc<TJsonValue, IError>): IAsyncResult;
 begin
   Result := add('https://ipfs.infura.io:5001', fileName, callback);
 end;
@@ -124,7 +124,7 @@ begin
   Result := add('https://ipfs.infura.io:5001', fileName, callback);
 end;
 
-function add(const apiHost, fileName: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
+function add(const apiHost, fileName: string; callback: TProc<TJsonValue, IError>): IAsyncResult;
 begin
   const source = TMultipartFormData.Create;
   source.AddFile('file', fileName);
@@ -138,7 +138,7 @@ end;
 
 function add(const apiHost, fileName: string; callback: TProc<IFile, IError>): IAsyncResult;
 begin
-  Result := add(apiHost, fileName, procedure(obj: TJsonObject; err: IError)
+  Result := add(apiHost, fileName, procedure(obj: TJsonValue; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -149,12 +149,12 @@ begin
   end);
 end;
 
-function pin(const hash: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
+function pin(const hash: string; callback: TProc<TJsonValue, IError>): IAsyncResult;
 begin
   Result := pin('https://ipfs.infura.io:5001', hash, callback);
 end;
 
-function pin(const apiHost, hash: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
+function pin(const apiHost, hash: string; callback: TProc<TJsonValue, IError>): IAsyncResult;
 begin
   Result := web3.http.get(
     apiHost + '/api/v0/pin/add?arg=' + TNetEncoding.URL.Encode(hash),

@@ -64,13 +64,8 @@ function get(
 function get(
   const URL: string;
   headers  : TNetHeaders;
-  callback : TProc<TJsonObject, IError>;
+  callback : TProc<TJsonValue, IError>;
   backoff  : Integer = 1): IAsyncResult; overload;
-function get(
-  const URL: string;
-  headers  : TNetHeaders;
-  callback : TProc<TJsonArray, IError>;
-  backoff  : Integer = 1) : IAsyncResult; overload;
 
 function post(
   const URL: string;
@@ -82,7 +77,7 @@ function post(
   const URL: string;
   const src: string;
   headers  : TNetHeaders;
-  callback : TProc<TJsonObject, IError>;
+  callback : TProc<TJsonValue, IError>;
   backoff  : Integer = 1): IAsyncResult; overload;
 
 function post(
@@ -95,10 +90,18 @@ function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
-  callback : TProc<TJsonObject, IError>;
+  callback : TProc<TJsonValue, IError>;
   backoff  : Integer = 1): IAsyncResult; overload;
 
 {-------------------------- blocking function calls ---------------------------}
+
+function get(
+  const URL: string;
+  headers  : TNetHeaders;
+  backoff  : Integer = 1): IResult<IHttpResponse>; overload;
+function get(
+  const URL: string;
+  backoff  : Integer = 1): IResult<TJsonValue>; overload;
 
 function post(
   const URL: string;
@@ -175,7 +178,7 @@ begin
   end;
 end;
 
-function get(const URL: string; headers: TNetHeaders; callback: TProc<TJsonObject, IError>; backoff: Integer): IAsyncResult;
+function get(const URL: string; headers: TNetHeaders; callback: TProc<TJsonValue, IError>; backoff: Integer): IAsyncResult;
 begin
   Result := get(URL, headers, procedure(response: IHttpResponse; err: IError)
   begin
@@ -184,37 +187,13 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    const obj = web3.json.unmarshal(response.ContentAsString(TEncoding.UTF8));
-    if Assigned(obj) then
+    const value = web3.json.unmarshal(response.ContentAsString(TEncoding.UTF8));
+    if Assigned(value) then
     try
-      callback(obj as TJsonObject, nil);
+      callback(value, nil);
       EXIT;
     finally
-      obj.Free;
-    end;
-    callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
-  end, backoff);
-end;
-
-function get(const URL: string; headers: TNetHeaders; callback: TProc<TJsonArray, IError>; backoff: Integer): IAsyncResult;
-begin
-  Result := get(URL, headers, procedure(response: IHttpResponse; err: IError)
-  begin
-    if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    const arr = TJsonObject.ParseJsonValue(response.ContentAsString(TEncoding.UTF8));
-    if Assigned(arr) then
-    try
-      if arr is TJsonArray then
-      begin
-        callback(TJsonArray(arr), nil);
-        EXIT;
-      end;
-    finally
-      arr.Free;
+      value.Free;
     end;
     callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
   end, backoff);
@@ -267,7 +246,7 @@ function post(
   const URL: string;
   const src: string;
   headers  : TNetHeaders;
-  callback : TProc<TJsonObject, IError>;
+  callback : TProc<TJsonValue, IError>;
   backoff  : Integer): IAsyncResult;
 begin
   Result := post(URL, src, headers, procedure(response: IHttpResponse; err: IError)
@@ -277,13 +256,13 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    const obj = web3.json.unmarshal(response.ContentAsString(TEncoding.UTF8));
-    if Assigned(obj) then
+    const value = web3.json.unmarshal(response.ContentAsString(TEncoding.UTF8));
+    if Assigned(value) then
     try
-      callback(obj as TJsonObject, nil);
+      callback(value, nil);
       EXIT;
     finally
-      obj.Free;
+      value.Free;
     end;
     callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
   end, backoff);
@@ -336,7 +315,7 @@ function post(
   const URL: string;
   source   : TMultipartFormData;
   headers  : TNetHeaders;
-  callback : TProc<TJsonObject, IError>;
+  callback : TProc<TJsonValue, IError>;
   backoff  : Integer): IAsyncResult;
 begin
   Result := post(URL, source, headers, procedure(response: IHttpResponse; err: IError)
@@ -346,19 +325,67 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    const obj = web3.json.unmarshal(response.ContentAsString(TEncoding.UTF8));
-    if Assigned(obj) then
+    const value = web3.json.unmarshal(response.ContentAsString(TEncoding.UTF8));
+    if Assigned(value) then
     try
-      callback(obj as TJsonObject, nil);
+      callback(value, nil);
       EXIT;
     finally
-      obj.Free;
+      value.Free;
     end;
     callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
   end, backoff);
 end;
 
 {-------------------------- blocking function calls ---------------------------}
+
+function get(const URL: string; headers: TNetHeaders; backoff: Integer): IResult<IHttpResponse>;
+begin
+  const client = THttpClient.Create;
+  try
+    const response = client.Get(URL, nil, headers);
+    if not Assigned(response) then
+    begin
+      Result := TResult<IHttpResponse>.Err(nil, 'no response');
+      EXIT;
+    end;
+    if response.StatusCode = 429 then
+    begin
+      TThread.Sleep(Min(MAX_BACKOFF, (function: Integer
+      begin
+        if response.ContainsHeader('Retry-After') then
+          Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
+        else
+          Result := backoff;
+      end)()) * 1000);
+      Result := get(URL, headers, backoff * 2);
+      EXIT;
+    end;
+    if (response.StatusCode < 200) or (response.StatusCode >= 300) then
+    begin
+      Result := TResult<IHttpResponse>.Err(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
+      EXIT;
+    end;
+    Result := TResult<IHttpResponse>.Ok(response);
+  finally
+    client.Free;
+  end;
+end;
+
+function get(const URL: string; backoff: Integer): IResult<TJsonValue>;
+begin
+  const response = get(URL, [TNetHeader.Create('Content-Type', 'application/json')], backoff);
+  if Assigned(response.Value) then
+  begin
+    const value = web3.json.unmarshal(response.Value.ContentAsString(TEncoding.UTF8));
+    if Assigned(value) then
+    begin
+      Result := TResult<TJsonValue>.Ok(value);
+      EXIT;
+    end;
+  end;
+  Result := TResult<TJsonValue>.Err(nil, response.Error);
+end;
 
 function post(
   const URL: string;

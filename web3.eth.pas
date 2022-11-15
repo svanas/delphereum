@@ -192,7 +192,7 @@ begin
 end;
 
 type
-  TBlock = class(TDeserialized<TJsonObject>, IBlock)
+  TBlock = class(TDeserialized, IBlock)
   public
     function ToString: string; override;
     function baseFeePerGas: TWei;

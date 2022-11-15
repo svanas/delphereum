@@ -73,7 +73,7 @@ uses
 {--------------------------------- TMigration ---------------------------------}
 
 type
-  TMigration = class(TDeserialized<TJsonObject>, IMigration)
+  TMigration = class(TDeserialized, IMigration)
   public
     function Available: Boolean;
     function Address: TAddress;
@@ -92,7 +92,7 @@ end;
 {-------------------------------- TYearnVault ---------------------------------}
 
 type
-  TYearnVault = class(TDeserialized<TJsonObject>, IYearnVault)
+  TYearnVault = class(TDeserialized, IYearnVault)
   public
     function Address: TAddress;
     function Token: TAddress;
@@ -176,7 +176,16 @@ end;
 
 function vaults(chain: TChain; callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
-  Result := web3.http.get(Format('https://api.yearn.finance/v1/chains/%d/vaults/all', [chain.Id]), [], callback);
+  Result := web3.http.get(Format('https://api.yearn.finance/v1/chains/%d/vaults/all', [chain.Id]), [], procedure(value: TJsonValue; err: IError)
+  begin
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      if Assigned(value) and (value is TJsonArray) then
+        callback(TJsonArray(value), err)
+      else
+        callback(nil, TError.Create('not an array'));
+  end);
 end;
 
 function latest(chain: TChain; reserve: TAddress; &type: TVaultType; callback: TProc<IYearnVault, IError>): IAsyncResult;

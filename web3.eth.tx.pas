@@ -511,7 +511,7 @@ end;
 { TTxn }
 
 type
-  TTxn = class(TDeserialized<TJsonObject>, ITxn)
+  TTxn = class(TDeserialized, ITxn)
   public
     function &type: Byte;
     function ToString: string; override;
@@ -608,7 +608,7 @@ end;
 { TTxReceipt }
 
 type
-  TTxReceipt = class(TDeserialized<TJsonObject>, ITxReceipt)
+  TTxReceipt = class(TDeserialized, ITxReceipt)
   public
     function ToString: string; override;
     function txHash: TTxHash;         // hash of the transaction.

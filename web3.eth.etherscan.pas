@@ -49,7 +49,7 @@ type
   private
     FStatus: Integer;
   public
-    constructor Create(aStatus: Integer; aBody: TJsonObject);
+    constructor Create(aStatus: Integer; aBody: TJsonValue);
     function Status: Integer;
   end;
 
@@ -166,7 +166,7 @@ end;
 
 {------------------------------ TEtherscanError -------------------------------}
 
-constructor TEtherscanError.Create(aStatus: Integer; aBody: TJsonObject);
+constructor TEtherscanError.Create(aStatus: Integer; aBody: TJsonValue);
 
   function msg: string;
   begin
@@ -192,7 +192,7 @@ end;
 {---------------------------- TErc20TransferEvent -----------------------------}
 
 type
-  TErc20TransferEvent = class(TDeserialized<TJsonObject>, IErc20TransferEvent)
+  TErc20TransferEvent = class(TDeserialized, IErc20TransferEvent)
   public
     function Hash: TTxHash;
     function From: TAddress;
@@ -236,13 +236,13 @@ type
 
 function TErc20TransferEvents.Item(const Index: Integer): IErc20TransferEvent;
 begin
-  Result := TErc20TransferEvent.Create(FJsonValue.Items[Index] as TJsonObject);
+  Result := TErc20TransferEvent.Create(TJsonArray(FJsonValue)[Index]);
 end;
 
 {------------------------------ TContractSymbol -------------------------------}
 
 type
-  TContractSymbol = class(TDeserialized<TJsonObject>, IContractSymbol)
+  TContractSymbol = class(TDeserialized, IContractSymbol)
   public
     function Name: string;
     function &Type: TSymbolType;
@@ -330,7 +330,7 @@ end;
 
 function TContractABI.Item(const Index: Integer): IContractSymbol;
 begin
-  Result := TContractSymbol.Create(FJsonValue.Items[Index] as TJsonObject);
+  Result := TContractSymbol.Create(TJsonArray(FJsonValue)[Index]);
 end;
 
 function TContractABI.IndexOf(
@@ -338,14 +338,16 @@ function TContractABI.IndexOf(
   &Type     : TSymbolType;
   InputCount: Integer): Integer;
 begin
-  for Result := 0 to Pred(Count) do
-  begin
-    const Item = Self.Item(Result);
-    if  (Item.Name = Name)
-    and (Item.&Type = &Type)
-    and (Item.Inputs.Count = InputCount) then
-      EXIT;
-  end;
+  const count = Self.Count;
+  if count.IsOk then
+    for Result := 0 to Pred(count.Value) do
+    begin
+      const Item = Self.Item(Result);
+      if  (Item.Name = Name)
+      and (Item.&Type = &Type)
+      and (Item.Inputs.Count = InputCount) then
+        EXIT;
+    end;
   Result := -1;
 end;
 
@@ -354,14 +356,16 @@ function TContractABI.IndexOf(
   &Type          : TSymbolType;
   StateMutability: TStateMutability): Integer;
 begin
-  for Result := 0 to Pred(Count) do
-  begin
-    const Item = Self.Item(Result);
-    if  (Item.Name = Name)
-    and (Item.&Type = &Type)
-    and (Item.StateMutability = StateMutability) then
-      EXIT;
-  end;
+  const count = Self.Count;
+  if count.IsOk then
+    for Result := 0 to Pred(count.Value) do
+    begin
+      const Item = Self.Item(Result);
+      if  (Item.Name = Name)
+      and (Item.&Type = &Type)
+      and (Item.StateMutability = StateMutability) then
+        EXIT;
+    end;
   Result := -1;
 end;
 
@@ -371,15 +375,17 @@ function TContractABI.IndexOf(
   InputCount     : Integer;
   StateMutability: TStateMutability): Integer;
 begin
-  for Result := 0 to Pred(Count) do
-  begin
-    const Item = Self.Item(Result);
-    if  (Item.Name = Name)
-    and (Item.&Type = &Type)
-    and (Item.Inputs.Count = InputCount)
-    and (Item.StateMutability = StateMutability) then
-      EXIT;
-  end;
+  const count = Self.Count;
+  if count.IsOk then
+    for Result := 0 to Pred(count.Value) do
+    begin
+      const Item = Self.Item(Result);
+      if  (Item.Name = Name)
+      and (Item.&Type = &Type)
+      and (Item.Inputs.Count = InputCount)
+      and (Item.StateMutability = StateMutability) then
+        EXIT;
+    end;
   Result := -1;
 end;
 
@@ -444,7 +450,7 @@ type
       chain       : TChain;
       const apiKey: string;
       const query : string;
-      callback    : TProc<TJsonObject, IError>);
+      callback    : TProc<TJsonValue, IError>);
   end;
 
 type
@@ -454,14 +460,14 @@ type
       chain       : TChain;
       const apiKey: string;
       const query : string;
-      callback    : TProc<TJsonObject, IError>);
+      callback    : TProc<TJsonValue, IError>);
   end;
 
 procedure TEtherscan.Get(
   chain       : TChain;
   const apiKey: string;
   const query : string;
-  callback    : TProc<TJsonObject, IError>);
+  callback    : TProc<TJsonValue, IError>);
 begin
   const URL = endpoint(chain, TNetEncoding.URL.Encode(apiKey));
   if URL.IsErr then
@@ -504,7 +510,7 @@ procedure getBlockNumberByTimestamp(
 begin
   Etherscan.Get(chain, apiKey,
     Format('&module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
-  procedure(response: TJsonObject; err: IError)
+  procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -539,7 +545,7 @@ procedure getErc20TransferEvents(
 begin
   Etherscan.Get(chain, apiKey,
     Format('&module=account&action=tokentx&address=%s&sort=desc', [address]),
-  procedure(response: TJsonObject; err: IError)
+  procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -593,7 +599,7 @@ begin
   end;
   Etherscan.Get(chain, apiKey,
     Format('&module=contract&action=getabi&address=%s', [contract]),
-  procedure(response: TJsonObject; err: IError)
+  procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -613,7 +619,7 @@ begin
       EXIT;
     end;
     try
-      const abi = TContractABI.Create(chain, contract, &result as TJsonArray);
+      const abi = TContractABI.Create(chain, contract, TJsonArray(&result));
       ContractCache.Enter;
       try
         ContractCache.Add(abi);

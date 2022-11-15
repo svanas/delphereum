@@ -42,7 +42,7 @@ type
   end;
 
 function ticker(const asset: string; callback: TProc<ITicker, IError>): IAsyncResult; overload;
-function ticker(const asset: string; callback: TProc<TJsonObject, IError>): IAsyncResult; overload;
+function ticker(const asset: string; callback: TProc<TJsonValue, IError>): IAsyncResult; overload;
 
 function price(const asset: string; callback: TProc<Double, IError>): IAsyncResult;
 
@@ -55,7 +55,7 @@ uses
   web3.json;
 
 type
-  TTicker = class(TDeserialized<TJsonObject>, ITicker)
+  TTicker = class(TDeserialized, ITicker)
   public
     function Symbol: string;
     function Price : Double;
@@ -73,7 +73,7 @@ end;
 
 function ticker(const asset: string; callback: TProc<ITicker, IError>): IAsyncResult;
 begin
-  Result := ticker(asset, procedure(obj: TJsonObject; err: IError)
+  Result := ticker(asset, procedure(obj: TJsonValue; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -90,7 +90,7 @@ begin
   end);
 end;
 
-function ticker(const asset: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
+function ticker(const asset: string; callback: TProc<TJsonValue, IError>): IAsyncResult;
 begin
   Result := web3.http.get(
     'https://api.coincap.io/v2/assets/' + TNetEncoding.URL.Encode(asset),

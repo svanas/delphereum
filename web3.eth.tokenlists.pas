@@ -65,6 +65,8 @@ function tokens(const source: string; callback: TProc<TJsonArray, IError>): IAsy
 function tokens(const source: string; callback: TProc<TTokens, IError>): IAsyncResult; overload;
 function tokens(chain: TChain; callback: TProc<TTokens, IError>): IAsyncResult; overload;
 
+function token(chain: TChain; const token: TAddress; callback: TProc<IToken, IError>): IAsyncResult;
+
 implementation
 
 uses
@@ -78,7 +80,7 @@ uses
 {----------------------------------- TToken -----------------------------------}
 
 type
-  TToken = class(TCustomDeserialized<TJsonObject>, IToken)
+  TToken = class(TCustomDeserialized, IToken)
   private
     FChainId: UInt32;
     FAddress: TAddress;
@@ -94,10 +96,10 @@ type
     function Decimals: Integer;
     function LogoURI: string;
     procedure Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
-    constructor Create(const aJsonValue: TJsonObject); override;
+    constructor Create(const aJsonValue: TJsonValue); override;
   end;
 
-constructor TToken.Create(const aJsonValue: TJsonObject);
+constructor TToken.Create(const aJsonValue: TJsonValue);
 begin
   inherited Create(aJsonValue);
   FChainId := getPropAsInt(aJsonValue, 'chainId');
@@ -214,7 +216,7 @@ end;
 
 function tokens(const source: string; callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
-  Result := web3.http.get(source, [], procedure(obj: TJsonObject; err: IError)
+  Result := web3.http.get(source, [], procedure(obj: TJsonValue; err: IError)
   begin
     callback(getPropAsArr(obj, 'tokens'), err);
   end);
@@ -271,6 +273,23 @@ begin
           result := result + [token2];
       callback(result, nil);
     end);
+  end);
+end;
+
+function token(chain: TChain; const token: TAddress; callback: TProc<IToken, IError>): IAsyncResult;
+begin
+  Result := tokens(chain, procedure(tokens: TTokens; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    const I = tokens.IndexOf(token);
+    if I = -1 then
+      callback(nil, nil)
+    else
+      callback(tokens[I], nil);
   end);
 end;
 

@@ -81,7 +81,7 @@ resourcestring
   RS_API_KEY = 'Please paste your API key';
 
 type
-  TNode = class(TCustomDeserialized<TJsonObject>, INode)
+  TNode = class(TCustomDeserialized, INode)
   private
     FChain: TChain;
     FFree : Boolean;
@@ -225,7 +225,7 @@ end;
 
 function get(chain: TChain; callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
-  Result := web3.http.get('https://raw.githubusercontent.com/svanas/ethereum-node-list/main/ethereum-node-list.json', [], procedure(obj: TJsonObject; err: IError)
+  Result := web3.http.get('https://raw.githubusercontent.com/svanas/ethereum-node-list/main/ethereum-node-list.json', [], procedure(obj: TJsonValue; err: IError)
   begin
     if Assigned(err) or not Assigned(obj) then
     begin

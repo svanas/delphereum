@@ -108,7 +108,7 @@ procedure TJsonRpcHttps.Call(
   args        : array of const;
   callback    : TProc<TJsonObject, IError>);
 begin
-  const handler: TProc<TJsonObject, IError> = procedure(resp: TJsonObject; err: IError)
+  const handler: TProc<TJsonValue, IError> = procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -116,15 +116,18 @@ begin
       EXIT;
     end;
     // did we receive an error?
-    const error = web3.json.getPropAsObj(resp, 'error');
+    const error = web3.json.getPropAsObj(response, 'error');
     if Assigned(error) then
-      callback(resp, TJsonRpcError.Create(
+      callback(nil, TJsonRpcError.Create(
         web3.json.getPropAsInt(error, 'code'),
         web3.json.getPropAsStr(error, 'message')
       ))
     else
-      // if we reached this far, then we have a valid response object
-      callback(resp, nil);
+      if Assigned(response) and (response is TJsonObject) then
+        // if we reached this far, then we have a valid response object
+        callback(TJsonObject(response), nil)
+      else
+        callback(nil, TError.Create('not a JSON object'));
   end;
 
   const payload = CreatePayload(method, args);

@@ -301,7 +301,7 @@ end;
 // Execute a GraphQL query, return the result as a float (if any)
 procedure TPair.Execute(const field: string; callback: TProc<Double, IError>);
 begin
-  web3.graph.execute(UNISWAP_V2, Query(field), procedure(response: TJsonObject; err: IError)
+  web3.graph.execute('https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2', Query(field), procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin

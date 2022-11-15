@@ -33,34 +33,36 @@ uses
   System.JSON,
   System.SysUtils,
   // Velthuis' BigNumbers
-  Velthuis.BigIntegers;
+  Velthuis.BigIntegers,
+  // web3
+  web3;
 
 type
-  TCustomDeserialized<T: TJsonValue> = class abstract(TInterfacedObject)
+  TCustomDeserialized = class abstract(TInterfacedObject)
   public
-    constructor Create(const aJsonValue: T); virtual;
+    constructor Create(const aJsonValue: TJsonValue); virtual;
   end;
 
-  TDeserialized<T: TJsonValue> = class abstract(TCustomDeserialized<T>)
+  TDeserialized = class abstract(TCustomDeserialized)
   protected
-    FJsonValue: T;
+    FJsonValue: TJsonValue;
   public
-    constructor Create(const aJsonValue: T); override;
+    constructor Create(const aJsonValue: TJsonValue); override;
     destructor Destroy; override;
   end;
 
   IDeserializedArray<T: IInterface> = interface
-    function Count: Integer;
+    function Count: IResult<Integer>;
     function Item(const Index: Integer): T;
   end;
 
-  TDeserializedArray<T: IInterface> = class abstract(TDeserialized<TJsonArray>, IDeserializedArray<T>)
+  TDeserializedArray<T: IInterface> = class abstract(TDeserialized, IDeserializedArray<T>)
   public
-    function Count: Integer;
+    function Count: IResult<Integer>;
     function Item(const Index: Integer): T; virtual; abstract;
   end;
 
-function marshal(const obj: TJsonValue): string;
+function marshal(const value: TJsonValue): string;
 function unmarshal(const value: string): TJsonValue;
 
 function getPropAsStr(obj: TJsonValue; const name: string; const def: string = ''): string;
@@ -76,22 +78,22 @@ function quoteString(const S: string; Quote: Char = '"'): string;
 
 implementation
 
-{--------------------------- TCustomDeserialized<T> ---------------------------}
+{---------------------------- TCustomDeserialized -----------------------------}
 
-constructor TCustomDeserialized<T>.Create(const aJsonValue: T);
+constructor TCustomDeserialized.Create(const aJsonValue: TJsonValue);
 begin
   inherited Create;
 end;
 
-{------------------------------ TDeserialized<T> ------------------------------}
+{------------------------------- TDeserialized --------------------------------}
 
-constructor TDeserialized<T>.Create(const aJsonValue: T);
+constructor TDeserialized.Create(const aJsonValue: TJsonValue);
 begin
   inherited Create(aJsonValue);
-  FJsonValue := aJsonValue.Clone as T;
+  FJsonValue := aJsonValue.Clone as TJsonValue;
 end;
 
-destructor TDeserialized<T>.Destroy;
+destructor TDeserialized.Destroy;
 begin
   if Assigned(FJsonValue) then FJsonValue.Free;
   inherited Destroy;
@@ -99,28 +101,31 @@ end;
 
 {--------------------------- TDeserializedArray<T> ----------------------------}
 
-function TDeserializedArray<T>.Count: Integer;
+function TDeserializedArray<T>.Count: IResult<Integer>;
 begin
-  Result := Self.FJsonValue.Count;
+  if Self.FJsonValue is TJsonArray then
+    Result := TResult<Integer>.Ok(TJsonArray(Self.FJsonValue).Count)
+  else
+    Result := TResult<Integer>.Err(0, 'not an array');
 end;
 
 {------------------------------ global functions ------------------------------}
 
-function marshal(const obj: TJsonValue): string;
+function marshal(const value: TJsonValue): string;
 begin
   Result := '';
 
-  if not Assigned(obj) then
+  if not Assigned(value) then
     EXIT;
 
-  var I := obj.EstimatedByteSize;
+  var I := value.EstimatedByteSize;
   if I <= 0 then
     EXIT;
 
   var B: TBytes;
   SetLength(B, I);
 
-  I := obj.ToBytes(B, 0);
+  I := value.ToBytes(B, 0);
   if I <= 0 then
     SetLength(B, 0)
   else
@@ -131,7 +136,7 @@ end;
 
 function unmarshal(const value: string): TJsonValue;
 begin
-  Result := TJsonObject.ParseJsonValue(value.Trim);
+  Result := TJsonValue.ParseJsonValue(value.Trim);
 end;
 
 function getPropAsStr(obj: TJsonValue; const name: string; const def: string): string;
@@ -275,7 +280,7 @@ begin
   begin
     var I: Integer;
     // add extra backslash is there is a backslash, for example: c:\ --> c:\\
-    I := Low(Result);
+    I := System.Low(Result);
     while I <= Length(Result) do
       if Result[I] = '\' then
       begin
@@ -285,7 +290,7 @@ begin
       else
         Inc(I);
     // add backslash if there is a double quote, for example: "a" --> \"a\"
-    I := Low(Result);
+    I := System.Low(Result);
     while I <= Length(Result) do
       if Result[I] = Quote then
       begin
