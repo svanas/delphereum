@@ -558,35 +558,71 @@ end;
 procedure TCustomWeb3.LatestPrice(callback: TProc<Double, IError>);
 begin
   if Chain = Ethereum then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
+    end)
   else if Chain = Sepolia then
     web3.coincap.price('ethereum', callback)
   else if Chain = Goerli then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
+    end)
   else if Chain = Optimism then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x13e3Ee699D1909E989722E753853AE30b17e08c5').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x13e3Ee699D1909E989722E753853AE30b17e08c5').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
+    end)
   else if Chain = OptimismGoerli then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x57241A37733983F97C4Ab06448F244A1E0Ca0ba8').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x57241A37733983F97C4Ab06448F244A1E0Ca0ba8').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
+    end)
   else if (Chain = RSK) or (Chain = RSK_test_net) then
     web3.coincap.price('bitcoin', callback)
   else if Chain = BNB then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('binance-coin', callback) else callback(price, nil);
+    end)
   else if Chain = BNB_test_net then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x143db3CEEfbdfe5631aDD3E50f7614B6ba708BA7').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x143db3CEEfbdfe5631aDD3E50f7614B6ba708BA7').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('binance-coin', callback) else callback(price, nil);
+    end)
   else if Chain = Gnosis then
     web3.eth.chainlink.TAggregatorV3.Create(Self, '0x678df3415fc31947dA4324eC63212874be5a82f8').Price(callback)
   else if Chain = Polygon then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('polygon', callback) else callback(price, nil);
+    end)
   else if Chain = PolygonMumbai then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('polygon', callback) else callback(price, nil);
+    end)
   else if Chain = Fantom then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xf4766552D15AE4d256Ad41B6cf2933482B0680dc').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xf4766552D15AE4d256Ad41B6cf2933482B0680dc').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('fantom', callback) else callback(price, nil);
+    end)
   else if Chain = Fantom_test_net then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xe04676B9A9A2973BCb0D1478b5E1E9098BBB7f3D').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xe04676B9A9A2973BCb0D1478b5E1E9098BBB7f3D').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('fantom', callback) else callback(price, nil);
+    end)
   else if Chain = Arbitrum then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
+    end)
   else if Chain = ArbitrumGoerli then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08').Price(callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
+    end)
   else
     callback(0, TError.Create('Price feed does not exist on %s', [Self.Chain.Name]));
 end;
