@@ -99,6 +99,7 @@ type
     procedure ToString(client: IWeb3; callback: TProc<string, IError>; abbreviated: Boolean = False);
     function  ToChecksum: TAddress;
     function  Abbreviated: string;
+    function  IsEOA(client: IWeb3): IResult<Boolean>;
     function  IsZero: Boolean;
     function  SameAs(const other: TAddress): Boolean;
   end;
@@ -137,6 +138,7 @@ uses
   web3.eth,
   web3.eth.ens,
   web3.http,
+  web3.json,
   web3.utils;
 
 { TArg }
@@ -293,6 +295,20 @@ function TAddressHelper.Abbreviated: string;
 begin
   Result := string(Self);
   Result := Copy(Result, System.Low(Result), 8);
+end;
+
+function TAddressHelper.IsEOA(client: IWeb3): IResult<Boolean>;
+begin
+  const response = client.Call('eth_getCode', [Self.ToChecksum, BLOCK_LATEST]);
+  if Assigned(response.Value) then
+  try
+    const code = web3.json.getPropAsStr(response.Value, 'result');
+    Result := TResult<Boolean>.Ok((code = '') or (code = '0x') or (code = '0x0'));
+    EXIT;
+  finally
+    response.Value.Free;
+  end;
+  Result := TResult<Boolean>.Err(True, response.Error);
 end;
 
 function TAddressHelper.IsZero: Boolean;
