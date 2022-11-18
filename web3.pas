@@ -56,7 +56,8 @@ type
     class operator Equal(const Left, Right: TChain): Boolean;
     class operator NotEqual(const Left, Right: TChain): Boolean;
     function SetTxType(Value: Byte): TChain;
-    function SetGateway(transport: TTransport; const URI: string): TChain;
+    function SetGateway(const URI: string): TChain; overload;
+    function SetGateway(transport: TTransport; const URI: string): TChain; overload;
   end;
   PChain = ^TChain;
 
@@ -452,6 +453,11 @@ function TChain.SetTxType(Value: Byte): TChain;
 begin
   Self.TxType := Value;
   Result := Self;
+end;
+
+function TChain.SetGateway(const URI: string): TChain;
+begin
+  Result := Self.SetGateway(HTTPS, URI);
 end;
 
 function TChain.SetGateway(transport: TTransport; const URI: string): TChain;
