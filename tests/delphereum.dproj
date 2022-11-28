@@ -163,6 +163,7 @@
         <DCCReference Include="..\web3.eth.compound.pas"/>
         <DCCReference Include="..\web3.eth.contract.pas"/>
         <DCCReference Include="..\web3.eth.crypto.pas"/>
+        <DCCReference Include="..\web3.eth.crypto.tests.pas"/>
         <DCCReference Include="..\web3.eth.defi.pas"/>
         <DCCReference Include="..\web3.eth.dydx.pas"/>
         <DCCReference Include="..\web3.eth.ens.pas"/>

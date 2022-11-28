@@ -90,8 +90,7 @@ procedure call(client: IWeb3; from, &to: TAddress; const func: string; args: arr
 procedure call(client: IWeb3; &to: TAddress; const func, block: string; args: array of const; callback: TProc<TTuple, IError>); overload;
 procedure call(client: IWeb3; from, &to: TAddress; const func, block: string; args: array of const; callback: TProc<TTuple, IError>); overload;
 
-function  sign(privateKey: TPrivateKey; const msg: string): TSignature; overload;
-procedure sign(client: IWeb3; from: TPrivateKey; &to: TAddress; value: TWei; const data: string; estimatedGas: BigInteger; callback: TProc<string, IError>); overload;
+procedure sign(client: IWeb3; from: TPrivateKey; &to: TAddress; value: TWei; const data: string; estimatedGas: BigInteger; callback: TProc<string, IError>);
 
 // transact with a non-payable function.
 // default to the median gas price from the latest blocks.
@@ -153,18 +152,12 @@ implementation
 uses
   // Delphi
   System.JSON,
-  // CryptoLib4Pascal
-  ClpBigInteger,
-  ClpIECPrivateKeyParameters,
   // web3
-  web3.crypto,
   web3.eth.abi,
-  web3.eth.crypto,
   web3.eth.gas,
   web3.eth.nonce,
   web3.eth.tx,
   web3.json,
-  web3.json.rpc,
   web3.utils;
 
 function blockNumber(client: IWeb3): IResult<BigInteger>;
@@ -424,29 +417,26 @@ begin
   end);
 end;
 
-function sign(privateKey: TPrivateKey; const msg: string): TSignature;
+procedure sign(
+  client      : IWeb3;
+  from        : TPrivateKey;
+  &to         : TAddress;
+  value       : TWei;
+  const data  : string;
+  estimatedGas: BigInteger;
+  callback    : TProc<string, IError>);
 begin
-  const Signer = TEthereumSigner.Create;
-  try
-    Signer.Init(True, privateKey.Parameters);
-    const Signature = Signer.GenerateSignature(
-      sha3(
-        TEncoding.UTF8.GetBytes(
-          #25 + 'Ethereum Signed Message:' + #10 + IntToStr(Length(msg)) + msg
-        )
-      )
-    );
-    const v = Signature.rec.Add(TBigInteger.ValueOf(27));
-    Result := TSignature(
-      toHex(
-        Signature.r.ToByteArrayUnsigned +
-        Signature.s.ToByteArrayUnsigned +
-        v.ToByteArrayUnsigned
-      )
-    );
-  finally
-    Signer.Free;
-  end;
+  const sender = from.GetAddress;
+  if sender.IsErr then
+    callback('', sender.Error)
+  else
+    web3.eth.nonce.get(client, sender.Value, procedure(nonce: BigInteger; err: IError)
+    begin
+      if Assigned(err) then
+        callback('', err)
+      else
+        signTransaction(client, nonce, from, &to, value, data, 2 * estimatedGas, estimatedGas, callback);
+    end);
 end;
 
 procedure write(
@@ -519,28 +509,6 @@ begin
     else
       write(client, from, &to, value, data, estimatedGas, callback);
   end);
-end;
-
-procedure sign(
-  client      : IWeb3;
-  from        : TPrivateKey;
-  &to         : TAddress;
-  value       : TWei;
-  const data  : string;
-  estimatedGas: BigInteger;
-  callback    : TProc<string, IError>);
-begin
-  const sender = from.GetAddress;
-  if sender.IsErr then
-    callback('', sender.Error)
-  else
-    web3.eth.nonce.get(client, sender.Value, procedure(nonce: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback('', err)
-      else
-        signTransaction(client, nonce, from, &to, value, data, 2 * estimatedGas, estimatedGas, callback);
-    end);
 end;
 
 procedure write(
