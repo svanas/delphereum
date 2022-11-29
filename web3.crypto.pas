@@ -76,7 +76,8 @@ type
   end;
 
 function privateKeyFromByteArray(const algorithm: string; aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
-function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
+function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): IECPublicKeyParameters;
+function publicKeyToByteArray(aPubKey: IECPublicKeyParameters): TBytes;
 function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;
 
 implementation
@@ -95,11 +96,15 @@ begin
   Result := TECPrivateKeyParameters.Create(algorithm, privD, domain);
 end;
 
-function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
+function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): IECPublicKeyParameters;
 begin
-  const params: IECPublicKeyParameters = TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
-  Result := TBigIntegers.BigIntegerToBytes(params.Q.AffineXCoord.ToBigInteger, 32)
-          + TBigIntegers.BigIntegerToBytes(params.Q.AffineYCoord.ToBigInteger, 32);
+  Result := TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
+end;
+
+function publicKeyToByteArray(aPubKey: IECPublicKeyParameters): TBytes;
+begin
+  Result := TBigIntegers.BigIntegerToBytes(aPubKey.Q.AffineXCoord.ToBigInteger, 32)
+          + TBigIntegers.BigIntegerToBytes(aPubKey.Q.AffineYCoord.ToBigInteger, 32);
 end;
 
 function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;

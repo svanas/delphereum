@@ -40,6 +40,7 @@ uses
   ClpECDomainParameters,
   ClpECPublicKeyParameters,
   ClpIECC,
+  ClpIECPublicKeyParameters,
   ClpHMacDsaKCalculator,
   ClpX9ECC,
   // web3
@@ -57,18 +58,31 @@ type
   end;
 
   TSignature = record
+  private
     R: TBigInteger;
     S: TBigInteger;
     V: TBigInteger;
+  public
     function ToHex: string;
     function RecId: IResult<Int32>;
     constructor Create(R, S, V: TBigInteger);
   end;
 
+function publicKeyToAddress(pubKey: IECPublicKeyParameters): TAddress;
 function sign(privateKey: TPrivateKey; const msg: string): TSignature; // calculate an Ethereum-specific signature
 function ecrecover(const msg: string; signature: TSignature): IResult<TAddress>; // recover signer from signature
 
 implementation
+
+function publicKeyToAddress(pubKey: IECPublicKeyParameters): TAddress;
+begin
+  // take the keccak-256 hash of the public key
+  var buffer := web3.utils.sha3(publicKeyToByteArray(pubKey));
+  // take the last 40 characters / 20 bytes of this public key
+  Delete(buffer, 0, 12);
+  // hex-encode and prefix with 0x
+  Result := TAddress.New(web3.utils.toHex(buffer));
+end;
 
 // https://github.com/ethereum/go-ethereum/pull/2940
 function prefix(const msg: string): TBytes;
@@ -145,13 +159,8 @@ begin
   const yu = curve.curve.DecodePoint(vch);
   const domain = TECDomainParameters.Create(curve.curve, curve.G, curve.n, curve.H, curve.GetSeed);
 
-  const key = TECPublicKeyParameters.Create('EC', yu, domain);
-  var buffer := web3.utils.sha3(
-    TBigIntegers.BigIntegerToBytes(key.Q.AffineXCoord.ToBigInteger, 32) +
-    TBigIntegers.BigIntegerToBytes(key.Q.AffineYCoord.ToBigInteger, 32)
-  );
-  Delete(buffer, 0, 12);
-  Result := TResult<TAddress>.Ok(TAddress.New(web3.utils.toHex(buffer)));
+  const pubKey = TECPublicKeyParameters.Create('EC', yu, domain);
+  Result := TResult<TAddress>.Ok(publicKeyToAddress(pubKey));
 end;
 
 { TEthereumSigner }
