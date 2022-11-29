@@ -58,6 +58,11 @@ type
   TKeyType = (SECP256K1, SECP384R1, SECP521R1, SECT283K1);
 
 type
+  TKeyTypeHelper = record helper for TKeyType
+    function GetCurve: IX9ECParameters;
+  end;
+
+type
   TECDsaSignature = record
     r  : TBigInteger;
     s  : TBigInteger;
@@ -71,37 +76,42 @@ type
   end;
 
 function privateKeyFromByteArray(const algorithm: string; aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
-function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
+function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): IECPublicKeyParameters;
+function publicKeyToByteArray(aPubKey: IECPublicKeyParameters): TBytes;
 function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;
 
 implementation
 
-function getCurveFromKeyType(aKeyType: TKeyType): IX9ECParameters;
+function TKeyTypeHelper.GetCurve: IX9ECParameters;
 begin
-  const curveName = GetEnumName(TypeInfo(TKeyType), Ord(aKeyType));
+  const curveName = GetEnumName(TypeInfo(TKeyType), Ord(Self));
   Result := TCustomNamedCurves.GetByName(curveName);
 end;
 
 function privateKeyFromByteArray(const algorithm: string; aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
 begin
-  const curve : IX9ECParameters = getCurveFromKeyType(aKeyType);
+  const curve : IX9ECParameters = aKeyType.GetCurve;
   const domain: IECDomainParameters = TECDomainParameters.Create(curve.Curve, curve.G, curve.N, curve.H, curve.GetSeed);
   const privD = TBigInteger.Create(1, aPrivKey);
   Result := TECPrivateKeyParameters.Create(algorithm, privD, domain);
 end;
 
-function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): TBytes;
+function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): IECPublicKeyParameters;
 begin
-  const params: IECPublicKeyParameters = TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
-  Result := TBigIntegers.BigIntegerToBytes(params.Q.AffineXCoord.ToBigInteger, 32)
-          + TBigIntegers.BigIntegerToBytes(params.Q.AffineYCoord.ToBigInteger, 32);
+  Result := TECKeyPairGenerator.GetCorrespondingPublicKey(aPrivKey);
+end;
+
+function publicKeyToByteArray(aPubKey: IECPublicKeyParameters): TBytes;
+begin
+  Result := TBigIntegers.BigIntegerToBytes(aPubKey.Q.AffineXCoord.ToBigInteger, 32)
+          + TBigIntegers.BigIntegerToBytes(aPubKey.Q.AffineYCoord.ToBigInteger, 32);
 end;
 
 function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;
 begin
   const secureRandom: ISecureRandom = TSecureRandom.Create;
 
-  const customCurve : IX9ECParameters = getCurveFromKeyType(aKeyType);
+  const customCurve : IX9ECParameters = aKeyType.GetCurve;
   const domainParams: IECDomainParameters = TECDomainParameters.Create(customCurve.Curve,
     customCurve.G, customCurve.N, customCurve.H, customCurve.GetSeed);
   const keyPairGenerator: IECKeyPairGenerator = TECKeyPairGenerator.Create(algorithm);
@@ -118,7 +128,7 @@ function TECDsaSignerEx.GenerateSignature(aKeyType: TKeyType; const msg: TCrypto
 
   function curveOrder: TBigInteger;
   begin
-    Result := getCurveFromKeyType(aKeyType).Curve.Order;
+    Result := aKeyType.GetCurve.Curve.Order;
   end;
 
   function isLowS(const s: TBigInteger): Boolean;

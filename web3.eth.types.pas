@@ -136,6 +136,7 @@ uses
   web3.crypto,
   web3.error,
   web3.eth,
+  web3.eth.crypto,
   web3.eth.ens,
   web3.http,
   web3.json,
@@ -385,9 +386,7 @@ function TPrivateKeyHelper.GetAddress: IResult<TAddress>;
 begin
   try
     const pubKey = web3.crypto.publicKeyFromPrivateKey(Self.Parameters);
-    var buffer := web3.utils.sha3(pubKey);
-    Delete(buffer, 0, 12);
-    Result := TResult<TAddress>.Ok(TAddress.New(web3.utils.toHex(buffer)));
+    Result := TResult<TAddress>.Ok(web3.eth.crypto.publicKeyToAddress(pubKey));
   except
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'Private key is invalid');
   end;

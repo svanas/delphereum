@@ -53,6 +53,7 @@ uses
   web3.eth.compound in '..\web3.eth.compound.pas',
   web3.eth.contract in '..\web3.eth.contract.pas',
   web3.eth.crypto in '..\web3.eth.crypto.pas',
+  web3.eth.crypto.tests in '..\web3.eth.crypto.tests.pas',
   web3.eth.defi in '..\web3.eth.defi.pas',
   web3.eth.dydx in '..\web3.eth.dydx.pas',
   web3.eth.ens in '..\web3.eth.ens.pas',
