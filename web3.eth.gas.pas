@@ -38,7 +38,6 @@ uses
   web3,
   web3.eth,
   web3.eth.abi,
-  web3.eth.gas.station,
   web3.eth.types,
   web3.json,
   web3.json.rpc,
@@ -102,24 +101,7 @@ begin
     EXIT;
   end;
 
-  if (info.apiKey = '') and (info.Speed = Medium) then
-  begin
-    eth_gasPrice(client, callback);
-    EXIT;
-  end;
-
-  web3.eth.gas.station.getGasPrice(info.apiKey, procedure(price: IGasPrice; err: IError)
-  begin
-    if Assigned(err) then
-      callback(0, err)
-    else
-      case info.Speed of
-        Fastest: price.Fastest.Into(callback);
-        Fast   : price.Fast.Into(callback);
-        Medium : price.Average.Into(callback);
-        Low    : price.SafeLow.Into(callback);
-      end;
-  end);
+  eth_gasPrice(client, callback);
 end;
 
 procedure getBaseFeePerGas(client: IWeb3; callback: TProc<BigInteger, IError>);

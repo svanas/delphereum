@@ -227,7 +227,6 @@ type
 
   TGasStationInfo = record
     Speed : TGasPrice;
-    apiKey: string;
     Custom: TWei;
     class function Average: TGasStationInfo; static;
   end;

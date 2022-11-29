@@ -174,7 +174,6 @@
         <DCCReference Include="..\web3.eth.etherscan.pas"/>
         <DCCReference Include="..\web3.eth.fulcrum.pas"/>
         <DCCReference Include="..\web3.eth.gas.pas"/>
-        <DCCReference Include="..\web3.eth.gas.station.pas"/>
         <DCCReference Include="..\web3.eth.idle.finance.v4.pas"/>
         <DCCReference Include="..\web3.eth.infura.pas"/>
         <DCCReference Include="..\web3.eth.logs.pas"/>

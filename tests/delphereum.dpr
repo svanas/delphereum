@@ -64,7 +64,6 @@ uses
   web3.eth.etherscan in '..\web3.eth.etherscan.pas',
   web3.eth.fulcrum in '..\web3.eth.fulcrum.pas',
   web3.eth.gas in '..\web3.eth.gas.pas',
-  web3.eth.gas.station in '..\web3.eth.gas.station.pas',
   web3.eth.idle.finance.v4 in '..\web3.eth.idle.finance.v4.pas',
   web3.eth.infura in '..\web3.eth.infura.pas',
   web3.eth.logs in '..\web3.eth.logs.pas',
