@@ -217,20 +217,7 @@ type
   end;
 
   TOnEtherscanApiKey = reference to procedure(var apiKey: string);
-
-  TGasPrice = (
-    Fastest,
-    Fast,    // expected to be mined in < 2 minutes
-    Medium,  // expected to be mined in < 5 minutes
-    Low      // expected to be mined in < 30 minutes
-  );
-
-  TGasStationInfo = record
-    Speed : TGasPrice;
-    Custom: TWei;
-    class function Average: TGasStationInfo; static;
-  end;
-  TOnGasStationInfo = reference to procedure(var info: TGasStationInfo);
+  TOnCustomGasPrice  = reference to procedure(var price: TWei);
 
   IJsonRpc = interface
   ['{79B99FD7-3000-4839-96B4-6C779C25AD0C}']
@@ -277,7 +264,7 @@ type
     procedure LatestPrice(callback: TProc<Double, IError>);
 
     function  ETHERSCAN_API_KEY: string;
-    function  GetGasStationInfo: TGasStationInfo;
+    function  GetCustomGasPrice: TWei;
     procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
     function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload;
@@ -287,7 +274,7 @@ type
   TCustomWeb3 = class abstract(TInterfacedObject, IWeb3)
   private
     FChain: TChain;
-    FOnGasStationInfo  : TOnGasStationInfo;
+    FOnCustomGasPrice  : TOnCustomGasPrice;
     FOnEtherscanApiKey : TOnEtherscanApiKey;
     FOnSignatureRequest: TOnSignatureRequest;
   public
@@ -295,13 +282,13 @@ type
     procedure LatestPrice(callback: TProc<Double, IError>);
 
     function  ETHERSCAN_API_KEY: string;
-    function  GetGasStationInfo: TGasStationInfo;
+    function  GetCustomGasPrice: TWei;
     procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
     function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload; virtual; abstract;
     procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; virtual; abstract;
 
-    property OnGasStationInfo  : TOnGasStationInfo   read FOnGasStationInfo   write FOnGasStationInfo;
+    property OnCustomGasPrice  : TOnCustomGasPrice   read FOnCustomGasPrice   write FOnCustomGasPrice;
     property OnEtherscanApiKey : TOnEtherscanApiKey  read FOnEtherscanApiKey  write FOnEtherscanApiKey;
     property OnSignatureRequest: TOnSignatureRequest read FOnSignatureRequest write FOnSignatureRequest;
   end;
@@ -543,13 +530,6 @@ begin
   callback(Self.Value, Self.Error);
 end;
 
-{ TGasStationInfo }
-
-class function TGasStationInfo.Average: TGasStationInfo;
-begin
-  Result.Speed := TGasPrice.Medium;
-end;
-
 { TCustomWeb3 }
 
 function TCustomWeb3.Chain: TChain;
@@ -636,10 +616,10 @@ begin
   if Assigned(FOnEtherscanApiKey) then FOnEtherscanApiKey(Result);
 end;
 
-function TCustomWeb3.GetGasStationInfo: TGasStationInfo;
+function TCustomWeb3.GetCustomGasPrice: TWei;
 begin
-  Result := TGasStationInfo.Average;
-  if Assigned(FOnGasStationInfo) then FOnGasStationInfo(Result);
+  Result := 0;
+  if Assigned(FOnCustomGasPrice) then FOnCustomGasPrice(Result);
 end;
 
 procedure TCustomWeb3.CanSignTransaction(

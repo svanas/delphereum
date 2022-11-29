@@ -75,12 +75,14 @@ end;
 
 procedure getGasPrice(client: IWeb3; callback: TProc<BigInteger, IError>; allowCustom: Boolean);
 begin
-  const info = client.GetGasStationInfo;
-
-  if (info.Custom > 0) and allowCustom then
+  if allowCustom then
   begin
-    callback(info.Custom, nil);
-    EXIT;
+    const price = client.GetCustomGasPrice;
+    if price > 0 then
+    begin
+      callback(price, nil);
+      EXIT;
+    end;
   end;
 
   if client.Chain.TxType >= 2 then // EIP-1559
@@ -116,23 +118,9 @@ begin
 end;
 
 procedure getMaxPriorityFeePerGas(client: IWeb3; callback: TProc<BigInteger, IError>);
-var
-  adjustForSpeed: TFunc<BigInteger, TGasPrice, BigInteger>; // (input, speed) -> output
 begin
-  adjustForSpeed := function(tip: BigInteger; speed: TGasPrice): BigInteger
-  begin
-    case speed of
-      Fastest: Result := tip * 2;          // probably ~4 Gwei
-      Fast   : Result := tip + 1000000000; // probably ~3 Gwei
-      Medium : Result := tip;              // probably ~2 Gwei
-      Low    : Result := 1000000000;       // 1 Gwei
-    end;
-  end;
-
   client.Call('eth_maxPriorityFeePerGas', [], procedure(response: TJsonObject; err: IError)
   begin
-    const info = client.GetGasStationInfo;
-
     if Assigned(err) then
     begin
       eth_gasPrice(client, procedure(gasPrice: TWei; err: IError)
@@ -145,24 +133,25 @@ begin
             if Assigned(err) then
               callback(0, err)
             else
-              callback(adjustForSpeed(TWei.Max(1000000000, gasPrice - baseFee), info.Speed), nil);
+              callback(TWei.Max(1000000000, gasPrice - baseFee), nil);
           end);
       end);
       EXIT;
     end;
-
-    callback(adjustForSpeed(web3.json.getPropAsStr(response, 'result'), info.Speed), nil);
+    callback(web3.json.getPropAsStr(response, 'result'), nil);
   end);
 end;
 
 procedure getMaxFeePerGas(client: IWeb3; callback: TProc<BigInteger, IError>; allowCustom: Boolean);
 begin
-  const info = client.GetGasStationInfo;
-
-  if (info.Custom > 0) and allowCustom then
+  if allowCustom then
   begin
-    callback(info.Custom, nil);
-    EXIT;
+    const price = client.GetCustomGasPrice;
+    if price > 0 then
+    begin
+      callback(price, nil);
+      EXIT;
+    end;
   end;
 
   getBaseFeePerGas(client, procedure(baseFee: TWei; err: IError)
