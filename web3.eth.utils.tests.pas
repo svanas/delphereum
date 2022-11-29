@@ -238,9 +238,9 @@ begin
   for var TEST_CASE in TEST_CASES do
   begin
     Assert.AreEqual(
-      string(TAddress.New(TEST_CASE.ToUpper).ToChecksum), TEST_CASE, False);
+      string(TAddress.Create(TEST_CASE.ToUpper).ToChecksum), TEST_CASE, False);
     Assert.AreEqual(
-      string(TAddress.New(TEST_CASE.ToLower).ToChecksum), TEST_CASE, False);
+      string(TAddress.Create(TEST_CASE.ToLower).ToChecksum), TEST_CASE, False);
   end;
 end;
 

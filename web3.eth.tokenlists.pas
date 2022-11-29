@@ -103,7 +103,7 @@ constructor TToken.Create(const aJsonValue: TJsonValue);
 begin
   inherited Create(aJsonValue);
   FChainId := getPropAsInt(aJsonValue, 'chainId');
-  FAddress := TAddress.New(getPropAsStr(aJsonValue, 'address'));
+  FAddress := TAddress.Create(getPropAsStr(aJsonValue, 'address'));
   FName := getPropAsStr(aJsonValue, 'name');
   FSymbol := getPropAsStr(aJsonValue, 'symbol');
   FDecimals := getPropAsInt(aJsonValue, 'decimals');

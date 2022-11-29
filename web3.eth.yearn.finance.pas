@@ -35,12 +35,9 @@ uses
   Velthuis.BigIntegers,
   // web3
   web3,
-  web3.eth,
   web3.eth.defi,
   web3.eth.erc20,
-  web3.eth.etherscan,
-  web3.eth.types,
-  web3.utils;
+  web3.eth.types;
 
 type
   TyTokenClass = class of TyToken;
@@ -116,6 +113,14 @@ type
   end;
 
 implementation
+
+uses
+  // Delphi
+  System.DateUtils,
+  // web3
+  web3.eth,
+  web3.eth.etherscan,
+  web3.utils;
 
 { TyEarnCustom }
 
@@ -343,7 +348,7 @@ begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
     else
-      callback(TAddress.New(hex), nil);
+      callback(TAddress.Create(hex), nil);
   end);
 end;
 

@@ -494,7 +494,7 @@ begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
     else
-      callback(TAddress.New(hex), nil);
+      callback(TAddress.Create(hex), nil);
   end);
 end;
 
@@ -505,7 +505,7 @@ begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
     else
-      callback(TAddress.New(hex), nil);
+      callback(TAddress.Create(hex), nil);
   end);
 end;
 
@@ -525,7 +525,7 @@ begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
     else
-      callback(TAddress.New(hex), nil);
+      callback(TAddress.Create(hex), nil);
   end);
 end;
 

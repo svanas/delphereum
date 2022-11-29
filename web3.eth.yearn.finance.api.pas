@@ -86,7 +86,7 @@ end;
 
 function TMigration.Address: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonValue, 'address'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'address'));
 end;
 
 {-------------------------------- TYearnVault ---------------------------------}
@@ -105,7 +105,7 @@ type
 
 function TYearnVault.Address: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonValue, 'address'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'address'));
 end;
 
 function TYearnVault.Token: TAddress;
@@ -113,7 +113,7 @@ begin
   Result := EMPTY_ADDRESS;
   const token = getPropAsObj(FJsonValue, 'token');
   if Assigned(token) then
-    Result := TAddress.New(getPropAsStr(token, 'address'));
+    Result := TAddress.Create(getPropAsStr(token, 'address'));
 end;
 
 function TYearnVault.APY: Double;

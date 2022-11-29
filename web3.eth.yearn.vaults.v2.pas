@@ -125,6 +125,7 @@ implementation
 
 uses
   // Delphi
+  System.DateUtils,
   System.Math,
   // web3
   web3.eth,
@@ -494,7 +495,7 @@ end;
 
 class procedure TyVaultRegistry.Create(client: IWeb3; callback: TProc<TyVaultRegistry, IError>);
 begin
-  TAddress.New(client, 'v2.registry.ychad.eth', procedure(addr: TAddress; err: IError)
+  TAddress.Create(client, 'v2.registry.ychad.eth', procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
@@ -510,7 +511,7 @@ begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
     else
-      callback(TAddress.New(hex), nil);
+      callback(TAddress.Create(hex), nil);
   end);
 end;
 

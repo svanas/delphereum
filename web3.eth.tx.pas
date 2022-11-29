@@ -548,7 +548,7 @@ end;
 // address of the sender.
 function TTxn.from: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonValue, 'from'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from'));
 end;
 
 // gas limit provided by the sender.
@@ -584,7 +584,7 @@ end;
 // address of the receiver. null when its a contract creation transaction.
 function TTxn.&to: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonValue, 'to'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'to'));
 end;
 
 // value transferred in Wei.
@@ -633,13 +633,13 @@ end;
 // address of the sender.
 function TTxReceipt.from: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonValue, 'from'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from'));
 end;
 
 // address of the receiver. null when it's a contract creation transaction.
 function TTxReceipt.&to: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonValue, 'to'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'to'));
 end;
 
 // the amount of gas used by this specific transaction.

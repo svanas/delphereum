@@ -93,9 +93,9 @@ type
   end;
 
   TAddressHelper = record helper for TAddress
-    class function  New(arg: TArg): TAddress; overload; static;
-    class function  New(const hex: string): TAddress; overload; static;
-    class procedure New(client: IWeb3; const name: string; callback: TProc<TAddress, IError>); overload; static;
+    constructor Create(arg: TArg); overload;
+    constructor Create(const hex: string); overload;
+    class procedure Create(client: IWeb3; const name: string; callback: TProc<TAddress, IError>); overload; static;
     procedure ToString(client: IWeb3; callback: TProc<string, IError>; abbreviated: Boolean = False);
     function  ToChecksum: TAddress;
     function  Abbreviated: string;
@@ -106,7 +106,7 @@ type
 
   TPrivateKeyHelper = record helper for TPrivateKey
     class function Generate: TPrivateKey; static;
-    class function New(params: IECPrivateKeyParameters): TPrivateKey; static;
+    constructor Create(params: IECPrivateKeyParameters);
     class function Prompt(&public: TAddress): IResult<TPrivateKey>; static;
     function Parameters: IECPrivateKeyParameters;
     function GetAddress: IResult<TAddress>;
@@ -146,7 +146,7 @@ uses
 
 function TArg.toAddress: TAddress;
 begin
-  Result := TAddress.New(Self);
+  Result := TAddress.Create(Self);
 end;
 
 function TArg.toBytes32: TBytes32;
@@ -210,37 +210,37 @@ end;
 
 { TAddressHelper }
 
-class function TAddressHelper.New(arg: TArg): TAddress;
+constructor TAddressHelper.Create(arg: TArg);
 begin
-  Result := New(arg.toHex('0x'));
+  TAddress.Create(arg.toHex('0x'));
 end;
 
-class function TAddressHelper.New(const hex: string): TAddress;
+constructor TAddressHelper.Create(const hex: string);
 begin
   if not web3.utils.isHex(hex) then
   begin
-    Result := EMPTY_ADDRESS;
+    Self := EMPTY_ADDRESS;
     EXIT;
   end;
   var buf := web3.utils.fromHex(hex);
   if Length(buf) = 20 then
-    Result := TAddress(hex)
+    Self := TAddress(hex).ToChecksum
   else
     if Length(buf) < 20 then
     begin
       repeat
         buf := [0] + buf;
       until Length(buf) = 20;
-      Result := TAddress(web3.utils.toHex(buf));
+      Self := TAddress(web3.utils.toHex(buf)).ToChecksum;
     end
     else
-      Result := TAddress(web3.utils.toHex(Copy(buf, Length(buf) - 20, 20)));
+      Self := TAddress(web3.utils.toHex(Copy(buf, Length(buf) - 20, 20))).ToChecksum;
 end;
 
-class procedure TAddressHelper.New(client: IWeb3; const name: string; callback: TProc<TAddress, IError>);
+class procedure TAddressHelper.Create(client: IWeb3; const name: string; callback: TProc<TAddress, IError>);
 begin
   if web3.utils.isHex(name) then
-    callback(New(name), nil)
+    callback(TAddress.Create(name), nil)
   else
     web3.eth.ens.addr(client, name, callback);
 end;
@@ -329,12 +329,12 @@ end;
 
 class function TPrivateKeyHelper.Generate: TPrivateKey;
 begin
-  Result := New(web3.crypto.generatePrivateKey('ECDSA', SECP256K1));
+  Result := TPrivateKey.Create(web3.crypto.generatePrivateKey('ECDSA', SECP256K1));
 end;
 
-class function TPrivateKeyHelper.New(params: IECPrivateKeyParameters): TPrivateKey;
+constructor TPrivateKeyHelper.Create(params: IECPrivateKeyParameters);
 begin
-  Result := TPrivateKey(web3.utils.toHex('', params.D.ToByteArrayUnsigned));
+  Self := TPrivateKey(web3.utils.toHex('', params.D.ToByteArrayUnsigned));
 end;
 
 class function TPrivateKeyHelper.Prompt(&public: TAddress): IResult<TPrivateKey>;

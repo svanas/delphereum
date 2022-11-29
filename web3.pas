@@ -176,7 +176,7 @@ const
 
 type
   TStandardHelper = record helper for TStandard
-    class function New(const name: string): TStandard; static;
+    constructor Create(const name: string);
   end;
 
   IError = interface
@@ -466,14 +466,14 @@ end;
 
 { TStandardHelper }
 
-class function TStandardHelper.New(const name: string): TStandard;
+constructor TStandardHelper.Create(const name: string);
 begin
   if SameText(name, 'ERC1155') or SameText(name, 'ERC-1155') then
-    Result := erc1155
+    Self := erc1155
   else if SameText(name, 'ERC721') or SameText(name, 'ERC-721') then
-    Result := erc721
+    Self := erc721
   else
-    result := erc20;
+    Self := erc20;
 end;
 
 { TError }

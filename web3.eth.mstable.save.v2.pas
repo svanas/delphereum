@@ -96,6 +96,8 @@ type
 implementation
 
 uses
+  // Delphi
+  System.DateUtils,
   // web3
   web3.error,
   web3.eth,

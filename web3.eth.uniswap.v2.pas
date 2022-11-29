@@ -123,7 +123,7 @@ begin
       callback(EMPTY_ADDRESS, err);
       EXIT;
     end;
-    const pair = TAddress.New(hex);
+    const pair = TAddress.Create(hex);
     if pair.IsZero then
     begin
       callback(EMPTY_ADDRESS, TError.Create('%s does not exist', [tokenA]));
@@ -148,7 +148,7 @@ begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
     else
-      callback(TAddress.New(hex), nil);
+      callback(TAddress.Create(hex), nil);
   end);
 end;
 
@@ -276,7 +276,7 @@ begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
     else
-      callback(TAddress.New(hex), nil);
+      callback(TAddress.Create(hex), nil);
   end);
 end;
 
@@ -288,7 +288,7 @@ begin
     if Assigned(err) then
       callback(EMPTY_ADDRESS, err)
     else
-      callback(TAddress.New(hex), nil);
+      callback(TAddress.Create(hex), nil);
   end);
 end;
 

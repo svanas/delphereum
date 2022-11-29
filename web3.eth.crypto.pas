@@ -81,7 +81,7 @@ begin
   // take the last 40 characters / 20 bytes of this public key
   Delete(buffer, 0, 12);
   // hex-encode and prefix with 0x
-  Result := TAddress.New(web3.utils.toHex(buffer));
+  Result := TAddress.Create(web3.utils.toHex(buffer));
 end;
 
 // https://github.com/ethereum/go-ethereum/pull/2940
@@ -214,3 +214,4 @@ begin
 end;
 
 end.
+

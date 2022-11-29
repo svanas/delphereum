@@ -101,8 +101,8 @@ begin
   const contract = getPropAsObj(aJsonValue, 'asset_contract');
   if Assigned(contract) then
   begin
-    FAddress  := TAddress.New(getPropAsStr(contract, 'address'));
-    FStandard := TStandard.New(getPropAsStr(contract, 'schema_name'));
+    FAddress  := TAddress.Create(getPropAsStr(contract, 'address'));
+    FStandard := TStandard.Create(getPropAsStr(contract, 'schema_name'));
   end;
 end;
 

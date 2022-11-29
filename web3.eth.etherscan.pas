@@ -208,17 +208,17 @@ end;
 
 function TErc20TransferEvent.From: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonValue, 'from'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from'));
 end;
 
 function TErc20TransferEvent.&To: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonValue, 'to'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'to'));
 end;
 
 function TErc20TransferEvent.Contract: TAddress;
 begin
-  Result := TAddress.New(getPropAsStr(FJsonValue, 'contractAddress'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'contractAddress'));
 end;
 
 function TErc20TransferEvent.Value: BigInteger;
