@@ -138,7 +138,7 @@ begin
       end);
       EXIT;
     end;
-    callback(web3.json.getPropAsStr(response, 'result'), nil);
+    callback(TWei.Max(1000000000, web3.json.getPropAsStr(response, 'result')), nil);
   end);
 end;
 

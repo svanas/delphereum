@@ -48,7 +48,7 @@ type
   TChain = record
     Id           : UInt32; // https://chainlist.org
     Name         : string;
-    TxType       : Byte; // https://eips.ethereum.org/EIPS/eip-2718 (0 = Legacy, 2 = EIP-1559)
+    TxType       : Byte;   // https://eips.ethereum.org/EIPS/eip-2718 (0 = Legacy, 2 = EIP-1559)
     Gateway      : array[TTransport] of string;
     BlockExplorer: string;
     TokenList    : string;
