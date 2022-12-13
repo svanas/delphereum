@@ -212,7 +212,7 @@ end;
 
 constructor TAddressHelper.Create(arg: TArg);
 begin
-  TAddress.Create(arg.toHex('0x'));
+  Self := TAddress.Create(arg.toHex('0x'));
 end;
 
 constructor TAddressHelper.Create(const hex: string);
