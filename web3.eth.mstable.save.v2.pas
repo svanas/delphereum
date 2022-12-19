@@ -38,6 +38,7 @@ uses
   web3.eth.contract,
   web3.eth.defi,
   web3.eth.erc20,
+  web3.eth.etherscan,
   web3.eth.types;
 
 type
@@ -48,10 +49,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : IWeb3;
-      _reserve: TReserve;
-      period  : TPeriod;
-      callback: TProc<Double, IError>); override;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      _reserve : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -80,7 +82,7 @@ type
   TimUSD = class(TERC20)
   public
     constructor Create(aClient: IWeb3); reintroduce;
-    procedure APY(period: TPeriod; callback: TProc<Double, IError>);
+    procedure APY(etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TProc<BigInteger, IError>);
     procedure ExchangeRate(const block: string; callback: TProc<BigInteger, IError>);
     procedure CreditsToUnderlying(credits: BigInteger; callback: TProc<BigInteger, IError>);
@@ -101,7 +103,6 @@ uses
   // web3
   web3.error,
   web3.eth,
-  web3.eth.etherscan,
   web3.utils;
 
 { TmStable }
@@ -117,15 +118,16 @@ begin
 end;
 
 class procedure TmStable.APY(
-  client  : IWeb3;
-  _reserve: TReserve;
-  period  : TPeriod;
-  callback: TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  _reserve : TReserve;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 begin
   const imUSD = TimUSD.Create(client);
   if Assigned(imUSD) then
   begin
-    imUSD.APY(period, procedure(apy: Double; err: IError)
+    imUSD.APY(etherscan, period, procedure(apy: Double; err: IError)
     begin
       try
         callback(apy, err);
@@ -207,7 +209,7 @@ begin
   inherited Create(aClient, '0x30647a72dc82d7fbb1123ea74716ab8a317eac19');
 end;
 
-procedure TimUSD.APY(period: TPeriod; callback: TProc<Double, IError>);
+procedure TimUSD.APY(etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
 begin
   Self.ExchangeRate(BLOCK_LATEST, procedure(curr: BigInteger; err: IError)
   begin
@@ -216,7 +218,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    getBlockNumberByTimestamp(client, web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
+    etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
     begin
       if Assigned(err) then
       begin

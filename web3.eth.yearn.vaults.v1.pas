@@ -36,6 +36,7 @@ uses
   // web3
   web3,
   web3.eth.defi,
+  web3.eth.etherscan,
   web3.eth.types;
 
 type
@@ -63,10 +64,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : IWeb3;
-      reserve : TReserve;
-      period  : TPeriod;
-      callback: TProc<Double, IError>); override;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      reserve  : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -199,15 +201,16 @@ begin
 end;
 
 class procedure TyVaultV1.APY(
-  client  : IWeb3;
-  reserve : TReserve;
-  period  : TPeriod;
-  callback: TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  reserve  : TReserve;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 begin
   const yToken = yTokenClass[reserve].Create(client);
   if Assigned(yToken) then
   begin
-    yToken.APY(period, procedure(apy: Double; err: IError)
+    yToken.APY(etherscan, period, procedure(apy: Double; err: IError)
     begin
       try
         callback(apy, err);

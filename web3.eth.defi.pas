@@ -36,6 +36,7 @@ uses
   // web3
   web3,
   web3.eth.erc20,
+  web3.eth.etherscan,
   web3.eth.types;
 
 type
@@ -68,10 +69,11 @@ type
       reserve: TReserve): Boolean; virtual; abstract;
     // Returns the annual yield as a percentage with 4 decimals.
     class procedure APY(
-      client  : IWeb3;
-      reserve : TReserve;
-      period  : TPeriod;
-      callback: TProc<Double, IError>); virtual; abstract;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      reserve  : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); virtual; abstract;
     // Deposits an underlying asset into the lending pool.
     class procedure Deposit(
       client  : IWeb3;

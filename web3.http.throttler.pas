@@ -38,7 +38,7 @@ uses
   web3.sync;
 
 type
-  TReqPerSec = Byte;
+  TReqPerSec = Double;
 
   TGet = record
     endpoint: string;

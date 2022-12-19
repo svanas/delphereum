@@ -36,6 +36,7 @@ uses
   // web3
   web3,
   web3.eth.defi,
+  web3.eth.etherscan,
   web3.eth.types,
   web3.eth.yearn.finance;
 
@@ -47,10 +48,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : IWeb3;
-      reserve : TReserve;
-      period  : TPeriod;
-      callback: TProc<Double, IError>); override;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      reserve  : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -115,12 +117,13 @@ begin
 end;
 
 class procedure TyEarnV3.APY(
-  client  : IWeb3;
-  reserve : TReserve;
-  period  : TPeriod;
-  callback: TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  reserve  : TReserve;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 begin
-  Self._APY(client, yTokenClass[reserve], period, callback);
+  Self._APY(client, etherscan, yTokenClass[reserve], period, callback);
 end;
 
 class procedure TyEarnV3.Deposit(

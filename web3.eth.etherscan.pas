@@ -36,7 +36,6 @@ uses
   Velthuis.BigIntegers,
   // web3
   web3,
-  web3.eth.types,
   web3.json;
 
 type
@@ -74,7 +73,6 @@ type
   end;
 
   IContractABI = interface(IDeserializedArray<IContractSymbol>)
-    function Chain: TChain;
     function Contract: TAddress;
     function IndexOf(
       const Name: string;
@@ -91,35 +89,22 @@ type
       StateMutability: TStateMutability): Integer; overload;
   end;
 
-procedure getBlockNumberByTimestamp(
-  client      : IWeb3;
-  timestamp   : TUnixDateTime;
-  callback    : TProc<BigInteger, IError>); overload;
-procedure getBlockNumberByTimestamp(
-  chain       : TChain;
-  timestamp   : TUnixDateTime;
-  const apiKey: string;
-  callback    : TProc<BigInteger, IError>); overload;
+  IEtherscan = interface
+    procedure getBlockNumberByTimestamp(
+      timestamp: TUnixDateTime;
+      callback : TProc<BigInteger, IError>);
+    procedure getErc20TransferEvents(
+      address : TAddress;
+      callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
+    procedure getContractABI(
+      contract: TAddress;
+      callback: TProc<IContractABI, IError>);
+    procedure getContractSourceCode(
+      contract: TAddress;
+      callback: TProc<string, IError>);
+  end;
 
-procedure getErc20TransferEvents(
-  client      : IWeb3;
-  address     : TAddress;
-  callback    : TProc<IDeserializedArray<IErc20TransferEvent>, IError>); overload;
-procedure getErc20TransferEvents(
-  chain       : TChain;
-  address     : TAddress;
-  const apiKey: string;
-  callback    : TProc<IDeserializedArray<IErc20TransferEvent>, IError>); overload;
-
-procedure getContractABI(
-  client      : IWeb3;
-  contract    : TAddress;
-  callback    : TProc<IContractABI, IError>); overload;
-procedure getContractABI(
-  chain       : TChain;
-  contract    : TAddress;
-  const apiKey: string;
-  callback    : TProc<IContractABI, IError>); overload;
+function create(chain: TChain; const apiKey: string): IEtherscan;
 
 implementation
 
@@ -129,39 +114,46 @@ uses
   System.NetEncoding,
   System.TypInfo,
   // web3
-  web3.http.throttler,
-  web3.sync;
+  web3.eth.types,
+  web3.http.throttler;
 
-function endpoint(chain: TChain; const apiKey: string): IResult<string>;
+function endpoint(chain: TChain): IResult<string>; overload;
 begin
   if chain = Ethereum then
-    Result := TResult<string>.Ok(Format('https://api.etherscan.io/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api.etherscan.io/api?')
   else if chain = Goerli then
-    Result := TResult<string>.Ok(Format('https://api-goerli.etherscan.io/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api-goerli.etherscan.io/api?')
   else if chain = Optimism then
-    Result := TResult<string>.Ok(Format('https://api-optimistic.etherscan.io/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api-optimistic.etherscan.io/api?')
   else if chain = OptimismGoerli then
-    Result := TResult<string>.Ok(Format('https://api-goerli-optimistic.etherscan.io/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api-goerli-optimistic.etherscan.io/api?')
   else if chain = BNB then
-    Result := TResult<string>.Ok(Format('https://api.bscscan.com/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api.bscscan.com/api?')
   else if chain = BNB_test_net then
-    Result := TResult<string>.Ok(Format('https://api-testnet.bscscan.com/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api-testnet.bscscan.com/api?')
   else if chain = Polygon then
-    Result := TResult<string>.Ok(Format('https://api.polygonscan.com/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api.polygonscan.com/api?')
   else if chain = PolygonMumbai then
-    Result := TResult<string>.Ok(Format('https://api-testnet.polygonscan.com/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api-testnet.polygonscan.com/api?')
   else if chain = Fantom then
-    Result := TResult<string>.Ok(Format('https://api.ftmscan.com/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api.ftmscan.com/api?')
   else if chain = Fantom_test_net then
-    Result := TResult<string>.Ok(Format('https://api-testnet.ftmscan.com/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api-testnet.ftmscan.com/api?')
   else if chain = Arbitrum then
-    Result := TResult<string>.Ok(Format('https://api.arbiscan.io/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api.arbiscan.io/api?')
   else if chain = ArbitrumGoerli then
-    Result := TResult<string>.Ok(Format('https://goerli.arbiscan.io/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://goerli.arbiscan.io/api?')
   else if chain = Sepolia then
-    Result := TResult<string>.Ok(Format('https://api-sepolia.etherscan.io/api?apikey=%s', [apiKey]))
+    Result := TResult<string>.Ok('https://api-sepolia.etherscan.io/api?')
   else
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
+end;
+
+function endpoint(chain: TChain; const apiKey: string): IResult<string>; overload;
+begin
+  Result := endpoint(chain);
+  if Result.IsOk and (apiKey <> '') then
+    Result := TResult<string>.Ok(Format('%sapikey=%s&', [Result.Value, apiKey]));
 end;
 
 {------------------------------ TEtherscanError -------------------------------}
@@ -389,127 +381,62 @@ begin
   Result := -1;
 end;
 
-{------------------------------- ContractCache --------------------------------}
-
-type
-  IContractCache = interface(ICriticalThing)
-    function  Get(Index: Integer): IContractABI;
-    procedure Put(Index: Integer; const Item: IContractABI);
-    function  Add(const Item: IContractABI): Integer;
-    function  IndexOf(aChain: TChain; aContract: TAddress): Integer;
-  end;
-
-  TContractCache = class(TCriticalList, IContractCache)
-  strict protected
-    function  Get(Index: Integer): IContractABI;
-    procedure Put(Index: Integer; const Item: IContractABI);
-  public
-    function  Add(const Item: IContractABI): Integer;
-    function  IndexOf(aChain: TChain; aContract: TAddress): Integer;
-    property  Items[Index: Integer]: IContractABI read Get write Put; default;
-  end;
-
-function TContractCache.Get(Index: Integer): IContractABI;
-begin
-  Result := IContractABI(inherited Get(Index));
-end;
-
-procedure TContractCache.Put(Index: Integer; const Item: IContractABI);
-begin
-  inherited Put(Index, Item);
-end;
-
-function TContractCache.Add(const Item: IContractABI): Integer;
-begin
-  Result := inherited Add(Item);
-end;
-
-function TContractCache.IndexOf(aChain: TChain; aContract: TAddress): Integer;
-begin
-  for Result := 0 to Pred(Count) do
-    if (Items[Result].Chain = aChain) and (Items[Result].Contract = aContract) then
-      EXIT;
-  Result := -1;
-end;
-
-var
-  _ContractCache: IContractCache = nil;
-
-function ContractCache: IContractCache;
-begin
-  if not Assigned(_ContractCache) then
-    _ContractCache := TContractCache.Create;
-  Result := _ContractCache;
-end;
-
-{------------------------ 5 calls per sec/IP throttler ------------------------}
-
-type
-  IEtherscan = interface
-    procedure Get(
-      chain       : TChain;
-      const apiKey: string;
-      const query : string;
-      callback    : TProc<TJsonValue, IError>);
-  end;
+{--------------------------------- TEtherscan ---------------------------------}
 
 type
   TEtherscan = class(TGetter, IEtherscan)
+  private
+    chain : TChain;
+    apiKey: string;
+  protected
+    procedure get(
+      const query: string;
+      callback   : TProc<TJsonValue, IError>);
   public
-    procedure Get(
-      chain       : TChain;
-      const apiKey: string;
-      const query : string;
-      callback    : TProc<TJsonValue, IError>);
+    procedure getBlockNumberByTimestamp(
+      timestamp: TUnixDateTime;
+      callback : TProc<BigInteger, IError>);
+    procedure getErc20TransferEvents(
+      address : TAddress;
+      callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
+    procedure getContractABI(
+      contract: TAddress;
+      callback: TProc<IContractABI, IError>);
+    procedure getContractSourceCode(
+      contract: TAddress;
+      callback: TProc<string, IError>);
   end;
 
-procedure TEtherscan.Get(
-  chain       : TChain;
-  const apiKey: string;
-  const query : string;
-  callback    : TProc<TJsonValue, IError>);
+function create(chain: TChain; const apiKey: string): IEtherscan;
 begin
-  const URL = endpoint(chain, TNetEncoding.URL.Encode(apiKey));
+  const etherscan = (function: TEtherscan
+  begin
+    if apiKey <> '' then
+      Result := TEtherscan.Create(5)   // 5 req / 1 sec
+    else
+      Result := TEtherscan.Create(0.2) // 1 req / 5 sec
+  end)();
+  etherscan.chain  := chain;
+  etherscan.apiKey := apiKey;
+  Result := etherscan;
+end;
+
+procedure TEtherscan.get(
+  const query: string;
+  callback   : TProc<TJsonValue, IError>);
+begin
+  const URL = endpoint(Self.chain, TNetEncoding.URL.Encode(Self.apiKey));
   if URL.IsErr then
     callback(nil, URL.Error)
   else
     inherited Get(TGet.Create(URL.Value + query, [], callback));
 end;
 
-var
-  _Etherscan: IEtherscan = nil;
-
-function Etherscan: IEtherscan;
-const
-  REQUESTS_PER_SECOND = 5;
-begin
-  if not Assigned(_Etherscan) then
-    _Etherscan := TEtherscan.Create(REQUESTS_PER_SECOND);
-  Result := _Etherscan;
-end;
-
-{------------------------------ global functions ------------------------------}
-
-procedure getBlockNumberByTimestamp(
-  client   : IWeb3;
+procedure TEtherscan.getBlockNumberByTimestamp(
   timestamp: TUnixDateTime;
   callback : TProc<BigInteger, IError>);
 begin
-  getBlockNumberByTimestamp(
-    client.Chain,
-    timestamp,
-    client.ETHERSCAN_API_KEY,
-    callback);
-end;
-
-procedure getBlockNumberByTimestamp(
-  chain       : TChain;
-  timestamp   : TUnixDateTime;
-  const apiKey: string;
-  callback    : TProc<BigInteger, IError>);
-begin
-  Etherscan.Get(chain, apiKey,
-    Format('&module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
+  Self.get(Format('module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
   procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
@@ -525,26 +452,11 @@ begin
   end);
 end;
 
-procedure getErc20TransferEvents(
-  client  : IWeb3;
+procedure TEtherscan.getErc20TransferEvents(
   address : TAddress;
   callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
 begin
-  getErc20TransferEvents(
-    client.Chain,
-    address,
-    client.ETHERSCAN_API_KEY,
-    callback);
-end;
-
-procedure getErc20TransferEvents(
-  chain       : TChain;
-  address     : TAddress;
-  const apiKey: string;
-  callback    : TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
-begin
-  Etherscan.Get(chain, apiKey,
-    Format('&module=account&action=tokentx&address=%s&sort=desc', [address]),
+  Self.get(Format('module=account&action=tokentx&address=%s&sort=desc', [address]),
   procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
@@ -568,37 +480,11 @@ begin
   end);
 end;
 
-procedure getContractABI(
-  client  : IWeb3;
+procedure TEtherscan.getContractABI(
   contract: TAddress;
   callback: TProc<IContractABI, IError>);
 begin
-  getContractABI(
-    client.Chain,
-    contract,
-    client.ETHERSCAN_API_KEY,
-    callback);
-end;
-
-procedure getContractABI(
-  chain       : TChain;
-  contract    : TAddress;
-  const apiKey: string;
-  callback    : TProc<IContractABI, IError>);
-begin
-  ContractCache.Enter;
-  try
-    const I = ContractCache.IndexOf(chain, contract);
-    if I > -1 then
-    begin
-      callback(ContractCache.Get(I), nil);
-      EXIT;
-    end;
-  finally
-    ContractCache.Leave;
-  end;
-  Etherscan.Get(chain, apiKey,
-    Format('&module=contract&action=getabi&address=%s', [contract]),
+  Self.get(Format('module=contract&action=getabi&address=%s', [contract]),
   procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
@@ -619,14 +505,48 @@ begin
       EXIT;
     end;
     try
-      const abi = TContractABI.Create(chain, contract, TJsonArray(&result));
-      ContractCache.Enter;
-      try
-        ContractCache.Add(abi);
-      finally
-        ContractCache.Leave;
+      callback(TContractABI.Create(Self.chain, contract, TJsonArray(&result)), nil);
+    finally
+      &result.Free;
+    end;
+  end);
+end;
+
+procedure TEtherscan.getContractSourceCode(
+  contract: TAddress;
+  callback: TProc<string, IError>);
+begin
+  Self.get(Format('module=contract&action=getsourcecode&address=%s', [contract]),
+  procedure(response: TJsonValue; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback('', err);
+      EXIT;
+    end;
+    const status = web3.json.getPropAsInt(response, 'status');
+    if status = 0 then
+    begin
+      callback('', TEtherscanError.Create(status, response));
+      EXIT;
+    end;
+    const &result = unmarshal(web3.json.getPropAsStr(response, 'result'));
+    if not Assigned(&result) then
+    begin
+      callback('', TEtherscanError.Create(status, nil));
+      EXIT;
+    end;
+    try
+      if &result is TJsonArray then
+      begin
+        const &array = TJsonArray(&result);
+        if &array.Count > 0 then
+        begin
+          callback(web3.json.getPropAsStr(&array[0], 'SourceCode'), nil);
+          EXIT;
+        end;
       end;
-      callback(abi, nil);
+      callback('', TEtherscanError.Create(status, nil));
     finally
       &result.Free;
     end;

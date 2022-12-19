@@ -38,6 +38,7 @@ uses
   web3.eth.contract,
   web3.eth.defi,
   web3.eth.erc20,
+  web3.eth.etherscan,
   web3.eth.types;
 
 type
@@ -69,10 +70,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : IWeb3;
-      reserve : TReserve;
-      period  : TPeriod;
-      callback: TProc<Double, IError>); override;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      reserve  : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -115,7 +117,7 @@ type
     //------- helpers ----------------------------------------------------------
     procedure TokenToUnderlying(amount: BigInteger; callback: TProc<BigInteger, IError>);
     procedure UnderlyingToToken(amount: BigInteger; callback: TProc<BigInteger, IError>);
-    procedure APY(period: TPeriod; callback: TProc<Double, IError>);
+    procedure APY(etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
     //------- write to contract ------------------------------------------------
     procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
     procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
@@ -129,7 +131,6 @@ uses
   System.Math,
   // web3
   web3.eth,
-  web3.eth.etherscan,
   web3.eth.yearn.finance.api,
   web3.utils;
 
@@ -277,10 +278,11 @@ begin
 end;
 
 class procedure TyVaultV2.APY(
-  client  : IWeb3;
-  reserve : TReserve;
-  period  : TPeriod;
-  callback: TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  reserve  : TReserve;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 begin
   const underlying = reserve.Address(client.Chain);
   if underlying.IsErr then
@@ -312,7 +314,7 @@ begin
       const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
       if Assigned(yVaultToken) then
       begin
-        yVaultToken.APY(period, procedure(apy: Double; err: IError)
+        yVaultToken.APY(etherscan, period, procedure(apy: Double; err: IError)
         begin
           try
             if Assigned(err)
@@ -322,7 +324,7 @@ begin
               callback(apy, err);
               EXIT;
             end;
-            Self.APY(client, reserve, Pred(period), callback);
+            Self.APY(client, etherscan, reserve, Pred(period), callback);
           finally
             yVaultToken.Free;
           end;
@@ -563,7 +565,7 @@ begin
   end);
 end;
 
-procedure TyVaultToken.APY(period: TPeriod; callback: TProc<Double, IError>);
+procedure TyVaultToken.APY(etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
 begin
   Self.PricePerShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
   begin
@@ -572,7 +574,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    getBlockNumberByTimestamp(client, web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
+    etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
     begin
       if Assigned(err) then
       begin

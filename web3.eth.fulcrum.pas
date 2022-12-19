@@ -45,6 +45,7 @@ uses
   web3.eth,
   web3.eth.defi,
   web3.eth.erc20,
+  web3.eth.etherscan,
   web3.eth.logs,
   web3.eth.types,
   web3.utils;
@@ -74,10 +75,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : IWeb3;
-      reserve : TReserve;
-      _period : TPeriod;
-      callback: TProc<Double, IError>); override;
+      client    : IWeb3;
+      _etherscan: IEtherscan;
+      reserve   : TReserve;
+      _period   : TPeriod;
+      callback  : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -267,10 +269,11 @@ end;
 
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TFulcrum.APY(
-  client  : IWeb3;
-  reserve : TReserve;
-  _period : TPeriod;
-  callback: TProc<Double, IError>);
+  client    : IWeb3;
+  _etherscan: IEtherscan;
+  reserve   : TReserve;
+  _period   : TPeriod;
+  callback  : TProc<Double, IError>);
 begin
   const iToken = iTokenClass[reserve].Create(client);
   if Assigned(iToken) then

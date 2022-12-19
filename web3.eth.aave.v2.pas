@@ -38,6 +38,7 @@ uses
   web3.eth.contract,
   web3.eth.defi,
   web3.eth.erc20,
+  web3.eth.etherscan,
   web3.eth.types;
 
 type
@@ -63,10 +64,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client  : IWeb3;
-      reserve : TReserve;
-      _period : TPeriod;
-      callback: TProc<Double, IError>); override;
+      client    : IWeb3;
+      _etherscan: IEtherscan;
+      reserve   : TReserve;
+      _period   : TPeriod;
+      callback  : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -240,10 +242,11 @@ begin
 end;
 
 class procedure TAave.APY(
-  client  : IWeb3;
-  reserve : TReserve;
-  _period : TPeriod;
-  callback: TProc<Double, IError>);
+  client    : IWeb3;
+  _etherscan: IEtherscan;
+  reserve   : TReserve;
+  _period   : TPeriod;
+  callback  : TProc<Double, IError>);
 begin
   const AP = TAaveLendingPoolAddressesProvider.Create(client);
   if Assigned(AP) then

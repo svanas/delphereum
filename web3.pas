@@ -216,8 +216,7 @@ type
     procedure Into(callback: TProc<T, IError>);
   end;
 
-  TOnEtherscanApiKey = reference to procedure(var apiKey: string);
-  TOnCustomGasPrice  = reference to procedure(var price: TWei);
+  TOnCustomGasPrice = reference to procedure(var price: TWei);
 
   IJsonRpc = interface
   ['{79B99FD7-3000-4839-96B4-6C779C25AD0C}']
@@ -263,7 +262,6 @@ type
     function Chain: TChain;
     procedure LatestPrice(callback: TProc<Double, IError>);
 
-    function  ETHERSCAN_API_KEY: string;
     function  GetCustomGasPrice: TWei;
     procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
@@ -274,14 +272,12 @@ type
   TCustomWeb3 = class abstract(TInterfacedObject, IWeb3)
   private
     FChain: TChain;
-    FOnCustomGasPrice  : TOnCustomGasPrice;
-    FOnEtherscanApiKey : TOnEtherscanApiKey;
+    FOnCustomGasPrice: TOnCustomGasPrice;
     FOnSignatureRequest: TOnSignatureRequest;
   public
     function Chain: TChain;
     procedure LatestPrice(callback: TProc<Double, IError>);
 
-    function  ETHERSCAN_API_KEY: string;
     function  GetCustomGasPrice: TWei;
     procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
 
@@ -289,7 +285,6 @@ type
     procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; virtual; abstract;
 
     property OnCustomGasPrice  : TOnCustomGasPrice   read FOnCustomGasPrice   write FOnCustomGasPrice;
-    property OnEtherscanApiKey : TOnEtherscanApiKey  read FOnEtherscanApiKey  write FOnEtherscanApiKey;
     property OnSignatureRequest: TOnSignatureRequest read FOnSignatureRequest write FOnSignatureRequest;
   end;
 
@@ -608,12 +603,6 @@ begin
     end)
   else
     callback(0, TError.Create('Price feed does not exist on %s', [Self.Chain.Name]));
-end;
-
-function TCustomWeb3.ETHERSCAN_API_KEY: string;
-begin
-  Result := '';
-  if Assigned(FOnEtherscanApiKey) then FOnEtherscanApiKey(Result);
 end;
 
 function TCustomWeb3.GetCustomGasPrice: TWei;

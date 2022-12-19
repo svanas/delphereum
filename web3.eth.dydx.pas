@@ -41,6 +41,7 @@ uses
   web3.eth.contract,
   web3.eth.defi,
   web3.eth.erc20,
+  web3.eth.etherscan,
   web3.eth.types,
   web3.utils;
 
@@ -64,10 +65,11 @@ type
       chain   : TChain;
       reserve : TReserve): Boolean; override;
     class procedure APY(
-      client  : IWeb3;
-      reserve : TReserve;
-      _period : TPeriod;
-      callback: TProc<Double, IError>); override;
+      client    : IWeb3;
+      _etherscan: IEtherscan;
+      reserve   : TReserve;
+      _period   : TPeriod;
+      callback  : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -261,10 +263,11 @@ end;
 
 // Returns the annual yield as a percentage.
 class procedure TdYdX.APY(
-  client  : IWeb3;
-  reserve : TReserve;
-  _period : TPeriod;
-  callback: TProc<Double, IError>);
+  client    : IWeb3;
+  _etherscan: IEtherscan;
+  reserve   : TReserve;
+  _period   : TPeriod;
+  callback  : TProc<Double, IError>);
 const
   SECONDS_PER_YEAR = 31536000;
 begin

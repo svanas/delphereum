@@ -37,6 +37,7 @@ uses
   web3,
   web3.eth.defi,
   web3.eth.erc20,
+  web3.eth.etherscan,
   web3.eth.types;
 
 type
@@ -67,10 +68,11 @@ type
       callback: TProc<BigInteger, IError>);
   strict protected
     class procedure _APY(
-      client  : IWeb3;
-      yToken  : TyTokenClass;
-      period  : TPeriod;
-      callback: TProc<Double, IError>);
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      yToken   : TyTokenClass;
+      period   : TPeriod;
+      callback : TProc<Double, IError>);
     class procedure _Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -106,7 +108,7 @@ type
     procedure ApproveUnderlying(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
     procedure TokenToUnderlying(amount: BigInteger; callback: TProc<BigInteger, IError>);
     procedure UnderlyingToToken(amount: BigInteger; callback: TProc<BigInteger, IError>);
-    procedure APY(period: TPeriod; callback: TProc<Double, IError>);
+    procedure APY(etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
     //------- write to contract ------------------------------------------------
     procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
     procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
@@ -119,7 +121,6 @@ uses
   System.DateUtils,
   // web3
   web3.eth,
-  web3.eth.etherscan,
   web3.utils;
 
 { TyEarnCustom }
@@ -188,15 +189,16 @@ begin
 end;
 
 class procedure TyEarnCustom._APY(
-  client  : IWeb3;
-  yToken  : TyTokenClass;
-  period  : TPeriod;
-  callback: TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  yToken   : TyTokenClass;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 begin
   const token = yToken.Create(client);
   if Assigned(token) then
   begin
-    token.APY(period, procedure(apy: Double; err: IError)
+    token.APY(etherscan, period, procedure(apy: Double; err: IError)
     begin
       try
         callback(apy, err);
@@ -404,7 +406,7 @@ begin
   end);
 end;
 
-procedure TyToken.APY(period: TPeriod; callback: TProc<Double, IError>);
+procedure TyToken.APY(etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
 begin
   Self.GetPricePerFullShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
   begin
@@ -413,7 +415,7 @@ begin
       callback(0, err);
       EXIT;
     end;
-    getBlockNumberByTimestamp(client, web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
+    etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
     begin
       if Assigned(err) then
       begin
