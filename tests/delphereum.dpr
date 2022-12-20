@@ -50,6 +50,7 @@ uses
   web3.eth.balancer.v2 in '..\web3.eth.balancer.v2.pas',
   web3.eth.blocknative.mempool in '..\web3.eth.blocknative.mempool.pas',
   web3.eth.blocknative.mempool.sgc in '..\web3.eth.blocknative.mempool.sgc.pas',
+  web3.eth.breadcrumbs in '..\web3.eth.breadcrumbs.pas',
   web3.eth.chainlink in '..\web3.eth.chainlink.pas',
   web3.eth.compound in '..\web3.eth.compound.pas',
   web3.eth.contract in '..\web3.eth.contract.pas',
