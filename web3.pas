@@ -36,6 +36,7 @@ uses
   Velthuis.BigIntegers;
 
 type
+  TURL          = string;
   TAddress      = string[42];
   TPrivateKey   = string[64];
   TWei          = BigInteger;
@@ -48,15 +49,16 @@ type
   TChain = record
     Id           : UInt32; // https://chainlist.org
     Name         : string;
+    Symbol       : string;
     TxType       : Byte;   // https://eips.ethereum.org/EIPS/eip-2718 (0 = Legacy, 2 = EIP-1559)
-    Gateway      : array[TTransport] of string;
-    BlockExplorer: string;
-    TokenList    : string;
+    Gateway      : array[TTransport] of TURL;
+    BlockExplorer: TURL;
+    TokenList    : TURL;
     class operator Equal(const Left, Right: TChain): Boolean;
     class operator NotEqual(const Left, Right: TChain): Boolean;
     function SetTxType(Value: Byte): TChain;
-    function SetGateway(const URI: string): TChain; overload;
-    function SetGateway(transport: TTransport; const URI: string): TChain; overload;
+    function SetGateway(const URL: TURL): TChain; overload;
+    function SetGateway(transport: TTransport; const URL: TURL): TChain; overload;
   end;
   PChain = ^TChain;
 
@@ -64,6 +66,7 @@ const
   Ethereum: TChain = (
     Id           : 1;
     Name         : 'Ethereum';
+    Symbol       : 'ETH';
     TxType       : 2;
     BlockExplorer: 'https://etherscan.io';
     TokenList    : 'https://tokens.coingecko.com/uniswap/all.json'
@@ -71,6 +74,7 @@ const
   Goerli: TChain = (
     Id           : 5;
     Name         : 'Goerli';
+    Symbol       : 'ETH';
     TxType       : 2;
     BlockExplorer: 'https://goerli.etherscan.io';
     TokenList    : 'https://raw.githubusercontent.com/svanas/delphereum/master/web3.eth.balancer.v2.tokenlist.goerli.json'
@@ -78,6 +82,7 @@ const
   Optimism: TChain = (
     Id           : 10;
     Name         : 'Optimism';
+    Symbol       : 'ETH';
     TxType       : 2;
     BlockExplorer: 'https://optimistic.etherscan.io';
     TokenList    : 'https://static.optimism.io/optimism.tokenlist.json'
@@ -85,12 +90,14 @@ const
   OptimismGoerli: TChain = (
     Id           : 420;
     Name         : 'Optimism Goerli';
+    Symbol       : 'ETH';
     TxType       : 2;
     BlockExplorer: 'https://goerli-optimistic.etherscan.io'
   );
   RSK: TChain = (
     Id           : 30;
     Name         : 'RSK';
+    Symbol       : 'BTC';
     TxType       : 0;
     Gateway      : ('https://public-node.rsk.co', '');
     BlockExplorer: 'https://explorer.rsk.co'
@@ -98,6 +105,7 @@ const
   RSK_test_net: TChain = (
     Id           : 31;
     Name         : 'RSK testnet';
+    Symbol       : 'BTC';
     TxType       : 0;
     Gateway      : ('https://public-node.testnet.rsk.co', '');
     BlockExplorer: 'https://explorer.testnet.rsk.co'
@@ -105,6 +113,7 @@ const
   BNB: TChain = (
     Id           : 56;
     Name         : 'BNB Chain';
+    Symbol       : 'BNB';
     TxType       : 0;
     Gateway      : ('https://bsc-dataseed.binance.org', '');
     BlockExplorer: 'https://bscscan.com';
@@ -113,6 +122,7 @@ const
   BNB_test_net   : TChain = (
     Id           : 97;
     Name         : 'BNB Chain testnet';
+    Symbol       : 'BNB';
     TxType       : 0;
     Gateway      : ('https://data-seed-prebsc-1-s1.binance.org:8545', '');
     BlockExplorer: 'https://testnet.bscscan.com';
@@ -120,6 +130,7 @@ const
   Gnosis: TChain = (
     Id           : 100;
     Name         : 'Gnosis Chain';
+    Symbol       : 'xDAI';
     TxType       : 2;
     Gateway      : ('https://rpc.gnosischain.com', 'wss://rpc.gnosischain.com/wss');
     BlockExplorer: 'https://gnosisscan.io/';
@@ -128,6 +139,7 @@ const
   Polygon: TChain = (
     Id           : 137;
     Name         : 'Polygon';
+    Symbol       : 'MATIC';
     TxType       : 2;
     BlockExplorer: 'https://polygonscan.com';
     TokenList    : 'https://unpkg.com/quickswap-default-token-list@latest/build/quickswap-default.tokenlist.json'
@@ -135,12 +147,14 @@ const
   PolygonMumbai: TChain = (
     Id           : 80001;
     Name         : 'Polygon Mumbai';
+    Symbol       : 'MATIC';
     TxType       : 2;
     BlockExplorer: 'https://mumbai.polygonscan.com'
   );
   Fantom: TChain = (
     Id           : 250;
     Name         : 'Fantom';
+    Symbol       : 'FTM';
     TxType       : 0;
     Gateway      : ('https://rpc.fantom.network', '');
     BlockExplorer: 'https://ftmscan.com';
@@ -149,6 +163,7 @@ const
   Fantom_test_net: TChain = (
     Id           : 4002;
     Name         : 'Fantom testnet';
+    Symbol       : 'FTM';
     TxType       : 0;
     Gateway      : ('https://rpc.testnet.fantom.network', '');
     BlockExplorer: 'https://testnet.ftmscan.com';
@@ -156,6 +171,7 @@ const
   Arbitrum: TChain = (
     Id           : 42161;
     Name         : 'Arbitrum';
+    Symbol       : 'ETH';
     TxType       : 0;
     BlockExplorer: 'https://explorer.arbitrum.io';
     TokenList    : 'https://bridge.arbitrum.io/token-list-42161.json'
@@ -163,12 +179,14 @@ const
   ArbitrumGoerli: TChain = (
     Id           : 421613;
     Name         : 'Arbitrum Goerli';
+    Symbol       : 'ETH';
     TxType       : 0;
     BlockExplorer: 'https://goerli-rollup-explorer.arbitrum.io';
   );
   Sepolia: TChain = (
     Id           : 11155111;
     Name         : 'Sepolia';
+    Symbol       : 'ETH';
     TxType       : 2;
     Gateway      : ('https://rpc.sepolia.org', '');
     BlockExplorer: 'https://sepolia.etherscan.io';
@@ -434,14 +452,14 @@ begin
   Result := Self;
 end;
 
-function TChain.SetGateway(const URI: string): TChain;
+function TChain.SetGateway(const URL: TURL): TChain;
 begin
-  Result := Self.SetGateway(HTTPS, URI);
+  Result := Self.SetGateway(HTTPS, URL);
 end;
 
-function TChain.SetGateway(transport: TTransport; const URI: string): TChain;
+function TChain.SetGateway(transport: TTransport; const URL: TURL): TChain;
 begin
-  Self.Gateway[transport] := URI;
+  Self.Gateway[transport] := URL;
   Result := Self;
 end;
 
