@@ -68,23 +68,29 @@ type
   end;
 
 type
-  ICriticalInt64 = interface(ICriticalGeneric<Int64>)
-    function Inc: Int64;
+  ICriticalOrd<T> = interface(ICriticalGeneric<T>)
+    function Inc: T;
+    function Dec: T;
+  end;
+
+type
+  ICriticalInt64 = interface(ICriticalOrd<Int64>)
   end;
 
   TCriticalInt64 = class(TCriticalGeneric<Int64>, ICriticalInt64)
   public
     function Inc: Int64;
+    function Dec: Int64;
   end;
 
 type
-  ICriticalBigInt = interface(ICriticalGeneric<BigInteger>)
-    function Inc: BigInteger;
+  ICriticalBigInt = interface(ICriticalOrd<BigInteger>)
   end;
 
   TCriticalBigInt = class(TCriticalGeneric<BigInteger>, ICriticalBigInt)
   public
     function Inc: BigInteger;
+    function Dec: BigInteger;
   end;
 
 type
@@ -186,11 +192,23 @@ begin
   Result := Inner;
 end;
 
+function TCriticalInt64.Dec: Int64;
+begin
+  Inner  := Inner - 1;
+  Result := Inner;
+end;
+
 { TCriticalBigInt }
 
 function TCriticalBigInt.Inc: BigInteger;
 begin
   Inner  := Inner + 1;
+  Result := Inner;
+end;
+
+function TCriticalBigInt.Dec: BigInteger;
+begin
+  Inner  := Inner - 1;
   Result := Inner;
 end;
 
