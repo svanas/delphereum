@@ -37,6 +37,8 @@ uses
   DUnitX.Loggers.Xml.NUnit,
   {$ENDIF }
   DUnitX.TestFramework,
+  web3.bip39 in '..\web3.bip39.pas',
+  web3.bip39.tests in '..\web3.bip39.tests.pas',
   web3.coincap in '..\web3.coincap.pas',
   web3.crypto in '..\web3.crypto.pas',
   web3.crypto.tests in '..\web3.crypto.tests.pas',
