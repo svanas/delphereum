@@ -32,6 +32,11 @@ uses
   System.SysUtils;
 
 type
+  IWordList = interface
+    function Get(Index: Integer): string;
+    procedure LoadFromStream(Stream: TStream; Encoding: TEncoding);
+  end;
+
   TMnemonic = record
   strict private
     FEntropy: TArray<Integer>;
@@ -39,8 +44,8 @@ type
     class function from8bitTo11bit(const input: TBytes): TArray<Integer>; static;
   public
     constructor Create(entropy: TBytes);
-    class function English: TStrings; static;
-    function ToString(const wordlist: TStrings): string;
+    class function English: IWordList; static;
+    function ToString(const wordlist: IWordList): string;
   end;
 
 function create: TMnemonic;
@@ -56,14 +61,50 @@ uses
 
 {$R 'web3.bip39.res'}
 
+// generate a random 15-word mnemonic
 function create: TMnemonic;
 begin
   const rng = TSecureRandom.Create;
   try
-    Result := TMnemonic.Create(rng.GenerateSeed(16));
+    Result := TMnemonic.Create(rng.GenerateSeed(20)); // 160 bits
   finally
     rng.Free;
   end;
+end;
+
+{ TWordList }
+
+type
+  TWordList = class(TInterfacedObject, IWordList)
+  strict private
+    Inner: TStrings;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    function Get(Index: Integer): string;
+    procedure LoadFromStream(Stream: TStream; Encoding: TEncoding);
+  end;
+
+constructor TWordList.Create;
+begin
+  inherited Create;
+  Inner := TStringList.Create;
+end;
+
+destructor TWordList.Destroy;
+begin
+  if Assigned(Inner) then Inner.Free;
+  inherited Destroy;
+end;
+
+function TWordList.Get(Index: Integer): string;
+begin
+  Result := Inner[Index];
+end;
+
+procedure TWordList.LoadFromStream(Stream: TStream; Encoding: TEncoding);
+begin
+  Inner.LoadFromStream(Stream, Encoding);
 end;
 
 { TMnemonic }
@@ -120,9 +161,9 @@ begin
   end;
 end;
 
-class function TMnemonic.English: TStrings;
+class function TMnemonic.English: IWordList;
 begin
-  Result := TStringList.Create;
+  Result := TWordList.Create;
   const RS = TResourceStream.Create(hInstance, 'BIP39_ENGLISH_WORDLIST', RT_RCDATA);
   try
     Result.LoadFromStream(RS, TEncoding.UTF8);
@@ -132,13 +173,13 @@ begin
 end;
 
 // convert entropy-in-groups-of-11-bits to mnemonic sentence
-function TMnemonic.ToString(const wordlist: TStrings): string;
+function TMnemonic.ToString(const wordlist: IWordList): string;
 begin
   Result := '';
   for var I := 0 to High(FEntropy) do
   begin
     if Result <> '' then Result := Result + ' ';
-    Result := Result + wordlist[FEntropy[I]];
+    Result := Result + wordlist.Get(FEntropy[I]);
   end;
 end;
 
