@@ -49,6 +49,7 @@ type
   end;
 
 function create: TMnemonic;
+function seed(const words, passphrase: string): TBytes;
 
 implementation
 
@@ -57,6 +58,10 @@ uses
   System.Hash,
   System.Types,
   // CryptoLib4Pascal
+  ClpConverters,
+  ClpDigestUtilities,
+  ClpIKeyParameter,
+  ClpPkcs5S2ParametersGenerator,
   ClpSecureRandom;
 
 {$R 'web3.bip39.res'}
@@ -69,6 +74,20 @@ begin
     Result := TMnemonic.Create(rng.GenerateSeed(20)); // 160 bits
   finally
     rng.Free;
+  end;
+end;
+
+// from mnemonic sentence to 64-byte seed. please note the password is optional.
+function seed(const words, passphrase: string): TBytes;
+begin
+  const generator = TPkcs5S2ParametersGenerator.Create(TDigestUtilities.GetDigest('SHA-512'));
+  try
+    const password = TConverters.ConvertStringToBytes(words, TEncoding.UTF8);
+    const salt = TConverters.ConvertStringToBytes('mnemonic' + passphrase, TEncoding.UTF8);
+    generator.Init(password, salt, 2048);
+    Result := (generator.GenerateDerivedMacParameters(512) as IKeyParameter).GetKey;
+  finally
+    generator.Free;
   end;
 end;
 

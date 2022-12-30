@@ -74,6 +74,8 @@ begin
           const entropy  = ((vector as TJsonArray)[0] as TJsonString).Value;
           const mnemonic = ((vector as TJsonArray)[1] as TJsonString).Value;
           Assert.AreEqual(TMnemonic.Create(web3.utils.fromHex(entropy)).ToString(TMnemonic.English), mnemonic);
+          const seed = ((vector as TJsonArray)[2] as TJsonString).Value;
+          Assert.AreEqual(web3.utils.toHex(web3.bip39.seed(mnemonic, 'TREZOR')), '0x' + seed);
         end;
     finally
       vectors.Free;
