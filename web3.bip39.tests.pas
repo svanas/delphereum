@@ -37,29 +37,50 @@ type
   TTests = class
   public
     [Test]
-    procedure TestCase0;
-    [Test]
-    procedure TestCase1;
+    procedure TestCase;
   end;
 
 implementation
 
 uses
+  // Delphi
+  System.Classes,
+  System.JSON,
+  System.SysUtils,
+  System.Types,
   // web3
-  web3.bip39;
+  web3.bip39,
+  web3.json,
+  web3.utils;
 
-procedure TTests.TestCase0;
-begin
-  const mnemonic = TMnemonic.Create('00000000000000000000000000000000');
-  const secret = mnemonic.ToString(TMnemonic.English);
-  Assert.AreEqual(secret, 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
-end;
+{$R 'web3.bip39.tests.res'}
 
-procedure TTests.TestCase1;
+procedure TTests.TestCase;
 begin
-  const mnemonic = TMnemonic.Create('7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f');
-  const secret = mnemonic.ToString(TMnemonic.English);
-  Assert.AreEqual(secret, 'legal winner thank year wave sausage worth useful legal winner thank yellow');
+  const RS = TResourceStream.Create(hInstance, 'BIP39_TEST_VECTORS', RT_RCDATA);
+  try
+    const buf = (function: TBytes
+    begin
+      SetLength(Result, RS.Size);
+      RS.Read(Result[0], RS.Size);
+    end)();
+    const vectors = web3.json.unmarshal(TEncoding.UTF8.GetString(buf));
+    if Assigned(vectors) then
+    try
+      const english = web3.json.getPropAsArr(vectors, 'english');
+      if Assigned(english) then
+        for var vector in english do
+        begin
+          const entropy  = ((vector as TJsonArray)[0] as TJsonString).Value;
+          const mnemonic = ((vector as TJsonArray)[1] as TJsonString).Value;
+          Assert.AreEqual(TMnemonic.Create(web3.utils.fromHex(entropy)).ToString(TMnemonic.English), mnemonic);
+        end;
+    finally
+      vectors.Free;
+    end;
+  finally
+    RS.Free;
+  end;
 end;
 
 initialization

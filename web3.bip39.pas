@@ -33,35 +33,45 @@ uses
 
 type
   TMnemonic = record
-  private
+  strict private
     FEntropy: TArray<Integer>;
     class function sha256(const input: TBytes): TBytes; static;
     class function from8bitTo11bit(const input: TBytes): TArray<Integer>; static;
   public
-    constructor Create(const hex: string);
+    constructor Create(entropy: TBytes);
     class function English: TStrings; static;
     function ToString(const wordlist: TStrings): string;
   end;
+
+function create: TMnemonic;
 
 implementation
 
 uses
   // Delphi
   System.Hash,
-  System.Types;
+  System.Types,
+  // CryptoLib4Pascal
+  ClpSecureRandom;
 
 {$R 'web3.bip39.res'}
 
+function create: TMnemonic;
+begin
+  const rng = TSecureRandom.Create;
+  try
+    Result := TMnemonic.Create(rng.GenerateSeed(16));
+  finally
+    rng.Free;
+  end;
+end;
+
 { TMnemonic }
 
-constructor TMnemonic.Create(const hex: string);
+constructor TMnemonic.Create(entropy: TBytes);
 begin
-  // convert hex to bytes, reserve 1 byte for the checksum
-  const len = (Length(hex) div 2) + 1;
-  var entropy: TBytes;
-  SetLength(entropy, len);
-  for var I := 0 to len - 2 do
-    entropy[I] := StrToInt('$' + Copy(hex, 1 + (I * 2), 2));
+  // reserve 1 extra byte for the checksum
+  SetLength(entropy, Length(entropy) + 1);
   // checksum is the 1st byte of the SHA256 digest
   const checksum = TMnemonic.sha256(entropy)[0];
   entropy[High(entropy)] := checksum;
