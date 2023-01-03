@@ -37,7 +37,9 @@ type
   TTests = class
   public
     [Test]
-    procedure SignAndRecover;
+    procedure Sign;
+    [Test]
+    procedure Recover;
   end;
 
 implementation
@@ -46,15 +48,25 @@ uses
   // web3
   web3.eth.crypto;
 
-procedure TTests.SignAndRecover;
+const
+  msg = 'Hello, World!';
+  hex = '0xC7327D84F2790F7255E1B6DEB5090788867E4712753D2F9AA1CC2F5CBCB47F9B7A1EFF2875EE59A7C2BA7CF40715C07241CA056F766134F8F14F2EBA72DAFFA11B';
+
+procedure TTests.Sign;
 begin
-  const msg = 'Hello, World!';
   const signature = web3.eth.crypto.sign('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7', msg);
-  Assert.AreEqual(
-    signature.ToHex,
-    '0xC7327D84F2790F7255E1B6DEB5090788867E4712753D2F9AA1CC2F5CBCB47F9B7A1EFF2875EE59A7C2BA7CF40715C07241CA056F766134F8F14F2EBA72DAFFA11B'
-  );
-  const address = web3.eth.crypto.ecrecover(msg, signature);
+  Assert.AreEqual(signature.ToHex, hex);
+end;
+
+procedure TTests.Recover;
+begin
+  const signature = TSignature.FromHex(hex);
+  if signature.IsErr then
+  begin
+    Assert.Fail(signature.Error.Message);
+    EXIT;
+  end;
+  const address = web3.eth.crypto.ecrecover(msg, signature.Value);
   if address.IsErr then
     Assert.Fail(address.Error.Message)
   else

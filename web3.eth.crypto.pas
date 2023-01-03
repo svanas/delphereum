@@ -62,10 +62,12 @@ type
     R: TBigInteger;
     S: TBigInteger;
     V: TBigInteger;
+    class function Empty: TSignature; static;
   public
     function ToHex: string;
     function RecId: IResult<Int32>;
     constructor Create(R, S, V: TBigInteger);
+    class function FromHex(const hex: string): IResult<TSignature>; static;
   end;
 
 function publicKeyToAddress(pubKey: IECPublicKeyParameters): TAddress;
@@ -182,6 +184,30 @@ begin
   Self.R := R;
   Self.S := S;
   Self.V := V;
+end;
+
+class function TSignature.Empty: TSignature;
+begin
+  Result.R := TBigInteger.Zero;
+  Result.S := TBigInteger.Zero;
+  Result.V := TBigInteger.Zero;
+end;
+
+class function TSignature.FromHex(const hex: string): IResult<TSignature>;
+begin
+  const bytes = web3.utils.fromHex(hex);
+  if Length(bytes) < 65 then
+  begin
+    Result := TResult<TSignature>.Err(TSignature.Empty, 'out of range');
+    EXIT;
+  end;
+
+  var output: TSignature;
+  output.R := TBigInteger.Create(1, copy(bytes, 0, 32));
+  output.S := TBigInteger.Create(1, copy(bytes, 32, 32));
+  output.V := TBigInteger.Create(1, copy(bytes, 64, 1));
+
+  Result := TResult<TSignature>.Ok(output);
 end;
 
 function TSignature.ToHex: string;
