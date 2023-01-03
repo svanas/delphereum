@@ -40,7 +40,6 @@ type
   TMnemonic = record
   strict private
     FEntropy: TArray<Integer>;
-    class function sha256(const input: TBytes): TBytes; static;
     class function from8bitTo11bit(const input: TBytes): TArray<Integer>; static;
   public
     constructor Create(entropy: TBytes);
@@ -55,14 +54,15 @@ implementation
 
 uses
   // Delphi
-  System.Hash,
   System.Types,
   // CryptoLib4Pascal
   ClpConverters,
   ClpDigestUtilities,
   ClpIKeyParameter,
   ClpPkcs5S2ParametersGenerator,
-  ClpSecureRandom;
+  ClpSecureRandom,
+  // web3
+  web3.utils;
 
 {$R 'web3.bip39.res'}
 
@@ -130,25 +130,13 @@ end;
 
 constructor TMnemonic.Create(entropy: TBytes);
 begin
+  // checksum is the 1st byte of the SHA256 digest
+  const checksum = web3.utils.sha256(entropy)[0];
   // reserve 1 extra byte for the checksum
   SetLength(entropy, Length(entropy) + 1);
-  // checksum is the 1st byte of the SHA256 digest
-  const checksum = TMnemonic.sha256(entropy)[0];
   entropy[High(entropy)] := checksum;
   // split entropy in groups of 11 bits, each encoding a number from 0-2047
   Self.FEntropy := TMnemonic.from8bitTo11bit(entropy);
-end;
-
-class function TMnemonic.sha256(const input: TBytes): TBytes;
-begin
-  const stream = TBytesStream.Create;
-  try
-    stream.Write(input, High(input));
-    stream.Position := 0;
-    Result := THashSHA2.GetHashBytes(stream, THashSHA2.TSHA2Version.SHA256);
-  finally
-    stream.Free;
-  end;
 end;
 
 // split entropy in groups of 11 bits, each encoding a number from 0-2047, serving as an index into a wordlist
