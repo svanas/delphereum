@@ -52,6 +52,8 @@ type
     procedure TestCase7;
     [Test]
     procedure TestCase8;
+    [Test]
+    procedure TestCase9;
   end;
 
 implementation
@@ -61,7 +63,8 @@ uses
   System.SysUtils,
   // web3
   web3,
-  web3.eth.tx;
+  web3.eth.tx,
+  web3.utils;
 
 procedure TTests.TestCase1;
 begin
@@ -83,6 +86,32 @@ end;
 
 procedure TTests.TestCase2;
 begin
+  const signed = signTransactionLegacy(
+    1,                                                                          // chainId
+    2,                                                                          // nonce
+    'b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7',         // from private key
+    '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',                               // to public key
+    100000000000000000,                                                         // 0.1 ETH
+    'Chancellor on the Brink of Second Bailout for Banks',                      // data
+    4000000000,                                                                 // 4 Gwei
+    21000                                                                       // gasLimit
+  );
+  if signed.IsErr then
+  begin
+    Assert.Fail(signed.Error.Message);
+    EXIT;
+  end;
+  const signer = ecrecoverTransaction(web3.utils.fromHex(signed.Value));
+  if signer.IsErr then
+  begin
+    Assert.Fail(signer.Error.Message);
+    EXIT;
+  end;
+  Assert.AreEqual(string(signer.Value), '0x12890d2cce102216644c59dae5baed380d84830c');
+end;
+
+procedure TTests.TestCase3;
+begin
   const signed = web3.eth.tx.signTransactionType2(
     1559,                                                                       // chainId
     0,                                                                          // nonce
@@ -98,9 +127,14 @@ begin
     Assert.Fail(signed.Error.Message)
   else
     Assert.AreEqual(signed.Value, '0x02f850820617800304820dac800a80c080a0de12484b58bd47130bf9964740b4d68e42bcbbbc39b2eed5b917f0ae66f5e630a01b0d7aa6a810d63c25c115ef217e37023bbe3146b9bb1fe580d004d6432f7f32');
+  const signer = ecrecoverTransaction(web3.utils.fromHex(signed.Value));
+  if signer.IsErr then
+    Assert.Fail(signer.Error.Message)
+  else
+    Assert.AreEqual(string(signer.Value), '0x12890d2cce102216644c59dae5baed380d84830c');
 end;
 
-procedure TTests.TestCase3;
+procedure TTests.TestCase4;
 begin
   const signed = web3.eth.tx.signTransactionType2(
     1559,                                                                       // chainId
@@ -117,9 +151,14 @@ begin
     Assert.Fail(signed.Error.Message)
   else
     Assert.AreEqual(signed.Value, '0x02f866820617020304820dac941ad91ee08f21be3de0ba2ba6918e714da6b458360a821232c080a0d5ee3f01ce51d2b2930b268361be6fe9fc542e09311336d335cc4658d7bd7128a0038501925930d090429373c7855220d33a6cb949ea3bea273edcd540271c59ce');
+  const signer = ecrecoverTransaction(web3.utils.fromHex(signed.Value));
+  if signer.IsErr then
+    Assert.Fail(signer.Error.Message)
+  else
+    Assert.AreEqual(string(signer.Value), '0x12890d2cce102216644c59dae5baed380d84830c');
 end;
 
-procedure TTests.TestCase4;
+procedure TTests.TestCase5;
 begin
   const signed = web3.eth.tx.signTransactionType2(
     0,                                                                          // chainId
@@ -136,9 +175,14 @@ begin
     Assert.Fail(signed.Error.Message)
   else
     Assert.AreEqual(signed.Value, '0x02f84c8080808080808080c001a001d4a14026b819394d91fef9336d00d3febed6fbe5d0a993c0d29a3b275c03b6a00cf6961f932346b5e6e5774c063e7a8794cd2dace75464d1fe5f38f3ba744cb5');
+  const signer = ecrecoverTransaction(web3.utils.fromHex(signed.Value));
+  if signer.IsErr then
+    Assert.Fail(signer.Error.Message)
+  else
+    Assert.AreEqual(string(signer.Value), '0x12890d2cce102216644c59dae5baed380d84830c');
 end;
 
-procedure TTests.TestCase5;
+procedure TTests.TestCase6;
 begin
   const signed = web3.eth.tx.signTransactionType2(
     2,                                                                          // chainId
@@ -155,9 +199,14 @@ begin
     Assert.Fail(signed.Error.Message)
   else
     Assert.AreEqual(signed.Value, '0x02f84e02800304820dac800a80c001a046cfe7dde69e52b91eafd3b213e4547d9ff6294a5ad79383bdb347828fe20102a041e5ab79953b91967bf790a138d9c380d856e6d8b783f1c1751bc446610e6cc6');
+  const signer = ecrecoverTransaction(web3.utils.fromHex(signed.Value));
+  if signer.IsErr then
+    Assert.Fail(signer.Error.Message)
+  else
+    Assert.AreEqual(string(signer.Value), '0x12890d2cce102216644c59dae5baed380d84830c');
 end;
 
-procedure TTests.TestCase6;
+procedure TTests.TestCase7;
 begin
   const signed = web3.eth.tx.signTransactionType2(
     1559,                                                                       // chainId
@@ -174,9 +223,14 @@ begin
     Assert.Fail(signed.Error.Message)
   else
     Assert.AreEqual(signed.Value, '0x02f852820617800380820dac8080821232c001a0ea5637f224ab5b53d4efff652631e42647f3e4a1c539a14864b788c5178ae186a0242e177e38763bf6a0c0c48e9c078814177286367767e09fb362ce49b3577bc3');
+  const signer = ecrecoverTransaction(web3.utils.fromHex(signed.Value));
+  if signer.IsErr then
+    Assert.Fail(signer.Error.Message)
+  else
+    Assert.AreEqual(string(signer.Value), '0x12890d2cce102216644c59dae5baed380d84830c');
 end;
 
-procedure TTests.TestCase7;
+procedure TTests.TestCase8;
 begin
   const signed = web3.eth.tx.signTransactionType2(
     1559,                                                                       // chainId
@@ -193,9 +247,14 @@ begin
     Assert.Fail(signed.Error.Message)
   else
     Assert.AreEqual(signed.Value, '0x02f866820617640304820dac941ad91ee08f21be3de0ba2ba6918e714da6b458360a821232c001a04e731e02022a10b97312998630d3dcaabda660e4a5f53d0fc1ebf4ba0cf8597fa01f4639e24823c565e3ac8e094e6eda571d1691022de83285925f9979b8ad7365');
+  const signer = ecrecoverTransaction(web3.utils.fromHex(signed.Value));
+  if signer.IsErr then
+    Assert.Fail(signer.Error.Message)
+  else
+    Assert.AreEqual(string(signer.Value), '0x12890d2cce102216644c59dae5baed380d84830c');
 end;
 
-procedure TTests.TestCase8;
+procedure TTests.TestCase9;
 begin
   const signed = web3.eth.tx.signTransactionType2(
     1559,                                                                       // chainId
@@ -212,6 +271,11 @@ begin
     Assert.Fail(signed.Error.Message)
   else
     Assert.AreEqual(signed.Value, '0x02f864820617020304820dac941ad91ee08f21be3de0ba2ba6918e714da6b458360a80c080a02b7505766dabb65f8ef497955459f9ea43ff4a092153a8acb277321a80b784a8a0276140649dae47bbb8f6d8fdc3e0daddb58bba498aa4e0b8c547d0d8ebdbf9a5');
+  const signer = ecrecoverTransaction(web3.utils.fromHex(signed.Value));
+  if signer.IsErr then
+    Assert.Fail(signer.Error.Message)
+  else
+    Assert.AreEqual(string(signer.Value), '0x12890d2cce102216644c59dae5baed380d84830c');
 end;
 
 initialization
