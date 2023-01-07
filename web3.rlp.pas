@@ -30,12 +30,9 @@ interface
 
 uses
   // Delphi
-  System.Math,
   System.SysUtils,
-  System.Variants,
   // web3
-  web3,
-  web3.utils;
+  web3;
 
 type
   TDataType = (dtString, dtList);
@@ -50,9 +47,18 @@ function encode(item: Integer): IResult<TBytes>; overload;
 function encode(const item: string): IResult<TBytes>; overload;
 function encode(item: TVarRec): IResult<TBytes>; overload;
 function encode(items: array of const): IResult<TBytes>; overload;
+function recode(items: array of TItem): IResult<TBytes>;
 function decode(const input: TBytes): IResult<TArray<TItem>>;
 
 implementation
+
+uses
+  // Delphi
+  System.Math,
+  System.Variants,
+  // web3
+  web3.error,
+  web3.utils;
 
 function encodeLength(len, offset: Integer): IResult<TBytes>;
 
@@ -159,6 +165,27 @@ begin
   for var item in items do
   begin
     Result := encode(item);
+    if Result.IsErr then
+      EXIT;
+    output := output + Result.Value;
+  end;
+  Result := encodeLength(Length(output), $c0);
+  if Result.IsOk then
+    Result := TResult<TBytes>.Ok(Result.Value + output);
+end;
+
+function recode(items: array of TItem): IResult<TBytes>;
+begin
+  var output: TBytes := [];
+  for var item in items do
+  begin
+    if item.DataType = dtString then
+      Result := encodeItem(item.Bytes)
+    else
+      if Length(item.Bytes) = 0 then
+        Result := encodeItem(VarArrayCreate([0, 0], varVariant))
+      else
+        Result := TResult<TBytes>.Err([], TNotImplemented.Create);
     if Result.IsErr then
       EXIT;
     output := output + Result.Value;
