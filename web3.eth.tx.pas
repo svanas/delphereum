@@ -83,6 +83,9 @@ function signTransactionType2(
   maxFee        : TWei;
   gasLimit      : BigInteger): IResult<string>;
 
+// recover signer from Ethereum-signed transaction
+function ecrecoverTransaction(encoded: TBytes): IResult<TAddress>;
+
 // send raw (aka signed) transaction.
 procedure sendTransaction(
   client   : IWeb3;
@@ -162,6 +165,7 @@ uses
   ClpBigInteger,
   // web3
   web3.error,
+  web3.eth,
   web3.eth.crypto,
   web3.eth.gas,
   web3.eth.nonce,
@@ -377,6 +381,202 @@ begin
   finally
     Signer.Free;
   end;
+end;
+
+// recover signer from legacy transaction
+function ecrecoverTransactionLegacy(encoded: TBytes): IResult<TAddress>;
+
+  function getChainId(const V: TBytes): IResult<Int32>;
+  begin
+    if Length(V) = 0 then
+    begin
+      Result := TResult<Int32>.Err(0, 'V is null');
+      EXIT;
+    end;
+    var I: Int32 := V[0];
+    if I < 35 then
+    begin
+      Result := TResult<Int32>.Err(0, 'V is out of range');
+      EXIT;
+    end;
+    if I mod 2 = 0 then
+      I := I - 36
+    else
+      I := I - 35;
+    Result := TResult<Int32>.Ok(I div 2);
+  end;
+
+begin
+  const decoded = web3.rlp.decode(encoded);
+  if decoded.IsErr then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, decoded.Error);
+    EXIT;
+  end;
+
+  if (Length(decoded.Value) <> 1) or (decoded.Value[0].DataType <> dtList) then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'not a legacy transaction');
+    EXIT;
+  end;
+
+  const signature = web3.rlp.decode(decoded.Value[0].Bytes);
+  if signature.IsErr then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, signature.Error);
+    EXIT;
+  end;
+
+  if Length(signature.Value) < 9 then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'not a legacy transaction');
+    EXIT;
+  end;
+
+  const chainId = getChainId(signature.Value[6].Bytes);
+  if chainId.IsErr then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, signature.Error);
+    EXIT;
+  end;
+
+  const msg = web3.rlp.recode([
+    signature.Value[0],                                          // nonce
+    signature.Value[1],                                          // gasPrice
+    signature.Value[2],                                          // gas(Limit)
+    signature.Value[3],                                          // to
+    signature.Value[4],                                          // value
+    signature.Value[5],                                          // data
+    TItem.Create(fromHex(IntToHex(chainId.Value, 0)), dtString), // v
+    TItem.Create([], dtString),                                  // r
+    TItem.Create([], dtString)                                   // s
+  ]);
+
+  if msg.IsErr then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, msg.Error);
+    EXIT;
+  end;
+
+  Result := ecrecover(sha3(msg.Value), TSignature.Create(
+    TBigInteger.Create(1, signature.Value[7].Bytes),  // R
+    TBigInteger.Create(1, signature.Value[8].Bytes),  // S
+    TBigInteger.Create(1, signature.Value[6].Bytes)), // V
+    function(const V: TBigInteger): IResult<Int32>
+    begin
+      const B = V.ToByteArrayUnsigned;
+      if Length(B) = 0 then
+      begin
+        Result := TResult<Int32>.Err(0, 'V is null');
+        EXIT;
+      end;
+      var I: Int32 := B[0];
+      if I < 35 then
+      begin
+        Result := TResult<Int32>.Err(0, 'V is out of range');
+        EXIT;
+      end;
+      if I mod 2 = 0 then
+        Result := TResult<Int32>.Ok(1)
+      else
+        Result := TResult<Int32>.Ok(0);
+    end);
+end;
+
+// recover signer from EIP-1559 transaction
+function ecrecoverTransactionType2(encoded: TBytes): IResult<TAddress>;
+begin
+  const decoded = web3.rlp.decode(encoded);
+  if decoded.IsErr then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, decoded.Error);
+    EXIT;
+  end;
+
+  if (Length(decoded.Value) <> 2)
+  or (Length(decoded.Value[0].Bytes) <> 1)
+  or (decoded.Value[0].Bytes[0] < 2)
+  or (decoded.Value[1].DataType <> dtList) then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'not an EIP-1559 transaction');
+    EXIT;
+  end;
+
+  const signature = web3.rlp.decode(decoded.Value[1].Bytes);
+  if signature.IsErr then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, signature.Error);
+    EXIT;
+  end;
+
+  if Length(signature.Value) < 12 then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'not an EIP-1559 transactionn');
+    EXIT;
+  end;
+
+  const msg = web3.rlp.recode([
+    signature.Value[0], // chainId
+    signature.Value[1], // nonce
+    signature.Value[2], // maxPriorityFeePerGas
+    signature.Value[3], // maxFeePerGas
+    signature.Value[4], // gas(Limit)
+    signature.Value[5], // to
+    signature.Value[6], // value
+    signature.Value[7], // data
+    signature.Value[8]  // accessList
+  ]);
+
+  if msg.IsErr then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, msg.Error);
+    EXIT;
+  end;
+
+  Result := ecrecover(sha3([decoded.Value[0].Bytes[0]] + msg.Value), TSignature.Create(
+    TBigInteger.Create(1, signature.Value[10].Bytes), // R
+    TBigInteger.Create(1, signature.Value[11].Bytes), // S
+    TBigInteger.Create(1, signature.Value[9].Bytes)), // V
+    function(const V: TBigInteger): IResult<Int32>
+    begin
+      const bytes = V.ToByteArrayUnsigned;
+      if Length(bytes) = 0 then
+        Result := TResult<Int32>.Ok(0)
+      else
+        Result := TResult<Int32>.Ok(bytes[0]);
+    end);
+end;
+
+// recovery signer from Ethereum-signed transaction
+function ecrecoverTransaction(encoded: TBytes): IResult<TAddress>;
+begin
+  const decoded = web3.rlp.decode(encoded);
+  if decoded.IsErr then
+  begin
+    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, decoded.Error);
+    EXIT;
+  end;
+
+  // EIP-1559 ['2', [signature]]
+  if Length(decoded.Value) = 2 then
+  begin
+    const i0 = decoded.Value[0];
+    const i1 = decoded.Value[1];
+    if (Length(i0.Bytes) = 1) and (i0.Bytes[0] >= 2) and (i1.DataType = dtList) then
+    begin
+      Result := ecRecoverTransactionType2(encoded);
+      EXIT;
+    end;
+  end;
+
+  // Legacy transaction
+  if (Length(decoded.Value) = 1) and (decoded.Value[0].DataType = dtList) then
+  begin
+    Result := ecRecoverTransactionLegacy(encoded);
+    EXIT;
+  end;
+
+  Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'unknown transaction encoding');
 end;
 
 // send raw (aka signed) transaction.

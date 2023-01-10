@@ -80,6 +80,7 @@ uses
   System.JSON,
   System.Math,
   // HashLib4Pascal
+  HlpIHash,
   HlpSHA3,
   // CryptoLib4Pascal
   ClpDigestUtilities,

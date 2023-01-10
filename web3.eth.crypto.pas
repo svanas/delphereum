@@ -57,6 +57,8 @@ type
     function GenerateSignature(const msg: TCryptoLibByteArray): TECDsaSignature; reintroduce;
   end;
 
+  TGetRecId = reference to function(const V: TBigInteger): IResult<Int32>;
+
   TSignature = record
   private
     R: TBigInteger;
@@ -65,14 +67,14 @@ type
     class function Empty: TSignature; static;
   public
     function ToHex: string;
-    function RecId: IResult<Int32>;
     constructor Create(R, S, V: TBigInteger);
     class function FromHex(const hex: string): IResult<TSignature>; static;
   end;
 
 function publicKeyToAddress(pubKey: IECPublicKeyParameters): TAddress;
-function sign(privateKey: TPrivateKey; const msg: string): TSignature; // calculate an Ethereum-specific signature
-function ecrecover(const msg: string; signature: TSignature): IResult<TAddress>; // recover signer from signature
+function sign(privateKey: TPrivateKey; const msg: string): TSignature;
+function ecrecover(const msg: string; signature: TSignature): IResult<TAddress>; overload;
+function ecrecover(const data: TBytes; signature: TSignature; getRecId: TGetRecId): IResult<TAddress>; overload;
 
 implementation
 
@@ -96,7 +98,7 @@ begin
   );
 end;
 
-// calculate an Ethereum-specific signature
+// sign message, output Ethereum-specific signature
 function sign(privateKey: TPrivateKey; const msg: string): TSignature;
 begin
   const Signer = TEthereumSigner.Create;
@@ -110,8 +112,30 @@ begin
   end;
 end;
 
-// recover signer from Ethereum-specific signature
+// recover signer from Ethereum signed message
 function ecrecover(const msg: string; signature: TSignature): IResult<TAddress>;
+begin
+  Result := ecrecover(prefix(msg), signature, function(const V: TBigInteger): IResult<Int32>
+  begin
+    const B = V.ToByteArrayUnsigned;
+    if Length(B) = 0 then
+    begin
+      Result := TResult<Int32>.Err(0, 'V is null');
+      EXIT;
+    end;
+    var I: Int32 := B[0];
+    if (I < 27) or (I > 34) then
+    begin
+      Result := TResult<Int32>.Err(0, 'V is out of range');
+      EXIT;
+    end;
+    if I >= 31 then I := I - 4;
+    Result := TResult<Int32>.Ok(I - 27);
+  end)
+end;
+
+// recover signer from Ethereum-specific signature
+function ecrecover(const data: TBytes; signature: TSignature; getRecId: TGetRecId): IResult<TAddress>;
 
   function decompressKey(curve: IECCurve; xBN: TBigInteger; yBit: Boolean): IECPoint;
   begin
@@ -124,7 +148,7 @@ function ecrecover(const msg: string; signature: TSignature): IResult<TAddress>;
   end;
 
 begin
-  const recId = signature.RecId;
+  const recId = getRecId(signature.V);
   if recId.IsErr then
   begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, recId.Error);
@@ -149,8 +173,7 @@ begin
     EXIT;
   end;
 
-  const hashed = prefix(msg);
-  const e        = TBigInteger.Create(1, hashed);
+  const e        = TBigInteger.Create(1, data);
   const eInv     = TBigInteger.Zero.Subtract(e).&Mod(n);
   const rInv     = signature.R.ModInverse(n);
   const srInv    = rInv.Multiply(signature.S).&Mod(n);
@@ -213,30 +236,6 @@ end;
 function TSignature.ToHex: string;
 begin
   Result := web3.utils.toHex(Self.R.ToByteArrayUnsigned + Self.S.ToByteArrayUnsigned + Self.V.ToByteArrayUnsigned);
-end;
-
-function TSignature.RecId: IResult<Int32>;
-begin
-  const V = Self.V.ToByteArrayUnsigned;
-  if Length(V) = 0 then
-  begin
-    Result := TResult<Int32>.Err(0, 'header is null');
-    EXIT;
-  end;
-  var header: Int32 := V[0];
-  if (header < 27) or (header > 34) then
-  begin
-    Result := TResult<Int32>.Err(0, 'header byte out of range');
-    EXIT;
-  end;
-  if header >= 31 then header := header - 4;
-  header := header - 27;
-  if header < 0 then
-  begin
-    Result := TResult<Int32>.Err(0, 'recId should be positive');
-    EXIT;
-  end;
-  Result := TResult<Int32>.Ok(header);
 end;
 
 end.

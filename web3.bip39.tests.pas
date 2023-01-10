@@ -45,6 +45,7 @@ implementation
 uses
   // Delphi
   System.Classes,
+  System.Generics.Collections,
   System.JSON,
   System.SysUtils,
   System.Types,
