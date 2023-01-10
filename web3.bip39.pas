@@ -47,8 +47,12 @@ type
     function ToString(const wordlist: IWordList): string;
   end;
 
-function create: TMnemonic;
-function seed(const words, passphrase: string): TBytes;
+  TWords = (Twelve, Fifteen, Eighteen, TwentyOne, TwentyFour);
+  TSeed  = TBytes;
+
+function create: TMnemonic; overload;
+function create(length: TWords): TMnemonic; overload;
+function seed(const words, passphrase: string): TSeed;
 
 implementation
 
@@ -69,16 +73,29 @@ uses
 // generate a random 15-word mnemonic
 function create: TMnemonic;
 begin
+  Result := create(Fifteen);
+end;
+
+function create(length: TWords): TMnemonic;
+const
+  ENTROPY: array[TWords] of Int32 = (
+    128, // 12 words
+    160, // 15 words
+    192, // 18 words
+    224, // 21 words
+    256  // 24 words
+  );
+begin
   const rng = TSecureRandom.Create;
   try
-    Result := TMnemonic.Create(rng.GenerateSeed(20)); // 160 bits
+    Result := TMnemonic.Create(rng.GenerateSeed(ENTROPY[length] div 8));
   finally
     rng.Free;
   end;
 end;
 
 // from mnemonic sentence to 64-byte seed. please note the password is optional.
-function seed(const words, passphrase: string): TBytes;
+function seed(const words, passphrase: string): TSeed;
 begin
   const generator = TPkcs5S2ParametersGenerator.Create(TDigestUtilities.GetDigest('SHA-512'));
   try
