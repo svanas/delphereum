@@ -81,6 +81,7 @@ uses
   System.Math,
   // HashLib4Pascal
   HlpIHash,
+  HlpIHashInfo,
   HlpSHA3,
   // CryptoLib4Pascal
   ClpDigestUtilities,
