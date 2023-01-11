@@ -39,12 +39,12 @@ uses
 
 type
   INFT = interface
-    function ChainId : Integer;
-    function Address : TAddress;
-    function TokenId : BigInteger;
-    function Name    : string;
-    function ImageURL: string;
-    function Standard: TStandard;
+    function ChainId: Integer;
+    function Address: TAddress;
+    function TokenId: BigInteger;
+    function Name   : string;
+    function Image  : TURL;
+    function Asset  : TAssetType;
   end;
 
   TNFTs = TArray<INFT>;
@@ -73,19 +73,19 @@ uses
 type
   TNFT = class(TCustomDeserialized, INFT)
   private
-    FChainId : Integer;
-    FAddress : TAddress;
-    FTokenId : BigInteger;
-    FName    : string;
-    FImageURL: string;
-    FStandard: TStandard;
+    FChainId: Integer;
+    FAddress: TAddress;
+    FTokenId: BigInteger;
+    FName   : string;
+    FImage  : TURL;
+    FAsset  : TAssetType;
   public
-    function ChainId : Integer;
-    function Address : TAddress;
-    function TokenId : BigInteger;
-    function Name    : string;
-    function ImageURL: string;
-    function Standard: TStandard;
+    function ChainId: Integer;
+    function Address: TAddress;
+    function TokenId: BigInteger;
+    function Name   : string;
+    function Image  : string;
+    function Asset  : TAssetType;
     constructor Create(aChainId: Integer; aJsonValue: TJsonObject); reintroduce;
   end;
 
@@ -93,16 +93,16 @@ constructor TNFT.Create(aChainId: Integer; aJsonValue: TJsonObject);
 begin
   inherited Create(aJsonValue);
 
-  FChainId  := aChainId;
-  FTokenId  := getPropAsBigInt(aJsonValue, 'token_id');
-  FName     := getPropAsStr(aJsonValue, 'name');
-  FImageURL := getPropAsStr(aJsonValue, 'image_url');
+  FChainId := aChainId;
+  FTokenId := getPropAsBigInt(aJsonValue, 'token_id');
+  FName    := getPropAsStr(aJsonValue, 'name');
+  FImage   := getPropAsStr(aJsonValue, 'image_url');
 
   const contract = getPropAsObj(aJsonValue, 'asset_contract');
   if Assigned(contract) then
   begin
-    FAddress  := TAddress.Create(getPropAsStr(contract, 'address'));
-    FStandard := TStandard.Create(getPropAsStr(contract, 'schema_name'));
+    FAddress := TAddress.Create(getPropAsStr(contract, 'address'));
+    FAsset   := TAssetType.Create(getPropAsStr(contract, 'schema_name'));
   end;
 end;
 
@@ -126,14 +126,14 @@ begin
   Result := FTokenId;
 end;
 
-function TNFT.ImageURL: string;
+function TNFT.Image: TURL;
 begin
-  Result := FImageURL;
+  Result := FImage;
 end;
 
-function TNFT.Standard: TStandard;
+function TNFT.Asset: TAssetType;
 begin
-  Result := FStandard;
+  Result := FAsset;
 end;
 
 {------------------------------- TTokensHelper --------------------------------}

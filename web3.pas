@@ -44,7 +44,7 @@ type
   TUnixDateTime = Int64;
   TTransport    = (HTTPS, WebSocket);
   TSecurity     = (Automatic, TLS_10, TLS_11, TLS_12, TLS_13);
-  TStandard     = (erc20, erc721, erc1155);
+  TAssetType    = (native, erc20, erc721, erc1155);
 
   TChain = record
     Id           : UInt32; // https://chainlist.org
@@ -193,7 +193,7 @@ const
   );
 
 type
-  TStandardHelper = record helper for TStandard
+  TAssetTypeHelper = record helper for TAssetType
     constructor Create(const name: string);
   end;
 
@@ -463,16 +463,18 @@ begin
   Result := Self;
 end;
 
-{ TStandardHelper }
+{ TAssetTypeHelper }
 
-constructor TStandardHelper.Create(const name: string);
+constructor TAssetTypeHelper.Create(const name: string);
 begin
   if SameText(name, 'ERC1155') or SameText(name, 'ERC-1155') then
     Self := erc1155
   else if SameText(name, 'ERC721') or SameText(name, 'ERC-721') then
     Self := erc721
+  else if SameText(name, 'ERC20') or SameText(name, 'ERC-20') then
+    Self := erc20
   else
-    Self := erc20;
+    Self := native;
 end;
 
 { TError }

@@ -331,8 +331,8 @@ function TContractABI.IndexOf(
   InputCount: Integer): Integer;
 begin
   const count = Self.Count;
-  if count.IsOk then
-    for Result := 0 to Pred(count.Value) do
+  if count > 0 then
+    for Result := 0 to Pred(count) do
     begin
       const Item = Self.Item(Result);
       if  (Item.Name = Name)
@@ -349,8 +349,8 @@ function TContractABI.IndexOf(
   StateMutability: TStateMutability): Integer;
 begin
   const count = Self.Count;
-  if count.IsOk then
-    for Result := 0 to Pred(count.Value) do
+  if count > 0 then
+    for Result := 0 to Pred(count) do
     begin
       const Item = Self.Item(Result);
       if  (Item.Name = Name)
@@ -368,8 +368,8 @@ function TContractABI.IndexOf(
   StateMutability: TStateMutability): Integer;
 begin
   const count = Self.Count;
-  if count.IsOk then
-    for Result := 0 to Pred(count.Value) do
+  if count > 0 then
+    for Result := 0 to Pred(count) do
     begin
       const Item = Self.Item(Result);
       if  (Item.Name = Name)

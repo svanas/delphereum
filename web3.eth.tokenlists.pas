@@ -46,7 +46,7 @@ type
     function Name: string;
     function Symbol: string;
     function Decimals: Integer;
-    function LogoURI: string;
+    function Logo: TURL;
     procedure Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
   end;
 
@@ -87,14 +87,14 @@ type
     FName: string;
     FSymbol: string;
     FDecimals: Integer;
-    FLogoURI: string;
+    FLogo: TURL;
   public
     function ChainId: UInt32;
     function Address: TAddress;
     function Name: string;
     function Symbol: string;
     function Decimals: Integer;
-    function LogoURI: string;
+    function Logo: TURL;
     procedure Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
     constructor Create(const aJsonValue: TJsonValue); override;
   end;
@@ -107,7 +107,7 @@ begin
   FName := getPropAsStr(aJsonValue, 'name');
   FSymbol := getPropAsStr(aJsonValue, 'symbol');
   FDecimals := getPropAsInt(aJsonValue, 'decimals');
-  FLogoURI := getPropAsStr(aJsonValue, 'logoURI');
+  FLogo := getPropAsStr(aJsonValue, 'logoURI');
 end;
 
 function TToken.ChainId: UInt32;
@@ -135,9 +135,9 @@ begin
   Result := FDecimals;
 end;
 
-function TToken.LogoURI: string;
+function TToken.Logo: TURL;
 begin
-  Result := FLogoURI;
+  Result := FLogo;
 end;
 
 procedure TToken.Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);

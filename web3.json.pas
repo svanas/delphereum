@@ -52,13 +52,13 @@ type
   end;
 
   IDeserializedArray<T: IInterface> = interface
-    function Count: IResult<Integer>;
+    function Count: Integer;
     function Item(const Index: Integer): T;
   end;
 
   TDeserializedArray<T: IInterface> = class abstract(TDeserialized, IDeserializedArray<T>)
   public
-    function Count: IResult<Integer>;
+    function Count: Integer;
     function Item(const Index: Integer): T; virtual; abstract;
   end;
 
@@ -101,12 +101,12 @@ end;
 
 {--------------------------- TDeserializedArray<T> ----------------------------}
 
-function TDeserializedArray<T>.Count: IResult<Integer>;
+function TDeserializedArray<T>.Count: Integer;
 begin
   if Self.FJsonValue is TJsonArray then
-    Result := TResult<Integer>.Ok(TJsonArray(Self.FJsonValue).Count)
+    Result := TJsonArray(Self.FJsonValue).Count
   else
-    Result := TResult<Integer>.Err(0, 'not an array');
+    Result := 0;
 end;
 
 {------------------------------ global functions ------------------------------}

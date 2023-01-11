@@ -32,8 +32,8 @@ uses
   // web3
   web3;
 
-function endpoint(chain: TChain; const projectId: string): IResult<string>; overload;
-function endpoint(chain: TChain; protocol: TTransport; const projectId: string): IResult<string>; overload;
+function endpoint(chain: TChain; const apiKey: string): IResult<string>; overload;
+function endpoint(chain: TChain; protocol: TTransport; const apiKey: string): IResult<string>; overload;
 
 implementation
 
@@ -89,17 +89,17 @@ begin
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
-function endpoint(chain: TChain; const projectId: string): IResult<string>;
+function endpoint(chain: TChain; const apiKey: string): IResult<string>;
 begin
-  Result := endpoint(chain, TTransport.HTTPS, projectId);
+  Result := endpoint(chain, TTransport.HTTPS, apiKey);
 end;
 
-function endpoint(chain: TChain; protocol: TTransport; const projectId: string): IResult<string>;
+function endpoint(chain: TChain; protocol: TTransport; const apiKey: string): IResult<string>;
 begin
   if protocol = TTransport.WebSocket then
-    Result := WebSocket(chain, projectId)
+    Result := WebSocket(chain, apiKey)
   else
-    Result := HTTPS(chain, projectId);
+    Result := HTTPS(chain, apiKey);
 end;
 
 end.
