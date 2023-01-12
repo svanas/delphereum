@@ -54,13 +54,17 @@ type
     function Unscale : Double;
   end;
 
+  IAssetChanges = interface(IDeserializedArray<IAssetChange>)
+    function IndexOf(contract: TAddress): Integer;
+  end;
+
 procedure simulate(
   const apiKey: string;
   const chain : TChain;
   from, &to   : TAddress;
   value       : TWei;
   const data  : string;
-  callback    : TProc<IDeserializedArray<IAssetChange>, IError>);
+  callback    : TProc<IAssetChanges, IError>);
 
 implementation
 
@@ -148,14 +152,25 @@ begin
 end;
 
 type
-  TAssetChangeArray = class(TDeserializedArray<IAssetChange>)
+  TAssetChanges = class(TDeserializedArray<IAssetChange>, IAssetChanges)
   public
     function Item(const Index: Integer): IAssetChange; override;
+    function IndexOf(contract: TAddress): Integer;
   end;
 
-function TAssetChangeArray.Item(const Index: Integer): IAssetChange;
+function TAssetChanges.Item(const Index: Integer): IAssetChange;
 begin
   Result := TAssetChange.Create(TJsonArray(FJsonValue)[Index]);
+end;
+
+function TAssetChanges.IndexOf(contract: TAddress): Integer;
+begin
+  const count = Self.Count;
+  if count > 0 then
+    for Result := 0 to Pred(count) do
+      if Self.Item(Result).Contract.SameAs(contract) then
+        EXIT;
+  Result := -1;
 end;
 
 procedure _simulate(
@@ -202,7 +217,7 @@ procedure simulate(
   from, &to   : TAddress;
   value       : TWei;
   const data  : string;
-  callback    : TProc<IDeserializedArray<IAssetChange>, IError>);
+  callback    : TProc<IAssetChanges, IError>);
 begin
   _simulate(apiKey, chain, from, &to, value, data, procedure(response: TJsonObject; err: IError)
   begin
@@ -223,7 +238,7 @@ begin
       callback(nil, nil);
       EXIT;
     end;
-    callback(TAssetChangeArray.Create(changes), nil);
+    callback(TAssetChanges.Create(changes), nil);
   end);
 end;
 
