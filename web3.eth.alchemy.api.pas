@@ -72,6 +72,7 @@ uses
   // Delphi
   System.Generics.Collections,
   System.JSON,
+  System.Math,
   // web3
   web3.eth.alchemy,
   web3.eth.types,
@@ -148,7 +149,7 @@ end;
 
 function TAssetChange.Unscale: Double;
 begin
-  Result := Self.Amount.AsDouble / Self.Decimals;
+  Result := Self.Amount.AsDouble / Round(Power(10, Self.Decimals));
 end;
 
 type
