@@ -38,6 +38,7 @@ uses
   {$ENDIF }
   DUnitX.TestFramework,
   web3.bip32 in '..\web3.bip32.pas',
+  web3.bip32.tests in '..\web3.bip32.tests.pas',
   web3.bip39 in '..\web3.bip39.pas',
   web3.bip39.tests in '..\web3.bip39.tests.pas',
   web3.coincap in '..\web3.coincap.pas',
