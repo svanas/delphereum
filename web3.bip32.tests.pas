@@ -71,10 +71,25 @@ begin
       begin
         const seed = '0x' + web3.json.getPropAsStr(vector, 'seed');
         const master = web3.bip32.master(web3.utils.fromHex(seed));
-        const privKey = web3.json.getPropAsStr(vector, 'privKey');
-        Assert.AreEqual(master.ToString, privKey);
-        const pubKey = web3.json.getPropAsStr(vector, 'pubKey');
-        Assert.AreEqual(master.PublicKey.ToString, pubKey);
+        const masterPrivKey = web3.json.getPropAsStr(vector, 'privKey');
+        Assert.AreEqual(master.ToString, masterPrivKey);
+        const masterPubKey = web3.json.getPropAsStr(vector, 'pubKey');
+        Assert.AreEqual(master.PublicKey.ToString, masterPubKey);
+        const children = web3.json.getPropAsArr(vector, 'children');
+        for var child in children do
+        begin
+          const path = web3.json.getPropAsBigInt(child, 'path');
+          const childKey = master.NewChildKey(path.AsCardinal);
+          if childKey.IsErr then
+          begin
+            Assert.Fail(childKey.Error.Message);
+            EXIT;
+          end;
+          const childPrivKey = web3.json.getPropAsStr(child, 'privKey');
+          Assert.AreEqual(childKey.Value.ToString, childPrivKey);
+          const childPubKey = web3.json.getPropAsStr(child, 'pubKey');
+          Assert.AreEqual(childKey.Value.PublicKey.ToString, childPubKey);
+        end;
       end;
     finally
       vectors.Free;

@@ -30,6 +30,7 @@ uses
   // Delphi
   System.SysUtils,
   // web3
+  web3,
   web3.bip39;
 
 type
@@ -43,9 +44,10 @@ type
     depth      : Byte;   // 1 byte
     isPrivate  : Boolean;
     function getIntermediary(childIdx: UInt32): TBytes;
-    function Serialize: TBytes;
+    function serialize: TBytes;
   public
     constructor Create(version, keyData, chainCode, childNumber, fingerprint: TBytes; depth: Byte; isPrivate: Boolean);
+    function NewChildKey(childIdx: UInt32): IResult<TKey>;
     function PublicKey: TKey;
     function ToString: string;
   end;
@@ -57,10 +59,13 @@ implementation
 
 uses
   // CryptoLib4Pascal
+  ClpBigInteger,
+  ClpBigIntegers,
   ClpConverters,
   ClpEncoders,
   // web3
   web3.crypto,
+  web3.error,
   web3.utils;
 
 // the index of the first "hardened" child key
@@ -85,11 +90,24 @@ begin
   Result := data + Copy(digest, 0, 4);
 end;
 
-function publicKeyFromPrivateKey(key: TBytes): TBytes; inline
+function publicKeyFromPrivateKey(key: TBytes): TBytes; inline;
 begin
   const params = web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, key);
   const pubKey = web3.crypto.publicKeyFromPrivateKey(params);
   Result := web3.crypto.compressPublicKey(pubKey);
+end;
+
+function addPrivateKeys(const key1, key2: TBytes): TBytes; inline;
+begin
+  var int1 := TBigInteger.Create(1, key1);
+  var int2 := TBigInteger.Create(1, key2);
+
+  const curve = web3.crypto.SECP256K1.GetCurve;
+
+  int1 := int1.Add(int2);
+  int1 := int1.&Mod(curve.N);
+
+  Result := TBigIntegers.BigIntegerToBytes(int1, 32);
 end;
 
 function master(const seed: web3.bip39.TSeed): TKey;
@@ -119,7 +137,33 @@ begin
   Self.isPrivate   := isPrivate;
 end;
 
-// get intermediary to create key and chaincode from
+// derives a child key from a given parent
+function TKey.NewChildKey(childIdx: UInt32): IResult<TKey>;
+begin
+  var empty: TKey;
+
+  if not Self.isPrivate then
+  begin
+    Result := TResult<TKey>.Err(empty, TNotImplemented.Create);
+    EXIT;
+  end;
+
+  const intermediary = Self.getIntermediary(childIdx);
+
+  Result := TResult<TKey>.Ok(
+    TKey.Create(
+      privateWalletVersion,                                                     // version
+      addPrivateKeys(Copy(intermediary, 0, 32), Self.keyData),                  // key data
+      Copy(intermediary, 32, 32),                                               // chain code
+      TConverters.ReadUInt32AsBytesBE(childIdx),                                // child number
+      Copy(web3.utils.hash160(publicKeyFromPrivateKey(Self.keyData)), 0, 4),    // fingerprint
+      Self.depth + 1,                                                           // depth
+      Self.isPrivate                                                            // is private
+    )
+  );
+end;
+
+// get intermediary to create keydata and chaincode from
 function TKey.getIntermediary(childIdx: UInt32): TBytes;
 begin
   const childIdxBytes = TConverters.ReadUInt32AsBytesBE(childIdx);
@@ -159,7 +203,7 @@ begin
 end;
 
 // serializes the key to a 78-byte array
-function TKey.Serialize: TBytes;
+function TKey.serialize: TBytes;
 begin
   // private keys should be prepended with a single null byte
   var keyData := Self.keyData;
@@ -171,14 +215,14 @@ begin
   Result := Result + Self.childNumber;
   Result := Result + Self.chainCode;
   Result := Result + keyData;
-  // append the standard double-sha256 checksum
+  // append the double-sha256 checksum
   Result := addChecksum(Result);
 end;
 
 // encodes the key in the standard Bitcoin base58 encoding
 function TKey.ToString: string;
 begin
-  Result := TBase58.Encode(Self.Serialize);
+  Result := TBase58.Encode(Self.serialize);
 end;
 
 end.
