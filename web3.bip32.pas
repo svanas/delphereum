@@ -27,37 +27,27 @@ unit web3.bip32;
 interface
 
 uses
-  // Delphi
-  System.SysUtils,
   // web3
-  web3,
   web3.bip39;
 
 type
-  TKey = record
-  strict private
-    version    : TBytes; // 4 bytes
-    keyData    : TBytes; // 33 bytes
-    chainCode  : TBytes; // 32 bytes
-    childNumber: TBytes; // 4 bytes
-    fingerprint: TBytes; // 4 bytes
-    depth      : Byte;   // 1 byte
-    isPrivate  : Boolean;
-    function getIntermediary(childIdx: UInt32): TBytes;
-    function serialize: TBytes;
-  public
-    constructor Create(version, keyData, chainCode, childNumber, fingerprint: TBytes; depth: Byte; isPrivate: Boolean);
-    function NewChildKey(childIdx: UInt32): IResult<TKey>;
-    function PublicKey: TKey;
+  IPublicKey = interface
     function ToString: string;
   end;
 
+  IPrivateKey = interface(IPublicKey)
+    function NewChildKey(childIdx: UInt32): IPrivateKey;
+    function PublicKey: IPublicKey;
+  end;
+
 // creates a new master extended key
-function master(const seed: web3.bip39.TSeed): TKey;
+function master(const seed: web3.bip39.TSeed): IPrivateKey;
 
 implementation
 
 uses
+  // Delphi
+  System.SysUtils,
   // CryptoLib4Pascal
   ClpBigInteger,
   ClpBigIntegers,
@@ -65,7 +55,6 @@ uses
   ClpEncoders,
   // web3
   web3.crypto,
-  web3.error,
   web3.utils;
 
 // the index of the first "hardened" child key
@@ -97,7 +86,7 @@ begin
   Result := web3.crypto.compressPublicKey(pubKey);
 end;
 
-function addPrivateKeys(const key1, key2: TBytes): TBytes; inline;
+function addPrivateKeys(const key1, key2: TBytes): TBytes;
 begin
   var int1 := TBigInteger.Create(1, key1);
   var int2 := TBigInteger.Create(1, key2);
@@ -110,23 +99,26 @@ begin
   Result := TBigIntegers.BigIntegerToBytes(int1, 32);
 end;
 
-function master(const seed: web3.bip39.TSeed): TKey;
-begin
-  const digest = hmac_sha512(seed, TConverters.ConvertStringToBytes('Bitcoin seed', TEncoding.UTF8));
-  Result := TKey.Create(
-    privateWalletVersion, // version
-    Copy(digest, 0, 32),  // key data
-    Copy(digest, 32, 32), // chain code
-    [0, 0, 0, 0],         // child number
-    [0, 0, 0, 0],         // fingerprint
-    0,                    // depth
-    True                  // is private
-  );
-end;
+{ TPublicKey }
 
-{ TKey }
+type
+  TPublicKey = class(TInterfacedObject, IPublicKey)
+  private
+    version    : TBytes; // 4 bytes
+    keyData    : TBytes; // 33 bytes
+    chainCode  : TBytes; // 32 bytes
+    childNumber: TBytes; // 4 bytes
+    fingerprint: TBytes; // 4 bytes
+    depth      : Byte;   // 1 byte
+    function Serialize: TBytes;
+  protected
+    class function isPrivate: Boolean; virtual;
+  public
+    constructor Create(version, keyData, chainCode, childNumber, fingerprint: TBytes; depth: Byte);
+    function ToString: string; override;
+  end;
 
-constructor TKey.Create(version, keyData, chainCode, childNumber, fingerprint: TBytes; depth: Byte; isPrivate: Boolean);
+constructor TPublicKey.Create(version, keyData, chainCode, childNumber, fingerprint: TBytes; depth: Byte);
 begin
   Self.version     := version;
   Self.keyData     := keyData;
@@ -134,76 +126,15 @@ begin
   Self.childNumber := childNumber;
   Self.fingerprint := fingerprint;
   Self.depth       := depth;
-  Self.isPrivate   := isPrivate;
 end;
 
-// derives a child key from a given parent
-function TKey.NewChildKey(childIdx: UInt32): IResult<TKey>;
+class function TPublicKey.isPrivate: Boolean;
 begin
-  var empty: TKey;
-
-  if not Self.isPrivate then
-  begin
-    Result := TResult<TKey>.Err(empty, TNotImplemented.Create);
-    EXIT;
-  end;
-
-  const intermediary = Self.getIntermediary(childIdx);
-
-  Result := TResult<TKey>.Ok(
-    TKey.Create(
-      privateWalletVersion,                                                     // version
-      addPrivateKeys(Copy(intermediary, 0, 32), Self.keyData),                  // key data
-      Copy(intermediary, 32, 32),                                               // chain code
-      TConverters.ReadUInt32AsBytesBE(childIdx),                                // child number
-      Copy(web3.utils.hash160(publicKeyFromPrivateKey(Self.keyData)), 0, 4),    // fingerprint
-      Self.depth + 1,                                                           // depth
-      Self.isPrivate                                                            // is private
-    )
-  );
-end;
-
-// get intermediary to create keydata and chaincode from
-function TKey.getIntermediary(childIdx: UInt32): TBytes;
-begin
-  const childIdxBytes = TConverters.ReadUInt32AsBytesBE(childIdx);
-
-  // hardened children are based on the private key, non-hardened children are based on the public key
-  var data: TBytes;
-  if childIdx >= firstHardenedChild then
-    data := [0] + Self.keyData
-  else
-    if Self.isPrivate then
-      data := publicKeyFromPrivateKey(Self.keyData)
-    else
-      data := Self.keyData;
-
-  data := data + childIdxBytes;
-
-  Result := hmac_sha512(data, Self.chainCode);
-end;
-
-// this is the so-called "neuter" function
-function TKey.PublicKey: TKey;
-begin
-  var keyData := Self.keyData;
-
-  if Self.isPrivate then
-    keyData := publicKeyFromPrivateKey(keyData);
-
-  Result := TKey.Create(
-    publicWalletVersion, // version
-    keyData,             // key data
-    Self.chainCode,      // chain code
-    Self.childNumber,    // child number
-    Self.fingerprint,    // fingerprint
-    Self.depth,          // depth
-    False                // is private
-  );
+  Result := False;
 end;
 
 // serializes the key to a 78-byte array
-function TKey.serialize: TBytes;
+function TPublicKey.Serialize: TBytes;
 begin
   // private keys should be prepended with a single null byte
   var keyData := Self.keyData;
@@ -220,9 +151,81 @@ begin
 end;
 
 // encodes the key in the standard Bitcoin base58 encoding
-function TKey.ToString: string;
+function TPublicKey.ToString: string;
 begin
-  Result := TBase58.Encode(Self.serialize);
+  Result := TBase58.Encode(Self.Serialize);
+end;
+
+type
+  TPrivateKey = class(TPublicKey, IPrivateKey)
+  private
+    function getIntermediary(childIdx: UInt32): TBytes;
+  protected
+    class function isPrivate: Boolean; override;
+  public
+    function NewChildKey(childIdx: UInt32): IPrivateKey;
+    function PublicKey: IPublicKey;
+  end;
+
+{ TPrivateKey }
+
+class function TPrivateKey.isPrivate: Boolean;
+begin
+  Result := True;
+end;
+
+// derives a child key from a given parent
+function TPrivateKey.NewChildKey(childIdx: UInt32): IPrivateKey;
+begin
+  const intermediary = Self.getIntermediary(childIdx);
+  Result := TPrivateKey.Create(
+    privateWalletVersion,                                                  // version
+    addPrivateKeys(Copy(intermediary, 0, 32), Self.keyData),               // key data
+    Copy(intermediary, 32, 32),                                            // chain code
+    TConverters.ReadUInt32AsBytesBE(childIdx),                             // child number
+    Copy(web3.utils.hash160(publicKeyFromPrivateKey(Self.keyData)), 0, 4), // fingerprint
+    Self.depth + 1                                                         // depth
+  );
+end;
+
+// get intermediary to create keydata and chaincode from
+function TPrivateKey.getIntermediary(childIdx: UInt32): TBytes;
+begin
+  // hardened children are based on the private key, non-hardened children are based on the public key
+  if childIdx >= firstHardenedChild then
+    Result := [0] + Self.keyData
+  else
+    Result := publicKeyFromPrivateKey(Self.keyData);
+
+  Result := Result + TConverters.ReadUInt32AsBytesBE(childIdx);
+
+  Result := hmac_sha512(Result, Self.chainCode);
+end;
+
+// this is the so-called "neuter" function
+function TPrivateKey.PublicKey: IPublicKey;
+begin
+  Result := TPublicKey.Create(
+    publicWalletVersion,              // version
+    publicKeyFromPrivateKey(keyData), // key data
+    Self.chainCode,                   // chain code
+    Self.childNumber,                 // child number
+    Self.fingerprint,                 // fingerprint
+    Self.depth                        // depth
+  );
+end;
+
+function master(const seed: web3.bip39.TSeed): IPrivateKey;
+begin
+  const digest = hmac_sha512(seed, TConverters.ConvertStringToBytes('Bitcoin seed', TEncoding.UTF8));
+  Result := TPrivateKey.Create(
+    privateWalletVersion, // version
+    Copy(digest, 0, 32),  // key data
+    Copy(digest, 32, 32), // chain code
+    [0, 0, 0, 0],         // child number
+    [0, 0, 0, 0],         // fingerprint
+    0                     // depth
+  );
 end;
 
 end.

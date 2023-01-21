@@ -302,7 +302,7 @@ function hash160(const input: TBytes): TBytes;
 begin
   Result := sha256(input);
   const digest = TDigestUtilities.GetDigest('RIPEMD160');
-  digest.BlockUpdate(input, 0, System.Length(input));
+  digest.BlockUpdate(Result, 0, System.Length(Result));
   Result := TDigestUtilities.DoFinal(digest);
 end;
 
