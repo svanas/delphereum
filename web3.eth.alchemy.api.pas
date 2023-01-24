@@ -96,12 +96,12 @@ type
 
 function TAssetChange.Asset: TAssetType;
 begin
-  Result := TAssetType.Create(getPropAsStr(FJsonValue, 'asset_type'));
+  Result := TAssetType.Create(getPropAsStr(FJsonValue, 'assetType'));
 end;
 
 function TAssetChange.Change: TChangeType;
 begin
-  if SameText(getPropAsStr(FJsonValue, 'change_type'), 'TRANSFER') then
+  if SameText(getPropAsStr(FJsonValue, 'changeType'), 'TRANSFER') then
     Result := Transfer
   else
     Result := Approve;
@@ -124,7 +124,7 @@ end;
 
 function TAssetChange.Contract: TAddress;
 begin
-  Result := TAddress.Create(getPropAsStr(FJsonValue, 'contract_address'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'contractAddress'));
 end;
 
 function TAssetChange.Name: string;
@@ -227,10 +227,10 @@ begin
       callback(nil, err);
       EXIT;
     end;
-    const error = web3.json.getPropAsStr(response, 'error');
-    if error <> '' then
+    const error = web3.json.getPropAsObj(response, 'error');
+    if Assigned(error) then
     begin
-      callback(nil, TError.Create(error));
+      callback(nil, TError.Create(web3.json.getPropAsStr(error, 'message', 'an unknown error occurred')));
       EXIT;
     end;
     const changes = web3.json.getPropAsArr(response, 'changes');
