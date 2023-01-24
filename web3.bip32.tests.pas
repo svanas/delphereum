@@ -70,20 +70,21 @@ begin
       for var vector in vectors as TJsonArray do
       begin
         const seed = '0x' + web3.json.getPropAsStr(vector, 'seed');
-        var parent := web3.bip32.master(web3.utils.fromHex(seed));
+        const master = web3.bip32.master(web3.utils.fromHex(seed));
         var privKey := web3.json.getPropAsStr(vector, 'privKey');
-        Assert.AreEqual(parent.ToString, privKey);
+        Assert.AreEqual(master.ToString, privKey);
         var pubKey := web3.json.getPropAsStr(vector, 'pubKey');
-        Assert.AreEqual(parent.PublicKey.ToString, pubKey);
+        Assert.AreEqual(master.PublicKey.ToString, pubKey);
         const children = web3.json.getPropAsArr(vector, 'children');
         for var child in children do
         begin
-          const path = web3.json.getPropAsBigInt(child, 'path');
-          parent := parent.NewChildKey(path.AsCardinal);
+          const path = web3.json.getPropAsStr(child, 'path');
+          const key = master.GetChildKey(path);
+          if key.IsErr then Assert.Fail(key.Error.Message);
           privKey := web3.json.getPropAsStr(child, 'privKey');
-          Assert.AreEqual(parent.ToString, privKey);
+          Assert.AreEqual(key.Value.ToString, privKey);
           pubKey := web3.json.getPropAsStr(child, 'pubKey');
-          Assert.AreEqual(parent.PublicKey.ToString, pubKey);
+          Assert.AreEqual(key.Value.PublicKey.ToString, pubKey);
         end;
       end;
     finally
