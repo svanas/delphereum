@@ -27,7 +27,10 @@ unit web3.bip32;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // web3
+  web3,
   web3.bip39;
 
 type
@@ -36,18 +39,24 @@ type
   end;
 
   IPrivateKey = interface(IPublicKey)
+    function Data: TBytes;
     function NewChildKey(childIdx: UInt32): IPrivateKey;
     function PublicKey: IPublicKey;
   end;
 
+  IMasterKey = interface(IPrivateKey)
+    function GetChildKey(const path: string): IResult<IPrivateKey>;
+  end;
+
 // creates a new master extended key
-function master(const seed: web3.bip39.TSeed): IPrivateKey;
+function master(const seed: web3.bip39.TSeed): IMasterKey;
 
 implementation
 
 uses
   // Delphi
-  System.SysUtils,
+  System.Character,
+  System.Classes,
   // CryptoLib4Pascal
   ClpBigInteger,
   ClpBigIntegers,
@@ -163,6 +172,7 @@ type
   protected
     class function isPrivate: Boolean; override;
   public
+    function Data: TBytes;
     function NewChildKey(childIdx: UInt32): IPrivateKey;
     function PublicKey: IPublicKey;
   end;
@@ -172,6 +182,11 @@ type
 class function TPrivateKey.isPrivate: Boolean;
 begin
   Result := True;
+end;
+
+function TPrivateKey.Data: TBytes;
+begin
+  Result := Self.keyData;
 end;
 
 // derives a child key from a given parent
@@ -215,10 +230,53 @@ begin
   );
 end;
 
-function master(const seed: web3.bip39.TSeed): IPrivateKey;
+type
+  TMasterKey = class(TPrivateKey, IMasterKey)
+  public
+    function GetChildKey(const path: string): IResult<IPrivateKey>;
+  end;
+
+function TMasterKey.GetChildKey(const path: string): IResult<IPrivateKey>;
+begin
+  const SL = TStringList.Create;
+  try
+    SL.Delimiter := '/';
+    SL.DelimitedText := path;
+    var K: IPrivateKey := Self;
+    for var I := 0 to Pred(SL.Count) do
+    begin
+      var S := SL[I].Trim;
+      if (I = 0) and S.Equals('m') then CONTINUE;
+      var C, E: UInt32; // child, error
+      Val(S, C, E);
+      if E <> 0 then
+      begin
+        if (S = '') or S[High(S)].IsDigit then
+        begin
+          Result := TResult<IPrivateKey>.Err(nil, 'invalid derivation path');
+          EXIT;
+        end;
+        Delete(S, High(S), 1);
+        Val(S, C, E);
+        if E <> 0 then
+        begin
+          Result := TResult<IPrivateKey>.Err(nil, 'invalid derivation path');
+          EXIT;
+        end;
+        C := C + firstHardenedChild;
+      end;
+      K := K.NewChildKey(C);
+    end;
+    Result := TResult<IPrivateKey>.Ok(K);
+  finally
+    SL.Free;
+  end;
+end;
+
+function master(const seed: web3.bip39.TSeed): IMasterKey;
 begin
   const digest = hmac_sha512(seed, TConverters.ConvertStringToBytes('Bitcoin seed', TEncoding.UTF8));
-  Result := TPrivateKey.Create(
+  Result := TMasterKey.Create(
     privateWalletVersion, // version
     Copy(digest, 0, 32),  // key data
     Copy(digest, 32, 32), // chain code
