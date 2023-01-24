@@ -78,6 +78,7 @@ type
 function privateKeyFromByteArray(const algorithm: string; aKeyType: TKeyType; const aPrivKey: TBytes): IECPrivateKeyParameters;
 function publicKeyFromPrivateKey(aPrivKey: IECPrivateKeyParameters): IECPublicKeyParameters;
 function publicKeyToByteArray(aPubKey: IECPublicKeyParameters): TBytes;
+function compressPublicKey(aPubKey: IECPublicKeyParameters): TBytes;
 function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;
 
 implementation
@@ -105,6 +106,15 @@ function publicKeyToByteArray(aPubKey: IECPublicKeyParameters): TBytes;
 begin
   Result := TBigIntegers.BigIntegerToBytes(aPubKey.Q.AffineXCoord.ToBigInteger, 32)
           + TBigIntegers.BigIntegerToBytes(aPubKey.Q.AffineYCoord.ToBigInteger, 32);
+end;
+
+function compressPublicKey(aPubKey: IECPublicKeyParameters): TBytes;
+begin
+  if aPubKey.Q.AffineYCoord.ToBigInteger.IsEven then
+    Result := [2]
+  else
+    Result := [3];
+  Result := Result + TBigIntegers.BigIntegerToBytes(aPubKey.Q.AffineXCoord.ToBigInteger, 32);
 end;
 
 function generatePrivateKey(const algorithm: string; aKeyType: TKeyType): IECPrivateKeyParameters;

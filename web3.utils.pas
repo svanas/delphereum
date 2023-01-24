@@ -69,6 +69,7 @@ function  sha3(const buf: TBytes): TBytes; overload;
 procedure sha3(client: IWeb3; const hex: string; callback: TProc<string, IError>); overload;
 
 function sha256(const input: TBytes): TBytes;
+function hash160(const input: TBytes): TBytes;
 function hmac_sha512(const msg, key: TBytes): TBytes;
 
 implementation
@@ -295,6 +296,14 @@ begin
   finally
     stream.Free;
   end;
+end;
+
+function hash160(const input: TBytes): TBytes;
+begin
+  Result := sha256(input);
+  const digest = TDigestUtilities.GetDigest('RIPEMD160');
+  digest.BlockUpdate(Result, 0, System.Length(Result));
+  Result := TDigestUtilities.DoFinal(digest);
 end;
 
 function hmac_sha512(const msg, key: TBytes): TBytes;

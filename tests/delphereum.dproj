@@ -148,6 +148,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="..\web3.bip32.pas"/>
+        <DCCReference Include="..\web3.bip32.tests.pas"/>
         <DCCReference Include="..\web3.bip39.pas"/>
         <DCCReference Include="..\web3.bip39.tests.pas"/>
         <DCCReference Include="..\web3.coincap.pas"/>
