@@ -52,7 +52,7 @@ type
 
 function create: TMnemonic; overload;
 function create(length: TWords): TMnemonic; overload;
-function seed(const words, passphrase: string): TSeed;
+function seed(const sentence, passphrase: string): TSeed;
 
 implementation
 
@@ -95,11 +95,11 @@ begin
 end;
 
 // from mnemonic sentence to 64-byte seed. please note the password is optional.
-function seed(const words, passphrase: string): TSeed;
+function seed(const sentence, passphrase: string): TSeed;
 begin
   const generator = TPkcs5S2ParametersGenerator.Create(TDigestUtilities.GetDigest('SHA-512'));
   try
-    const password = TConverters.ConvertStringToBytes(words, TEncoding.UTF8);
+    const password = TConverters.ConvertStringToBytes(sentence, TEncoding.UTF8);
     const salt = TConverters.ConvertStringToBytes('mnemonic' + passphrase, TEncoding.UTF8);
     generator.Init(password, salt, 2048);
     Result := (generator.GenerateDerivedMacParameters(512) as IKeyParameter).GetKey;

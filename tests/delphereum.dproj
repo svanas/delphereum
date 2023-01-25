@@ -151,6 +151,7 @@
         <DCCReference Include="..\web3.bip32.tests.pas"/>
         <DCCReference Include="..\web3.bip39.pas"/>
         <DCCReference Include="..\web3.bip39.tests.pas"/>
+        <DCCReference Include="..\web3.bip44.pas"/>
         <DCCReference Include="..\web3.coincap.pas"/>
         <DCCReference Include="..\web3.crypto.pas"/>
         <DCCReference Include="..\web3.crypto.tests.pas"/>
