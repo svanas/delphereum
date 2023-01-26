@@ -41,6 +41,7 @@ uses
   web3.bip32.tests in '..\web3.bip32.tests.pas',
   web3.bip39 in '..\web3.bip39.pas',
   web3.bip39.tests in '..\web3.bip39.tests.pas',
+  web3.bip44 in '..\web3.bip44.pas',
   web3.coincap in '..\web3.coincap.pas',
   web3.crypto in '..\web3.crypto.pas',
   web3.crypto.tests in '..\web3.crypto.tests.pas',
