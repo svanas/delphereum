@@ -133,6 +133,8 @@ uses
   VCL.Dialogs,
 {$ENDIF}
   // web3
+  web3.bip39,
+  web3.bip44,
   web3.crypto,
   web3.error,
   web3.eth,
@@ -339,27 +341,38 @@ end;
 
 class function TPrivateKeyHelper.Prompt(&public: TAddress): IResult<TPrivateKey>;
 begin
-  var &private: TPrivateKey;
+  var input: string;
   TThread.Synchronize(nil, procedure
   begin
 {$WARN SYMBOL_DEPRECATED OFF}
-    &private := TPrivateKey(Trim(InputBox(string(&public), 'Please paste your private key', '')));
+    input := Trim(InputBox(string(&public), 'Please paste your private key or your secret recovery phrase', ''));
 {$WARN SYMBOL_DEPRECATED DEFAULT}
   end);
 
-  if &private = '' then
+  if input = '' then
   begin
     Result := TResult<TPrivateKey>.Err('', TCancelled.Create);
     EXIT;
   end;
 
-  if (
-    (not web3.utils.isHex('', string(&private)))
-  or
-    (Length(&private) <> SizeOf(TPrivateKey) - 1)) then
+  var &private: TPrivateKey;
+  if web3.utils.isHex('', input) then
   begin
-    Result := TResult<TPrivateKey>.Err('', 'Private key is invalid');
-    EXIT;
+    if Length(input) <> SizeOf(TPrivateKey) - 1 then
+    begin
+      Result := TResult<TPrivateKey>.Err('', 'Private key is invalid');
+      EXIT;
+    end;
+    &private := TPrivateKey(input);
+  end else
+  begin
+    Result := web3.bip44.wallet(&public, web3.bip39.seed(input, ''));
+    if Result.IsErr or (Result.Value = '') then
+    begin
+      Result := TResult<TPrivateKey>.Err('', 'Secret recovery phrase is invalid');
+      EXIT;
+    end;
+    &private := Result.Value;
   end;
 
   const address = &private.GetAddress;
@@ -370,7 +383,10 @@ begin
   end;
   if address.Value.ToChecksum <> &public.ToChecksum then
   begin
-    Result := TResult<TPrivateKey>.Err('', 'Private key is invalid');
+    if web3.utils.isHex('', input) then
+      Result := TResult<TPrivateKey>.Err('', 'Private key is invalid')
+    else
+      Result := TResult<TPrivateKey>.Err('', 'Secret recovery phrase is invalid');
     EXIT;
   end;
 
