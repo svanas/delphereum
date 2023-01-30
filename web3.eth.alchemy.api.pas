@@ -56,6 +56,7 @@ type
 
   IAssetChanges = interface(IDeserializedArray<IAssetChange>)
     function IndexOf(contract: TAddress): Integer;
+    procedure FilterBy(change: TChangeType);
   end;
 
 procedure simulate(
@@ -157,6 +158,7 @@ type
   public
     function Item(const Index: Integer): IAssetChange; override;
     function IndexOf(contract: TAddress): Integer;
+    procedure FilterBy(change: TChangeType);
   end;
 
 function TAssetChanges.Item(const Index: Integer): IAssetChange;
@@ -172,6 +174,19 @@ begin
       if Self.Item(Result).Contract.SameAs(contract) then
         EXIT;
   Result := -1;
+end;
+
+procedure TAssetChanges.FilterBy(change: TChangeType);
+begin
+  const count = Self.Count;
+  var I := 0;
+  while I < count do
+  begin
+    if Self.Item(I).Change = change then
+      Inc(I)
+    else
+      Self.Delete(I);
+  end;
 end;
 
 procedure _simulate(
