@@ -34,13 +34,10 @@ uses
   System.SysUtils,
   // web3
   web3,
-  web3.http.throttler,
   web3.json.rpc;
 
 type
   TJsonRpcHttps = class(TCustomJsonRpc, IJsonRpc)
-  strict private
-    FThrottler: IThrottler;
   public
     function Call(
       const URL   : string;
@@ -51,32 +48,18 @@ type
       const method: string;
       args        : array of const;
       callback    : TProc<TJsonObject, IError>); overload;
-    constructor Create; overload;
-    constructor Create(const throttler: IThrottler); overload;
   end;
 
 implementation
 
 uses
   // Delphi
-  System.Classes,
   System.Net.URLClient,
   // web3
   web3.http,
   web3.json;
 
 { TJsonRpcHttps }
-
-constructor TJsonRpcHttps.Create;
-begin
-  inherited Create;
-end;
-
-constructor TJsonRpcHttps.Create(const throttler: IThrottler);
-begin
-  inherited Create;
-  FThrottler := throttler;
-end;
 
 function TJsonRpcHttps.Call(
   const URL   : string;
@@ -108,7 +91,7 @@ procedure TJsonRpcHttps.Call(
   args        : array of const;
   callback    : TProc<TJsonObject, IError>);
 begin
-  const handler: TProc<TJsonValue, IError> = procedure(response: TJsonValue; err: IError)
+  web3.http.post(URL, CreatePayload(method, args), [TNetHeader.Create('Content-Type', 'application/json')], procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -128,18 +111,7 @@ begin
         callback(TJsonObject(response), nil)
       else
         callback(nil, TError.Create('not a JSON object'));
-  end;
-
-  const payload = CreatePayload(method, args);
-  const headers: TNetHeaders = [TNetHeader.Create('Content-Type', 'application/json')];
-
-  if Assigned(FThrottler) then
-  begin
-    FThrottler.Post(TPost.Create(URL, payload, headers, handler));
-    EXIT;
-  end;
-
-  web3.http.post(URL, payload, headers, handler);
+  end);
 end;
 
 end.

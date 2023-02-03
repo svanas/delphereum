@@ -113,6 +113,9 @@ function post(
   const src: string;
   backoff  : Integer = 1): IResult<TJsonValue>; overload;
 
+const
+  MAX_BACKOFF = 32; // 32 seconds
+
 implementation
 
 uses
@@ -121,9 +124,6 @@ uses
   // web3
   web3.json,
   web3.sync;
-
-const
-  MAX_BACKOFF = 32; // 32 seconds
 
 {--------------------------------- THttpError ---------------------------------}
 

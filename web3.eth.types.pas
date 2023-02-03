@@ -68,7 +68,7 @@ type
     function baseFeePerGas: TWei;
   end;
 
-  ITxn = interface
+  ITransaction = interface
     function &type: Byte;
     function ToString: string;
     function blockNumber: BigInteger;    // block number where this transaction was in. null when its pending.
@@ -99,7 +99,7 @@ type
     procedure ToString(client: IWeb3; callback: TProc<string, IError>; abbreviated: Boolean = False);
     function  ToChecksum: TAddress;
     function  Abbreviated: string;
-    function  IsEOA(client: IWeb3): IResult<Boolean>;
+    procedure IsEOA(client: IWeb3; callback: TProc<Boolean, IError>);
     function  IsZero: Boolean;
     function  SameAs(const other: TAddress): Boolean;
   end;
@@ -300,18 +300,18 @@ begin
   Result := Copy(Result, System.Low(Result), 8);
 end;
 
-function TAddressHelper.IsEOA(client: IWeb3): IResult<Boolean>;
+procedure TAddressHelper.IsEOA(client: IWeb3; callback: TProc<Boolean, IError>);
 begin
-  const response = client.Call('eth_getCode', [Self.ToChecksum, BLOCK_LATEST]);
-  if Assigned(response.Value) then
-  try
-    const code = web3.json.getPropAsStr(response.Value, 'result');
-    Result := TResult<Boolean>.Ok((code = '') or (code = '0x') or (code = '0x0'));
-    EXIT;
-  finally
-    response.Value.Free;
-  end;
-  Result := TResult<Boolean>.Err(True, response.Error);
+  client.Call('eth_getCode', [Self.ToChecksum, BLOCK_LATEST], procedure(response: TJsonObject; err: IError)
+  begin
+    if not Assigned(response) then
+    begin
+      callback(True, err);
+      EXIT;
+    end;
+    const code = web3.json.getPropAsStr(response, 'result');
+    callback((code = '') or (code = '0x') or (code = '0x0'), err);
+  end);
 end;
 
 function TAddressHelper.IsZero: Boolean;

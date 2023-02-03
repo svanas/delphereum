@@ -36,6 +36,7 @@ uses
   Velthuis.BigIntegers,
   // web3
   web3,
+  web3.eth.types,
   web3.json;
 
 type
@@ -50,6 +51,10 @@ type
   public
     constructor Create(aStatus: Integer; aBody: TJsonValue);
     function Status: Integer;
+  end;
+
+  ITransactions = interface(IDeserializedArray<ITransaction>)
+    procedure FilterBy(recipient: TAddress);
   end;
 
   IErc20TransferEvent = interface
@@ -93,6 +98,9 @@ type
     procedure getBlockNumberByTimestamp(
       timestamp: TUnixDateTime;
       callback : TProc<BigInteger, IError>);
+    procedure getTransactions(
+      address : TAddress;
+      callback: TProc<ITransactions, IError>);
     procedure getErc20TransferEvents(
       address : TAddress;
       callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
@@ -110,12 +118,14 @@ implementation
 
 uses
   // Delphi
+  System.Classes,
   System.Generics.Collections,
+  System.Math,
   System.NetEncoding,
   System.TypInfo,
   // web3
-  web3.eth.types,
-  web3.http.throttler;
+  web3.eth.tx,
+  web3.http;
 
 function endpoint(chain: TChain): IResult<string>; overload;
 begin
@@ -165,9 +175,9 @@ constructor TEtherscanError.Create(aStatus: Integer; aBody: TJsonValue);
     Result := 'an unknown error occurred';
     if Assigned(aBody) then
     begin
-      Result := web3.json.getPropAsStr(aBody, 'message');
+      Result := web3.json.getPropAsStr(aBody, 'message', Result);
       if Result = 'NOTOK' then
-        Result := web3.json.getPropAsStr(aBody, 'result');
+        Result := web3.json.getPropAsStr(aBody, 'result', Result);
     end;
   end;
 
@@ -179,6 +189,30 @@ end;
 function TEtherscanError.Status: Integer;
 begin
   Result := FStatus;
+end;
+
+{------------------------------- TTransactions --------------------------------}
+
+type
+  TTransactions = class(TDeserializedArray<ITransaction>, ITransactions)
+  public
+    function Item(const Index: Integer): ITransaction; override;
+    procedure FilterBy(recipient: TAddress);
+  end;
+
+function TTransactions.Item(const Index: Integer): ITransaction;
+begin
+  Result := createTransaction(TJsonArray(FJsonValue)[Index]);
+end;
+
+procedure TTransactions.FilterBy(recipient: TAddress);
+begin
+  var I := 0;
+  while I < Self.Count do
+    if Self.Item(I).&To.SameAs(recipient) then
+      Inc(I)
+    else
+      Self.Delete(I);
 end;
 
 {---------------------------- TErc20TransferEvent -----------------------------}
@@ -384,18 +418,21 @@ end;
 {--------------------------------- TEtherscan ---------------------------------}
 
 type
-  TEtherscan = class(TGetter, IEtherscan)
-  private
+  TEtherscan = class(TInterfacedObject, IEtherscan)
+  strict private
     chain : TChain;
     apiKey: string;
   protected
-    procedure get(
-      const query: string;
-      callback   : TProc<TJsonValue, IError>);
+    procedure get(const query: string; callback: TProc<TJsonValue, IError>); overload;
+    procedure get(const query: string; callback: TProc<TJsonValue, IError>; backoff: Integer); overload;
   public
+    constructor Create(chain: TChain; const apiKey: string);
     procedure getBlockNumberByTimestamp(
       timestamp: TUnixDateTime;
       callback : TProc<BigInteger, IError>);
+    procedure getTransactions(
+      address : TAddress;
+      callback: TProc<ITransactions, IError>);
     procedure getErc20TransferEvents(
       address : TAddress;
       callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
@@ -409,27 +446,48 @@ type
 
 function create(chain: TChain; const apiKey: string): IEtherscan;
 begin
-  const etherscan = (function: TEtherscan
-  begin
-    if apiKey <> '' then
-      Result := TEtherscan.Create(5)   // 5 req / 1 sec
-    else
-      Result := TEtherscan.Create(0.2) // 1 req / 5 sec
-  end)();
-  etherscan.chain  := chain;
-  etherscan.apiKey := apiKey;
-  Result := etherscan;
+  Result := TEtherscan.Create(chain, apiKey);
 end;
 
-procedure TEtherscan.get(
-  const query: string;
-  callback   : TProc<TJsonValue, IError>);
+constructor TEtherscan.Create(chain: TChain; const apiKey: string);
+begin
+  inherited Create;
+  Self.chain  := chain;
+  Self.apiKey := apiKey;
+end;
+
+procedure TEtherscan.get(const query: string; callback: TProc<TJsonValue, IError>);
+begin
+  const rps = (function: Double
+  begin
+    if apiKey <> '' then
+      Result := 5   // 5 reg / 1 sec
+    else
+      Result := 0.2 // 1 req / 5 sec
+  end)();
+  Self.get(query, callback, Ceil(1000 / rps));
+end;
+
+procedure TEtherscan.get(const query: string; callback: TProc<TJsonValue, IError>; backoff: Integer);
 begin
   const URL = endpoint(Self.chain, TNetEncoding.URL.Encode(Self.apiKey));
   if URL.IsErr then
     callback(nil, URL.Error)
   else
-    inherited Get(TGet.Create(URL.Value + query, [], callback));
+    web3.http.get(URL.Value + query, [], procedure(response: TJsonValue; err: IError)
+    begin
+      {"status":"0", "message":"NOTOK", "result":"Max rate limit reached, please use API Key for higher rate limit"}
+      if  Assigned(response)
+      and (backoff <= web3.http.MAX_BACKOFF * 1000)
+      and (web3.json.getPropAsInt(response, 'status') = 0)
+      and web3.json.getPropAsStr(response, 'result').Contains('rate limit') then
+      begin
+        TThread.Sleep(backoff);
+        Self.get(query, callback, backoff * 2);
+        EXIT;
+      end;
+      callback(response, err);
+    end);
 end;
 
 procedure TEtherscan.getBlockNumberByTimestamp(
@@ -449,6 +507,34 @@ begin
       callback(0, TEtherscanError.Create(status, response))
     else
       callback(web3.json.getPropAsBigInt(response, 'result'), nil);
+  end);
+end;
+
+procedure TEtherscan.getTransactions(
+  address : TAddress;
+  callback: TProc<ITransactions, IError>);
+begin
+  Self.get(Format('module=account&action=txlist&address=%s&sort=desc', [address]),
+  procedure(response: TJsonValue; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    const status = web3.json.getPropAsInt(response, 'status');
+    if status = 0 then
+    begin
+      callback(nil, TEtherscanError.Create(status, response));
+      EXIT;
+    end;
+    const &array = web3.json.getPropAsArr(response, 'result');
+    if not Assigned(&array) then
+    begin
+      callback(nil, TEtherscanError.Create(status, nil));
+      EXIT;
+    end;
+    callback(TTransactions.Create(&array), nil);
   end);
 end;
 

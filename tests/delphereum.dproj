@@ -207,7 +207,6 @@
         <DCCReference Include="..\web3.eth.yearn.vaults.v2.pas"/>
         <DCCReference Include="..\web3.graph.pas"/>
         <DCCReference Include="..\web3.http.pas"/>
-        <DCCReference Include="..\web3.http.throttler.pas"/>
         <DCCReference Include="..\web3.ipfs.pas"/>
         <DCCReference Include="..\web3.json.pas"/>
         <DCCReference Include="..\web3.json.rpc.https.pas"/>

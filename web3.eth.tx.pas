@@ -30,6 +30,7 @@ interface
 
 uses
   // Delphi
+  System.JSON,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
@@ -124,7 +125,7 @@ procedure sendTransaction(
 procedure getTransaction(
   client  : IWeb3;
   hash    : TTxHash;
-  callback: TProc<ITxn, IError>);
+  callback: TProc<ITransaction, IError>);
 
 // returns the receipt of a transaction by transaction hash.
 procedure getTransactionReceipt(
@@ -148,11 +149,13 @@ procedure cancelTransaction(
 // open transaction in block explorer
 procedure openTransaction(chain: TChain; hash: TTxHash);
 
+// create transaction from JSON value
+function createTransaction(const value: TJsonValue): ITransaction;
+
 implementation
 
 uses
   // Delphi
-  System.JSON,
   System.Variants,
 {$IFDEF MSWINDOWS}
   WinAPI.ShellAPI,
@@ -708,10 +711,10 @@ begin
     end);
 end;
 
-{ TTxn }
+{ TTransaction }
 
 type
-  TTxn = class(TDeserialized, ITxn)
+  TTransaction = class(TDeserialized, ITransaction)
   public
     function &type: Byte;
     function ToString: string; override;
@@ -726,7 +729,7 @@ type
     function value: TWei;                // value transferred in Wei.
   end;
 
-function TTxn.&type: Byte;
+function TTransaction.&type: Byte;
 begin
   if (Self.maxPriorityFeePerGas > 0) or (Self.maxFeePerGas > 0) then
     Result := 2 // EIP-1559
@@ -734,74 +737,79 @@ begin
     Result := 0; // Legacy
 end;
 
-function TTxn.ToString: string;
+function TTransaction.ToString: string;
 begin
   Result := web3.json.marshal(FJsonValue);
 end;
 
 // block number where this transaction was in. null when its pending.
-function TTxn.blockNumber: BigInteger;
+function TTransaction.blockNumber: BigInteger;
 begin
   Result := getPropAsStr(FJsonValue, 'blockNumber', '0x0');
 end;
 
 // address of the sender.
-function TTxn.from: TAddress;
+function TTransaction.from: TAddress;
 begin
   Result := TAddress.Create(getPropAsStr(FJsonValue, 'from'));
 end;
 
 // gas limit provided by the sender.
-function TTxn.gasLimit: BigInteger;
+function TTransaction.gasLimit: BigInteger;
 begin
   Result := getPropAsStr(FJsonValue, 'gas', '0x5208');
 end;
 
 // gas price provided by the sender in Wei.
-function TTxn.gasPrice: TWei;
+function TTransaction.gasPrice: TWei;
 begin
   Result := getPropAsStr(FJsonValue, 'gasPrice', '0x0');
 end;
 
 // EIP-1559-only
-function TTxn.maxPriorityFeePerGas: TWei;
+function TTransaction.maxPriorityFeePerGas: TWei;
 begin
   Result := getPropAsStr(FJsonValue, 'maxPriorityFeePerGas', '0x0');
 end;
 
 // EIP-1559-only
-function TTxn.maxFeePerGas: TWei;
+function TTransaction.maxFeePerGas: TWei;
 begin
   Result := getPropAsStr(FJsonValue, 'maxFeePerGas', '0x0');
 end;
 
 // the data send along with the transaction.
-function TTxn.input: string;
+function TTransaction.input: string;
 begin
   Result := web3.json.getPropAsStr(FJsonValue, 'input');
 end;
 
 // address of the receiver. null when its a contract creation transaction.
-function TTxn.&to: TAddress;
+function TTransaction.&to: TAddress;
 begin
   Result := TAddress.Create(getPropAsStr(FJsonValue, 'to'));
 end;
 
 // value transferred in Wei.
-function TTxn.value: TWei;
+function TTransaction.value: TWei;
 begin
   Result := getPropAsStr(FJsonValue, 'value', '0x0');
 end;
 
+function createTransaction(const value: TJsonValue): ITransaction;
+begin
+  Result := TTransaction.Create(value);
+end;
+
 // returns the information about a transaction requested by transaction hash.
-procedure getTransaction(client: IWeb3; hash: TTxHash; callback: TProc<ITxn, IError>);
+procedure getTransaction(client: IWeb3; hash: TTxHash; callback: TProc<ITransaction, IError>);
 begin
   client.Call('eth_getTransactionByHash', [hash], procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
       callback(nil, TTxError.Create(hash, err.Message))
     else
-      callback(TTxn.Create(web3.json.getPropAsObj(response, 'result')), nil);
+      callback(createTransaction(web3.json.getPropAsObj(response, 'result')), nil);
   end);
 end;
 
@@ -892,7 +900,7 @@ begin
     EXIT;
   end;
 
-  web3.eth.tx.getTransaction(client, rcpt.txHash, procedure(txn: ITxn; err: IError)
+  web3.eth.tx.getTransaction(client, rcpt.txHash, procedure(txn: ITransaction; err: IError)
   begin
     if Assigned(err) then
     begin

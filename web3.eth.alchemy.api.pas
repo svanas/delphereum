@@ -178,15 +178,12 @@ end;
 
 procedure TAssetChanges.FilterBy(change: TChangeType);
 begin
-  const count = Self.Count;
   var I := 0;
-  while I < count do
-  begin
+  while I < Self.Count do
     if Self.Item(I).Change = change then
       Inc(I)
     else
       Self.Delete(I);
-  end;
 end;
 
 procedure _simulate(

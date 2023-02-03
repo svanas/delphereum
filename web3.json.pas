@@ -59,7 +59,7 @@ type
   TDeserializedArray<T: IInterface> = class abstract(TDeserialized, IDeserializedArray<T>)
   public
     function Count: Integer;
-    procedure Delete(Index: Integer);
+    procedure Delete(const Index: Integer);
     function Item(const Index: Integer): T; virtual; abstract;
   end;
 
@@ -110,7 +110,7 @@ begin
     Result := 0;
 end;
 
-procedure TDeserializedArray<T>.Delete(Index: Integer);
+procedure TDeserializedArray<T>.Delete(const Index: Integer);
 begin
   if not(Self.FJsonValue is TJsonArray) then
     EXIT;
