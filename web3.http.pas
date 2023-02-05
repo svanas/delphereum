@@ -114,7 +114,7 @@ function post(
   backoff  : Integer = 1): IResult<TJsonValue>; overload;
 
 const
-  MAX_BACKOFF = 32; // 32 seconds
+  MAX_BACKOFF_SECONDS = 32;
 
 implementation
 
@@ -155,7 +155,7 @@ begin
         end;
         if response.StatusCode = 429 then
         begin
-          TThread.Sleep(Min(MAX_BACKOFF, (function: Integer
+          TThread.Sleep(Min(MAX_BACKOFF_SECONDS, (function: Integer
           begin
             if response.ContainsHeader('Retry-After') then
               Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
@@ -219,7 +219,7 @@ begin
         end;
         if response.StatusCode = 429 then
         begin
-          TThread.Sleep(Min(MAX_BACKOFF, (function: Integer
+          TThread.Sleep(Min(MAX_BACKOFF_SECONDS, (function: Integer
           begin
             if response.ContainsHeader('Retry-After') then
               Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
@@ -288,7 +288,7 @@ begin
         end;
         if response.StatusCode = 429 then
         begin
-          TThread.Sleep(Min(MAX_BACKOFF, (function: Integer
+          TThread.Sleep(Min(MAX_BACKOFF_SECONDS, (function: Integer
           begin
             if response.ContainsHeader('Retry-After') then
               Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
@@ -351,7 +351,7 @@ begin
     end;
     if response.StatusCode = 429 then
     begin
-      TThread.Sleep(Min(MAX_BACKOFF, (function: Integer
+      TThread.Sleep(Min(MAX_BACKOFF_SECONDS, (function: Integer
       begin
         if response.ContainsHeader('Retry-After') then
           Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
@@ -403,7 +403,7 @@ begin
     end;
     if response.StatusCode = 429 then
     begin
-      TThread.Sleep(Min(MAX_BACKOFF, (function: Integer
+      TThread.Sleep(Min(MAX_BACKOFF_SECONDS, (function: Integer
       begin
         if response.ContainsHeader('Retry-After') then
           Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)

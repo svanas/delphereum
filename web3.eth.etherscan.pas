@@ -458,14 +458,7 @@ end;
 
 procedure TEtherscan.get(const query: string; callback: TProc<TJsonValue, IError>);
 begin
-  const rps = (function: Double
-  begin
-    if apiKey <> '' then
-      Result := 5   // 5 reg / 1 sec
-    else
-      Result := 0.2 // 1 req / 5 sec
-  end)();
-  Self.get(query, callback, Ceil(1000 / rps));
+  Self.get(query, callback, 250);
 end;
 
 procedure TEtherscan.get(const query: string; callback: TProc<TJsonValue, IError>; backoff: Integer);
@@ -477,9 +470,8 @@ begin
     web3.http.get(URL.Value + query, [], procedure(response: TJsonValue; err: IError)
     begin
       {"status":"0", "message":"NOTOK", "result":"Max rate limit reached, please use API Key for higher rate limit"}
-      if  Assigned(response)
-      and (backoff <= web3.http.MAX_BACKOFF * 1000)
-      and (web3.json.getPropAsInt(response, 'status') = 0)
+      if  (backoff <= web3.http.MAX_BACKOFF_SECONDS * 1000)
+      and (response <> nil) and (web3.json.getPropAsInt(response, 'status') = 0)
       and web3.json.getPropAsStr(response, 'result').Contains('rate limit') then
       begin
         TThread.Sleep(backoff);
