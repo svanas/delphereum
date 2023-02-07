@@ -61,8 +61,8 @@ begin
     Result := TResult<string>.Ok(Format('https://arbitrum-goerli.infura.io/v3/%s', [projectId]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('https://sepolia.infura.io/v3/%s', [projectId]))
-  else if chain.Gateway[TTransport.HTTPS] <> '' then
-    Result := TResult<string>.Ok(chain.Gateway[TTransport.HTTPS])
+  else if chain.RPC[TTransport.HTTPS] <> '' then
+    Result := TResult<string>.Ok(chain.RPC[TTransport.HTTPS])
   else
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
@@ -75,8 +75,8 @@ begin
     Result := TResult<string>.Ok(Format('wss://goerli.infura.io/ws/v3/%s', [projectId]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('wss://sepolia.infura.io/ws/v3/%s', [projectId]))
-  else if chain.Gateway[TTransport.WebSocket] <> '' then
-    Result := TResult<string>.Ok(chain.Gateway[TTransport.WebSocket])
+  else if chain.RPC[TTransport.WebSocket] <> '' then
+    Result := TResult<string>.Ok(chain.RPC[TTransport.WebSocket])
   else
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;

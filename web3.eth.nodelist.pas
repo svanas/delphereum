@@ -104,16 +104,16 @@ begin
   inherited Create(aJsonValue);
 
   FChain := aChain;
-  FChain.Gateway[HTTPS] := getPropAsStr(aJsonValue, 'rpc');
-  FChain.Gateway[WebSocket] := getPropAsStr(aJsonValue, 'wss');
+  FChain.RPC[HTTPS] := getPropAsStr(aJsonValue, 'rpc');
+  FChain.RPC[WebSocket] := getPropAsStr(aJsonValue, 'wss');
 
-  FFree := FChain.Gateway[HTTPS].IndexOf('$apiKey') = -1;
+  FFree := FChain.RPC[HTTPS].IndexOf('$apiKey') = -1;
   FName := getPropAsStr(aJsonValue, 'name');
 end;
 
 function TNode.Client: TWeb3;
 begin
-  Result := TWeb3.Create(Self.FChain.SetGateway(HTTPS, Self.Rpc));
+  Result := TWeb3.Create(Self.FChain.SetRPC(HTTPS, Self.Rpc));
 end;
 
 function TNode.Free: Boolean;
@@ -145,7 +145,7 @@ end;
 
 function TNode.Rpc: string;
 begin
-  if FChain.Gateway[HTTPS].IndexOf('$apiKey') > -1 then
+  if FChain.RPC[HTTPS].IndexOf('$apiKey') > -1 then
   begin
     var apiKey: string;
     TThread.Synchronize(nil, procedure
@@ -154,10 +154,10 @@ begin
       apiKey := Trim(InputBox(Self.Name, RS_API_KEY, ''));
 {$WARN SYMBOL_DEPRECATED DEFAULT}
       if apiKey <> '' then
-        FChain.Gateway[HTTPS] := FChain.Gateway[HTTPS].Replace('$apiKey', apiKey);
+        FChain.RPC[HTTPS] := FChain.RPC[HTTPS].Replace('$apiKey', apiKey);
     end);
   end;
-  Result := FChain.Gateway[HTTPS];
+  Result := FChain.RPC[HTTPS];
 end;
 
 function TNode.SetTag(const Value: IInterface): INode;
@@ -173,7 +173,7 @@ end;
 
 function TNode.Wss: string;
 begin
-  if FChain.Gateway[WebSocket].IndexOf('$apiKey') > -1 then
+  if FChain.RPC[WebSocket].IndexOf('$apiKey') > -1 then
   begin
     var apiKey: string;
     TThread.Synchronize(nil, procedure
@@ -182,10 +182,10 @@ begin
       apiKey := Trim(InputBox(Self.Name, RS_API_KEY, ''));
 {$WARN SYMBOL_DEPRECATED DEFAULT}
       if apiKey <> '' then
-        FChain.Gateway[WebSocket] := FChain.Gateway[WebSocket].Replace('$apiKey', apiKey);
+        FChain.RPC[WebSocket] := FChain.RPC[WebSocket].Replace('$apiKey', apiKey);
     end);
   end;
-  Result := FChain.Gateway[WebSocket];
+  Result := FChain.RPC[WebSocket];
 end;
 
 {------------------------------- TNodesHelper ---------------------------------}

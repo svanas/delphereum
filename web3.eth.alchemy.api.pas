@@ -200,7 +200,7 @@ begin
     callback(nil, endpoint.Error);
     EXIT;
   end;
-  const client = TWeb3.Create(chain.SetGateway(endpoint.Value));
+  const client = TWeb3.Create(chain.SetRPC(endpoint.Value));
   try
     const params = web3.json.unmarshal(Format(
       '{"from": %s, "to": %s, "value": %s, "data": %s}', [

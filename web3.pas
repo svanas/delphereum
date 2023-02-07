@@ -51,14 +51,14 @@ type
     Name         : string;
     Symbol       : string;
     TxType       : Byte;   // https://eips.ethereum.org/EIPS/eip-2718 (0 = Legacy, 2 = EIP-1559)
-    Gateway      : array[TTransport] of TURL;
+    RPC          : array[TTransport] of TURL;
     BlockExplorer: TURL;
     TokenList    : TURL;
     class operator Equal(const Left, Right: TChain): Boolean;
     class operator NotEqual(const Left, Right: TChain): Boolean;
     function SetTxType(Value: Byte): TChain;
-    function SetGateway(const URL: TURL): TChain; overload;
-    function SetGateway(transport: TTransport; const URL: TURL): TChain; overload;
+    function SetRPC(const URL: TURL): TChain; overload;
+    function SetRPC(transport: TTransport; const URL: TURL): TChain; overload;
   end;
   PChain = ^TChain;
 
@@ -99,7 +99,7 @@ const
     Name         : 'RSK';
     Symbol       : 'BTC';
     TxType       : 0;
-    Gateway      : ('https://public-node.rsk.co', '');
+    RPC          : ('https://public-node.rsk.co', '');
     BlockExplorer: 'https://explorer.rsk.co'
   );
   RSK_test_net: TChain = (
@@ -107,7 +107,7 @@ const
     Name         : 'RSK testnet';
     Symbol       : 'BTC';
     TxType       : 0;
-    Gateway      : ('https://public-node.testnet.rsk.co', '');
+    RPC          : ('https://public-node.testnet.rsk.co', '');
     BlockExplorer: 'https://explorer.testnet.rsk.co'
   );
   BNB: TChain = (
@@ -115,7 +115,7 @@ const
     Name         : 'BNB Chain';
     Symbol       : 'BNB';
     TxType       : 0;
-    Gateway      : ('https://bsc-dataseed.binance.org', '');
+    RPC          : ('https://bsc-dataseed.binance.org', '');
     BlockExplorer: 'https://bscscan.com';
     TokenList    : 'https://tokens.pancakeswap.finance/pancakeswap-extended.json'
   );
@@ -124,7 +124,7 @@ const
     Name         : 'BNB Chain testnet';
     Symbol       : 'BNB';
     TxType       : 0;
-    Gateway      : ('https://data-seed-prebsc-1-s1.binance.org:8545', '');
+    RPC          : ('https://data-seed-prebsc-1-s1.binance.org:8545', '');
     BlockExplorer: 'https://testnet.bscscan.com';
   );
   Gnosis: TChain = (
@@ -132,7 +132,7 @@ const
     Name         : 'Gnosis Chain';
     Symbol       : 'xDAI';
     TxType       : 2;
-    Gateway      : ('https://rpc.gnosischain.com', 'wss://rpc.gnosischain.com/wss');
+    RPC          : ('https://rpc.gnosischain.com', 'wss://rpc.gnosischain.com/wss');
     BlockExplorer: 'https://gnosisscan.io/';
     TokenList    : 'https://tokens.honeyswap.org'
   );
@@ -156,7 +156,7 @@ const
     Name         : 'Fantom';
     Symbol       : 'FTM';
     TxType       : 0;
-    Gateway      : ('https://rpc.fantom.network', '');
+    RPC          : ('https://rpc.fantom.network', '');
     BlockExplorer: 'https://ftmscan.com';
     TokenList    : 'https://raw.githubusercontent.com/SpookySwap/spooky-info/master/src/constants/token/spookyswap.json'
   );
@@ -165,7 +165,7 @@ const
     Name         : 'Fantom testnet';
     Symbol       : 'FTM';
     TxType       : 0;
-    Gateway      : ('https://rpc.testnet.fantom.network', '');
+    RPC          : ('https://rpc.testnet.fantom.network', '');
     BlockExplorer: 'https://testnet.ftmscan.com';
   );
   Arbitrum: TChain = (
@@ -188,7 +188,7 @@ const
     Name         : 'Sepolia';
     Symbol       : 'ETH';
     TxType       : 2;
-    Gateway      : ('https://rpc.sepolia.org', '');
+    RPC          : ('https://rpc.sepolia.org', '');
     BlockExplorer: 'https://sepolia.etherscan.io';
   );
 
@@ -452,14 +452,14 @@ begin
   Result := Self;
 end;
 
-function TChain.SetGateway(const URL: TURL): TChain;
+function TChain.SetRPC(const URL: TURL): TChain;
 begin
-  Result := Self.SetGateway(HTTPS, URL);
+  Result := Self.SetRPC(HTTPS, URL);
 end;
 
-function TChain.SetGateway(transport: TTransport; const URL: TURL): TChain;
+function TChain.SetRPC(transport: TTransport; const URL: TURL): TChain;
 begin
-  Self.Gateway[transport] := URL;
+  Self.RPC[transport] := URL;
   Result := Self;
 end;
 
@@ -701,12 +701,12 @@ end;
 
 constructor TWeb3.Create(const aURL: string);
 begin
-  Self.Create(Ethereum.SetGateway(HTTPS, aURL));
+  Self.Create(Ethereum.SetRPC(HTTPS, aURL));
 end;
 
 constructor TWeb3.Create(const aURL: string; aTxType: Byte);
 begin
-  Self.Create(Ethereum.SetGateway(HTTPS, aURL).SetTxType(aTxType));
+  Self.Create(Ethereum.SetRPC(HTTPS, aURL).SetTxType(aTxType));
 end;
 
 constructor TWeb3.Create(aChain: TChain);
@@ -722,12 +722,12 @@ end;
 
 function TWeb3.Call(const method: string; args: array of const): IResult<TJsonObject>;
 begin
-  Result := Self.FProtocol.Call(Self.Chain.Gateway[HTTPS], method, args);
+  Result := Self.FProtocol.Call(Self.Chain.RPC[HTTPS], method, args);
 end;
 
 procedure TWeb3.Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>);
 begin
-  Self.FProtocol.Call(Self.Chain.Gateway[HTTPS], method, args, callback);
+  Self.FProtocol.Call(Self.Chain.RPC[HTTPS], method, args, callback);
 end;
 
 { TWeb3Ex }
@@ -737,7 +737,7 @@ constructor TWeb3Ex.Create(
   aProtocol : IPubSub;
   aSecurity : TSecurity = TSecurity.Automatic);
 begin
-  Self.Create(Ethereum.SetGateway(WebSocket, aURL), aProtocol, aSecurity);
+  Self.Create(Ethereum.SetRPC(WebSocket, aURL), aProtocol, aSecurity);
 end;
 
 constructor TWeb3Ex.Create(
@@ -746,7 +746,7 @@ constructor TWeb3Ex.Create(
   aProtocol : IPubSub;
   aSecurity : TSecurity = TSecurity.Automatic);
 begin
-  Self.Create(Ethereum.SetGateway(WebSocket, aURL).SetTxType(aTxType), aProtocol, aSecurity);
+  Self.Create(Ethereum.SetRPC(WebSocket, aURL).SetTxType(aTxType), aProtocol, aSecurity);
 end;
 
 constructor TWeb3Ex.Create(
@@ -761,12 +761,12 @@ end;
 
 function TWeb3Ex.Call(const method: string; args: array of const): IResult<TJsonObject>;
 begin
-  Result := Self.FProtocol.Call(Self.Chain.Gateway[WebSocket], Self.FSecurity, method, args);
+  Result := Self.FProtocol.Call(Self.Chain.RPC[WebSocket], Self.FSecurity, method, args);
 end;
 
 procedure TWeb3Ex.Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>);
 begin
-  Self.FProtocol.Call(Self.Chain.Gateway[WebSocket], Self.FSecurity, method, args, callback);
+  Self.FProtocol.Call(Self.Chain.RPC[WebSocket], Self.FSecurity, method, args, callback);
 end;
 
 procedure TWeb3Ex.Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
