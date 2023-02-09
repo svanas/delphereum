@@ -32,8 +32,8 @@ uses
   // web3
   web3;
 
-function endpoint(chain: TChain; const apiKey: string): IResult<string>; overload;
-function endpoint(chain: TChain; protocol: TTransport; const apiKey: string): IResult<string>; overload;
+function endpoint(chain: TChain; const apiKey: string; NFT: Boolean = False): IResult<string>; overload;
+function endpoint(chain: TChain; protocol: TTransport; const apiKey: string; NFT: Boolean = False): IResult<string>; overload;
 
 implementation
 
@@ -41,24 +41,31 @@ uses
   // Delphi
   System.SysUtils;
 
-function HTTPS(chain: TChain; const projectId: string): IResult<string>;
+function HTTPS(chain: TChain; const apiKey: string; NFT: Boolean): IResult<string>;
 begin
+  const api = (function: string
+  begin
+    if NFT then
+      Result := 'nft/'
+    else
+      Result := '';
+  end)();
   if chain = Ethereum then
-    Result := TResult<string>.Ok(Format('https://eth-mainnet.g.alchemy.com/v2/%s', [projectId]))
+    Result := TResult<string>.Ok(Format('https://eth-mainnet.g.alchemy.com/%sv2/%s', [api, apiKey]))
   else if chain = Goerli then
-    Result := TResult<string>.Ok(Format('https://eth-goerli.g.alchemy.com/v2/%s', [projectId]))
+    Result := TResult<string>.Ok(Format('https://eth-goerli.g.alchemy.com/%sv2/%s', [api, apiKey]))
   else if chain = Optimism then
-    Result := TResult<string>.Ok(Format('https://opt-mainnet.g.alchemy.com/v2/%s', [projectId]))
+    Result := TResult<string>.Ok(Format('https://opt-mainnet.g.alchemy.com/%sv2/%s', [api, apiKey]))
   else if chain = OptimismGoerli then
-    Result := TResult<string>.Ok(Format('https://opt-goerli.g.alchemy.com/v2/%s', [projectId]))
+    Result := TResult<string>.Ok(Format('https://opt-goerli.g.alchemy.com/%sv2/%s', [api, apiKey]))
   else if chain = Polygon then
-    Result := TResult<string>.Ok(Format('https://polygon-mainnet.g.alchemy.com/v2/%s', [projectId]))
+    Result := TResult<string>.Ok(Format('https://polygon-mainnet.g.alchemy.com/%sv2/%s', [api, apiKey]))
   else if chain = PolygonMumbai then
-    Result := TResult<string>.Ok(Format('https://polygon-mumbai.g.alchemy.com/v2/%s', [projectId]))
+    Result := TResult<string>.Ok(Format('https://polygon-mumbai.g.alchemy.com/%sv2/%s', [api, apiKey]))
   else if chain = Arbitrum then
-    Result := TResult<string>.Ok(Format('https://arb-mainnet.g.alchemy.com/v2/%s', [projectId]))
+    Result := TResult<string>.Ok(Format('https://arb-mainnet.g.alchemy.com/%sv2/%s', [api, apiKey]))
   else if chain = ArbitrumGoerli then
-    Result := TResult<string>.Ok(Format('https://arb-goerli.g.alchemy.com/v2/%s', [projectId]))
+    Result := TResult<string>.Ok(Format('https://arb-goerli.g.alchemy.com/%sv2/%s', [api, apiKey]))
   else if chain.RPC[TTransport.HTTPS] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.HTTPS])
   else
@@ -89,17 +96,17 @@ begin
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
-function endpoint(chain: TChain; const apiKey: string): IResult<string>;
+function endpoint(chain: TChain; const apiKey: string; NFT: Boolean): IResult<string>;
 begin
-  Result := endpoint(chain, TTransport.HTTPS, apiKey);
+  Result := endpoint(chain, TTransport.HTTPS, apiKey, NFT);
 end;
 
-function endpoint(chain: TChain; protocol: TTransport; const apiKey: string): IResult<string>;
+function endpoint(chain: TChain; protocol: TTransport; const apiKey: string; NFT: Boolean): IResult<string>;
 begin
   if protocol = TTransport.WebSocket then
     Result := WebSocket(chain, apiKey)
   else
-    Result := HTTPS(chain, apiKey);
+    Result := HTTPS(chain, apiKey, NFT);
 end;
 
 end.

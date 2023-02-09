@@ -67,16 +67,31 @@ procedure simulate(
   const data  : string;
   callback    : TProc<IAssetChanges, IError>);
 
+type
+  TContractType = (
+    Good,    // probably okay
+    Airdrop, // probably an unwarranted airdrop. most of the owners are honeypots, or a significant chunk of the usual honeypot addresses own this token.
+    Spam     // probably spam. this contract contains a lot of duplicate NFTs, or the contract lies about its own token supply. running totalSupply() on the contract is vastly different from the empirical number of tokens in circulation.
+  );
+
+procedure detect(
+  const apiKey  : string;
+  const chain   : TChain;
+  const contract: TAddress;
+  const callback: TProc<TContractType, IError>);
+
 implementation
 
 uses
   // Delphi
   System.Generics.Collections,
   System.JSON,
+  System.Net.URLClient,
   System.Math,
   // web3
   web3.eth.alchemy,
   web3.eth.types,
+  web3.http,
   web3.utils;
 
 type
@@ -252,6 +267,150 @@ begin
       EXIT;
     end;
     callback(TAssetChanges.Create(changes), nil);
+  end);
+end;
+
+procedure getTokenIDs(
+  const apiKey   : string;
+  const chain    : TChain;
+  const contract : TAddress;
+  const startWith: string;
+  const callback : TProc<TJsonValue, IError>); overload;
+begin
+  const endpoint = web3.eth.alchemy.endpoint(chain, apiKey, True);
+  if endpoint.IsErr then
+    callback(nil, endpoint.Error)
+  else
+    web3.http.get((function: string
+      begin
+        Result := Format('%s/getNFTsForCollection?contractAddress=%s', [endpoint.Value, contract]);
+        if startWith <> '' then
+          Result := Result + '&startToken=' + startWith;
+      end)(),
+      [TNetHeader.Create('accept', 'application/json')],
+      callback
+    );
+end;
+
+procedure getTokenIDs(
+  const apiKey: string;
+  const chain: TChain;
+  const contract: TAddress;
+  const callback: TProc<TArray<string>, IError>); overload;
+type
+  TPage = reference to procedure(const startWith: string; result: TArray<string>);
+begin
+  var page: TPage;
+
+  page := procedure(const startWith: string; result: TArray<string>)
+  begin
+    getTokenIDs(apiKey, chain, contract, startWith, procedure(response: TJsonValue; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        callback([], err);
+        EXIT;
+      end;
+      const NFTs = getPropAsArr(response, 'nfts');
+      if Assigned(NFTs) then for var NFT in NFTs do
+      begin
+        const id = getPropAsObj(NFT, 'id');
+        if Assigned(id) then
+        begin
+          const tokenId = getPropAsStr(id, 'tokenId');
+          if tokenId <> '' then
+            Result := Result + [tokenId];
+        end;
+      end;
+      const next = getPropAsStr(response, 'nextToken');
+      if next <> '' then
+        page(next, result)
+      else
+        callback(result, nil);
+    end);
+  end;
+
+  page('', []);
+end;
+
+procedure isAirdrop(
+  const apiKey  : string;
+  const chain   : TChain;
+  const contract: TAddress;
+  const callback: TProc<Boolean, IError>);
+begin
+  const endpoint = web3.eth.alchemy.endpoint(chain, apiKey, True);
+  if endpoint.IsErr then
+  begin
+    callback(False, endpoint.Error);
+    EXIT;
+  end;
+  getTokenIDs(apiKey, chain, contract, procedure(TokenIDs: TArray<string>; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(False, err);
+      EXIT;
+    end;
+
+    var get: TProc<Integer>;
+    get := procedure(index: Integer)
+    begin
+      if index >= Length(TokenIDs) then
+        callback(False, nil)
+      else
+        web3.http.get(
+          Format('%s/isAirdrop?contractAddress=%s&tokenId=%s', [endpoint.Value, contract, TokenIDs[index]]),
+          [TNetHeader.Create('accept', 'application/json')],
+          procedure(response: TJsonValue; err: IError)
+          begin
+            if Assigned(response) and (response is TJsonTrue) then
+              callback(True, nil)
+            else
+              get(index + 1);
+          end
+        );
+    end;
+
+    get(0);
+  end);
+end;
+
+procedure isSpam(
+  const apiKey  : string;
+  const chain   : TChain;
+  const contract: TAddress;
+  const callback: TProc<TJsonValue, IError>);
+begin
+  const endpoint = web3.eth.alchemy.endpoint(chain, apiKey, True);
+  if endpoint.IsErr then
+    callback(nil, endpoint.Error)
+  else
+    web3.http.get(
+      Format('%s/isSpamContract?contractAddress=%s', [endpoint.Value, contract]),
+      [TNetHeader.Create('accept', 'application/json')],
+      callback
+    );
+end;
+
+procedure detect(
+  const apiKey  : string;
+  const chain   : TChain;
+  const contract: TAddress;
+  const callback: TProc<TContractType, IError>);
+begin
+  isAirdrop(apiKey, chain, contract, procedure(response: Boolean; err: IError)
+  begin
+    if response then
+      callback(Airdrop, nil)
+    else
+      isSpam(apiKey, chain, contract, procedure(response: TJsonValue; err: IError)
+      begin
+        if Assigned(response) and (response is TJsonTrue) then
+          callback(Spam, nil)
+        else
+          callback(Good, err);
+      end);
   end);
 end;
 
