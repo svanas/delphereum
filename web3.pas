@@ -216,7 +216,13 @@ type
     function Error: IError;
     function IsOk: Boolean;
     function IsErr: Boolean;
-    procedure Into(callback: TProc<T, IError>);
+    function IfOk(const proc: TProc<T>): IResult<T>;
+    function IfErr(const proc: TProc<IError>): IResult<T>;
+    function &And(const predicate: TFunc<T, Boolean>; const proc: TProc<T>): IResult<T>; overload;
+    function &And(const predicate: TFunc<IError, Boolean>; const proc: TProc<IError>): IResult<T>; overload;
+    procedure &Else(const proc: TProc<T>); overload;
+    procedure &Else(const proc: TProc<IError>); overload;
+    procedure Into(const callback: TProc<T, IError>);
   end;
 
   TResult<T> = class(TInterfacedObject, IResult<T>)
@@ -231,7 +237,13 @@ type
     function Error: IError;
     function IsOk: Boolean;
     function IsErr: Boolean;
-    procedure Into(callback: TProc<T, IError>);
+    function IfOk(const proc: TProc<T>): IResult<T>;
+    function IfErr(const proc: TProc<IError>): IResult<T>;
+    function &And(const predicate: TFunc<T, Boolean>; const proc: TProc<T>): IResult<T>; overload;
+    function &And(const predicate: TFunc<IError, Boolean>; const proc: TProc<IError>): IResult<T>; overload;
+    procedure &Else(const proc: TProc<T>); overload;
+    procedure &Else(const proc: TProc<IError>); overload;
+    procedure Into(const callback: TProc<T, IError>);
   end;
 
   TOnCustomGasPrice = reference to procedure(var price: TWei);
@@ -540,7 +552,41 @@ begin
   Result := Assigned(FError);
 end;
 
-procedure TResult<T>.Into(callback: TProc<T, IError>);
+function TResult<T>.IfOk(const proc: TProc<T>): IResult<T>;
+begin
+  Result := Self;
+  if Self.IsOk then proc(Self.Value);
+end;
+
+function TResult<T>.IfErr(const proc: TProc<IError>): IResult<T>;
+begin
+  Result := Self;
+  if Self.IsErr then proc(Self.Error);
+end;
+
+function TResult<T>.&And(const predicate: TFunc<T, Boolean>; const proc: TProc<T>): IResult<T>;
+begin
+  Result := Self;
+  if Self.IsOk and predicate(Self.Value) then proc(Self.Value);
+end;
+
+function TResult<T>.&And(const predicate: TFunc<IError, Boolean>; const proc: TProc<IError>): IResult<T>;
+begin
+  Result := Self;
+  if Self.IsErr and predicate(Self.Error) then proc(Self.Error);
+end;
+
+procedure TResult<T>.&Else(const proc: TProc<T>);
+begin
+  if Self.IsOk then proc(Self.Value);
+end;
+
+procedure TResult<T>.&Else(const proc: TProc<IError>);
+begin
+  if Self.IsErr then proc(Self.Error);
+end;
+
+procedure TResult<T>.Into(const callback: TProc<T, IError>);
 begin
   callback(Self.Value, Self.Error);
 end;
