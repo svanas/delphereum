@@ -119,8 +119,6 @@ const
 implementation
 
 uses
-  // Delphi
-  System.Math,
   // web3
   web3.json,
   web3.sync;
@@ -155,15 +153,19 @@ begin
         end;
         if response.StatusCode = 429 then
         begin
-          TThread.Sleep(Min(MAX_BACKOFF_SECONDS, (function: Integer
+          const retryAfter = (function: Integer
           begin
             if response.ContainsHeader('Retry-After') then
               Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
             else
               Result := backoff;
-          end)()) * 1000);
-          get(URL, headers, callback, backoff * 2);
-          EXIT;
+          end)();
+          if retryAfter <= MAX_BACKOFF_SECONDS then
+          begin
+            TThread.Sleep(retryAfter * 1000);
+            get(URL, headers, callback, backoff * 2);
+            EXIT;
+          end;
         end;
         callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
       except
@@ -219,15 +221,19 @@ begin
         end;
         if response.StatusCode = 429 then
         begin
-          TThread.Sleep(Min(MAX_BACKOFF_SECONDS, (function: Integer
+          const retryAfter = (function: Integer
           begin
             if response.ContainsHeader('Retry-After') then
               Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
             else
               Result := backoff;
-          end)()) * 1000);
-          post(URL, src, headers, callback, backoff * 2);
-          EXIT;
+          end)();
+          if retryAfter <= MAX_BACKOFF_SECONDS then
+          begin
+            TThread.Sleep(retryAfter * 1000);
+            post(URL, src, headers, callback, backoff * 2);
+            EXIT;
+          end;
         end;
         callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
       except
@@ -288,15 +294,19 @@ begin
         end;
         if response.StatusCode = 429 then
         begin
-          TThread.Sleep(Min(MAX_BACKOFF_SECONDS, (function: Integer
+          const retryAfter = (function: Integer
           begin
             if response.ContainsHeader('Retry-After') then
               Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
             else
               Result := backoff;
-          end)()) * 1000);
-          post(URL, source, headers, callback, backoff * 2);
-          EXIT;
+          end)();
+          if retryAfter <= MAX_BACKOFF_SECONDS then
+          begin
+            TThread.Sleep(retryAfter * 1000);
+            post(URL, source, headers, callback, backoff * 2);
+            EXIT;
+          end;
         end;
         callback(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
       except
@@ -351,15 +361,19 @@ begin
     end;
     if response.StatusCode = 429 then
     begin
-      TThread.Sleep(Min(MAX_BACKOFF_SECONDS, (function: Integer
+      const retryAfter = (function: Integer
       begin
         if response.ContainsHeader('Retry-After') then
           Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
         else
           Result := backoff;
-      end)()) * 1000);
-      Result := get(URL, headers, backoff * 2);
-      EXIT;
+      end)();
+      if retryAfter <= MAX_BACKOFF_SECONDS then
+      begin
+        TThread.Sleep(retryAfter * 1000);
+        Result := get(URL, headers, backoff * 2);
+        EXIT;
+      end;
     end;
     if (response.StatusCode < 200) or (response.StatusCode >= 300) then
     begin
@@ -403,15 +417,19 @@ begin
     end;
     if response.StatusCode = 429 then
     begin
-      TThread.Sleep(Min(MAX_BACKOFF_SECONDS, (function: Integer
+      const retryAfter = (function: Integer
       begin
         if response.ContainsHeader('Retry-After') then
           Result := StrToIntDef(response.HeaderValue['Retry-After'], backoff)
         else
           Result := backoff;
-      end)()) * 1000);
-      Result := post(URL, src, headers, backoff * 2);
-      EXIT;
+      end)();
+      if retryAfter <= MAX_BACKOFF_SECONDS then
+      begin
+        TThread.Sleep(retryAfter * 1000);
+        Result := post(URL, src, headers, backoff * 2);
+        EXIT;
+      end;
     end;
     if (response.StatusCode < 200) or (response.StatusCode >= 300) then
     begin

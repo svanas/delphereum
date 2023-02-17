@@ -41,13 +41,13 @@ type
 
   INode = interface
     function Client: TWeb3;
-    function Free: Boolean;
+    function Freeware: Boolean;
     function Name: string;
     procedure Online(callback: TProc<TOnline, IError>);
-    function Rpc: string;
+    function Rpc: TURL;
     function SetTag(const Value: IInterface): INode;
     function Tag: IInterface;
-    function Wss: string;
+    function Wss: TURL;
   end;
 
   TNodes = TArray<INode>;
@@ -83,15 +83,15 @@ resourcestring
 type
   TNode = class(TCustomDeserialized, INode)
   private
-    FChain: TChain;
-    FFree : Boolean;
-    FName : string;
-    FTag  : IInterface;
-    function Rpc: string;
-    function Wss: string;
+    FChain   : TChain;
+    FFreeware: Boolean;
+    FName    : string;
+    FTag     : IInterface;
+    function Rpc: TURL;
+    function Wss: TURL;
   public
     function Client: TWeb3;
-    function Free: Boolean;
+    function Freeware: Boolean;
     function Name: string;
     procedure Online(callback: TProc<TOnline, IError>);
     function SetTag(const Value: IInterface): INode;
@@ -107,8 +107,8 @@ begin
   FChain.RPC[HTTPS] := getPropAsStr(aJsonValue, 'rpc');
   FChain.RPC[WebSocket] := getPropAsStr(aJsonValue, 'wss');
 
-  FFree := FChain.RPC[HTTPS].IndexOf('$apiKey') = -1;
-  FName := getPropAsStr(aJsonValue, 'name');
+  FFreeware := FChain.RPC[HTTPS].IndexOf('$apiKey') = -1;
+  FName     := getPropAsStr(aJsonValue, 'name');
 end;
 
 function TNode.Client: TWeb3;
@@ -116,9 +116,9 @@ begin
   Result := TWeb3.Create(Self.FChain.SetRPC(HTTPS, Self.Rpc));
 end;
 
-function TNode.Free: Boolean;
+function TNode.Freeware: Boolean;
 begin
-  Result := FFree;
+  Result := FFreeware;
 end;
 
 function TNode.Name: string;
@@ -143,7 +143,7 @@ begin
   end);
 end;
 
-function TNode.Rpc: string;
+function TNode.Rpc: TURL;
 begin
   if FChain.RPC[HTTPS].IndexOf('$apiKey') > -1 then
   begin
@@ -171,7 +171,7 @@ begin
   Result := FTag;
 end;
 
-function TNode.Wss: string;
+function TNode.Wss: TURL;
 begin
   if FChain.RPC[WebSocket].IndexOf('$apiKey') > -1 then
   begin
