@@ -40,14 +40,14 @@ type
   TOnline = (Unknown, Offline, Online);
 
   INode = interface
-    function Client: TWeb3;
+    function Client(apiKey: TFunc<string>): TWeb3;
     function Freeware: Boolean;
     function Name: string;
-    procedure Online(callback: TProc<TOnline, IError>);
-    function Rpc: TURL;
+    procedure Online(apiKey: TFunc<string>; callback: TProc<TOnline, IError>);
+    function Rpc(apiKey: TFunc<string>): TURL;
     function SetTag(const Value: IInterface): INode;
     function Tag: IInterface;
-    function Wss: TURL;
+    function Wss(apiKey: TFunc<string>): TURL;
   end;
 
   TNodes = TArray<INode>;
@@ -87,13 +87,13 @@ type
     FFreeware: Boolean;
     FName    : string;
     FTag     : IInterface;
-    function Rpc: TURL;
-    function Wss: TURL;
+    function Rpc(getApiKey: TFunc<string>): TURL;
+    function Wss(getApiKey: TFunc<string>): TURL;
   public
-    function Client: TWeb3;
+    function Client(apiKey: TFunc<string>): TWeb3;
     function Freeware: Boolean;
     function Name: string;
-    procedure Online(callback: TProc<TOnline, IError>);
+    procedure Online(apiKey: TFunc<string>; callback: TProc<TOnline, IError>);
     function SetTag(const Value: IInterface): INode;
     function Tag: IInterface;
     constructor Create(aChain: TChain; const aJsonValue: TJsonObject); reintroduce;
@@ -111,9 +111,9 @@ begin
   FName     := getPropAsStr(aJsonValue, 'name');
 end;
 
-function TNode.Client: TWeb3;
+function TNode.Client(apiKey: TFunc<string>): TWeb3;
 begin
-  Result := TWeb3.Create(Self.FChain.SetRPC(HTTPS, Self.Rpc));
+  Result := TWeb3.Create(Self.FChain.SetRPC(HTTPS, Self.Rpc(apiKey)));
 end;
 
 function TNode.Freeware: Boolean;
@@ -126,9 +126,9 @@ begin
   Result := FName;
 end;
 
-procedure TNode.Online(callback: TProc<TOnline, IError>);
+procedure TNode.Online(apiKey: TFunc<string>; callback: TProc<TOnline, IError>);
 begin
-  if Self.Rpc.IndexOf('$apiKey') > -1 then
+  if Self.Rpc(apiKey).IndexOf('$apiKey') > -1 then
   begin
     callback(TOnline.Unknown, nil);
     EXIT;
@@ -143,19 +143,20 @@ begin
   end);
 end;
 
-function TNode.Rpc: TURL;
+function TNode.Rpc(getApiKey: TFunc<string>): TURL;
 begin
   if FChain.RPC[HTTPS].IndexOf('$apiKey') > -1 then
   begin
-    var apiKey: string;
-    TThread.Synchronize(nil, procedure
-    begin
+    var apiKey := '';
+    if Assigned(getApiKey) then apiKey := getApiKey;
+    if apiKey = '' then
+      TThread.Synchronize(nil, procedure
+      begin
 {$WARN SYMBOL_DEPRECATED OFF}
-      apiKey := Trim(InputBox(Self.Name, RS_API_KEY, ''));
+        apiKey := Trim(InputBox(Self.Name, RS_API_KEY, ''));
 {$WARN SYMBOL_DEPRECATED DEFAULT}
-      if apiKey <> '' then
-        FChain.RPC[HTTPS] := FChain.RPC[HTTPS].Replace('$apiKey', apiKey);
-    end);
+      end);
+    if apiKey <> '' then FChain.RPC[HTTPS] := FChain.RPC[HTTPS].Replace('$apiKey', apiKey);
   end;
   Result := FChain.RPC[HTTPS];
 end;
@@ -171,19 +172,20 @@ begin
   Result := FTag;
 end;
 
-function TNode.Wss: TURL;
+function TNode.Wss(getApiKey: TFunc<string>): TURL;
 begin
   if FChain.RPC[WebSocket].IndexOf('$apiKey') > -1 then
   begin
     var apiKey: string;
-    TThread.Synchronize(nil, procedure
-    begin
+    if Assigned(getApiKey) then apiKey := getApiKey;
+    if apiKey = '' then
+      TThread.Synchronize(nil, procedure
+      begin
 {$WARN SYMBOL_DEPRECATED OFF}
-      apiKey := Trim(InputBox(Self.Name, RS_API_KEY, ''));
+        apiKey := Trim(InputBox(Self.Name, RS_API_KEY, ''));
 {$WARN SYMBOL_DEPRECATED DEFAULT}
-      if apiKey <> '' then
-        FChain.RPC[WebSocket] := FChain.RPC[WebSocket].Replace('$apiKey', apiKey);
-    end);
+      end);
+    if apiKey <> '' then FChain.RPC[WebSocket] := FChain.RPC[WebSocket].Replace('$apiKey', apiKey);
   end;
   Result := FChain.RPC[WebSocket];
 end;
