@@ -163,26 +163,21 @@ procedure TRouter02.SwapExactTokensForETH(
   deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
   callback    : TProc<ITxReceipt, IError>);
 begin
-  const erc20 = TERC20.Create(Self.Client, token0);
-  if Assigned(erc20) then
+  web3.eth.erc20.approve(web3.eth.erc20.create(Self.Client, token0), from, Self.Contract, amountIn, procedure(rcpt: ITxReceipt; err: IError)
   begin
-    erc20.ApproveEx(from, Self.Contract, amountIn, procedure(rcpt: ITxReceipt; err: IError)
-    begin
-      erc20.Free;
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        web3.eth.write(Client, from, Contract,
-          'swapExactTokensForETH(uint256,uint256,address[],address,uint256)',
-          [
-            web3.utils.toHex(amountIn),
-            web3.utils.toHex(amountOutMin),
-            &array([token0, token1]),
-            &to,
-            deadline
-          ], callback);
-    end);
-  end;
+    if Assigned(err) then
+      callback(nil, err)
+    else
+      web3.eth.write(Client, from, Contract,
+        'swapExactTokensForETH(uint256,uint256,address[],address,uint256)',
+        [
+          web3.utils.toHex(amountIn),
+          web3.utils.toHex(amountOutMin),
+          &array([token0, token1]),
+          &to,
+          deadline
+        ], callback);
+  end);
 end;
 
 procedure TRouter02.SwapExactETHForTokens(

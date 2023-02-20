@@ -173,18 +173,7 @@ begin
           callback(nil, err);
           EXIT;
         end;
-        const erc20 = TERC20.Create(client, addr);
-        if Assigned(erc20) then
-        begin
-          erc20.ApproveEx(from, IdleToken.Contract, amount, procedure(rcpt: ITxReceipt; err: IError)
-          begin
-            try
-              callback(rcpt, err);
-            finally
-              erc20.Free;
-            end;
-          end);
-        end;
+        web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, IdleToken.Contract, amount, callback)
       finally
         IdleToken.Free;
       end;

@@ -787,7 +787,7 @@ begin
       EXIT;
     end;
     // step #2: grant token spend allowance to the vault
-    TERC20.Create(client, assetIn).ApproveEx(owner, TVault.DeployedAt, web3.Infinite, procedure(rcpt: ITxReceipt; err: IError)
+    web3.eth.erc20.approve(web3.eth.erc20.Create(client, assetIn), owner, TVault.DeployedAt, web3.Infinite, procedure(rcpt: ITxReceipt; err: IError)
     begin
       if Assigned(err) then
       begin

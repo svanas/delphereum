@@ -199,12 +199,7 @@ begin
       callback(0, address.Error);
     EXIT;
   end;
-  const erc20 = TERC20.Create(client, address.Value);
-  try
-    erc20.BalanceOf(owner, callback);
-  finally
-    erc20.Free;
-  end;
+  web3.eth.erc20.create(client, address.Value).BalanceOf(owner, callback);
 end;
 
 end.

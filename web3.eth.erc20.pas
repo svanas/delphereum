@@ -30,7 +30,6 @@ interface
 
 uses
   // Delphi
-  System.Math,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
@@ -74,11 +73,6 @@ type
       value   : BigInteger;
       callback: TProc<ITxReceipt, IError>);
     procedure Approve(
-      owner   : TPrivateKey;
-      spender : TAddress;
-      value   : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
-    procedure ApproveEx(
       owner   : TPrivateKey;
       spender : TAddress;
       value   : BigInteger;
@@ -129,18 +123,55 @@ type
       spender : TAddress;
       value   : BigInteger;
       callback: TProc<ITxReceipt, IError>);
-    procedure ApproveEx(
-      owner   : TPrivateKey;
-      spender : TAddress;
-      value   : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
 
     //------- events -----------------------------------------------------------
     property OnTransfer: TOnTransfer read FOnTransfer write SetOnTransfer;
     property OnApproval: TOnApproval read FOnApproval write SetOnApproval;
   end;
 
+function create(client: IWeb3; contract: TAddress): IERC20;
+
+procedure approve(
+  token  : IERC20;
+  owner  : TPrivateKey;
+  spender: TAddress;
+  value  : BigInteger;
+  callback: TProc<ITxReceipt, IError>);
+
 implementation
+
+function create(client: IWeb3; contract: TAddress): IERC20;
+begin
+  Result := TERC20.Create(client, contract);
+end;
+
+procedure approve(
+  token   : IERC20;
+  owner   : TPrivateKey;
+  spender : TAddress;
+  value   : BigInteger;
+  callback: TProc<ITxReceipt, IError>);
+begin
+  owner.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(address: TAddress)
+    begin
+      token.Allowance(address, spender, procedure(approved: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          if ((value = 0) and (approved = 0))
+          or ((value > 0) and (approved >= value)) then
+            callback(nil, nil)
+          else
+            token.Approve(owner, spender, value, callback);
+      end);
+    end);
+end;
 
 { TERC20 }
 
@@ -152,8 +183,7 @@ end;
 
 destructor TERC20.Destroy;
 begin
-  if FLogger.Status in [Running, Paused] then
-    FLogger.Stop;
+  if FLogger.Status in [Running, Paused] then FLogger.Stop;
   inherited Destroy;
 end;
 
@@ -161,18 +191,15 @@ procedure TERC20.EventChanged;
 begin
   if ListenForLatestBlock then
   begin
-    if FLogger.Status in [Idle, Paused] then
-      FLogger.Start;
+    if FLogger.Status in [Idle, Paused] then FLogger.Start;
     EXIT;
   end;
-  if FLogger.Status = Running then
-    FLogger.Pause;
+  if FLogger.Status = Running then FLogger.Pause;
 end;
 
 function TERC20.ListenForLatestBlock: Boolean;
 begin
-  Result := Assigned(FOnTransfer)
-         or Assigned(FOnApproval);
+  Result := Assigned(FOnTransfer) or Assigned(FOnApproval);
 end;
 
 procedure TERC20.OnLatestBlockMined(log: PLog; err: IError);
@@ -307,29 +334,6 @@ procedure TERC20.Approve(
   callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, web3.utils.toHex(value)], callback);
-end;
-
-procedure TERC20.ApproveEx(
-  owner   : TPrivateKey;
-  spender : TAddress;
-  value   : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
-begin
-  const address = owner.GetAddress;
-  if address.IsErr then
-    callback(nil, address.Error)
-  else
-    Allowance(address.Value, spender, procedure(approved: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        if ((value = 0) and (approved = 0))
-        or ((value > 0) and (approved >= value)) then
-          callback(nil, nil)
-        else
-          Approve(owner, spender, value, callback);
-    end);
 end;
 
 end.

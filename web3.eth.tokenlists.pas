@@ -142,12 +142,7 @@ end;
 
 procedure TToken.Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
 begin
-  const erc20 = TERC20.Create(client, Self.Address);
-  try
-    erc20.BalanceOf(owner, callback);
-  finally
-    erc20.Free;
-  end;
+  web3.eth.erc20.create(client, Self.Address).BalanceOf(owner, callback);
 end;
 
 {------------------------------- TTokensHelper --------------------------------}

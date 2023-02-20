@@ -213,18 +213,7 @@ begin
         callback(nil, underlying.Error);
         EXIT;
       end;
-      const erc20 = TERC20.Create(client, underlying.Value);
-      if Assigned(erc20) then
-      begin
-        erc20.ApproveEx(from, pool, amount, procedure(rcpt: ITxReceipt; err: IError)
-        begin
-          try
-            callback(rcpt, err);
-          finally
-            erc20.Free;
-          end;
-        end);
-      end;
+      web3.eth.erc20.approve(web3.eth.erc20.create(client, underlying.Value), from, pool, amount, callback);
     end);
   finally
     AP.Free;
