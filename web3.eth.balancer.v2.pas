@@ -497,10 +497,15 @@ end;
 
 procedure tokens(chain: TChain; callback: TProc<TTokens, IError>);
 begin
-  if chain <> Ethereum then
-    web3.eth.tokenlists.tokens(chain, callback)
-  else
-    web3.eth.tokenlists.tokens('https://raw.githubusercontent.com/balancer-labs/assets/master/generated/listed.tokenlist.json', procedure(tokens: TTokens; err: IError)
+  if (chain = Ethereum) or (chain = Goerli) then
+  begin
+    web3.eth.tokenlists.tokens((function: TURL
+    begin
+      if chain = Goerli then
+        Result := 'https://raw.githubusercontent.com/svanas/delphereum/master/web3.eth.balancer.v2.tokenlist.goerli.json'
+      else
+        Result := 'https://raw.githubusercontent.com/balancer-labs/assets/master/generated/listed.tokenlist.json';
+    end)(), procedure(tokens: TTokens; err: IError)
     begin
       if Assigned(err) or not Assigned(tokens) then
       begin
@@ -515,6 +520,9 @@ begin
           Inc(I);
       callback(tokens, nil);
     end);
+    EXIT;
+  end;
+  web3.eth.tokenlists.tokens(chain, callback);
 end;
 
 {---------- easy access function: returns the Vault's WETH instance -----------}
