@@ -37,6 +37,7 @@ interface
 
 uses
   // Delphi
+  System.Math,
   System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
@@ -75,11 +76,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client    : IWeb3;
-      _etherscan: IEtherscan;
-      reserve   : TReserve;
-      _period   : TPeriod;
-      callback  : TProc<Double, IError>); override;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      reserve  : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -158,11 +159,6 @@ type
 
 implementation
 
-uses
-  // Delphi
-  System.Math,
-  System.TypInfo;
-
 type
   TiTokenClass = class of TiToken;
 
@@ -189,18 +185,14 @@ begin
   if Assigned(iToken) then
   begin
     iToken.LoanTokenAddress(procedure(addr: TAddress; err: IError)
-    begin
-      try
-        if Assigned(err) then
-        begin
-          callback(nil, err);
-          EXIT;
-        end;
+    begin try
+      if Assigned(err) then
+        callback(nil, err)
+      else
         web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, iToken.Contract, amount, callback);
-      finally
-        iToken.Free;
-      end;
-    end);
+    finally
+      iToken.Free;
+    end; end);
   end;
 end;
 
@@ -258,11 +250,11 @@ end;
 
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TFulcrum.APY(
-  client    : IWeb3;
-  _etherscan: IEtherscan;
-  reserve   : TReserve;
-  _period   : TPeriod;
-  callback  : TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  reserve  : TReserve;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 begin
   const iToken = iTokenClass[reserve].Create(client);
   if Assigned(iToken) then
@@ -361,42 +353,38 @@ class procedure TFulcrum.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const owner = from.GetAddress;
-  if owner.IsErr then
-  begin
-    callback(nil, 0, owner.Error);
-    EXIT;
-  end;
-  const iToken = iTokenClass[reserve].Create(client);
-  if Assigned(iToken) then
-    // step #1: get the iToken balance
-    iToken.BalanceOf(owner.Value, procedure(amount: BigInteger; err: IError)
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      try
-        if Assigned(err) then
-        begin
-          callback(nil, 0, err);
-          EXIT;
-        end;
-        // step #2: redeem iToken-amount in exchange for the underlying asset
-        iToken.Burn(from, amount, procedure(rcpt: ITxReceipt; err: IError)
-        begin
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(owner: TAddress)
+    begin
+      const iToken = iTokenClass[reserve].Create(client);
+      if Assigned(iToken) then
+        // step #1: get the iToken balance
+        iToken.BalanceOf(owner, procedure(amount: BigInteger; err: IError)
+        begin try
           if Assigned(err) then
-          begin
-            callback(nil, 0, err);
-            EXIT;
-          end;
-          TokenToUnderlying(client, reserve, amount, procedure(output: BigInteger; err: IError)
-          begin
-            if Assigned(err) then
-              callback(rcpt, 0, err)
-            else
-              callback(rcpt, output, nil);
-          end);
-        end);
-      finally
-        iToken.Free;
-      end;
+            callback(nil, 0, err)
+          else
+            // step #2: redeem iToken-amount in exchange for the underlying asset
+            iToken.Burn(from, amount, procedure(rcpt: ITxReceipt; err: IError)
+            begin
+              if Assigned(err) then
+                callback(nil, 0, err)
+              else
+                TokenToUnderlying(client, reserve, amount, procedure(output: BigInteger; err: IError)
+                begin
+                  if Assigned(err) then
+                    callback(rcpt, 0, err)
+                  else
+                    callback(rcpt, output, nil);
+                end);
+            end);
+        finally
+          iToken.Free;
+        end; end);
     end);
 end;
 
@@ -483,13 +471,15 @@ end;
 // The supplier will receive the asset proceeds.
 procedure TiToken.Burn(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
-  const supplier = from.GetAddress;
-  if supplier.IsErr then
-    callback(nil, supplier.Error)
-  else
-    web3.eth.write(
-      Client, from, Contract,
-      'burn(address,uint256)', [supplier.Value, web3.utils.toHex(amount)], callback);
+  from.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(supplier: TAddress)
+    begin
+      web3.eth.write(Client, from, Contract, 'burn(address,uint256)', [supplier, web3.utils.toHex(amount)], callback)
+    end);
 end;
 
 // Called to deposit assets to the iToken, which in turn mints iTokens to the lender�s wallet at the current tokenPrice() rate.
@@ -497,13 +487,15 @@ end;
 // The supplier will receive the minted iTokens.
 procedure TiToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
-  const supplier = from.GetAddress;
-  if supplier.IsErr then
-    callback(nil, supplier.Error)
-  else
-    web3.eth.write(
-      Client, from, Contract,
-      'mint(address,uint256)', [supplier.Value, web3.utils.toHex(amount)], callback);
+  from.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(supplier: TAddress)
+    begin
+      web3.eth.write(Client, from, Contract, 'mint(address,uint256)', [supplier, web3.utils.toHex(amount)], callback)
+    end);
 end;
 
 // Returns the user's balance of the underlying asset, scaled by 1e18

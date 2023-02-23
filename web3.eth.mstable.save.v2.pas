@@ -51,7 +51,7 @@ type
     class procedure APY(
       client   : IWeb3;
       etherscan: IEtherscan;
-      _reserve : TReserve;
+      reserve  : TReserve;
       period   : TPeriod;
       callback : TProc<Double, IError>); override;
     class procedure Deposit(
@@ -63,7 +63,7 @@ type
     class procedure Balance(
       client  : IWeb3;
       owner   : TAddress;
-      _reserve: TReserve;
+      reserve : TReserve;
       callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
       client  : IWeb3;
@@ -120,7 +120,7 @@ end;
 class procedure TmStable.APY(
   client   : IWeb3;
   etherscan: IEtherscan;
-  _reserve : TReserve;
+  reserve  : TReserve;
   period   : TPeriod;
   callback : TProc<Double, IError>);
 begin
@@ -128,13 +128,11 @@ begin
   if Assigned(imUSD) then
   begin
     imUSD.APY(etherscan, period, procedure(apy: Double; err: IError)
-    begin
-      try
-        callback(apy, err);
-      finally
-        imUSD.Free;
-      end;
-    end);
+    begin try
+      callback(apy, err);
+    finally
+      imUSD.Free;
+    end; end);
   end;
 end;
 
@@ -151,7 +149,7 @@ end;
 class procedure TmStable.Balance(
   client  : IWeb3;
   owner   : TAddress;
-  _reserve: TReserve;
+  reserve : TReserve;
   callback: TProc<BigInteger, IError>);
 begin
   const imUSD = TimUSD.Create(client);
@@ -214,27 +212,21 @@ begin
   Self.ExchangeRate(BLOCK_LATEST, procedure(curr: BigInteger; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(0, err);
-      EXIT;
-    end;
-    etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-      begin
-        callback(0, err);
-        EXIT;
-      end;
-      Self.ExchangeRate(web3.utils.toHex(bn), procedure(past: BigInteger; err: IError)
+      callback(0, err)
+    else
+      etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
       begin
         if Assigned(err) then
-        begin
-          callback(0, err);
-          EXIT;
-        end;
-        callback(period.ToYear(curr.AsDouble / past.AsDouble - 1) * 100, nil);
+          callback(0, err)
+        else
+          Self.ExchangeRate(web3.utils.toHex(bn), procedure(past: BigInteger; err: IError)
+          begin
+            if Assigned(err) then
+               callback(0, err)
+            else
+              callback(period.ToYear(curr.AsDouble / past.AsDouble - 1) * 100, nil);
+          end);
       end);
-    end);
   end);
 end;
 

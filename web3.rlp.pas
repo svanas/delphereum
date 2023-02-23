@@ -96,7 +96,7 @@ begin
     EXIT;
   end;
   Result := encodeLength(len, $80);
-  if Result.IsOk then
+  if Result.isOk then
     Result := TResult<TBytes>.Ok(Result.Value + item);
 end;
 
@@ -122,12 +122,12 @@ begin
       for var I := VarArrayLowBound(item, 1) to VarArrayHighBound(item, 1) do
       begin
         Result := encodeItem(VarArrayGet(item, [I]));
-        if Result.IsErr then
+        if Result.isErr then
           EXIT;
         output := output + Result.Value;
       end;
       Result := encodeLength(Length(output), $c0);
-      if Result.IsOk then
+      if Result.isOk then
         Result := TResult<TBytes>.Ok(Result.Value + output);
     end
     else
@@ -165,12 +165,12 @@ begin
   for var item in items do
   begin
     Result := encode(item);
-    if Result.IsErr then
+    if Result.isErr then
       EXIT;
     output := output + Result.Value;
   end;
   Result := encodeLength(Length(output), $c0);
-  if Result.IsOk then
+  if Result.isOk then
     Result := TResult<TBytes>.Ok(Result.Value + output);
 end;
 
@@ -186,12 +186,12 @@ begin
         Result := encodeItem(VarArrayCreate([0, 0], varVariant))
       else
         Result := TResult<TBytes>.Err([], TNotImplemented.Create);
-    if Result.IsErr then
+    if Result.isErr then
       EXIT;
     output := output + Result.Value;
   end;
   Result := encodeLength(Length(output), $c0);
-  if Result.IsOk then
+  if Result.isOk then
     Result := TResult<TBytes>.Ok(Result.Value + output);
 end;
 
@@ -223,7 +223,7 @@ function decodeLength(const input: TBytes): IResult<TLength>;
       else
       begin
         const I = toInt(Copy(input, 0, -1));
-        if I.IsErr then
+        if I.isErr then
           Result := TResult<Integer>.Err(0, I.Error)
         else
           Result := TResult<Integer>.Ok(Copy(input, -1)[0] + I.Value * 256);
@@ -266,7 +266,7 @@ begin
     if len > len_of_len then
     begin
       const len_of_payload = toInt(Copy(input, 1, len_of_len));
-      if len_of_payload.IsOk and (len > len_of_len + len_of_payload.Value) then
+      if len_of_payload.isOk and (len > len_of_len + len_of_payload.Value) then
       begin
         Result := TResult<TLength>.Ok(TLength.Create(1 + len_of_len, len_of_payload.Value, dtString));
         EXIT;
@@ -293,7 +293,7 @@ begin
     if len > len_of_len then
     begin
       const len_of_payload = toInt(Copy(input, 1, len_of_len));
-      if len_of_payload.IsOk and (len > len_of_len + len_of_payload.Value) then
+      if len_of_payload.isOk and (len > len_of_len + len_of_payload.Value) then
       begin
         Result := TResult<TLength>.Ok(TLength.Create(1 + len_of_len, len_of_payload.Value, dtList));
         EXIT;
@@ -318,14 +318,14 @@ begin
     EXIT;
   end;
   const this = decodeLength(input);
-  if this.IsErr then
+  if this.isErr then
   begin
     Result := TResult<TArray<TItem>>.Err([], this.Error);
     EXIT;
   end;
   var output: TArray<TItem> := [TItem.Create(Copy(input, this.Value.Offset, this.Value.Length), this.Value.DataType)];
   const next = decode(Copy(input, this.Value.offset + this.Value.length));
-  if next.IsOk then
+  if next.isOk then
     for var I := 0 to High(next.Value) do output := output + [next.Value[I]];
   Result := TResult<TArray<TItem>>.Ok(output);
 end;

@@ -35,11 +35,13 @@ uses
   Velthuis.BigIntegers,
   // web3
   web3,
+  web3.eth,
   web3.eth.contract,
   web3.eth.defi,
   web3.eth.erc20,
   web3.eth.etherscan,
-  web3.eth.types;
+  web3.eth.types,
+  web3.utils;
 
 type
   TAave = class(TLendingProtocol)
@@ -64,11 +66,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client    : IWeb3;
-      _etherscan: IEtherscan;
-      reserve   : TReserve;
-      _period   : TPeriod;
-      callback  : TProc<Double, IError>); override;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      reserve  : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -130,13 +132,6 @@ type
   end;
 
 implementation
-
-uses
-  // web3
-  web3.eth,
-  web3.utils,
-  // Delphi
-  System.TypInfo;
 
 { TAave }
 
@@ -203,17 +198,17 @@ begin
     AP.GetLendingPool(procedure(pool: TAddress; err: IError)
     begin
       if Assigned(err) then
-      begin
-        callback(nil, err);
-        EXIT;
-      end;
-      const underlying = reserve.Address(client.chain);
-      if underlying.IsErr then
-      begin
-        callback(nil, underlying.Error);
-        EXIT;
-      end;
-      web3.eth.erc20.approve(web3.eth.erc20.create(client, underlying.Value), from, pool, amount, callback);
+        callback(nil, err)
+      else
+        reserve.Address(client.chain)
+          .ifErr(procedure(err: IError)
+          begin
+            callback(nil, err)
+          end)
+          .&else(procedure(underlying: TAddress)
+          begin
+            web3.eth.erc20.approve(web3.eth.erc20.create(client, underlying), from, pool, amount, callback)
+          end);
     end);
   finally
     AP.Free;
@@ -231,11 +226,11 @@ begin
 end;
 
 class procedure TAave.APY(
-  client    : IWeb3;
-  _etherscan: IEtherscan;
-  reserve   : TReserve;
-  _period   : TPeriod;
-  callback  : TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  reserve  : TReserve;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 begin
   const AP = TAaveLendingPoolAddressesProvider.Create(client);
   if Assigned(AP) then
@@ -253,11 +248,9 @@ begin
         LP.CurrentLiquidityRate(reserve, procedure(qty: BigInteger; err: IError)
         begin
           if Assigned(err) then
-          begin
-            callback(0, err);
-            EXIT;
-          end;
-          callback(BigInteger.Divide(qty, BigInteger.Create(1e21)).AsInt64 / 1e4, nil);
+            callback(0, err)
+          else
+            callback(BigInteger.Divide(qty, BigInteger.Create(1e21)).AsInt64 / 1e4, nil);
         end);
       finally
         LP.Free;
@@ -336,16 +329,20 @@ class procedure TAave.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const owner = from.GetAddress;
-  if owner.IsErr then
-    callback(nil, 0, owner.Error)
-  else
-    Self.Balance(client, owner.Value, reserve, procedure(amount: BigInteger; err: IError)
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, 0, err)
-      else
-        Self.WithdrawEx(client, from, reserve, amount, callback);
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(owner: TAddress)
+    begin
+      Self.Balance(client, owner, reserve, procedure(amount: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, 0, err)
+        else
+          Self.WithdrawEx(client, from, reserve, amount, callback);
+      end);
     end);
 end;
 
@@ -372,11 +369,9 @@ begin
         LP.Withdraw(from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
         begin
           if Assigned(err) then
-          begin
-            callback(nil, 0, err);
-            EXIT;
-          end;
-          callback(rcpt, amount, nil);
+            callback(nil, 0, err)
+          else
+            callback(rcpt, amount, nil);
         end);
       finally
         LP.Free;
@@ -395,23 +390,23 @@ procedure TAaveLendingPool.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const underlying = reserve.Address(Client.Chain);
-  if underlying.IsErr then
-  begin
-    callback(nil, underlying.Error);
-    EXIT;
-  end;
-  const receiver = from.GetAddress;
-  if receiver.IsErr then
-    callback(nil, receiver.Error)
-  else
-    web3.eth.write(
-      Self.Client,
-      from,
-      Self.Contract,
-      'deposit(address,uint256,address,uint16)',
-      [underlying.Value, web3.utils.toHex(amount), receiver.Value, 42],
-      callback);
+  reserve.Address(Client.Chain)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(underlying: TAddress)
+    begin
+      from.GetAddress
+        .ifErr(procedure(err: IError)
+        begin
+          callback(nil, err)
+        end)
+        .&else(procedure(receiver: TAddress)
+        begin
+          web3.eth.write(Self.Client, from, Self.Contract, 'deposit(address,uint256,address,uint16)', [underlying, web3.utils.toHex(amount), receiver, 42], callback)
+        end);
+    end);
 end;
 
 procedure TAaveLendingPool.Withdraw(
@@ -420,32 +415,36 @@ procedure TAaveLendingPool.Withdraw(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const underlying = reserve.Address(Client.Chain);
-  if underlying.IsErr then
-  begin
-    callback(nil, underlying.Error);
-    EXIT;
-  end;
-  const receiver = from.GetAddress;
-  if receiver.IsErr then
-    callback(nil, receiver.Error)
-  else
-    web3.eth.write(
-      Self.Client,
-      from,
-      Self.Contract,
-      'withdraw(address,uint256,address)',
-      [underlying.Value, web3.utils.toHex(amount), receiver.Value],
-      callback);
+  reserve.Address(Client.Chain)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(underlying: TAddress)
+    begin
+      from.GetAddress
+        .ifErr(procedure(err: IError)
+        begin
+          callback(nil, err)
+        end)
+        .&else(procedure(receiver: TAddress)
+        begin
+          web3.eth.write(Self.Client, from, Self.Contract, 'withdraw(address,uint256,address)', [underlying, web3.utils.toHex(amount), receiver], callback)
+        end);
+    end);
 end;
 
 procedure TAaveLendingPool.GetReserveData(reserve: TReserve; callback: TProc<TTuple, IError>);
 begin
-  const underlying = reserve.Address(Client.Chain);
-  if underlying.IsErr then
-    callback(nil, underlying.Error)
-  else
-    web3.eth.call(Client, Contract, 'getReserveData(address)', [underlying.Value], callback);
+  reserve.Address(Client.Chain)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(underlying: TAddress)
+    begin
+      web3.eth.call(Client, Contract, 'getReserveData(address)', [underlying], callback)
+    end);
 end;
 
 procedure TAaveLendingPool.CurrentLiquidityRate(reserve: TReserve; callback: TProc<BigInteger, IError>);
@@ -465,11 +464,15 @@ procedure TAaveProtocolDataProvider.GetReserveTokensAddresses(
   reserve : TReserve;
   callback: TProc<TTuple, IError>);
 begin
-  const underlying = reserve.Address(Client.Chain);
-  if underlying.IsErr then
-    callback(nil, underlying.Error)
-  else
-    web3.eth.call(Client, Contract, 'getReserveTokensAddresses(address)', [underlying.Value], callback);
+  reserve.Address(Client.Chain)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(underlying: TAddress)
+    begin
+      web3.eth.call(Client, Contract, 'getReserveTokensAddresses(address)', [underlying], callback)
+    end);
 end;
 
 { TAaveLendingPoolAddressesProvider }

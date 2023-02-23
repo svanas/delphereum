@@ -65,11 +65,11 @@ type
       chain   : TChain;
       reserve : TReserve): Boolean; override;
     class procedure APY(
-      client    : IWeb3;
-      _etherscan: IEtherscan;
-      reserve   : TReserve;
-      _period   : TPeriod;
-      callback  : TProc<Double, IError>); override;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      reserve  : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -194,25 +194,27 @@ class procedure TdYdX.TokenAddress(
   reserve : TReserve;
   callback: TProc<TAddress, IError>);
 begin
-  const solo = TSoloMargin.DeployedAt(client.Chain);
-  if solo.IsErr then
-  begin
-    callback(EMPTY_ADDRESS, solo.Error);
-    EXIT;
-  end;
-  const dYdX = TSoloMargin.Create(client, solo.Value);
-  if Assigned(dYdX) then
-  try
-    dYdX.GetMarket(TSoloMargin.marketId[reserve], procedure(market: ISoloMarket; err: IError)
+  TSoloMargin.DeployedAt(client.Chain)
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(EMPTY_ADDRESS, err)
-      else
-        callback(market.Token, nil);
+      callback(EMPTY_ADDRESS, err)
+    end)
+    .&else(procedure(solo: TAddress)
+    begin
+      const dYdX = TSoloMargin.Create(client, solo);
+      if Assigned(dYdX) then
+      try
+        dYdX.GetMarket(TSoloMargin.marketId[reserve], procedure(market: ISoloMarket; err: IError)
+        begin
+          if Assigned(err) then
+            callback(EMPTY_ADDRESS, err)
+          else
+            callback(market.Token, nil);
+        end);
+      finally
+        dYdX.Free;
+      end;
     end);
-  finally
-    dYdX.Free;
-  end;
 end;
 
 // Approve the Solo contract to move your tokens.
@@ -223,21 +225,21 @@ class procedure TdYdX.Approve(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const solo = TSoloMargin.DeployedAt(client.Chain);
-  if solo.IsErr then
-  begin
-    callback(nil, solo.Error);
-    EXIT;
-  end;
-  TokenAddress(client, reserve, procedure(addr: TAddress; err: IError)
-  begin
-    if Assigned(err) then
+  TSoloMargin.DeployedAt(client.Chain)
+    .ifErr(procedure(err: IError)
     begin
-      callback(nil, err);
-      EXIT;
-    end;
-    web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, solo.Value, amount, callback);
-  end);
+      callback(nil, err)
+    end)
+    .&else(procedure(solo: TAddress)
+    begin
+      TokenAddress(client, reserve, procedure(addr: TAddress; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, solo, amount, callback);
+      end);
+    end);
 end;
 
 class function TdYdX.Name: string;
@@ -252,35 +254,37 @@ end;
 
 // Returns the annual yield as a percentage.
 class procedure TdYdX.APY(
-  client    : IWeb3;
-  _etherscan: IEtherscan;
-  reserve   : TReserve;
-  _period   : TPeriod;
-  callback  : TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  reserve  : TReserve;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 const
   SECONDS_PER_YEAR = 31536000;
 begin
-  const solo = TSoloMargin.DeployedAt(client.Chain);
-  if solo.IsErr then
-  begin
-    callback(0, solo.Error);
-    EXIT;
-  end;
-  const dYdX = TSoloMargin.Create(client, solo.Value);
-  if Assigned(dYdX) then
-  begin
-    dYdX.GetMarketSupplyInterestRate(TSoloMargin.marketId[reserve], procedure(qty: Double; err: IError)
+  TSoloMargin.DeployedAt(client.Chain)
+    .ifErr(procedure(err: IError)
     begin
-      try
-        if Assigned(err) then
-          callback(0, err)
-        else
-          callback(qty * SECONDS_PER_YEAR * 100, nil);
-      finally
-        dYdX.Free;
+      callback(0, err)
+    end)
+    .&else(procedure(solo: TAddress)
+    begin
+      const dYdX = TSoloMargin.Create(client, solo);
+      if Assigned(dYdX) then
+      begin
+        dYdX.GetMarketSupplyInterestRate(TSoloMargin.marketId[reserve], procedure(qty: Double; err: IError)
+        begin
+          try
+            if Assigned(err) then
+              callback(0, err)
+            else
+              callback(qty * SECONDS_PER_YEAR * 100, nil);
+          finally
+            dYdX.Free;
+          end;
+        end);
       end;
     end);
-  end;
 end;
 
 class procedure TdYdX.Deposit(
@@ -290,28 +294,30 @@ class procedure TdYdX.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const solo = TSoloMargin.DeployedAt(client.Chain);
-  if solo.IsErr then
-  begin
-    callback(nil, solo.Error);
-    EXIT;
-  end;
-  // Before moving tokens, we must first approve the Solo contract.
-  Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
-  begin
-    if Assigned(err) then
+  TSoloMargin.DeployedAt(client.Chain)
+    .ifErr(procedure(err: IError)
     begin
-      callback(nil, err);
-      EXIT;
-    end;
-    const dYdX = TSoloMargin.Create(client, solo.Value);
-    if Assigned(dYdX) then
-    try
-      dYdX.Deposit(from, TSoloMargin.marketId[reserve], amount, callback);
-    finally
-      dYdX.Free;
-    end;
-  end);
+      callback(nil, err)
+    end)
+    .&else(procedure(solo: TAddress)
+    begin
+      // Before moving tokens, we must first approve the Solo contract.
+      Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
+      begin
+        if Assigned(err) then
+        begin
+          callback(nil, err);
+          EXIT;
+        end;
+        const dYdX = TSoloMargin.Create(client, solo);
+        if Assigned(dYdX) then
+        try
+          dYdX.Deposit(from, TSoloMargin.marketId[reserve], amount, callback);
+        finally
+          dYdX.Free;
+        end;
+      end);
+    end);
 end;
 
 class procedure TdYdX.Balance(
@@ -320,19 +326,21 @@ class procedure TdYdX.Balance(
   reserve : TReserve;
   callback: TProc<BigInteger, IError>);
 begin
-  const solo = TSoloMargin.DeployedAt(client.Chain);
-  if solo.IsErr then
-  begin
-    callback(0, solo.Error);
-    EXIT;
-  end;
-  const dYdX = TSoloMargin.Create(client, solo.Value);
-  if Assigned(dYdX) then
-  try
-    dYdX.GetAccountWei(owner, TSoloMargin.marketId[reserve], callback);
-  finally
-    dYdX.Free;
-  end;
+  TSoloMargin.DeployedAt(client.Chain)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(0, err)
+    end)
+    .&else(procedure(solo: TAddress)
+    begin
+      const dYdX = TSoloMargin.Create(client, solo);
+      if Assigned(dYdX) then
+      try
+        dYdX.GetAccountWei(owner, TSoloMargin.marketId[reserve], callback);
+      finally
+        dYdX.Free;
+      end;
+    end);
 end;
 
 class procedure TdYdX.Withdraw(
@@ -341,16 +349,20 @@ class procedure TdYdX.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const owner = from.GetAddress;
-  if owner.IsErr then
-    callback(nil, 0, owner.Error)
-  else
-    Balance(client, owner.Value, reserve, procedure(amount: BigInteger; err: IError)
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, 0, err)
-      else
-        WithdrawEx(client, from, reserve, amount, callback);
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(owner: TAddress)
+    begin
+      Balance(client, owner, reserve, procedure(amount: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, 0, err)
+        else
+          WithdrawEx(client, from, reserve, amount, callback);
+      end);
     end);
 end;
 
@@ -361,25 +373,27 @@ class procedure TdYdX.WithdrawEx(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const solo = TSoloMargin.DeployedAt(client.Chain);
-  if solo.IsErr then
-  begin
-    callback(nil, 0, solo.Error);
-    EXIT;
-  end;
-  const dYdX = TSoloMargin.Create(client, solo.Value);
-  if Assigned(dYdX) then
-  try
-    dYdX.Withdraw(from, TSoloMargin.marketId[reserve], amount, procedure(rcpt: ITxReceipt; err: IError)
+  TSoloMargin.DeployedAt(client.Chain)
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, 0, err)
-      else
-        callback(rcpt, amount, err);
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(solo: TAddress)
+    begin
+      const dYdX = TSoloMargin.Create(client, solo);
+      if Assigned(dYdX) then
+      try
+        dYdX.Withdraw(from, TSoloMargin.marketId[reserve], amount, procedure(rcpt: ITxReceipt; err: IError)
+        begin
+          if Assigned(err) then
+            callback(nil, 0, err)
+          else
+            callback(rcpt, amount, err);
+        end);
+      finally
+        dYdX.Free;
+      end;
     end);
-  finally
-    dYdX.Free;
-  end;
 end;
 
 { TSoloMarket }
@@ -481,16 +495,13 @@ procedure TSoloMargin.GetAccountWei(
   marketId: Integer;
   callback: TProc<BigInteger, IError>);
 begin
-  web3.eth.call(Client, Contract,
-    'getAccountWei((address,uint256),uint256)', [tuple([owner, 0]), marketId],
-    procedure(tup: TTuple; err: IError)
-    begin
-      if Assigned(err) then
-        callback(BigInteger.Zero, err)
-      else
-        TSoloMargin.ToBigInt(tup).Into(callback);
-    end
-  );
+  web3.eth.call(Client, Contract, 'getAccountWei((address,uint256),uint256)', [tuple([owner, 0]), marketId], procedure(tup: TTuple; err: IError)
+  begin
+    if Assigned(err) then
+      callback(BigInteger.Zero, err)
+    else
+      TSoloMargin.ToBigInt(tup).into(callback);
+  end);
 end;
 
 // Get the global earnings-rate variable that determines what percentage of the
@@ -536,25 +547,21 @@ begin
   GetEarningsRate(procedure(earningsRate: Double; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(0, err);
-      EXIT;
-    end;
-    GetMarketInterestRate(marketId, procedure(borrowInterestRate: Double; err: IError)
-    begin
-      if Assigned(err) then
-      begin
-        callback(0, err);
-        EXIT;
-      end;
-      GetMarketUtilization(marketId, procedure(utilization: Double; err: IError)
+      callback(0, err)
+    else
+      GetMarketInterestRate(marketId, procedure(borrowInterestRate: Double; err: IError)
       begin
         if Assigned(err) then
           callback(0, err)
         else
-          callback(borrowInterestRate * earningsRate * utilization, nil);
+          GetMarketUtilization(marketId, procedure(utilization: Double; err: IError)
+          begin
+            if Assigned(err) then
+              callback(0, err)
+            else
+              callback(borrowInterestRate * earningsRate * utilization, nil);
+          end);
       end);
-    end);
   end);
 end;
 
@@ -587,43 +594,45 @@ procedure TSoloMargin.Operate(
   otherAccountId   : Integer;
   callback         : TProc<ITxReceipt, IError>);
 begin
-  const sender = owner.GetAddress;
-  if sender.IsErr then
-  begin
-    callback(nil, sender.Error);
-    EXIT;
-  end;
-  web3.eth.write(Client, owner, Contract,
-    'operate(' +
-      '(address,uint256)[],' +            // accountOwner, accountNumber
-      '(' +
-        'uint8,uint256,' +                // actionType, accountId
-        '(bool,uint8,uint8,uint256),' +   // sign, denomination, reference, value
-        'uint256,' +                      // primaryMarketId
-        'uint256,' +                      // secondaryMarketId
-        'address,' +                      // otherAddress
-        'uint256,' +                      // otherAccountId
-        'bytes' +                         // arbitrary data
-      ')[]' +
-    ')',
-    [
-      &array([tuple([sender.Value, 0])]), // accountOwner, accountNumber
-      &array([tuple([actionType, 0,       // actionType, accountId
-        tuple([
-          not(amount.Negative),           // sign
-          denomination,                   // denomination
-          reference,                      // reference
-          web3.utils.toHex(amount.Abs)    // value
-        ]),
-        primaryMarketId,
-        secondaryMarketId,
-        otherAddress,
-        otherAccountId,
-        '0b0'
-      ])])
-    ],
-    callback
-  );
+  owner.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(sender: TAddress)
+    begin
+      web3.eth.write(Client, owner, Contract,
+        'operate(' +
+          '(address,uint256)[],' +           // accountOwner, accountNumber
+          '(' +
+            'uint8,uint256,' +               // actionType, accountId
+            '(bool,uint8,uint8,uint256),' +  // sign, denomination, reference, value
+            'uint256,' +                     // primaryMarketId
+            'uint256,' +                     // secondaryMarketId
+            'address,' +                     // otherAddress
+            'uint256,' +                     // otherAccountId
+            'bytes' +                        // arbitrary data
+          ')[]' +
+        ')',
+        [
+          &array([tuple([sender, 0])]),      // accountOwner, accountNumber
+          &array([tuple([actionType, 0,      // actionType, accountId
+            tuple([
+              not(amount.Negative),          // sign
+              denomination,                  // denomination
+              reference,                     // reference
+              web3.utils.toHex(amount.Abs)   // value
+            ]),
+            primaryMarketId,
+            secondaryMarketId,
+            otherAddress,
+            otherAccountId,
+            '0b0'
+          ])])
+        ],
+        callback
+      );
+    end);
 end;
 
 // Moves tokens from an address to Solo.
@@ -634,21 +643,25 @@ procedure TSoloMargin.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const address = owner.GetAddress;
-  if address.IsErr then
-    callback(nil, address.Error)
-  else
-    Operate(
-      owner,                    // owner
-      TSoloActionType.Deposit,  // actionType
-      amount,                   // amount
-      TSoloDenomination.Wei,    // denomination
-      TSoloReference.Delta,     // reference
-      marketId,                 // primaryMarketId
-      0,                        // secondaryMarketId (ignored)
-      address.Value,            // otherAddress
-      0,                        // otherAccountId (ignored)
-      callback);
+  owner.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(address: TAddress)
+    begin
+      Operate(
+        owner,                    // owner
+        TSoloActionType.Deposit,  // actionType
+        amount,                   // amount
+        TSoloDenomination.Wei,    // denomination
+        TSoloReference.Delta,     // reference
+        marketId,                 // primaryMarketId
+        0,                        // secondaryMarketId (ignored)
+        address,                  // otherAddress
+        0,                        // otherAccountId (ignored)
+        callback);
+      end);
 end;
 
 // Moves tokens from Solo to another address.
@@ -661,21 +674,25 @@ procedure TSoloMargin.Withdraw(
 begin
   if not(amount.IsZero) then
     amount.Sign := -1;
-  const address = owner.GetAddress;
-  if address.IsErr then
-    callback(nil, address.Error)
-  else
-    Operate(
-      owner,                     // owner
-      TSoloActionType.Withdraw,  // actionType
-      amount,                    // amount
-      TSoloDenomination.Wei,     // denomination
-      TSoloReference.Delta,      // reference
-      marketId,                  // primaryMarketId
-      0,                         // secondaryMarketId (ignored)
-      address.Value,             // otherAddress
-      0,                         // otherAccountId (ignored)
-      callback);
+  owner.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(address: TAddress)
+    begin
+      Operate(
+        owner,                     // owner
+        TSoloActionType.Withdraw,  // actionType
+        amount,                    // amount
+        TSoloDenomination.Wei,     // denomination
+        TSoloReference.Delta,      // reference
+        marketId,                  // primaryMarketId
+        0,                         // secondaryMarketId (ignored)
+        address,                   // otherAddress
+        0,                         // otherAccountId (ignored)
+        callback);
+    end);
 end;
 
 end.

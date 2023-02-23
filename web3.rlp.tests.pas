@@ -60,7 +60,7 @@ uses
 
 procedure TTests.TestCase1;
 begin
-  const encoded = web3.rlp.encode([
+  web3.rlp.encode([
     9,                                                                          // nonce
     toHex(BigInteger.Multiply(20, BigInteger.Pow(10, 9)), [padToEven]),         // gasPrice
     21000,                                                                      // gas(Limit)
@@ -70,14 +70,17 @@ begin
     1,                                                                          // v
     0,                                                                          // r
     0                                                                           // s
-  ]);
-  if encoded.IsErr then
-    Assert.Fail(encoded.Error.Message)
-  else
+  ]).ifErr(procedure(err: IError)
+  begin
+    Assert.Fail(err.Message)
+  end)
+  .&else(procedure(encoded: TBytes)
+  begin
     Assert.AreEqual(
-      web3.utils.toHex(encoded.Value),
+      web3.utils.toHex(encoded),
       '0xec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080'
-    );
+    )
+  end);
 end;
 
 procedure TTests.TestCase2;
@@ -100,41 +103,59 @@ const
 begin
   for var TEST_CASE in TEST_CASES do
   begin
-    const encoded = web3.rlp.encode(TEST_CASE.input);
-    if encoded.IsErr then
-      Assert.Fail(encoded.Error.Message)
-    else
-      Assert.AreEqual(toHex(encoded.Value), TEST_CASE.output);
+    web3.rlp.encode(TEST_CASE.input)
+      .ifErr(procedure(err: IError)
+      begin
+        Assert.Fail(err.Message)
+      end)
+      .&else(procedure(encoded: TBytes)
+      begin
+        Assert.AreEqual(web3.utils.toHex(encoded), TEST_CASE.output)
+      end);
   end;
 end;
 
 procedure TTests.TestCase3;
-var
-  encoded: IResult<TBytes>;
 begin
-  encoded := web3.rlp.encode('');
-  if encoded.IsErr then
-    Assert.Fail(encoded.Error.Message)
-  else
-    Assert.AreEqual(toHex(encoded.Value), '0x80');
+  web3.rlp.encode('')
+    .ifErr(procedure(err: IError)
+    begin
+      Assert.Fail(err.Message)
+    end)
+    .&else(procedure(encoded: TBytes)
+    begin
+      Assert.AreEqual(toHex(encoded), '0x80')
+    end);
 
-  encoded := web3.rlp.encode([]);
-  if encoded.IsErr then
-    Assert.Fail(encoded.Error.Message)
-  else
-    Assert.AreEqual(toHex(encoded.Value), '0xc0');
+  web3.rlp.encode([])
+    .ifErr(procedure(err: IError)
+    begin
+      Assert.Fail(err.Message)
+    end)
+    .&else(procedure(encoded: TBytes)
+    begin
+      Assert.AreEqual(toHex(encoded), '0xc0')
+    end);
 
-  encoded := web3.rlp.encode(['dog', 'god', 'cat']);
-  if encoded.IsErr then
-    Assert.Fail(encoded.Error.Message)
-  else
-    Assert.AreEqual(toHex(encoded.Value), '0xcc83646f6783676f6483636174');
+  web3.rlp.encode(['dog', 'god', 'cat'])
+    .ifErr(procedure(err: IError)
+    begin
+      Assert.Fail(err.Message)
+    end)
+    .&else(procedure(encoded: TBytes)
+    begin
+      Assert.AreEqual(toHex(encoded), '0xcc83646f6783676f6483636174')
+    end);
 
-  encoded := web3.rlp.encode('Lorem ipsum dolor sit amet, consectetur adipisicing elit');
-  if encoded.IsErr then
-    Assert.Fail(encoded.Error.Message)
-  else
-    Assert.AreEqual(toHex(encoded.Value), '0xb8384c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f6e7365637465747572206164697069736963696e6720656c6974');
+  web3.rlp.encode('Lorem ipsum dolor sit amet, consectetur adipisicing elit')
+    .ifErr(procedure(err: IError)
+    begin
+      Assert.Fail(err.Message)
+    end)
+    .&else(procedure(encoded: TBytes)
+    begin
+      Assert.AreEqual(toHex(encoded), '0xb8384c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f6e7365637465747572206164697069736963696e6720656c6974')
+    end);
 end;
 
 procedure TTests.TestCase4;
@@ -159,11 +180,15 @@ const
 begin
   for var TEST_CASE in TEST_CASES do
   begin
-    const encoded = web3.rlp.encode(toHex(BigInteger.Create(TEST_CASE.bigInt), [padToEven]));
-    if encoded.IsErr then
-      Assert.Fail(encoded.Error.Message)
-    else
-      Assert.AreEqual(toHex(encoded.Value), TEST_CASE.output);
+    web3.rlp.encode(toHex(BigInteger.Create(TEST_CASE.bigInt), [padToEven]))
+      .ifErr(procedure(err: IError)
+      begin
+        Assert.Fail(err.Message)
+      end)
+      .&else(procedure(encoded: TBytes)
+      begin
+        Assert.AreEqual(toHex(encoded), TEST_CASE.output)
+      end);
   end;
 end;
 

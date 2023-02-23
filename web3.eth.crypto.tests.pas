@@ -46,6 +46,7 @@ implementation
 
 uses
   // web3
+  web3,
   web3.eth.crypto;
 
 const
@@ -60,17 +61,23 @@ end;
 
 procedure TTests.Recover;
 begin
-  const signature = TSignature.FromHex(hex);
-  if signature.IsErr then
-  begin
-    Assert.Fail(signature.Error.Message);
-    EXIT;
-  end;
-  const address = web3.eth.crypto.ecrecover(msg, signature.Value);
-  if address.IsErr then
-    Assert.Fail(address.Error.Message)
-  else
-    Assert.AreEqual(string(address.Value), '0x12890d2cce102216644c59dae5baed380d84830c');
+  TSignature.FromHex(hex)
+    .ifErr(procedure(err: IError)
+    begin
+      Assert.Fail(err.Message)
+    end)
+    .&else(procedure(signature: TSignature)
+    begin
+      web3.eth.crypto.ecrecover(msg, signature)
+        .ifErr(procedure(err: IError)
+        begin
+          Assert.Fail(err.Message)
+        end)
+        .&else(procedure(address: TAddress)
+        begin
+          Assert.AreEqual(string(address), '0x12890d2cce102216644c59dae5baed380d84830c')
+        end);
+    end);
 end;
 
 initialization

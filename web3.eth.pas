@@ -426,16 +426,20 @@ procedure sign(
   estimatedGas: BigInteger;
   callback    : TProc<string, IError>);
 begin
-  const sender = from.GetAddress;
-  if sender.IsErr then
-    callback('', sender.Error)
-  else
-    web3.eth.nonce.get(client, sender.Value, procedure(nonce: BigInteger; err: IError)
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback('', err)
-      else
-        signTransaction(client, nonce, from, &to, value, data, 2 * estimatedGas, estimatedGas, callback);
+      callback('', err)
+    end)
+    .&else(procedure(sender: TAddress)
+    begin
+      web3.eth.nonce.get(client, sender, procedure(nonce: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback('', err)
+        else
+          signTransaction(client, nonce, from, &to, value, data, 2 * estimatedGas, estimatedGas, callback);
+      end);
     end);
 end;
 
@@ -471,7 +475,7 @@ procedure write(
   callback  : TProc<TTxHash, IError>);
 begin
   const sender = from.GetAddress;
-  if sender.IsErr then
+  if sender.isErr then
   begin
     callback('', sender.Error);
     EXIT;
@@ -496,7 +500,7 @@ procedure write(
   callback  : TProc<ITxReceipt, IError>);
 begin
   const sender = from.GetAddress;
-  if sender.IsErr then
+  if sender.isErr then
   begin
     callback(nil, sender.Error);
     EXIT;

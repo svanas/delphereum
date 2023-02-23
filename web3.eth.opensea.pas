@@ -187,7 +187,7 @@ begin
   var result := TJsonArray.Create;
 
   const base = baseURL(chain);
-  if base.IsErr then
+  if base.isErr then
   begin
     callback(result, base.Error);
     EXIT;

@@ -150,13 +150,11 @@ begin
   if Assigned(yToken) then
   begin
     yToken.ApproveUnderlying(from, amount, procedure(rcpt: ITxReceipt; err: IError)
-    begin
-      try
-        callback(rcpt, err);
-      finally
-        yToken.Free;
-      end;
-    end);
+    begin try
+      callback(rcpt, err);
+    finally
+      yToken.Free;
+    end; end);
   end;
 end;
 
@@ -211,13 +209,11 @@ begin
   if Assigned(yToken) then
   begin
     yToken.APY(etherscan, period, procedure(apy: Double; err: IError)
-    begin
-      try
-        callback(apy, err);
-      finally
-        yToken.Free;
-      end;
-    end);
+    begin try
+      callback(apy, err);
+    finally
+      yToken.Free;
+    end; end);
   end;
 end;
 
@@ -258,18 +254,16 @@ begin
     yToken.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
     begin
       if Assigned(err) then
-      begin
-        callback(0, err);
-        EXIT;
-      end;
-      // step #2: multiply it by the current yToken price
-      TokenToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
-          callback(0, err)
-        else
-          callback(output, nil);
-      end);
+        callback(0, err)
+      else
+        // step #2: multiply it by the current yToken price
+        TokenToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
+        begin
+          if Assigned(err) then
+            callback(0, err)
+          else
+            callback(output, nil);
+        end);
     end);
   finally
     yToken.Free;
@@ -287,34 +281,28 @@ begin
   begin
     // step #1: get the yToken balance
     yToken.BalanceOf(from, procedure(balance: BigInteger; err: IError)
-    begin
-      try
-        if Assigned(err) then
-        begin
-          callback(nil, 0, err);
-          EXIT;
-        end;
+    begin try
+      if Assigned(err) then
+        callback(nil, 0, err)
+      else
         // step #2: withdraw yToken-amount in exchange for the underlying asset.
         yToken.Withdraw(from, balance, procedure(rcpt: ITxReceipt; err: IError)
         begin
           if Assigned(err) then
-          begin
-            callback(nil, 0, err);
-            EXIT;
-          end;
-          // step #3: from yToken-balance to Underlying-balance
-          TokenToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
-          begin
-            if Assigned(err) then
-              callback(rcpt, 0, err)
-            else
-              callback(rcpt, output, nil);
-          end);
+            callback(nil, 0, err)
+          else
+            // step #3: from yToken-balance to Underlying-balance
+            TokenToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
+            begin
+              if Assigned(err) then
+                callback(rcpt, 0, err)
+              else
+                callback(rcpt, output, nil);
+            end);
         end);
-      finally
-        yToken.Free;
-      end;
-    end);
+    finally
+      yToken.Free;
+    end; end);
   end;
 end;
 

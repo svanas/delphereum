@@ -111,87 +111,121 @@ const
 begin
   for var TEST_CASE in TEST_CASES do
   begin
-    const wei = web3.eth.utils.toWei('1', TEST_CASE.&to);
-    if wei.IsErr then
-      Assert.Fail(wei.Error.Message)
-    else
-      Assert.IsTrue(wei.Value = TWei.Create(TEST_CASE.output));
+    web3.eth.utils.toWei('1', TEST_CASE.&to)
+      .ifErr(procedure(err: IError)
+      begin
+        Assert.Fail(err.Message)
+      end)
+      .&else(procedure(wei: TWei)
+      begin
+        Assert.IsTrue(wei = TWei.Create(TEST_CASE.output))
+      end);
   end;
 end;
 
 procedure TTests.ToWei2;
 begin
-  const wei1 = web3.eth.utils.toWei('1', kwei);
-  if wei1.IsErr then
-  begin
-    Assert.Fail(wei1.Error.Message);
-    EXIT;
-  end;
-  const wei2 = web3.eth.utils.toWei('1', femtoether);
-  if wei2.IsErr then
-    Assert.Fail(wei2.Error.Message)
-  else
-    Assert.IsTrue(wei1.Value = wei2.Value);
+  web3.eth.utils.toWei('1', kwei)
+    .ifErr(procedure(err: IError)
+    begin
+      Assert.Fail(err.Message)
+    end)
+    .&else(procedure(wei1: TWei)
+    begin
+      web3.eth.utils.toWei('1', femtoether)
+        .ifErr(procedure(err: IError)
+        begin
+          Assert.Fail(err.Message)
+        end)
+        .&else(procedure(wei2: TWei)
+        begin
+          Assert.IsTrue(wei1 = wei2)
+        end);
+    end);
 end;
 
 procedure TTests.ToWei3;
 begin
-  const wei1 = web3.eth.utils.toWei('1', szabo);
-  if wei1.IsErr then
-  begin
-    Assert.Fail(wei1.Error.Message);
-    EXIT;
-  end;
-  const wei2 = web3.eth.utils.toWei('1', microether);
-  if wei2.IsErr then
-    Assert.Fail(wei2.Error.Message)
-  else
-    Assert.IsTrue(wei1.Value = wei2.Value);
+  web3.eth.utils.toWei('1', szabo)
+    .ifErr(procedure(err: IError)
+    begin
+      Assert.Fail(err.Message)
+    end)
+    .&else(procedure(wei1: TWei)
+    begin
+      web3.eth.utils.toWei('1', microether)
+        .ifErr(procedure(err: IError)
+        begin
+          Assert.Fail(err.Message)
+        end)
+        .&else(procedure(wei2: TWei)
+        begin
+          Assert.IsTrue(wei1 = wei2)
+        end);
+    end);
 end;
 
 procedure TTests.ToWei4;
 begin
-  const wei1 = web3.eth.utils.toWei('1', finney);
-  if wei1.IsErr then
-  begin
-    Assert.Fail(wei1.Error.Message);
-    EXIT;
-  end;
-  const wei2 = web3.eth.utils.toWei('1', milliether);
-  if wei2.IsErr then
-    Assert.Fail(wei2.Error.Message)
-  else
-    Assert.IsTrue(wei1.Value = wei2.Value);
+  web3.eth.utils.toWei('1', finney)
+    .ifErr(procedure(err: IError)
+    begin
+      Assert.Fail(err.Message)
+    end)
+    .&else(procedure(wei1: TWei)
+    begin
+      web3.eth.utils.toWei('1', milliether)
+        .ifErr(procedure(err: IError)
+        begin
+          Assert.Fail(err.Message)
+        end)
+        .&else(procedure(wei2: TWei)
+        begin
+          Assert.IsTrue(wei1 = wei2)
+        end);
+    end);
 end;
 
 procedure TTests.ToWei5;
 begin
-  const wei1 = web3.eth.utils.toWei('1', milli);
-  if wei1.IsErr then
-  begin
-    Assert.Fail(wei1.Error.Message);
-    EXIT;
-  end;
-  const wei2 = web3.eth.utils.toWei('1', milliether);
-  if wei2.IsErr then
-    Assert.Fail(wei2.Error.Message)
-  else
-    Assert.IsTrue(wei1.Value = wei2.Value);
+  web3.eth.utils.toWei('1', milli)
+    .ifErr(procedure(err: IError)
+    begin
+      Assert.Fail(err.Message)
+    end)
+    .&else(procedure(wei1: TWei)
+    begin
+      web3.eth.utils.toWei('1', milliether)
+        .ifErr(procedure(err: IError)
+        begin
+          Assert.Fail(err.Message)
+        end)
+        .&else(procedure(wei2: TWei)
+        begin
+          Assert.IsTrue(wei1 = wei2)
+        end);
+    end);
 end;
 
 procedure TTests.ToWei6;
 begin
-  const wei1 = web3.eth.utils.toWei('1', milli);
-  if wei1.IsErr then
-  begin
-    Assert.Fail(wei1.Error.Message);
-    EXIT;
-  end;
-  const wei2 = web3.eth.utils.toWei('1000', micro);
-  if wei2.IsErr then
-    Assert.Fail(wei2.Error.Message)
-  else
-    Assert.IsTrue(wei1.Value = wei2.Value);
+  web3.eth.utils.toWei('1', milli)
+    .ifErr(procedure(err: IError)
+    begin
+      Assert.Fail(err.Message)
+    end)
+    .&else(procedure(wei1: TWei)
+    begin
+      web3.eth.utils.toWei('1000', micro)
+        .ifErr(procedure(err: IError)
+        begin
+           Assert.Fail(err.Message)
+        end)
+        .&else(procedure(wei2: TWei)
+        begin
+          Assert.IsTrue(wei1 = wei2)
+        end);
+    end);
 end;
 
 procedure TTests.WeiToWei;
@@ -218,11 +252,15 @@ const
 begin
   for var TEST_CASE in TEST_CASES do
   begin
-    const wei = web3.eth.utils.toWei(TEST_CASE, ether);
-    if wei.IsErr then
-      Assert.Fail(wei.Error.Message)
-    else
-      Assert.AreEqual(web3.eth.utils.fromWei(wei.Value, ether), TEST_CASE);
+    web3.eth.utils.toWei(TEST_CASE, ether)
+      .ifErr(procedure(err: IError)
+      begin
+        Assert.Fail(err.Message)
+      end)
+      .&else(procedure(wei: TWei)
+      begin
+        Assert.AreEqual(web3.eth.utils.fromWei(wei, ether), TEST_CASE)
+      end);
   end;
 end;
 

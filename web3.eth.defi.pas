@@ -190,16 +190,18 @@ end;
 
 procedure TReserveHelper.BalanceOf(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
 begin
-  const address = Self.Address(client.Chain);
-  if address.IsErr then
-  begin
-    if Supports(address.Error, ISilent) then
-      callback(0, nil)
-    else
-      callback(0, address.Error);
-    EXIT;
-  end;
-  web3.eth.erc20.create(client, address.Value).BalanceOf(owner, callback);
+  Self.Address(client.Chain)
+    .ifErr(procedure(err: IError)
+    begin
+      if Supports(err, ISilent) then
+        callback(0, nil)
+      else
+        callback(0, err);
+    end)
+    .&else(procedure(address: TAddress)
+    begin
+      web3.eth.erc20.create(client, address).BalanceOf(owner, callback)
+    end);
 end;
 
 end.

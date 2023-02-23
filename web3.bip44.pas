@@ -60,7 +60,7 @@ uses
 function get(const master: web3.bip32.IMasterKey; const path: string): IResult<TPrivateKey>; overload;
 begin
   const child = master.GetChildKey(path);
-  if child.IsErr then
+  if child.isErr then
     Result := TResult<TPrivateKey>.Err('', child.Error)
   else
     Result := TResult<TPrivateKey>.Ok(TPrivateKey(web3.utils.toHex('', child.Value.Data)));
@@ -81,13 +81,13 @@ end;
 procedure get(const client: IWeb3; const master: web3.bip32.IMasterKey; const prefix, suffix: string; const index: Integer; const callback: TProc<TPrivateKey, IError>); overload;
 begin
   const privKey = get(master, prefix, suffix, index);
-  if privKey.IsErr then
+  if privKey.isErr then
   begin
-    privKey.Into(callback);
+    privKey.into(callback);
     EXIT;
   end;
   const address = privKey.Value.GetAddress;
-  if address.IsErr then
+  if address.isErr then
   begin
     callback('', address.Error);
     EXIT;
@@ -108,7 +108,7 @@ begin
   for var index := 0 to 19 do
   begin
     const key = get(master, prefix, suffix, index);
-    if key.IsErr then
+    if key.isErr then
     begin
       Result := TResult<TArray<TPrivateKey>>.Err([], key.Error);
       EXIT;
@@ -122,7 +122,7 @@ end;
 function get(&public: TAddress; const master: web3.bip32.IMasterKey; const prefix, suffix: string): IResult<TPrivateKey>; overload;
 begin
   const keys = traverse(master, prefix, suffix);
-  if keys.IsErr then
+  if keys.isErr then
   begin
     Result := TResult<TPrivateKey>.Err('', keys.Error);
     EXIT;
@@ -130,7 +130,7 @@ begin
   for var key in keys.Value do
   begin
     const address = key.GetAddress;
-    if address.IsOk and address.Value.SameAs(&public) then
+    if address.isOk and address.Value.SameAs(&public) then
     begin
       Result := TResult<TPrivateKey>.Ok(key);
       EXIT;
@@ -144,10 +144,10 @@ function long(&public: TAddress; const master: web3.bip32.IMasterKey): IResult<T
 begin
   // m/44'/60'/0'/0/x
   Result := get(&public, master, 'm/44H/60H/0H/0/', '');
-  if Result.IsErr or (Result.Value <> '') then EXIT;
+  if Result.isErr or (Result.Value <> '') then EXIT;
   // m/44'/60'/0'/x/0
   Result := get(&public, master, 'm/44H/60H/0H/', '/0');
-  if Result.IsErr or (Result.Value <> '') then EXIT;
+  if Result.isErr or (Result.Value <> '') then EXIT;
   // m/44'/60'/x'/0/0
   Result := get(&public, master, 'm/44H/60H/', 'H/0/0');
 end;
@@ -157,7 +157,7 @@ function shorter(&public: TAddress; const master: web3.bip32.IMasterKey): IResul
 begin
   // m/44'/60'/0'/x
   Result := get(&public, master, 'm/44H/60H/0H/', '');
-  if Result.IsErr or (Result.Value <> '') then EXIT;
+  if Result.isErr or (Result.Value <> '') then EXIT;
   // m/44'/60'/x'/0
   Result := get(&public, master, 'm/44H/60H/', 'H/0');
 end;
@@ -321,9 +321,9 @@ function wallet(&public: TAddress; const seed: web3.bip39.TSeed): IResult<TPriva
 begin
   const master = web3.bip32.master(seed);
   Result := long(&public, master);
-  if Result.IsErr or (Result.Value <> '') then EXIT;
+  if Result.isErr or (Result.Value <> '') then EXIT;
   Result := shorter(&public, master);
-  if Result.IsErr or (Result.Value <> '') then EXIT;
+  if Result.isErr or (Result.Value <> '') then EXIT;
   Result := shortest(&public, master);
 end;
 

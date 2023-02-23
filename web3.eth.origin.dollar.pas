@@ -35,11 +35,13 @@ uses
   Velthuis.BigIntegers,
   // web3
   web3,
+  web3.eth,
   web3.eth.contract,
   web3.eth.defi,
   web3.eth.erc20,
   web3.eth.etherscan,
-  web3.eth.types;
+  web3.eth.types,
+  web3.utils;
 
 type
   TOrigin = class(TLendingProtocol)
@@ -58,7 +60,7 @@ type
     class procedure APY(
       client   : IWeb3;
       etherscan: IEtherscan;
-      _reserve : TReserve;
+      reserve  : TReserve;
       period   : TPeriod;
       callback : TProc<Double, IError>); override;
     class procedure Deposit(
@@ -80,7 +82,7 @@ type
     class procedure WithdrawEx(
       client  : IWeb3;
       from    : TPrivateKey;
-      _reserve: TReserve;
+      reserve : TReserve;
       amount  : BigInteger;
       callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
@@ -111,13 +113,6 @@ type
 
 implementation
 
-uses
-  // Delphi
-  System.DateUtils,
-  // web3
-  web3.eth,
-  web3.utils;
-
 { TOrigin }
 
 class procedure TOrigin.Approve(
@@ -127,13 +122,15 @@ class procedure TOrigin.Approve(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const underlying = reserve.Address(client.Chain);
-  if underlying.IsErr then
-  begin
-    callback(nil, underlying.Error);
-    EXIT;
-  end;
-  web3.eth.erc20.approve(web3.eth.erc20.create(client, underlying.Value), from, TOriginVault.DeployedAt, amount, callback);
+  reserve.Address(client.Chain)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(underlying: TAddress)
+    begin
+      web3.eth.erc20.approve(web3.eth.erc20.create(client, underlying), from, TOriginVault.DeployedAt, amount, callback)
+    end);
 end;
 
 class function TOrigin.Name: string;
@@ -149,7 +146,7 @@ end;
 class procedure TOrigin.APY(
   client   : IWeb3;
   etherscan: IEtherscan;
-  _reserve : TReserve;
+  reserve  : TReserve;
   period   : TPeriod;
   callback : TProc<Double, IError>);
 begin
@@ -157,13 +154,11 @@ begin
   if Assigned(ousd) then
   begin
     ousd.APY(etherscan, period, procedure(apy: Double; err: IError)
-    begin
-      try
-        callback(apy, err);
-      finally
-        ousd.Free;
-      end;
-    end);
+    begin try
+      callback(apy, err);
+    finally
+      ousd.Free;
+    end; end);
   end;
 end;
 
@@ -219,23 +214,27 @@ class procedure TOrigin.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const owner = from.GetAddress;
-  if owner.IsErr then
-    callback(nil, 0, owner.Error)
-  else
-    Self.Balance(client, owner.Value, reserve, procedure(balance: BigInteger; err: IError)
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, 0, err)
-      else
-        Self.WithdrawEx(client, from, reserve, balance, callback);
+      callback(nil, 0, err)
     end)
+    .&else(procedure(owner: TAddress)
+    begin
+      Self.Balance(client, owner, reserve, procedure(balance: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, 0, err)
+        else
+          Self.WithdrawEx(client, from, reserve, balance, callback);
+      end)
+    end);
 end;
 
 class procedure TOrigin.WithdrawEx(
   client  : IWeb3;
   from    : TPrivateKey;
-  _reserve: TReserve;
+  reserve : TReserve;
   amount  : BigInteger;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
@@ -271,22 +270,15 @@ procedure TOriginVault.Mint(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const underlying = reserve.Address(Client.Chain);
-  if underlying.IsErr then
-    callback(nil, underlying.Error)
-  else
-    web3.eth.write(
-      Client,
-      from,
-      Contract,
-      'mint(address,uint256,uint256)',
-      [
-        underlying.Value,
-        web3.utils.toHex(amount),
-        0
-      ],
-      callback
-    );
+  reserve.Address(Client.Chain)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(underlying: TAddress)
+    begin
+      web3.eth.write(Client, from, Contract, 'mint(address,uint256,uint256)', [underlying, web3.utils.toHex(amount), 0], callback)
+    end);
 end;
 
 procedure TOriginVault.Redeem(
@@ -294,17 +286,7 @@ procedure TOriginVault.Redeem(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  web3.eth.write(
-    Client,
-    from,
-    Contract,
-    'redeem(uint256,uint256)',
-    [
-      web3.utils.toHex(amount),
-      0
-    ],
-    callback
-  );
+  web3.eth.write(Client, from, Contract, 'redeem(uint256,uint256)', [web3.utils.toHex(amount), 0], callback);
 end;
 
 { TOriginDollar }
@@ -324,27 +306,21 @@ begin
   Self.RebasingCreditsPerToken(BLOCK_LATEST, procedure(curr: BigInteger; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(0, err);
-      EXIT;
-    end;
-    etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-      begin
-        callback(0, err);
-        EXIT;
-      end;
-      Self.RebasingCreditsPerToken(web3.utils.toHex(bn), procedure(past: BigInteger; err: IError)
+      callback(0, err)
+    else
+      etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
       begin
         if Assigned(err) then
-        begin
-          callback(0, err);
-          EXIT;
-        end;
-        callback(period.ToYear((1 / curr.AsDouble) / (1 / past.AsDouble) - 1) * 100, nil);
+          callback(0, err)
+        else
+          Self.RebasingCreditsPerToken(web3.utils.toHex(bn), procedure(past: BigInteger; err: IError)
+          begin
+            if Assigned(err) then
+              callback(0, err)
+            else
+              callback(period.ToYear((1 / curr.AsDouble) / (1 / past.AsDouble) - 1) * 100, nil);
+          end);
       end);
-    end);
   end);
 end;
 

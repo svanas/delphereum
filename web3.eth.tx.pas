@@ -200,58 +200,60 @@ procedure signTransaction(
   estimatedGas: BigInteger;
   callback    : TProc<string, IError>);
 begin
-  const sender = from.GetAddress;
-  if sender.IsErr then
-  begin
-    callback('', sender.Error);
-    EXIT;
-  end;
-  web3.eth.gas.getGasPrice(client, procedure(gasPrice: TWei; err: IError)
-  begin
-    if Assigned(err) then
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      callback('', err);
-      EXIT;
-    end;
-    client.CanSignTransaction(sender.Value, &to, gasPrice, estimatedGas, procedure(approved: Boolean; err: IError)
+      callback('', err)
+    end)
+    .&else(procedure(sender: TAddress)
     begin
-      if Assigned(err) then
+      web3.eth.gas.getGasPrice(client, procedure(gasPrice: TWei; err: IError)
       begin
-        callback('', err);
-        EXIT;
-      end;
-
-      if not approved then
-      begin
-        callback('', TSignatureDenied.Create);
-        EXIT;
-      end;
-
-      if client.Chain.TxType >= 2 then // EIP-1559
-      begin
-        web3.eth.gas.getMaxPriorityFeePerGas(client, procedure(tip: BigInteger; err: IError)
+        if Assigned(err) then
+        begin
+          callback('', err);
+          EXIT;
+        end;
+        client.CanSignTransaction(sender, &to, gasPrice, estimatedGas, procedure(approved: Boolean; err: IError)
         begin
           if Assigned(err) then
           begin
             callback('', err);
             EXIT;
           end;
-          web3.eth.gas.getMaxFeePerGas(client, procedure(max: BigInteger; err: IError)
-          begin
-            if Assigned(err) then
-            begin
-              callback('', err);
-              EXIT;
-            end;
-            signTransactionType2(client.Chain.Id, nonce, from, &to, value, data, tip, max, gasLimit).Into(callback);
-          end);
-        end);
-        EXIT;
-      end;
 
-      signTransactionLegacy(client.Chain.Id, nonce, from, &to, value, data, gasPrice, gasLimit).Into(callback);
+          if not approved then
+          begin
+            callback('', TSignatureDenied.Create);
+            EXIT;
+          end;
+
+          if client.Chain.TxType >= 2 then // EIP-1559
+          begin
+            web3.eth.gas.getMaxPriorityFeePerGas(client, procedure(tip: BigInteger; err: IError)
+            begin
+              if Assigned(err) then
+              begin
+                callback('', err);
+                EXIT;
+              end;
+              web3.eth.gas.getMaxFeePerGas(client, procedure(max: BigInteger; err: IError)
+              begin
+                if Assigned(err) then
+                begin
+                  callback('', err);
+                  EXIT;
+                end;
+                signTransactionType2(client.Chain.Id, nonce, from, &to, value, data, tip, max, gasLimit).into(callback);
+              end);
+            end);
+            EXIT;
+          end;
+
+          signTransactionLegacy(client.Chain.Id, nonce, from, &to, value, data, gasPrice, gasLimit).into(callback);
+        end);
+      end);
     end);
-  end);
 end;
 
 function signTransactionLegacy(
@@ -278,7 +280,7 @@ begin
     0                                        // s
   ]);
 
-  if encoded.IsErr then
+  if encoded.isErr then
   begin
     Result := TResult<string>.Err('', encoded.Error);
     EXIT;
@@ -306,7 +308,7 @@ begin
       web3.utils.toHex(s.ToByteArrayUnsigned)  // s
     ]);
 
-    if encoded.IsErr then
+    if encoded.isErr then
     begin
       Result := TResult<string>.Err('', encoded.Error);
       EXIT;
@@ -343,7 +345,7 @@ begin
     VarArrayCreate([0, 0], varVariant)             // accessList
   ]);
 
-  if encoded.IsErr then
+  if encoded.isErr then
   begin
     Result := TResult<string>.Err('', encoded.Error);
     EXIT;
@@ -374,7 +376,7 @@ begin
       web3.utils.toHex(s.ToByteArrayUnsigned)        // s
     ]);
 
-    if encoded.IsErr then
+    if encoded.isErr then
     begin
       Result := TResult<string>.Err('', encoded.Error);
       EXIT;
@@ -411,7 +413,7 @@ function ecrecoverTransactionLegacy(encoded: TBytes): IResult<TAddress>;
 
 begin
   const decoded = web3.rlp.decode(encoded);
-  if decoded.IsErr then
+  if decoded.isErr then
   begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, decoded.Error);
     EXIT;
@@ -424,7 +426,7 @@ begin
   end;
 
   const signature = web3.rlp.decode(decoded.Value[0].Bytes);
-  if signature.IsErr then
+  if signature.isErr then
   begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, signature.Error);
     EXIT;
@@ -437,7 +439,7 @@ begin
   end;
 
   const chainId = getChainId(signature.Value[6].Bytes);
-  if chainId.IsErr then
+  if chainId.isErr then
   begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, signature.Error);
     EXIT;
@@ -455,7 +457,7 @@ begin
     TItem.Create([], dtString)                                   // s
   ]);
 
-  if msg.IsErr then
+  if msg.isErr then
   begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, msg.Error);
     EXIT;
@@ -490,7 +492,7 @@ end;
 function ecrecoverTransactionType2(encoded: TBytes): IResult<TAddress>;
 begin
   const decoded = web3.rlp.decode(encoded);
-  if decoded.IsErr then
+  if decoded.isErr then
   begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, decoded.Error);
     EXIT;
@@ -506,7 +508,7 @@ begin
   end;
 
   const signature = web3.rlp.decode(decoded.Value[1].Bytes);
-  if signature.IsErr then
+  if signature.isErr then
   begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, signature.Error);
     EXIT;
@@ -530,7 +532,7 @@ begin
     signature.Value[8]  // accessList
   ]);
 
-  if msg.IsErr then
+  if msg.isErr then
   begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, msg.Error);
     EXIT;
@@ -554,7 +556,7 @@ end;
 function ecrecoverTransaction(encoded: TBytes): IResult<TAddress>;
 begin
   const decoded = web3.rlp.decode(encoded);
-  if decoded.IsErr then
+  if decoded.isErr then
   begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, decoded.Error);
     EXIT;
@@ -649,28 +651,32 @@ procedure sendTransaction(
   value   : TWei;
   callback: TProc<TTxHash, IError>);
 begin
-  const sender = from.GetAddress;
-  if sender.IsErr then
-    callback('', sender.Error)
-  else
-    web3.eth.nonce.get(client, sender.Value, procedure(nonce: BigInteger; err: IError)
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback('', err)
-      else
-        signTransaction(client, nonce, from, &to, value, '', 21000, 21000, procedure(sig: string; err: IError)
-        begin
-          if Assigned(err) then
-            callback('', err)
-          else
-            sendTransaction(client, sig, procedure(hash: TTxHash; err: IError)
-            begin
-              if Assigned(err) and (err.Message = 'nonce too low') then
-                sendTransaction(client, from, &to, value, callback)
-              else
-                callback(hash, err);
-            end);
-        end);
+      callback('', err)
+    end)
+    .&else(procedure(sender: TAddress)
+    begin
+      web3.eth.nonce.get(client, sender, procedure(nonce: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback('', err)
+        else
+          signTransaction(client, nonce, from, &to, value, '', 21000, 21000, procedure(sig: string; err: IError)
+          begin
+            if Assigned(err) then
+              callback('', err)
+            else
+              sendTransaction(client, sig, procedure(hash: TTxHash; err: IError)
+              begin
+                if Assigned(err) and (err.Message = 'nonce too low') then
+                  sendTransaction(client, from, &to, value, callback)
+                else
+                  callback(hash, err);
+              end);
+          end);
+      end);
     end);
 end;
 
@@ -686,28 +692,32 @@ procedure sendTransaction(
   value   : TWei;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const sender = from.GetAddress;
-  if sender.IsErr then
-    callback(nil, sender.Error)
-  else
-    web3.eth.nonce.get(client, sender.Value, procedure(nonce: BigInteger; err: IError)
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        signTransaction(client, nonce, from, &to, value, '', 21000, 21000, procedure(sig: string; err: IError)
-        begin
-          if Assigned(err) then
-            callback(nil, err)
-          else
-            sendTransaction(client, sig, procedure(rcpt: ITxReceipt; err: IError)
-            begin
-              if Assigned(err) and (err.Message = 'nonce too low') then
-                sendTransaction(client, from, &to, value, callback)
-              else
-                callback(rcpt, err);
-            end);
-        end);
+      callback(nil, err)
+    end)
+    .&else(procedure(sender: TAddress)
+    begin
+      web3.eth.nonce.get(client, sender, procedure(nonce: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          signTransaction(client, nonce, from, &to, value, '', 21000, 21000, procedure(sig: string; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, err)
+            else
+              sendTransaction(client, sig, procedure(rcpt: ITxReceipt; err: IError)
+              begin
+                if Assigned(err) and (err.Message = 'nonce too low') then
+                  sendTransaction(client, from, &to, value, callback)
+                else
+                  callback(rcpt, err);
+              end);
+          end);
+      end)
     end);
 end;
 
@@ -988,16 +998,20 @@ procedure cancelTransaction(
   nonce   : BigInteger;
   callback: TProc<TTxHash, IError>);
 begin
-  const sender = from.GetAddress;
-  if sender.IsErr then
-    callback('', sender.Error)
-  else
-    signTransaction(client, nonce, from, sender.Value, 0, '', 21000, 21000, procedure(sig: string; err: IError)
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback('', err)
-      else
-        sendTransaction(client, sig, callback);
+      callback('', err)
+    end)
+    .&else(procedure(sender: TAddress)
+    begin
+      signTransaction(client, nonce, from, sender, 0, '', 21000, 21000, procedure(sig: string; err: IError)
+      begin
+        if Assigned(err) then
+          callback('', err)
+        else
+          sendTransaction(client, sig, callback);
+      end);
     end);
 end;
 

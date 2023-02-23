@@ -35,7 +35,6 @@ interface
 uses
   // Delphi
   System.SysUtils,
-  System.TypInfo,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
@@ -64,11 +63,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client    : IWeb3;
-      _etherscan: IEtherscan;
-      reserve   : TReserve;
-      _period   : TPeriod;
-      callback  : TProc<Double, IError>); override;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      reserve  : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -149,17 +148,17 @@ begin
     aap.GetLendingPoolCore(procedure(core: TAddress; err: IError)
     begin
       if Assigned(err) then
-      begin
-        callback(nil, err);
-        EXIT;
-      end;
-      const underlying = reserve.Address(client.Chain);
-      if underlying.IsErr then
-      begin
-        callback(nil, underlying.Error);
-        EXIT;
-      end;
-      web3.eth.erc20.approve(web3.eth.erc20.create(client, underlying.Value), from, core, amount, callback);
+        callback(nil, err)
+      else
+        reserve.Address(client.Chain)
+          .ifErr(procedure(err: IError)
+          begin
+            callback(nil, err)
+          end)
+          .&else(procedure(underlying: TAddress)
+          begin
+            web3.eth.erc20.approve(web3.eth.erc20.create(client, underlying), from, core, amount, callback)
+          end);
     end);
   finally
     aap.Free;
@@ -178,11 +177,11 @@ end;
 
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TAave.APY(
-  client    : IWeb3;
-  _etherscan: IEtherscan;
-  reserve   : TReserve;
-  _period   : TPeriod;
-  callback  : TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  reserve  : TReserve;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 begin
   const aap = TAaveAddressesProvider.Create(client);
   if Assigned(aap) then
@@ -304,16 +303,20 @@ class procedure TAave.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const owner = from.GetAddress;
-  if owner.IsErr then
-    callback(nil, 0, owner.Error)
-  else
-    Balance(client, owner.Value, reserve, procedure(amount: BigInteger; err: IError)
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, 0, err)
-      else
-        WithdrawEx(client, from, reserve, amount, callback);
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(owner: TAddress)
+    begin
+      Balance(client, owner, reserve, procedure(amount: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, 0, err)
+        else
+          WithdrawEx(client, from, reserve, amount, callback);
+      end);
     end);
 end;
 
@@ -347,11 +350,6 @@ begin
           const aToken = TaToken.Create(client, addr);
           if Assigned(aToken) then
           try
-            if Assigned(err) then
-            begin
-              callback(nil, 0, err);
-              EXIT;
-            end;
             aToken.Redeem(from, amount, procedure(rcpt: ITxReceipt; err: IError)
             begin
               if Assigned(err) then
@@ -419,24 +417,29 @@ procedure TAaveLendingPool.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const underlying = reserve.Address(Client.Chain);
-  if underlying.IsErr then
-    callback(nil, underlying.Error)
-  else
-    web3.eth.write(
-      Client, from, Contract,
-      'deposit(address,uint256,uint16)',
-      [underlying.Value, web3.utils.toHex(amount), 42], callback);
+  reserve.Address(Client.Chain)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(underlying: TAddress)
+    begin
+      web3.eth.write(Client, from, Contract, 'deposit(address,uint256,uint16)', [underlying, web3.utils.toHex(amount), 42], callback);
+    end);
 end;
 
 // https://docs.aave.com/developers/developing-on-aave/the-protocol/lendingpool#getreservedata
 procedure TAaveLendingPool.GetReserveData(reserve: TReserve; callback: TProc<TTuple, IError>);
 begin
-  const underlying = reserve.Address(Client.Chain);
-  if underlying.IsErr then
-    callback(nil, underlying.Error)
-  else
-    web3.eth.call(Client, Contract, 'getReserveData(address)', [underlying.Value], callback);
+  reserve.Address(Client.Chain)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(underlying: TAddress)
+    begin
+      web3.eth.call(Client, Contract, 'getReserveData(address)', [underlying], callback)
+    end);
 end;
 
 // Returns current yearly interest (APY) earned by the depositors, in Ray units.
@@ -469,9 +472,7 @@ end;
 // redeem an `amount` of aTokens for the underlying asset, burning the aTokens during the process.
 procedure TaToken.Redeem(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
-  web3.eth.write(
-    Client, from, Contract,
-    'redeem(uint256)', [web3.utils.toHex(amount)], callback);
+  web3.eth.write(Client, from, Contract, 'redeem(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 end.

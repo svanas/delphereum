@@ -247,12 +247,14 @@ begin
                       log^.Topic[1].toAddress,  // from
                       log^.Topic[2].toAddress,  // to
                       log^.Topic[3].toUInt256); // tokenId
+
       if Assigned(FOnApproval) then
         if log^.isEvent('Approval(address,address,uint256)') then
           FOnApproval(Self,
                       log^.Topic[1].toAddress,  // owner
                       log^.Topic[2].toAddress,  // spender
                       log^.Topic[3].toUInt256); // tokenId
+
       if Assigned(FOnApprovalForAll) then
         if log^.isEvent('ApprovalForAll(address,address,bool)') then
           FOnApprovalForAll(Self,
@@ -264,8 +266,7 @@ end;
 
 destructor TERC721.Destroy;
 begin
-  if FLogger.Status in [Running, Paused] then
-    FLogger.Stop;
+  if FLogger.Status in [Running, Paused] then FLogger.Stop;
   inherited Destroy;
 end;
 
@@ -289,16 +290,12 @@ end;
 
 procedure TERC721.WatchOrStop;
 begin
-  if Assigned(FOnTransfer)
-  or Assigned(FOnApproval)
-  or Assigned(FOnApprovalForAll) then
+  if Assigned(FOnTransfer) or Assigned(FOnApproval) or Assigned(FOnApprovalForAll) then
   begin
-    if FLogger.Status in [Idle, Paused] then
-      FLogger.Start;
+    if FLogger.Status in [Idle, Paused] then FLogger.Start;
     EXIT;
   end;
-  if FLogger.Status = Running then
-    FLogger.Pause;
+  if FLogger.Status = Running then FLogger.Pause;
 end;
 
 procedure TERC721.BalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
@@ -323,14 +320,15 @@ procedure TERC721.SafeTransferFrom(
   tokenId : BigInteger;
   callback: TProc<TTxHash, IError>);
 begin
-  const sender = from.GetAddress;
-  if sender.IsErr then
-    callback('', sender.Error)
-  else
-    web3.eth.write(
-      Client, from, Contract,
-      'safeTransferFrom(address,address,uint256)', [sender.Value, &to, web3.utils.toHex(tokenId)], callback
-    );
+  from.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback('', err)
+    end)
+    .&else(procedure(sender: TAddress)
+    begin
+      web3.eth.write(Client, from, Contract, 'safeTransferFrom(address,address,uint256)', [sender, &to, web3.utils.toHex(tokenId)], callback)
+    end);
 end;
 
 procedure TERC721.SafeTransferFromEx(
@@ -339,14 +337,15 @@ procedure TERC721.SafeTransferFromEx(
   tokenId : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const sender = from.GetAddress;
-  if sender.IsErr then
-    callback(nil, sender.Error)
-  else
-    web3.eth.write(
-      Client, from, Contract,
-      'safeTransferFrom(address,address,uint256)', [sender.Value, &to, web3.utils.toHex(tokenId)], callback
-    );
+  from.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(sender: TAddress)
+    begin
+      web3.eth.write(Client, from, Contract, 'safeTransferFrom(address,address,uint256)', [sender, &to, web3.utils.toHex(tokenId)], callback)
+    end);
 end;
 
 procedure TERC721.TransferFrom(
@@ -355,14 +354,15 @@ procedure TERC721.TransferFrom(
   tokenId : BigInteger;
   callback: TProc<TTxHash, IError>);
 begin
-  const sender = from.GetAddress;
-  if sender.IsErr then
-    callback('', sender.Error)
-  else
-    web3.eth.write(
-      Client, from, Contract,
-      'transferFrom(address,address,uint256)', [sender.Value, &to, web3.utils.toHex(tokenId)], callback
-    );
+  from.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback('', err)
+    end)
+    .&else(procedure(sender: TAddress)
+    begin
+      web3.eth.write(Client, from, Contract, 'transferFrom(address,address,uint256)', [sender, &to, web3.utils.toHex(tokenId)], callback)
+    end);
 end;
 
 procedure TERC721.TransferFromEx(
@@ -371,14 +371,15 @@ procedure TERC721.TransferFromEx(
   tokenId : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const sender = from.GetAddress;
-  if sender.IsErr then
-    callback(nil, sender.Error)
-  else
-    web3.eth.write(
-      Client, from, Contract,
-      'transferFrom(address,address,uint256)', [sender.Value, &to, web3.utils.toHex(tokenId)], callback
-    );
+  from.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(sender: TAddress)
+    begin
+      web3.eth.write(Client, from, Contract, 'transferFrom(address,address,uint256)', [sender, &to, web3.utils.toHex(tokenId)], callback)
+    end);
 end;
 
 procedure TERC721.Approve(

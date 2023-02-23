@@ -80,7 +80,7 @@ begin
         begin
           const path = web3.json.getPropAsStr(child, 'path');
           const key = master.GetChildKey(path);
-          if key.IsErr then Assert.Fail(key.Error.Message);
+          if key.isErr then Assert.Fail(key.Error.Message);
           privKey := web3.json.getPropAsStr(child, 'privKey');
           Assert.AreEqual(key.Value.ToString, privKey);
           pubKey := web3.json.getPropAsStr(child, 'pubKey');

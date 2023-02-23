@@ -149,7 +149,7 @@ function ecrecover(const data: TBytes; signature: TSignature; getRecId: TGetRecI
 
 begin
   const recId = getRecId(signature.V);
-  if recId.IsErr then
+  if recId.isErr then
   begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, recId.Error);
     EXIT;

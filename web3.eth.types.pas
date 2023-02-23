@@ -367,7 +367,7 @@ begin
   end else
   begin
     Result := web3.bip44.wallet(&public, web3.bip39.seed(input, ''));
-    if Result.IsErr or (Result.Value = '') then
+    if Result.isErr or (Result.Value = '') then
     begin
       Result := TResult<TPrivateKey>.Err('', 'Secret recovery phrase is invalid');
       EXIT;
@@ -376,7 +376,7 @@ begin
   end;
 
   const address = &private.GetAddress;
-  if address.IsErr then
+  if address.isErr then
   begin
     Result := TResult<TPrivateKey>.Err('', address.Error);
     EXIT;

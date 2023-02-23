@@ -146,17 +146,17 @@ begin
   Self.UnderlyingToLpTokenAddress(client, reserve, procedure(lpTokenAddr: TAddress; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    const underlying = reserve.Address(client.Chain);
-    if underlying.IsErr then
-    begin
-      callback(nil, underlying.Error);
-      EXIT;
-    end;
-    web3.eth.erc20.approve(web3.eth.erc20.create(client, underlying.Value), from, lpTokenAddr, amount, callback);
+      callback(nil, err)
+    else
+      reserve.Address(client.Chain)
+        .ifErr(procedure(err: IError)
+        begin
+          callback(nil, err)
+        end)
+        .&else(procedure(underlying: TAddress)
+        begin
+          web3.eth.erc20.approve(web3.eth.erc20.create(client, underlying), from, lpTokenAddr, amount, callback)
+        end);
   end);
 end;
 
@@ -176,13 +176,11 @@ begin
     const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
     begin
       yVaultToken.TokenToUnderlying(amount, procedure(result: BigInteger; err: IError)
-      begin
-        try
-          callback(result, err);
-        finally
-          yVaultToken.Free;
-        end;
-      end);
+      begin try
+        callback(result, err);
+      finally
+        yVaultToken.Free;
+      end; end);
     end;
   end);
 end;
@@ -203,13 +201,11 @@ begin
     const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
     begin
       yVaultToken.UnderlyingToToken(amount, procedure(result: BigInteger; err: IError)
-      begin
-        try
-          callback(result, err);
-        finally
-          yVaultToken.Free;
-        end;
-      end);
+      begin try
+        callback(result, err);
+      finally
+        yVaultToken.Free;
+      end; end);
     end;
   end);
 end;
@@ -219,38 +215,40 @@ class procedure TyVaultV2.UnderlyingToLpTokenAddress(
   reserve : TReserve;
   callback: TProc<TAddress, IError>);
 begin
-  const underlying = reserve.Address(client.Chain);
-  if underlying.IsErr then
-  begin
-    callback(EMPTY_ADDRESS, underlying.Error);
-    EXIT;
-  end;
-  // step #1: use the yearn API
-  web3.eth.yearn.finance.api.latest(client.Chain, underlying.Value, v2, procedure(vault: IYearnVault; err: IError)
-  begin
-    if Assigned(err) then
+  reserve.Address(client.Chain)
+    .ifErr(procedure(err: IError)
     begin
-      callback(EMPTY_ADDRESS, err);
-      EXIT;
-    end;
-    if Assigned(vault) then
+      callback(EMPTY_ADDRESS, err)
+    end)
+    .&else(procedure(underlying: TAddress)
     begin
-      callback(vault.Address, err);
-      EXIT;
-    end;
-    // step #2; if the yearn API didn't work, use the on-chain registry
-    TyVaultRegistry.Create(client, procedure(reg: TyVaultRegistry; err: IError)
-    begin
-      if Assigned(reg) then
-      try
-        reg.LatestVault(underlying.Value, callback);
-        EXIT;
-      finally
-        reg.Free;
-      end;
-      callback(EMPTY_ADDRESS, err);
+      // step #1: use the yearn API
+      web3.eth.yearn.finance.api.latest(client.Chain, underlying, v2, procedure(vault: IYearnVault; err: IError)
+      begin
+        if Assigned(err) then
+        begin
+          callback(EMPTY_ADDRESS, err);
+          EXIT;
+        end;
+        if Assigned(vault) then
+        begin
+          callback(vault.Address, err);
+          EXIT;
+        end;
+        // step #2; if the yearn API didn't work, use the on-chain registry
+        TyVaultRegistry.Create(client, procedure(reg: TyVaultRegistry; err: IError)
+        begin
+          if Assigned(reg) then
+          try
+            reg.LatestVault(underlying, callback);
+            EXIT;
+          finally
+            reg.Free;
+          end;
+          callback(EMPTY_ADDRESS, err);
+        end);
+      end);
     end);
-  end);
 end;
 
 class function TyVaultV2.Name: string;
@@ -273,54 +271,54 @@ class procedure TyVaultV2.APY(
   period   : TPeriod;
   callback : TProc<Double, IError>);
 begin
-  const underlying = reserve.Address(client.Chain);
-  if underlying.IsErr then
-  begin
-    callback(0, underlying.Error);
-    EXIT;
-  end;
-  // step #1: use the yearn API
-  web3.eth.yearn.finance.api.latest(client.Chain, underlying.Value, v2, procedure(vault: IYearnVault; err: IError)
-  begin
-    if Assigned(err) then
+  reserve.Address(client.Chain)
+    .ifErr(procedure(err: IError)
     begin
-      callback(0, err);
-      EXIT;
-    end;
-    if Assigned(vault) then
+      callback(0, err)
+    end)
+    .&else(procedure(underlying: TAddress)
     begin
-      callback(vault.APY, err);
-      EXIT;
-    end;
-    // step #2; if the yearn API didn't work, use the on-chain smart contract
-    Self.UnderlyingToLpTokenAddress(client, reserve, procedure(lpTokenAddr: TAddress; err: IError)
-    begin
-      if Assigned(err) then
+      // step #1: use the yearn API
+      web3.eth.yearn.finance.api.latest(client.Chain, underlying, v2, procedure(vault: IYearnVault; err: IError)
       begin
-        callback(0, err);
-        EXIT;
-      end;
-      const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
-      if Assigned(yVaultToken) then
-      begin
-        yVaultToken.APY(etherscan, period, procedure(apy: Double; err: IError)
+        if Assigned(err) then
         begin
-          try
-            if Assigned(err)
-            or (period = System.Low(TPeriod))
-            or (not(IsNaN(apy) or IsInfinite(apy))) then
-            begin
-              callback(apy, err);
-              EXIT;
-            end;
-            Self.APY(client, etherscan, reserve, Pred(period), callback);
-          finally
-            yVaultToken.Free;
+          callback(0, err);
+          EXIT;
+        end;
+        if Assigned(vault) then
+        begin
+          callback(vault.APY, err);
+          EXIT;
+        end;
+        // step #2; if the yearn API didn't work, use the on-chain smart contract
+        Self.UnderlyingToLpTokenAddress(client, reserve, procedure(lpTokenAddr: TAddress; err: IError)
+        begin
+          if Assigned(err) then
+          begin
+            callback(0, err);
+            EXIT;
+          end;
+          const yVaultToken = TyVaultToken.Create(client, lpTokenAddr);
+          if Assigned(yVaultToken) then
+          begin
+            yVaultToken.APY(etherscan, period, procedure(apy: Double; err: IError)
+            begin try
+              if Assigned(err)
+              or (period = System.Low(TPeriod))
+              or (not(IsNaN(apy) or IsInfinite(apy))) then
+              begin
+                callback(apy, err);
+                EXIT;
+              end;
+              Self.APY(client, etherscan, reserve, Pred(period), callback);
+            finally
+              yVaultToken.Free;
+            end; end);
           end;
         end);
-      end;
+      end);
     end);
-  end);
 end;
 
 class procedure TyVaultV2.Deposit(
@@ -410,34 +408,32 @@ begin
     begin
       // step #1: get the yVaultToken balance
       yVaultToken.BalanceOf(from, procedure(balance: BigInteger; err: IError)
-      begin
-        try
+      begin try
+        if Assigned(err) then
+        begin
+          callback(nil, 0, err);
+          EXIT;
+        end;
+        // step #2: withdraw yVaultToken-amount in exchange for the underlying asset.
+        yVaultToken.Withdraw(from, balance, procedure(rcpt: ITxReceipt; err: IError)
+        begin
           if Assigned(err) then
           begin
             callback(nil, 0, err);
             EXIT;
           end;
-          // step #2: withdraw yVaultToken-amount in exchange for the underlying asset.
-          yVaultToken.Withdraw(from, balance, procedure(rcpt: ITxReceipt; err: IError)
+          // step #3: from yVaultToken-balance to Underlying-balance
+          Self.LpTokenToUnderlyingAmount(client, reserve, balance, procedure(output: BigInteger; err: IError)
           begin
             if Assigned(err) then
-            begin
-              callback(nil, 0, err);
-              EXIT;
-            end;
-            // step #3: from yVaultToken-balance to Underlying-balance
-            Self.LpTokenToUnderlyingAmount(client, reserve, balance, procedure(output: BigInteger; err: IError)
-            begin
-              if Assigned(err) then
-                callback(rcpt, 0, err)
-              else
-                callback(rcpt, output, nil);
-            end);
+              callback(rcpt, 0, err)
+            else
+              callback(rcpt, output, nil);
           end);
-        finally
-          yVaultToken.Free;
-        end;
-      end);
+        end);
+      finally
+        yVaultToken.Free;
+      end; end);
     end;
   end);
 end;
@@ -518,17 +514,15 @@ begin
   Self.PricePerShare(block, procedure(price: BigInteger; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(0, err);
-      EXIT;
-    end;
-    Self.Decimals(procedure(decimals: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(price.AsDouble / Power(10, decimals.AsInteger), nil);
-    end);
+      callback(0, err)
+    else
+      Self.Decimals(procedure(decimals: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          callback(price.AsDouble / Power(10, decimals.AsInteger), nil);
+      end);
   end);
 end;
 

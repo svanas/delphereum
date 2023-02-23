@@ -192,18 +192,16 @@ begin
   Self.WETH(procedure(WETH: TAddress; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    web3.eth.write(Client, from, Contract, amountIn,
-      'swapExactETHForTokens(uint256,address[],address,uint256)',
-      [
-        web3.utils.toHex(amountOutMin),
-        &array([WETH, token]),
-        &to,
-        deadline
-      ], callback);
+      callback(nil, err)
+    else
+      web3.eth.write(Client, from, Contract, amountIn,
+        'swapExactETHForTokens(uint256,address[],address,uint256)',
+        [
+          web3.utils.toHex(amountOutMin),
+          &array([WETH, token]),
+          &to,
+          deadline
+        ], callback);
   end);
 end;
 
@@ -216,25 +214,29 @@ procedure TRouter02.SwapExactTokensForETH(
   minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
   callback    : TProc<ITxReceipt, IError>);
 begin
-  const receiver = owner.GetAddress;
-  if receiver.IsErr then
-    callback(nil, receiver.Error)
-  else
-    Self.WETH(procedure(WETH: TAddress; err: IError)
+  owner.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        Self.SwapExactTokensForETH(
-          owner,
-          amountIn,
-          amountOutMin,
-          token,
-          WETH,
-          receiver.Value,
-          DateTimeToUnix(IncMinute(System.SysUtils.Now, minutes), False),
-          callback
-        );
+      callback(nil, err)
+    end)
+    .&else(procedure(receiver: TAddress)
+    begin
+      Self.WETH(procedure(WETH: TAddress; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          Self.SwapExactTokensForETH(
+            owner,
+            amountIn,
+            amountOutMin,
+            token,
+            WETH,
+            receiver,
+            DateTimeToUnix(IncMinute(System.SysUtils.Now, minutes), False),
+            callback
+          )
+      end);
     end);
 end;
 
@@ -246,19 +248,23 @@ procedure TRouter02.SwapExactETHForTokens(
   minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
   callback    : TProc<ITxReceipt, IError>);
 begin
-  const receiver = owner.GetAddress;
-  if receiver.IsErr then
-    callback(nil, receiver.Error)
-  else
-    Self.SwapExactETHForTokens(
-      owner,
-      amountIn,
-      amountOutMin,
-      token,
-      receiver.Value,
-      DateTimeToUnix(IncMinute(System.SysUtils.Now, minutes), False),
-      callback
-    );
+  owner.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(receiver: TAddress)
+    begin
+      Self.SwapExactETHForTokens(
+        owner,
+        amountIn,
+        amountOutMin,
+        token,
+        receiver,
+        DateTimeToUnix(IncMinute(System.SysUtils.Now, minutes), False),
+        callback
+      )
+    end);
 end;
 
 { TPair }

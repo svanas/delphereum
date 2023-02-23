@@ -276,32 +276,37 @@ function get(client: IWeb3; address: TAddress; callback: TProc<PLog, IError>): I
 begin
   Result := TLogger.Create(procedure
   begin
-    const latest = web3.eth.blockNumber(client);
-    if latest.IsErr then
-    begin
-      callback(nil, latest.Error);
-      EXIT;
-    end;
-    var blockNumber := latest.Value;
-    while (TTask.CurrentTask as ILogger).Status <> Stopped do
-    begin
-      try
-        TTask.CurrentTask.Wait(500);
-      except end;
-      if (TTask.CurrentTask as ILogger).Status <> Stopped then
+    web3.eth.blockNumber(client)
+      .ifErr(procedure(err: IError)
       begin
-        const logs = web3.eth.logs.getAsLog(client, blockNumber, address);
-        if logs.IsErr then
-           callback(nil, logs.Error)
-        else
-          for var log in logs.Value do
+        callback(nil, err)
+      end)
+      .&else(procedure(latest: BigInteger)
+      begin
+        while (TTask.CurrentTask as ILogger).Status <> Stopped do
+        begin
+          try
+            TTask.CurrentTask.Wait(500);
+          except end;
+          if (TTask.CurrentTask as ILogger).Status <> Stopped then
           begin
-            blockNumber := BigInteger.Max(blockNumber, log.BlockNumber.Succ);
-            if (TTask.CurrentTask as ILogger).Status <> Paused then
-              callback(@log, nil);
+            web3.eth.logs.getAsLog(client, latest, address)
+              .ifErr(procedure(err: IError)
+              begin
+                callback(nil, err)
+              end)
+              .&else(procedure(logs: TLogs)
+              begin
+                for var log in logs do
+                begin
+                  latest := BigInteger.Max(latest, log.BlockNumber.Succ);
+                  if (TTask.CurrentTask as ILogger).Status <> Paused then
+                    callback(@log, nil);
+                end;
+              end);
           end;
-      end;
-    end;
+        end;
+      end);
   end);
 end;
 

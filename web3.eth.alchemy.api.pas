@@ -209,34 +209,36 @@ procedure _simulate(
   const data  : string;
   callback    : TProc<TJsonObject, IError>);
 begin
-  const endpoint = web3.eth.alchemy.endpoint(chain, apiKey);
-  if endpoint.IsErr then
-  begin
-    callback(nil, endpoint.Error);
-    EXIT;
-  end;
-  const client = TWeb3.Create(chain.SetRPC(endpoint.Value));
-  try
-    const params = web3.json.unmarshal(Format(
-      '{"from": %s, "to": %s, "value": %s, "data": %s}', [
-        web3.json.quoteString(string(from), '"'),
-        web3.json.quoteString(string(&to), '"'),
-        web3.json.quoteString(toHex(value, [zeroAs0x0]), '"'),
-        web3.json.quoteString(data, '"')]));
-    try
-      client.Call('alchemy_simulateAssetChanges', [params], procedure(response: TJsonObject; err: IError)
-      begin
-        if Assigned(err) then
-          callback(nil, err)
-        else
-          callback(web3.json.getPropAsObj(response, 'result'), nil);
-      end);
-    finally
-      params.Free;
-    end;
-  finally
-    client.Free;
-  end;
+  web3.eth.alchemy.endpoint(chain, apiKey)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(endpoint: string)
+    begin
+      const client = TWeb3.Create(chain.SetRPC(endpoint));
+      try
+        const params = web3.json.unmarshal(Format(
+          '{"from": %s, "to": %s, "value": %s, "data": %s}', [
+            web3.json.quoteString(string(from), '"'),
+            web3.json.quoteString(string(&to), '"'),
+            web3.json.quoteString(toHex(value, [zeroAs0x0]), '"'),
+            web3.json.quoteString(data, '"')]));
+        try
+          client.Call('alchemy_simulateAssetChanges', [params], procedure(response: TJsonObject; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, err)
+            else
+              callback(web3.json.getPropAsObj(response, 'result'), nil);
+          end);
+        finally
+          params.Free;
+        end;
+      finally
+        client.Free;
+      end;
+    end);
 end;
 
 procedure simulate(
@@ -277,19 +279,23 @@ procedure getTokenIDs(
   const startWith: string;
   const callback : TProc<TJsonValue, IError>); overload;
 begin
-  const endpoint = web3.eth.alchemy.endpoint(chain, apiKey, True);
-  if endpoint.IsErr then
-    callback(nil, endpoint.Error)
-  else
-    web3.http.get((function: string
-      begin
-        Result := Format('%s/getNFTsForCollection?contractAddress=%s', [endpoint.Value, contract]);
-        if startWith <> '' then
-          Result := Result + '&startToken=' + startWith;
-      end)(),
-      [TNetHeader.Create('accept', 'application/json')],
-      callback
-    );
+  web3.eth.alchemy.endpoint(chain, apiKey, True)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(endpoint: string)
+    begin
+      web3.http.get((function: string
+        begin
+          Result := Format('%s/getNFTsForCollection?contractAddress=%s', [endpoint, contract]);
+          if startWith <> '' then
+            Result := Result + '&startToken=' + startWith;
+        end)(),
+        [TNetHeader.Create('accept', 'application/json')],
+        callback
+      );
+    end);
 end;
 
 procedure getTokenIDs(
@@ -339,41 +345,43 @@ procedure isAirdrop(
   const contract: TAddress;
   const callback: TProc<Boolean, IError>);
 begin
-  const endpoint = web3.eth.alchemy.endpoint(chain, apiKey, True);
-  if endpoint.IsErr then
-  begin
-    callback(False, endpoint.Error);
-    EXIT;
-  end;
-  getTokenIDs(apiKey, chain, contract, procedure(TokenIDs: TArray<string>; err: IError)
-  begin
-    if Assigned(err) then
+  web3.eth.alchemy.endpoint(chain, apiKey, True)
+    .ifErr(procedure(err: IError)
     begin
-      callback(False, err);
-      EXIT;
-    end;
-
-    var get: TProc<Integer>;
-    get := procedure(index: Integer)
+      callback(False, err)
+    end)
+    .&else(procedure(endpoint: string)
     begin
-      if index >= Length(TokenIDs) then
-        callback(False, nil)
-      else
-        web3.http.get(
-          Format('%s/isAirdrop?contractAddress=%s&tokenId=%s', [endpoint.Value, contract, TokenIDs[index]]),
-          [TNetHeader.Create('accept', 'application/json')],
-          procedure(response: TJsonValue; err: IError)
-          begin
-            if Assigned(response) and (response is TJsonTrue) then
-              callback(True, nil)
-            else
-              get(index + 1);
-          end
-        );
-    end;
+      getTokenIDs(apiKey, chain, contract, procedure(TokenIDs: TArray<string>; err: IError)
+      begin
+        if Assigned(err) then
+        begin
+          callback(False, err);
+          EXIT;
+        end;
 
-    get(0);
-  end);
+        var get: TProc<Integer>;
+        get := procedure(index: Integer)
+        begin
+          if index >= Length(TokenIDs) then
+            callback(False, nil)
+          else
+            web3.http.get(
+              Format('%s/isAirdrop?contractAddress=%s&tokenId=%s', [endpoint, contract, TokenIDs[index]]),
+              [TNetHeader.Create('accept', 'application/json')],
+              procedure(response: TJsonValue; err: IError)
+              begin
+                if Assigned(response) and (response is TJsonTrue) then
+                  callback(True, nil)
+                else
+                  get(index + 1);
+              end
+            );
+        end;
+
+        get(0);
+      end);
+    end);
 end;
 
 procedure isSpam(
@@ -382,15 +390,19 @@ procedure isSpam(
   const contract: TAddress;
   const callback: TProc<TJsonValue, IError>);
 begin
-  const endpoint = web3.eth.alchemy.endpoint(chain, apiKey, True);
-  if endpoint.IsErr then
-    callback(nil, endpoint.Error)
-  else
-    web3.http.get(
-      Format('%s/isSpamContract?contractAddress=%s', [endpoint.Value, contract]),
-      [TNetHeader.Create('accept', 'application/json')],
-      callback
-    );
+  web3.eth.alchemy.endpoint(chain, apiKey, True)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(endpoint: string)
+    begin
+      web3.http.get(
+        Format('%s/isSpamContract?contractAddress=%s', [endpoint, contract]),
+        [TNetHeader.Create('accept', 'application/json')],
+        callback
+      );
+    end);
 end;
 
 procedure detect(

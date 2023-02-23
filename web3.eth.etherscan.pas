@@ -162,7 +162,7 @@ end;
 function endpoint(chain: TChain; const apiKey: string): IResult<string>; overload;
 begin
   Result := endpoint(chain);
-  if Result.IsOk and (apiKey <> '') then
+  if Result.isOk and (apiKey <> '') then
     Result := TResult<string>.Ok(Format('%sapikey=%s&', [Result.Value, apiKey]));
 end;
 
@@ -463,22 +463,26 @@ end;
 
 procedure TEtherscan.get(const query: string; callback: TProc<TJsonValue, IError>; backoff: Integer);
 begin
-  const URL = endpoint(Self.chain, TNetEncoding.URL.Encode(Self.apiKey));
-  if URL.IsErr then
-    callback(nil, URL.Error)
-  else
-    web3.http.get(URL.Value + query, [], procedure(response: TJsonValue; err: IError)
+  endpoint(Self.chain, TNetEncoding.URL.Encode(Self.apiKey))
+    .ifErr(procedure(err: IError)
     begin
-      {"status":"0", "message":"NOTOK", "result":"Max rate limit reached, please use API Key for higher rate limit"}
-      if  (backoff <= web3.http.MAX_BACKOFF_SECONDS * 1000)
-      and (response <> nil) and (web3.json.getPropAsInt(response, 'status') = 0)
-      and web3.json.getPropAsStr(response, 'result').Contains('rate limit') then
+      callback(nil, err)
+    end)
+    .&else(procedure(endpoint: string)
+    begin
+      web3.http.get(endpoint + query, [], procedure(response: TJsonValue; err: IError)
       begin
-        TThread.Sleep(backoff);
-        Self.get(query, callback, backoff * 2);
-        EXIT;
-      end;
-      callback(response, err);
+        {"status":"0", "message":"NOTOK", "result":"Max rate limit reached, please use API Key for higher rate limit"}
+        if  (backoff <= web3.http.MAX_BACKOFF_SECONDS * 1000)
+        and (response <> nil) and (web3.json.getPropAsInt(response, 'status') = 0)
+        and web3.json.getPropAsStr(response, 'result').Contains('rate limit') then
+        begin
+          TThread.Sleep(backoff);
+          Self.get(query, callback, backoff * 2);
+          EXIT;
+        end;
+        callback(response, err);
+      end);
     end);
 end;
 

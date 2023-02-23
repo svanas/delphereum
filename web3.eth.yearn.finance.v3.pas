@@ -123,7 +123,7 @@ class procedure TyEarnV3.APY(
   period   : TPeriod;
   callback : TProc<Double, IError>);
 begin
-  Self._APY(client, etherscan, yTokenClass[reserve], period, callback);
+  Self.yAPY(client, etherscan, yTokenClass[reserve], period, callback);
 end;
 
 class procedure TyEarnV3.Deposit(
@@ -133,7 +133,7 @@ class procedure TyEarnV3.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  Self._Deposit(client, from, yTokenClass[reserve], amount, callback);
+  Self.yDeposit(client, from, yTokenClass[reserve], amount, callback);
 end;
 
 class procedure TyEarnV3.Balance(
@@ -142,7 +142,7 @@ class procedure TyEarnV3.Balance(
   reserve : TReserve;
   callback: TProc<BigInteger, IError>);
 begin
-  Self._Balance(client, owner, yTokenClass[reserve], callback);
+  Self.yBalance(client, owner, yTokenClass[reserve], callback);
 end;
 
 class procedure TyEarnV3.Withdraw(
@@ -151,7 +151,7 @@ class procedure TyEarnV3.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  Self._Withdraw(client, from, yTokenClass[reserve], callback);
+  Self.yWithdraw(client, from, yTokenClass[reserve], callback);
 end;
 
 class procedure TyEarnV3.WithdrawEx(
@@ -161,7 +161,7 @@ class procedure TyEarnV3.WithdrawEx(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  Self._WithdrawEx(client, from, yTokenClass[reserve], amount, callback);
+  Self.yWithdrawEx(client, from, yTokenClass[reserve], amount, callback);
 end;
 
 { TyDAIv3 }

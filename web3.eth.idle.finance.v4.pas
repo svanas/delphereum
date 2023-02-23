@@ -166,18 +166,14 @@ begin
   if Assigned(IdleToken) then
   begin
     IdleToken.Token(procedure(addr: TAddress; err: IError)
-    begin
-      try
-        if Assigned(err) then
-        begin
-          callback(nil, err);
-          EXIT;
-        end;
+    begin try
+      if Assigned(err) then
+        callback(nil, err)
+      else
         web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, IdleToken.Contract, amount, callback)
-      finally
-        IdleToken.Free;
-      end;
-    end);
+    finally
+      IdleToken.Free;
+    end; end);
   end;
 end;
 
@@ -295,18 +291,16 @@ begin
     IdleToken.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
     begin
       if Assigned(err) then
-      begin
-        callback(0, err);
-        EXIT;
-      end;
-      // step #2: multiply it by the current IdleToken price
-      IdleToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
-          callback(0, err)
-        else
-          callback(output, nil);
-      end);
+        callback(0, err)
+      else
+        // step #2: multiply it by the current IdleToken price
+        IdleToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
+        begin
+          if Assigned(err) then
+            callback(0, err)
+          else
+            callback(output, nil);
+        end);
     end);
   finally
     IdleToken.Free;
@@ -324,33 +318,27 @@ begin
   begin
     // step #1: get the IdleToken balance
     IdleToken.BalanceOf(from, procedure(balance: BigInteger; err: IError)
-    begin
-      try
-        if Assigned(err) then
-        begin
-          callback(nil, 0, err);
-          EXIT;
-        end;
+    begin try
+      if Assigned(err) then
+        callback(nil, 0, err)
+      else
         // step #2: redeem IdleToken-amount in exchange for the underlying asset.
         IdleToken.RedeemIdleToken(from, balance, procedure(rcpt: ITxReceipt; err: IError)
         begin
           if Assigned(err) then
-          begin
-            callback(nil, 0, err);
-            EXIT;
-          end;
-          IdleToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
-          begin
-            if Assigned(err) then
-              callback(rcpt, 0, err)
-            else
-              callback(rcpt, output, nil);
-          end);
+            callback(nil, 0, err)
+          else
+            IdleToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
+            begin
+              if Assigned(err) then
+                callback(rcpt, 0, err)
+              else
+                callback(rcpt, output, nil);
+            end);
         end);
-      finally
-        IdleToken.Free;
-      end;
-    end);
+    finally
+      IdleToken.Free;
+    end; end);
   end;
 end;
 
@@ -444,16 +432,13 @@ procedure TIdleToken.MintIdleToken(
   referral          : TAddress;    // address for eventual future referral program
   callback          : TProc<ITxReceipt, IError>);
 begin
-  web3.eth.write(Client, from, Contract,
-    'mintIdleToken(uint256,bool,address)',
-    [web3.utils.toHex(amount), skipWholeRebalance, referral], callback);
+  web3.eth.write(Client, from, Contract, 'mintIdleToken(uint256,bool,address)', [web3.utils.toHex(amount), skipWholeRebalance, referral], callback);
 end;
 
 // Redeems your underlying balance by burning your IdleTokens.
 procedure TIdleToken.RedeemIdleToken(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
-  web3.eth.write(Client, from, Contract,
-    'redeemIdleToken(uint256)', [web3.utils.toHex(amount)], callback);
+  web3.eth.write(Client, from, Contract, 'redeemIdleToken(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 { TIdleDAI }

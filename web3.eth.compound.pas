@@ -63,11 +63,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client    : IWeb3;
-      _etherscan: IEtherscan;
-      reserve   : TReserve;
-      _period   : TPeriod;
-      callback  : TProc<Double, IError>); override;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      reserve  : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -196,18 +196,16 @@ begin
   if Assigned(cToken) then
   begin
     cToken.Underlying(procedure(addr: TAddress; err: IError)
-    begin
-      try
-        if Assigned(err) then
-        begin
-          callback(nil, err);
-          EXIT;
-        end;
-        web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, cToken.Contract, amount, callback);
-      finally
-        cToken.Free;
+    begin try
+      if Assigned(err) then
+      begin
+        callback(nil, err);
+        EXIT;
       end;
-    end);
+      web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, cToken.Contract, amount, callback);
+    finally
+      cToken.Free;
+    end; end);
   end;
 end;
 
@@ -227,11 +225,11 @@ end;
 
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TCompound.APY(
-  client    : IWeb3;
-  _etherscan: IEtherscan;
-  reserve   : TReserve;
-  _period   : TPeriod;
-  callback  : TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  reserve  : TReserve;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 begin
   const cToken = cTokenClass[reserve].Create(client);
   if Assigned(cToken) then
@@ -297,43 +295,41 @@ class procedure TCompound.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const owner = from.GetAddress;
-  if owner.IsErr then
-  begin
-    callback(nil, 0, owner.Error);
-    EXIT;
-  end;
-  Balance(client, owner.Value, reserve, procedure(underlyingAmount: BigInteger; err: IError)
-  begin
-    if Assigned(err) then
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      callback(nil, 0, err);
-      EXIT;
-    end;
-    const cToken = cTokenClass[reserve].Create(client);
-    if Assigned(cToken) then
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(owner: TAddress)
     begin
-      cToken.BalanceOf(owner.Value, procedure(cTokenAmount: BigInteger; err: IError)
+      Balance(client, owner, reserve, procedure(underlyingAmount: BigInteger; err: IError)
       begin
-        try
-          if Assigned(err) then
-          begin
-            callback(nil, 0, err);
-            EXIT;
-          end;
-          cToken.Redeem(from, cTokenAmount, procedure(rcpt: ITxReceipt; err: IError)
-          begin
+        if Assigned(err) then
+        begin
+          callback(nil, 0, err);
+          EXIT;
+        end;
+        const cToken = cTokenClass[reserve].Create(client);
+        if Assigned(cToken) then
+        begin
+          cToken.BalanceOf(owner, procedure(cTokenAmount: BigInteger; err: IError)
+          begin try
             if Assigned(err) then
               callback(nil, 0, err)
             else
-              callback(rcpt, underlyingAmount, err);
-          end);
-        finally
-          cToken.Free;
+              cToken.Redeem(from, cTokenAmount, procedure(rcpt: ITxReceipt; err: IError)
+              begin
+                if Assigned(err) then
+                  callback(nil, 0, err)
+                else
+                  callback(rcpt, underlyingAmount, err);
+              end);
+          finally
+            cToken.Free;
+          end; end);
         end;
       end);
-    end;
-  end);
+    end);
 end;
 
 class procedure TCompound.WithdrawEx(
@@ -444,8 +440,7 @@ end;
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
 procedure TcToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
-  web3.eth.write(Client, from, Contract,
-    'mint(uint256)', [web3.utils.toHex(amount)], callback);
+  web3.eth.write(Client, from, Contract, 'mint(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 // redeems specified amount of cTokens in exchange for the underlying ERC20 tokens.
@@ -453,9 +448,7 @@ end;
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
 procedure TcToken.Redeem(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
-  web3.eth.write(
-    Client, from, Contract,
-    'redeem(uint256)', [web3.utils.toHex(amount)], callback);
+  web3.eth.write(Client, from, Contract, 'redeem(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 // redeems cTokens in exchange for the specified amount of underlying ERC20 tokens.
@@ -463,9 +456,7 @@ end;
 // returns a receipt on success, otherwise https://compound.finance/docs/ctokens#ctoken-error-codes
 procedure TcToken.RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
-  web3.eth.write(
-    Client, from, Contract,
-    'redeemUnderlying(uint256)', [web3.utils.toHex(amount)], callback);
+  web3.eth.write(Client, from, Contract, 'redeemUnderlying(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
 // returns the current per-block supply interest rate for this cToken, scaled by 1e18

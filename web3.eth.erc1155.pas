@@ -254,6 +254,7 @@ begin
             log^.Data[0].toUInt256,  // id
             log^.Data[1].toUInt256   // value
           );
+
       if Assigned(FOnTransferBatch) then
         if log^.isEvent('TransferBatch(address,address,address,uint256[],uint256[])') then
           FOnTransferBatch(Self,
@@ -263,6 +264,7 @@ begin
             [],                      // IDs
             []                       // values
           );
+
       if Assigned(FOnApprovalForAll) then
         if log^.isEvent('ApprovalForAll(address,address,bool)') then
           FOnApprovalForAll(Self,
@@ -275,8 +277,7 @@ end;
 
 destructor TERC1155.Destroy;
 begin
-  if FLogger.Status in [Running, Paused] then
-    FLogger.Stop;
+  if FLogger.Status in [Running, Paused] then FLogger.Stop;
   inherited Destroy;
 end;
 
@@ -300,16 +301,12 @@ end;
 
 procedure TERC1155.WatchOrStop;
 begin
-  if Assigned(FOnTransferSingle)
-  or Assigned(FOnTransferBatch)
-  or Assigned(FOnApprovalForAll) then
+  if Assigned(FOnTransferSingle) or Assigned(FOnTransferBatch) or Assigned(FOnApprovalForAll) then
   begin
-    if FLogger.Status in [Idle, Paused] then
-      FLogger.Start;
+    if FLogger.Status in [Idle, Paused] then FLogger.Start;
     EXIT;
   end;
-  if FLogger.Status = Running then
-    FLogger.Pause;
+  if FLogger.Status = Running then FLogger.Pause;
 end;
 
 // Transfers `value` amount of an `id` from the `owner` address to the `to` address specified (with safety call).
@@ -320,18 +317,15 @@ procedure TERC1155.SafeTransferFrom(
   value   : BigInteger;  // Transfer amount
   callback: TProc<TTxHash, IError>);
 begin
-  const from = owner.GetAddress;
-  if from.IsErr then
-    callback('', from.Error)
-  else
-    web3.eth.write(
-      Self.Client,
-      owner,
-      Self.Contract,
-      'safeTransferFrom(address,address,uint256,uint256,bytes)',
-      [from.Value, &to, web3.utils.toHex(id), web3.utils.toHex(value), ''],
-      callback
-    );
+  owner.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback('', err)
+    end)
+    .&else(procedure(from: TAddress)
+    begin
+      web3.eth.write(Self.Client, owner, Self.Contract, 'safeTransferFrom(address,address,uint256,uint256,bytes)', [from, &to, web3.utils.toHex(id), web3.utils.toHex(value), ''], callback)
+    end);
 end;
 
 procedure TERC1155.SafeTransferFromEx(
@@ -341,18 +335,15 @@ procedure TERC1155.SafeTransferFromEx(
   value   : BigInteger;  // Transfer amount
   callback: TProc<ITxReceipt, IError>);
 begin
-  const from = owner.GetAddress;
-  if from.IsErr then
-    callback(nil, from.Error)
-  else
-    web3.eth.write(
-      Self.Client,
-      owner,
-      Self.Contract,
-      'safeTransferFrom(address,address,uint256,uint256,bytes)',
-      [from.Value, &to, web3.utils.toHex(id), web3.utils.toHex(value), ''],
-      callback
-    );
+  owner.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(from: TAddress)
+    begin
+      web3.eth.write(Self.Client, owner, Self.Contract, 'safeTransferFrom(address,address,uint256,uint256,bytes)', [from, &to, web3.utils.toHex(id), web3.utils.toHex(value), ''], callback)
+    end);
 end;
 
 // Transfers `values` amount(s) of `IDs` from the `owner` address to the `to` address specified (with safety call).
@@ -364,17 +355,10 @@ procedure TERC1155.SafeBatchTransferFrom(
   callback: TProc<TTxHash, IError>);
 begin
   const from = owner.GetAddress;
-  if from.IsErr then
+  if from.isErr then
     callback('', from.Error)
   else
-    web3.eth.write(
-      Self.Client,
-      owner,
-      Self.Contract,
-      'safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)',
-      [from.Value, &to, &array(IDs), &array(values), ''],
-      callback
-    );
+    web3.eth.write(Self.Client, owner, Self.Contract, 'safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)', [from.Value, &to, &array(IDs), &array(values), ''], callback)
 end;
 
 procedure TERC1155.SafeBatchTransferFromEx(
@@ -385,17 +369,10 @@ procedure TERC1155.SafeBatchTransferFromEx(
   callback: TProc<ITxReceipt, IError>);
 begin
   const from = owner.GetAddress;
-  if from.IsErr then
+  if from.isErr then
     callback(nil, from.Error)
   else
-    web3.eth.write(
-      Self.Client,
-      owner,
-      Self.Contract,
-      'safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)',
-      [from.Value, &to, &array(IDs), &array(values), ''],
-      callback
-    );
+    web3.eth.write(Self.Client, owner, Self.Contract, 'safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)', [from.Value, &to, &array(IDs), &array(values), ''], callback)
 end;
 
 // Get the balance of an account's tokens.
@@ -404,13 +381,7 @@ procedure TERC1155.BalanceOf(
   id      : BigInteger;                 // ID of the token
   callback: TProc<BigInteger, IError>); // The owner's balance of the token type requested
 begin
-  web3.eth.call(
-    Self.Client,
-    Self.Contract,
-    'balanceOf(address,uint256)',
-    [owner, web3.utils.toHex(id)],
-    callback
-  );
+  web3.eth.call(Self.Client, Self.Contract, 'balanceOf(address,uint256)', [owner, web3.utils.toHex(id)], callback)
 end;
 
 // Get the balance of multiple account/token pairs
@@ -419,13 +390,7 @@ procedure TERC1155.BalanceOfBatch(
   IDs     : array of BigInteger;    // IDs of the tokens
   callback: TProc<TTuple, IError>); // The owner's balance of the token types requested i.e. balance for each (owner, id) pair
 begin
-  web3.eth.call(
-    Self.Client,
-    Self.Contract,
-    'balanceOfBatch(address[],uint256[])',
-    [&array(owners), &array(ids)],
-    callback
-  );
+  web3.eth.call(Self.Client, Self.Contract, 'balanceOfBatch(address[],uint256[])', [&array(owners), &array(ids)], callback)
 end;
 
 // Enable or disable approval for a third party ("operator") to manage all of the caller's tokens.
@@ -435,14 +400,7 @@ procedure TERC1155.SetApprovalForAll(
   approved : Boolean;     // True if the operator is approved, False to revoke approval
   callback : TProc<ITxReceipt, IError>);
 begin
-  web3.eth.write(
-    Self.Client,
-    owner,
-    Self.Contract,
-    'setApprovalForAll(address,bool)',
-    [&operator, approved],
-    callback
-  );
+  web3.eth.write(Self.Client, owner, Self.Contract, 'setApprovalForAll(address,bool)', [&operator, approved], callback)
 end;
 
 // Queries the approval status of an operator for a given owner.
@@ -451,13 +409,7 @@ procedure TERC1155.IsApprovedForAll(
   &operator: TAddress;                // Address of authorized operator
   callback : TProc<Boolean, IError>); // True if the operator is approved, False if not
 begin
-  web3.eth.call(
-    Self.Client,
-    Self.Contract,
-    'isApprovedForAll(address,address)',
-    [owner, &operator],
-    callback
-  );
+  web3.eth.call(Self.Client, Self.Contract, 'isApprovedForAll(address,address)', [owner, &operator], callback)
 end;
 
 // Handle the receipt of a single ERC1155 token type.
@@ -468,13 +420,7 @@ procedure TERC1155.OnERC1155Received(
   value    : BigInteger;               // The amount of tokens being transferred
   callback : TProc<TBytes32, IError>); // bytes4(keccak256("onERC1155Received(address,address,uint256,uint256,bytes)"))
 begin
-  web3.eth.call(
-    Self.Client,
-    Self.Contract,
-    'onERC1155Received(address,address,uint256,uint256,bytes)',
-    [&operator, from, web3.utils.toHex(id), web3.utils.toHex(value), ''],
-    callback
-  );
+  web3.eth.call(Self.Client, Self.Contract, 'onERC1155Received(address,address,uint256,uint256,bytes)', [&operator, from, web3.utils.toHex(id), web3.utils.toHex(value), ''], callback)
 end;
 
 // Handle the receipt of multiple ERC1155 token types.
@@ -485,13 +431,7 @@ procedure TERC1155.OnERC1155BatchReceived(
   values   : array of BigInteger;      // An array containing amounts of each token being transferred (order and length must match _ids array)
   callback : TProc<TBytes32, IError>); // bytes4(keccak256("onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)"))
 begin
-  web3.eth.call(
-    Self.Client,
-    Self.Contract,
-    'onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)',
-    [&operator, from, &array(IDs), &array(values), ''],
-    callback
-  );
+  web3.eth.call(Self.Client, Self.Contract, 'onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)', [&operator, from, &array(IDs), &array(values), ''], callback)
 end;
 
 // A distinct Uniform Resource Identifier (URI) for a given token.
@@ -499,13 +439,7 @@ procedure TERC1155.URI(
   id      : BigInteger;             // ID of the token
   callback: TProc<string, IError>); // points to a JSON file that conforms to the "ERC-1155 Metadata URI JSON Schema"
 begin
-  web3.eth.call(
-    Self.Client,
-    Self.Contract,
-    'uri(uint256)',
-    [web3.utils.toHex(id)],
-    callback
-  );
+  web3.eth.call(Self.Client, Self.Contract, 'uri(uint256)', [web3.utils.toHex(id)], callback)
 end;
 
 end.

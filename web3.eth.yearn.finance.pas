@@ -67,29 +67,29 @@ type
       amount  : BigInteger;
       callback: TProc<BigInteger, IError>);
   strict protected
-    class procedure _APY(
+    class procedure yAPY(
       client   : IWeb3;
       etherscan: IEtherscan;
       yToken   : TyTokenClass;
       period   : TPeriod;
       callback : TProc<Double, IError>);
-    class procedure _Deposit(
+    class procedure yDeposit(
       client  : IWeb3;
       from    : TPrivateKey;
       yToken  : TyTokenClass;
       amount  : BigInteger;
       callback: TProc<ITxReceipt, IError>);
-    class procedure _Balance(
+    class procedure yBalance(
       client  : IWeb3;
       owner   : TAddress;
       yToken  : TyTokenClass;
       callback: TProc<BigInteger, IError>);
-    class procedure _Withdraw(
+    class procedure yWithdraw(
       client  : IWeb3;
       from    : TPrivateKey;
       yToken  : TyTokenClass;
       callback: TProc<ITxReceipt, BigInteger, IError>);
-    class procedure _WithdrawEx(
+    class procedure yWithdrawEx(
       client  : IWeb3;
       from    : TPrivateKey;
       yToken  : TyTokenClass;
@@ -136,13 +136,11 @@ begin
   if Assigned(token) then
   begin
     token.ApproveUnderlying(from, amount, procedure(rcpt: ITxReceipt; err: IError)
-    begin
-      try
-        callback(rcpt, err);
-      finally
-        token.Free;
-      end;
-    end);
+    begin try
+      callback(rcpt, err);
+    finally
+      token.Free;
+    end; end);
   end;
 end;
 
@@ -188,7 +186,7 @@ begin
   end;
 end;
 
-class procedure TyEarnCustom._APY(
+class procedure TyEarnCustom.yAPY(
   client   : IWeb3;
   etherscan: IEtherscan;
   yToken   : TyTokenClass;
@@ -199,17 +197,15 @@ begin
   if Assigned(token) then
   begin
     token.APY(etherscan, period, procedure(apy: Double; err: IError)
-    begin
-      try
-        callback(apy, err);
-      finally
-        token.Free;
-      end;
-    end);
+    begin try
+      callback(apy, err);
+    finally
+      token.Free;
+    end; end);
   end;
 end;
 
-class procedure TyEarnCustom._Deposit(
+class procedure TyEarnCustom.yDeposit(
   client  : IWeb3;
   from    : TPrivateKey;
   yToken  : TyTokenClass;
@@ -232,7 +228,7 @@ begin
   end);
 end;
 
-class procedure TyEarnCustom._Balance(
+class procedure TyEarnCustom.yBalance(
   client  : IWeb3;
   owner   : TAddress;
   yToken  : TyTokenClass;
@@ -260,51 +256,55 @@ begin
   end;
 end;
 
-class procedure TyEarnCustom._Withdraw(
+class procedure TyEarnCustom.yWithdraw(
   client  : IWeb3;
   from    : TPrivateKey;
   yToken  : TyTokenClass;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const owner = from.GetAddress;
-  if owner.IsErr then
-    callback(nil, 0, owner.Error)
-  else
-    // step #1: get the yToken balance
-    Self.BalanceOf(client, yToken, owner.Value, procedure(balance: BigInteger; err: IError)
+  from.GetAddress
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, 0, err)
-      else
-        if balance = 0 then
-          callback(nil, 0, nil)
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(owner: TAddress)
+    begin
+      // step #1: get the yToken balance
+      Self.BalanceOf(client, yToken, owner, procedure(balance: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, 0, err)
         else
-        begin
-          const token = yToken.Create(client);
-          try
-            // step #2: withdraw yToken-amount in exchange for the underlying asset.
-            token.Withdraw(from, balance, procedure(rcpt: ITxReceipt; err: IError)
-            begin
-              if Assigned(err) then
-                callback(nil, 0, err)
-              else
-                // step #3: from yToken-balance to Underlying-balance
-                Self.TokenToUnderlying(client, yToken, balance, procedure(output: BigInteger; err: IError)
-                begin
-                  if Assigned(err) then
-                    callback(rcpt, 0, err)
-                  else
-                    callback(rcpt, output, nil);
-                end);
-            end);
-          finally
-            token.Free;
+          if balance = 0 then
+            callback(nil, 0, nil)
+          else
+          begin
+            const token = yToken.Create(client);
+            try
+              // step #2: withdraw yToken-amount in exchange for the underlying asset.
+              token.Withdraw(from, balance, procedure(rcpt: ITxReceipt; err: IError)
+              begin
+                if Assigned(err) then
+                  callback(nil, 0, err)
+                else
+                  // step #3: from yToken-balance to Underlying-balance
+                  Self.TokenToUnderlying(client, yToken, balance, procedure(output: BigInteger; err: IError)
+                  begin
+                    if Assigned(err) then
+                      callback(rcpt, 0, err)
+                    else
+                      callback(rcpt, output, nil);
+                  end);
+              end);
+            finally
+              token.Free;
+            end;
           end;
-        end;
+      end);
     end);
 end;
 
-class procedure TyEarnCustom._WithdrawEx(
+class procedure TyEarnCustom.yWithdrawEx(
   client  : IWeb3;
   from    : TPrivateKey;
   yToken  : TyTokenClass;
@@ -365,11 +365,9 @@ begin
   Self.Token(procedure(addr: TAddress; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, Self.Contract, amount, callback);
+      callback(nil, err)
+    else
+      web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, Self.Contract, amount, callback);
   end);
 end;
 
@@ -400,27 +398,21 @@ begin
   Self.GetPricePerFullShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(0, err);
-      EXIT;
-    end;
-    etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
-      begin
-        callback(0, err);
-        EXIT;
-      end;
-      Self.GetPricePerFullShare(web3.utils.toHex(bn), procedure(pastPrice: BigInteger; err: IError)
+      callback(0, err)
+    else
+      etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
       begin
         if Assigned(err) then
-        begin
-          callback(0, err);
-          EXIT;
-        end;
-        callback(period.ToYear(currPrice.AsDouble / pastPrice.AsDouble - 1) * 100, nil);
+          callback(0, err)
+        else
+          Self.GetPricePerFullShare(web3.utils.toHex(bn), procedure(pastPrice: BigInteger; err: IError)
+          begin
+            if Assigned(err) then
+              callback(0, err)
+            else
+              callback(period.ToYear(currPrice.AsDouble / pastPrice.AsDouble - 1) * 100, nil);
+          end);
       end);
-    end);
   end);
 end;
 
