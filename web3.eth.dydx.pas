@@ -199,12 +199,12 @@ begin
     begin
       callback(EMPTY_ADDRESS, err)
     end)
-    .&else(procedure(solo: TAddress)
+    .&else(procedure(address: TAddress)
     begin
-      const dYdX = TSoloMargin.Create(client, solo);
-      if Assigned(dYdX) then
+      const solo = TSoloMargin.Create(client, address);
+      if Assigned(solo) then
       try
-        dYdX.GetMarket(TSoloMargin.marketId[reserve], procedure(market: ISoloMarket; err: IError)
+        solo.GetMarket(TSoloMargin.marketId[reserve], procedure(market: ISoloMarket; err: IError)
         begin
           if Assigned(err) then
             callback(EMPTY_ADDRESS, err)
@@ -212,7 +212,7 @@ begin
             callback(market.Token, nil);
         end);
       finally
-        dYdX.Free;
+        solo.Free;
       end;
     end);
 end;
@@ -232,12 +232,12 @@ begin
     end)
     .&else(procedure(solo: TAddress)
     begin
-      TokenAddress(client, reserve, procedure(addr: TAddress; err: IError)
+      TokenAddress(client, reserve, procedure(address: TAddress; err: IError)
       begin
         if Assigned(err) then
           callback(nil, err)
         else
-          web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, solo, amount, callback);
+          web3.eth.erc20.approve(web3.eth.erc20.create(client, address), from, solo, amount, callback);
       end);
     end);
 end;
@@ -267,22 +267,20 @@ begin
     begin
       callback(0, err)
     end)
-    .&else(procedure(solo: TAddress)
+    .&else(procedure(address: TAddress)
     begin
-      const dYdX = TSoloMargin.Create(client, solo);
-      if Assigned(dYdX) then
+      const solo = TSoloMargin.Create(client, address);
+      if Assigned(solo) then
       begin
-        dYdX.GetMarketSupplyInterestRate(TSoloMargin.marketId[reserve], procedure(qty: Double; err: IError)
-        begin
-          try
-            if Assigned(err) then
-              callback(0, err)
-            else
-              callback(qty * SECONDS_PER_YEAR * 100, nil);
-          finally
-            dYdX.Free;
-          end;
-        end);
+        solo.GetMarketSupplyInterestRate(TSoloMargin.marketId[reserve], procedure(qty: Double; err: IError)
+        begin try
+          if Assigned(err) then
+            callback(0, err)
+          else
+            callback(qty * SECONDS_PER_YEAR * 100, nil);
+        finally
+          solo.Free;
+        end; end);
       end;
     end);
 end;
@@ -299,7 +297,7 @@ begin
     begin
       callback(nil, err)
     end)
-    .&else(procedure(solo: TAddress)
+    .&else(procedure(address: TAddress)
     begin
       // Before moving tokens, we must first approve the Solo contract.
       Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -309,12 +307,12 @@ begin
           callback(nil, err);
           EXIT;
         end;
-        const dYdX = TSoloMargin.Create(client, solo);
-        if Assigned(dYdX) then
+        const solo = TSoloMargin.Create(client, address);
+        if Assigned(solo) then
         try
-          dYdX.Deposit(from, TSoloMargin.marketId[reserve], amount, callback);
+          solo.Deposit(from, TSoloMargin.marketId[reserve], amount, callback);
         finally
-          dYdX.Free;
+          solo.Free;
         end;
       end);
     end);
@@ -331,14 +329,14 @@ begin
     begin
       callback(0, err)
     end)
-    .&else(procedure(solo: TAddress)
+    .&else(procedure(address: TAddress)
     begin
-      const dYdX = TSoloMargin.Create(client, solo);
-      if Assigned(dYdX) then
+      const solo = TSoloMargin.Create(client, address);
+      if Assigned(solo) then
       try
-        dYdX.GetAccountWei(owner, TSoloMargin.marketId[reserve], callback);
+        solo.GetAccountWei(owner, TSoloMargin.marketId[reserve], callback);
       finally
-        dYdX.Free;
+        solo.Free;
       end;
     end);
 end;
@@ -378,12 +376,12 @@ begin
     begin
       callback(nil, 0, err)
     end)
-    .&else(procedure(solo: TAddress)
+    .&else(procedure(address: TAddress)
     begin
-      const dYdX = TSoloMargin.Create(client, solo);
-      if Assigned(dYdX) then
+      const solo = TSoloMargin.Create(client, address);
+      if Assigned(solo) then
       try
-        dYdX.Withdraw(from, TSoloMargin.marketId[reserve], amount, procedure(rcpt: ITxReceipt; err: IError)
+        solo.Withdraw(from, TSoloMargin.marketId[reserve], amount, procedure(rcpt: ITxReceipt; err: IError)
         begin
           if Assigned(err) then
             callback(nil, 0, err)
@@ -391,7 +389,7 @@ begin
             callback(rcpt, amount, err);
         end);
       finally
-        dYdX.Free;
+        solo.Free;
       end;
     end);
 end;
