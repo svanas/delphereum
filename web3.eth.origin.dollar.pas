@@ -87,31 +87,61 @@ type
       callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
-type
   TOriginVault = class(TCustomContract)
   public
     constructor Create(aClient: IWeb3); reintroduce;
     class function DeployedAt: TAddress;
-    procedure Mint(
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
-    procedure Redeem(
-      from    : TPrivateKey;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+    procedure Mint(from: TPrivateKey; reserve: TReserve; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
   end;
 
-type
-  TOriginDollar = class(TERC20)
-  public
-    constructor Create(aClient: IWeb3); reintroduce;
+  IOriginDollar = interface(IERC20)
     procedure RebasingCreditsPerToken(const block: string; callback: TProc<BigInteger, IError>);
-    procedure APY(etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
   end;
 
 implementation
+
+procedure getAPY(ousd: IOriginDollar; etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
+begin
+  ousd.RebasingCreditsPerToken(BLOCK_LATEST, procedure(curr: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+      callback(0, err)
+    else
+      etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          ousd.RebasingCreditsPerToken(web3.utils.toHex(bn), procedure(past: BigInteger; err: IError)
+          begin
+            if Assigned(err) then
+              callback(0, err)
+            else
+              callback(period.ToYear((1 / curr.AsDouble) / (1 / past.AsDouble) - 1) * 100, nil);
+          end);
+      end);
+  end);
+end;
+
+{ TOriginDollar }
+
+type
+  TOriginDollar = class(TERC20, IOriginDollar)
+  public
+    constructor Create(aClient: IWeb3); reintroduce;
+    procedure RebasingCreditsPerToken(const block: string; callback: TProc<BigInteger, IError>);
+  end;
+
+constructor TOriginDollar.Create(aClient: IWeb3);
+begin
+  inherited Create(aClient, '0x2A8e1E676Ec238d8A992307B495b45B3fEAa5e86');
+end;
+
+procedure TOriginDollar.RebasingCreditsPerToken(const block: string; callback: TProc<BigInteger, IError>);
+begin
+  web3.eth.call(Client, Contract, 'rebasingCreditsPerToken()', block, [], callback);
+end;
 
 { TOrigin }
 
@@ -150,16 +180,7 @@ class procedure TOrigin.APY(
   period   : TPeriod;
   callback : TProc<Double, IError>);
 begin
-  const ousd = TOriginDollar.Create(client);
-  if Assigned(ousd) then
-  begin
-    ousd.APY(etherscan, period, procedure(apy: Double; err: IError)
-    begin try
-      callback(apy, err);
-    finally
-      ousd.Free;
-    end; end);
-  end;
+  getAPY(TOriginDollar.Create(client), etherscan, period, callback);
 end;
 
 class procedure TOrigin.Deposit(
@@ -264,11 +285,7 @@ begin
   Result := '0xe75d77b1865ae93c7eaa3040b038d7aa7bc02f70';
 end;
 
-procedure TOriginVault.Mint(
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+procedure TOriginVault.Mint(from: TPrivateKey; reserve: TReserve; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   reserve.Address(Client.Chain)
     .ifErr(procedure(err: IError)
@@ -281,47 +298,9 @@ begin
     end);
 end;
 
-procedure TOriginVault.Redeem(
-  from    : TPrivateKey;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+procedure TOriginVault.Redeem(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'redeem(uint256,uint256)', [web3.utils.toHex(amount), 0], callback);
-end;
-
-{ TOriginDollar }
-
-constructor TOriginDollar.Create(aClient: IWeb3);
-begin
-  inherited Create(aClient, '0x2A8e1E676Ec238d8A992307B495b45B3fEAa5e86');
-end;
-
-procedure TOriginDollar.RebasingCreditsPerToken(const block: string; callback: TProc<BigInteger, IError>);
-begin
-  web3.eth.call(Client, Contract, 'rebasingCreditsPerToken()', block, [], callback);
-end;
-
-procedure TOriginDollar.APY(etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
-begin
-  Self.RebasingCreditsPerToken(BLOCK_LATEST, procedure(curr: BigInteger; err: IError)
-  begin
-    if Assigned(err) then
-      callback(0, err)
-    else
-      etherscan.getBlockNumberByTimestamp(web3.Now - period.Seconds, procedure(bn: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
-          callback(0, err)
-        else
-          Self.RebasingCreditsPerToken(web3.utils.toHex(bn), procedure(past: BigInteger; err: IError)
-          begin
-            if Assigned(err) then
-              callback(0, err)
-            else
-              callback(period.ToYear((1 / curr.AsDouble) / (1 / past.AsDouble) - 1) * 100, nil);
-          end);
-      end);
-  end);
 end;
 
 end.
