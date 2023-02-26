@@ -68,11 +68,11 @@ type
       chain  : TChain;
       reserve: TReserve): Boolean; override;
     class procedure APY(
-      client    : IWeb3;
-      _etherscan: IEtherscan;
-      reserve   : TReserve;
-      _period   : TPeriod;
-      callback  : TProc<Double, IError>); override;
+      client   : IWeb3;
+      etherscan: IEtherscan;
+      reserve  : TReserve;
+      period   : TPeriod;
+      callback : TProc<Double, IError>); override;
     class procedure Deposit(
       client  : IWeb3;
       from    : TPrivateKey;
@@ -103,7 +103,26 @@ type
     procedure GetFullAPR(idleToken: TAddress; callback: TProc<BigInteger, IError>);
   end;
 
-  TIdleToken = class abstract(TERC20)
+  IIdleToken = interface(IERC20)
+    procedure Token(callback: TProc<TAddress, IError>);
+    procedure GetAvgAPR(callback: TProc<BigInteger, IError>);
+    procedure GetFullAPR(callback: TProc<BigInteger, IError>);
+    procedure TokenPrice(callback: TProc<BigInteger, IError>);
+    procedure MintIdleToken(
+      from              : TPrivateKey; // supplier of the underlying asset, and receiver of IdleTokens
+      amount            : BigInteger;  // amount of underlying asset to be lent
+      skipWholeRebalance: Boolean;     // triggers a rebalance of the whole pools if true
+      referral          : TAddress;    // address for eventual future referral program
+      callback          : TProc<ITxReceipt, IError>);
+    procedure RedeemIdleToken(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+  end;
+
+implementation
+
+{ TIdleToken }
+
+type
+  TIdleToken = class(TERC20, IIdleToken)
   public
     constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
     procedure Token(callback: TProc<TAddress, IError>);
@@ -119,39 +138,37 @@ type
     procedure RedeemIdleToken(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
   end;
 
-  TIdleDAI = class(TIdleToken)
-  public
-    constructor Create(aClient: IWeb3); override;
+function idleDAI(aClient: IWeb3): IIdleToken;
+begin
+  Result := TIdleToken.Create(aClient, '0x3fe7940616e5bc47b0775a0dccf6237893353bb4');
+end;
+
+function idleUSDC(aClient: IWeb3): IIdleToken;
+begin
+  Result := TIdleToken.Create(aClient, '0x5274891bEC421B39D23760c04A6755eCB444797C');
+end;
+
+function idleUSDT(aClient: IWeb3): IIdleToken;
+begin
+  Result := TIdleToken.Create(aClient, '0xF34842d05A1c888Ca02769A633DF37177415C2f8');
+end;
+
+function idleTUSD(aClient: IWeb3): IIdleToken;
+begin
+  Result := TIdleToken.Create(aClient, '0xc278041fDD8249FE4c1Aad1193876857EEa3D68c');
+end;
+
+function idleToken(aClient: IWeb3; aReserve: TReserve): IResult<IIdleToken>;
+begin
+  case aReserve of
+    DAI : Result := TResult<IIdleToken>.Ok(idleDAI(aClient));
+    USDC: Result := TResult<IIdleToken>.Ok(idleUSDC(aClient));
+    USDT: Result := TResult<IIdleToken>.Ok(idleUSDT(aClient));
+    TUSD: Result := TResult<IIdleToken>.Ok(idleTUSD(aClient));
+  else
+    Result := TResult<IIdleToken>.Err(nil, TError.Create('%s not supported', [aReserve.Symbol]));
   end;
-
-  TIdleUSDC = class(TIdleToken)
-  public
-    constructor Create(aClient: IWeb3); override;
-  end;
-
-  TIdleUSDT = class(TIdleToken)
-  public
-    constructor Create(aClient: IWeb3); override;
-  end;
-
-  TIdleTUSD = class(TIdleToken)
-  public
-    constructor Create(aClient: IWeb3); override;
-  end;
-
-implementation
-
-type
-  TIdleTokenClass = class of TIdleToken;
-
-const
-  IdleTokenClass: array[TReserve] of TIdleTokenClass = (
-    TIdleDAI,
-    TIdleUSDC,
-    TIdleUSDT,
-    TIdleTUSD,
-    nil
-  );
+end;
 
 { TIdle }
 
@@ -162,19 +179,21 @@ class procedure TIdle.Approve(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const IdleToken = IdleTokenClass[reserve].Create(client);
-  if Assigned(IdleToken) then
-  begin
-    IdleToken.Token(procedure(addr: TAddress; err: IError)
-    begin try
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, IdleToken.Contract, amount, callback)
-    finally
-      IdleToken.Free;
-    end; end);
-  end;
+  idleToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(idleToken: IIdleToken)
+    begin
+      idleToken.Token(procedure(address: TAddress; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          web3.eth.erc20.approve(web3.eth.erc20.create(client, address), from, idleToken.Contract, amount, callback)
+      end);
+    end);
 end;
 
 class procedure TIdle.IdleToUnderlying(
@@ -183,19 +202,21 @@ class procedure TIdle.IdleToUnderlying(
   amount  : BigInteger;
   callback: TProc<BigInteger, IError>);
 begin
-  const IdleToken = IdleTokenClass[reserve].Create(client);
-  if Assigned(IdleToken) then
-  try
-    IdleToken.TokenPrice(procedure(price: BigInteger; err: IError)
+  idleToken(client, reserve)
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(reserve.Scale(reserve.Unscale(amount) * (price.AsDouble / 1e18)), nil);
+      callback(0, err)
+    end)
+    .&else(procedure(idleToken: IIdleToken)
+    begin
+      idleToken.TokenPrice(procedure(price: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          callback(reserve.Scale(reserve.Unscale(amount) * (price.AsDouble / 1e18)), nil);
+      end);
     end);
-  finally
-    IdleToken.free;
-  end;
 end;
 
 class procedure TIdle.UnderlyingToIdle(
@@ -204,19 +225,21 @@ class procedure TIdle.UnderlyingToIdle(
   amount  : BIgInteger;
   callback: TProc<BigInteger, IError>);
 begin
-  const IdleToken = IdleTokenClass[reserve].Create(client);
-  if Assigned(IdleToken) then
-  try
-    IdleToken.TokenPrice(procedure(price: BigInteger; err: IError)
+  idleToken(client, reserve)
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(reserve.Scale(reserve.Unscale(amount) / (price.AsDouble / 1e18)), nil);
+      callback(0, err)
+    end)
+    .&else(procedure(idleToken: IIdleToken)
+    begin
+      idleToken.TokenPrice(procedure(price: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          callback(reserve.Scale(reserve.Unscale(amount) / (price.AsDouble / 1e18)), nil);
+      end);
     end);
-  finally
-    IdleToken.free;
-  end;
 end;
 
 class function TIdle.Name: string;
@@ -230,28 +253,35 @@ begin
 end;
 
 class procedure TIdle.APY(
-  client    : IWeb3;
-  _etherscan: IEtherscan;
-  reserve   : TReserve;
-  _period   : TPeriod;
-  callback  : TProc<Double, IError>);
+  client   : IWeb3;
+  etherscan: IEtherscan;
+  reserve  : TReserve;
+  period   : TPeriod;
+  callback : TProc<Double, IError>);
 begin
-  const IdleToken = IdleTokenClass[reserve].Create(client);
-  IdleToken.GetFullAPR(procedure(apr1: BigInteger; err1: IError)
-  begin
-    if Assigned(err1) then
+  idleToken(client, reserve)
+    .ifErr(procedure(err: IError)
     begin
-      IdleToken.GetAvgAPR(procedure(apr2: BigInteger; err2: IError)
+      callback(0, err)
+    end)
+    .&else(procedure(idleToken: IIdleToken)
+    begin
+      idleToken.GetFullAPR(procedure(apr1: BigInteger; err1: IError)
       begin
-        if Assigned(err2) then
-          callback(0, err2)
-        else
-          callback(apr2.AsDouble / 1e18, nil);
+        if Assigned(err1) then
+        begin
+          idleToken.GetAvgAPR(procedure(apr2: BigInteger; err2: IError)
+          begin
+            if Assigned(err2) then
+              callback(0, err2)
+            else
+              callback(apr2.AsDouble / 1e18, nil);
+          end);
+          EXIT;
+        end;
+        callback(apr1.AsDouble / 1e18, nil);
       end);
-      EXIT;
-    end;
-    callback(apr1.AsDouble / 1e18, nil);
-  end);
+    end);
 end;
 
 class procedure TIdle.Deposit(
@@ -264,17 +294,17 @@ begin
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    const IdleToken = IdleTokenClass[reserve].Create(client);
-    if Assigned(IdleToken) then
-    try
-      IdleToken.MintIdleToken(from, amount, True, EMPTY_ADDRESS, callback);
-    finally
-      IdleToken.Free;
-    end;
+      callback(nil, err)
+    else
+      idleToken(client, reserve)
+        .ifErr(procedure(err: IError)
+        begin
+          callback(nil, err)
+        end)
+        .&else(procedure(idleToken: IIdleToken)
+        begin
+          idleToken.MintIdleToken(from, amount, True, EMPTY_ADDRESS, callback)
+        end);
   end);
 end;
 
@@ -284,27 +314,29 @@ class procedure TIdle.Balance(
   reserve : TReserve;
   callback: TProc<BigInteger, IError>);
 begin
-  const IdleToken = IdleTokenClass[reserve].Create(client);
-  if Assigned(IdleToken) then
-  try
-    // step #1: get the IdleToken balance
-    IdleToken.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
+  idleToken(client, reserve)
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        // step #2: multiply it by the current IdleToken price
-        IdleToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
-        begin
-          if Assigned(err) then
-            callback(0, err)
-          else
-            callback(output, nil);
-        end);
+      callback(0, err)
+    end)
+    .&else(procedure(idleToken: IIdleToken)
+    begin
+      // step #1: get the IdleToken balance
+      idleToken.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          // step #2: multiply it by the current IdleToken price
+          IdleToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
+          begin
+            if Assigned(err) then
+              callback(0, err)
+            else
+              callback(output, nil);
+          end);
+      end);
     end);
-  finally
-    IdleToken.Free;
-  end;
 end;
 
 class procedure TIdle.Withdraw(
@@ -313,33 +345,35 @@ class procedure TIdle.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const IdleToken = IdleTokenClass[reserve].Create(client);
-  if Assigned(IdleToken) then
-  begin
-    // step #1: get the IdleToken balance
-    IdleToken.BalanceOf(from, procedure(balance: BigInteger; err: IError)
-    begin try
-      if Assigned(err) then
-        callback(nil, 0, err)
-      else
-        // step #2: redeem IdleToken-amount in exchange for the underlying asset.
-        IdleToken.RedeemIdleToken(from, balance, procedure(rcpt: ITxReceipt; err: IError)
-        begin
-          if Assigned(err) then
-            callback(nil, 0, err)
-          else
-            IdleToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
-            begin
-              if Assigned(err) then
-                callback(rcpt, 0, err)
-              else
-                callback(rcpt, output, nil);
-            end);
-        end);
-    finally
-      IdleToken.Free;
-    end; end);
-  end;
+  idleToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(idleToken: IIdleToken)
+    begin
+      // step #1: get the IdleToken balance
+      idleToken.BalanceOf(from, procedure(balance: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, 0, err)
+        else
+          // step #2: redeem IdleToken-amount in exchange for the underlying asset.
+          idleToken.RedeemIdleToken(from, balance, procedure(rcpt: ITxReceipt; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, 0, err)
+            else
+              IdleToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
+              begin
+                if Assigned(err) then
+                  callback(rcpt, 0, err)
+                else
+                  callback(rcpt, output, nil);
+              end);
+          end);
+      end);
+    end);
 end;
 
 class procedure TIdle.WithdrawEx(
@@ -353,24 +387,24 @@ begin
   UnderlyingToIdle(client, reserve, amount, procedure(input: BigInteger; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(nil, 0, err);
-      EXIT;
-    end;
-    const IdleToken = IdleTokenClass[reserve].Create(client);
-    if Assigned(IdleToken) then
-    try
-      // step #2: redeem IdleToken-amount in exchange for the underlying asset.
-      IdleToken.RedeemIdleToken(from, input, procedure(rcpt: ITxReceipt; err: IError)
-      begin
-        if Assigned(err) then
+      callback(nil, 0, err)
+    else
+      idleToken(client, reserve)
+        .ifErr(procedure(err: IError)
+        begin
           callback(nil, 0, err)
-        else
-          callback(rcpt, amount, nil);
-      end);
-    finally
-      IdleToken.Free;
-    end;
+        end)
+        .&else(procedure(idleToken: IIdleToken)
+        begin
+          // step #2: redeem IdleToken-amount in exchange for the underlying asset.
+          idleToken.RedeemIdleToken(from, input, procedure(rcpt: ITxReceipt; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, 0, err)
+            else
+              callback(rcpt, amount, nil);
+          end);
+        end);
   end);
 end;
 
@@ -439,34 +473,6 @@ end;
 procedure TIdleToken.RedeemIdleToken(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'redeemIdleToken(uint256)', [web3.utils.toHex(amount)], callback);
-end;
-
-{ TIdleDAI }
-
-constructor TIdleDAI.Create(aClient: IWeb3);
-begin
-  inherited Create(aClient, '0x3fe7940616e5bc47b0775a0dccf6237893353bb4');
-end;
-
-{ TIdleUSDC }
-
-constructor TIdleUSDC.Create(aClient: IWeb3);
-begin
-  inherited Create(aClient, '0x5274891bEC421B39D23760c04A6755eCB444797C');
-end;
-
-{ TIdleUSDT }
-
-constructor TIdleUSDT.Create(aClient: IWeb3);
-begin
-  inherited Create(aClient, '0xF34842d05A1c888Ca02769A633DF37177415C2f8');
-end;
-
-{ TIdleTUSD }
-
-constructor TIdleTUSD.Create(aClient: IWeb3);
-begin
-  inherited Create(aClient, '0xc278041fDD8249FE4c1Aad1193876857EEa3D68c');
 end;
 
 end.

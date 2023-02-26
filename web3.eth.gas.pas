@@ -199,11 +199,9 @@ begin
       client.Call('eth_estimateGas', [obj], procedure(response: TJsonObject; err: IError)
       begin
         if Assigned(err) then
-        begin
-          callback(0, err);
-          EXIT;
-        end;
-        callback(web3.json.getPropAsStr(response, 'result'), nil);
+          callback(0, err)
+        else
+          callback(web3.json.getPropAsStr(response, 'result'), nil);
       end);
     finally
       obj.Free;
