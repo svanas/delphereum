@@ -118,12 +118,29 @@ type
     AssetAmount: BigInteger;
     Price      : BigInteger);
 
-  TiToken = class abstract(TERC20)
+  IiToken = interface(IERC20)
+    //------- read from contract -----------------------------------------------
+    procedure AssetBalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
+    procedure LoanTokenAddress(callback: TProc<TAddress, IError>);
+    procedure SupplyInterestRate(callback: TProc<BigInteger, IError>);
+    procedure TokenPrice(callback: TProc<BigInteger, IError>);
+    //------- write to contract ------------------------------------------------
+    procedure Burn(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    //------- events -----------------------------------------------------------
+    function SetOnMint(Value: TOnMint): IiToken;
+    function SetOnBurn(Value: TOnBurn): IiToken;
+  end;
+
+implementation
+
+{ TiToken }
+
+type
+  TiToken = class(TERC20, IiToken)
   strict private
     FOnMint: TOnMint;
     FOnBurn: TOnBurn;
-    procedure SetOnMint(Value: TOnMint);
-    procedure SetOnBurn(Value: TOnBurn);
   protected
     function  ListenForLatestBlock: Boolean; override;
     procedure OnLatestBlockMined(log: PLog; err: IError); override;
@@ -138,38 +155,41 @@ type
     procedure Burn(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
     procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
     //------- events -----------------------------------------------------------
-    property OnMint: TOnMint read FOnMint write SetOnMint;
-    property OnBurn: TOnBurn read FOnBurn write SetOnBurn;
+    function SetOnMint(Value: TOnMint): IiToken;
+    function SetOnBurn(Value: TOnBurn): IiToken;
   end;
 
-  TiDAI = class(TiToken)
-  public
-    constructor Create(aClient: IWeb3); override;
+function iDAI(aClient: IWeb3): IiToken;
+begin
+  // https://bzx.network/itokens
+  Result := TiToken.Create(aClient, '0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0');
+end;
+
+function iUSDC(aClient: IWeb3): IiToken;
+begin
+  // https://bzx.network/itokens
+  Result := TiToken.Create(aClient, '0x32e4c68b3a4a813b710595aeba7f6b7604ab9c15');
+end;
+
+function iUSDT(aClient: IWeb3): IiToken;
+begin
+  // https://bzx.network/itokens
+  if aClient.Chain = BNB then
+    Result := TiToken.Create(aClient, '0xf326b42a237086f1de4e7d68f2d2456fc787bc01')
+  else
+    Result := TiToken.Create(aClient, '0x7e9997a38a439b2be7ed9c9c4628391d3e055d48');
+end;
+
+function iToken(aClient: IWeb3; aReserve: TReserve): IResult<IiToken>;
+begin
+  case aReserve of
+    DAI : Result := TResult<IiToken>.Ok(iDAI(aClient));
+    USDC: Result := TResult<IiToken>.Ok(iUSDC(aClient));
+    USDT: Result := TResult<IiToken>.Ok(iUSDT(aClient));
+  else
+    Result := TResult<IiToken>.Err(nil, TError.Create('%s not supported', [aReserve.Symbol]));
   end;
-
-  TiUSDC = class(TiToken)
-  public
-    constructor Create(aClient: IWeb3); override;
-  end;
-
-  TiUSDT = class(TiToken)
-  public
-    constructor Create(aClient: IWeb3); override;
-  end;
-
-implementation
-
-type
-  TiTokenClass = class of TiToken;
-
-const
-  iTokenClass: array[TReserve] of TiTokenClass = (
-    TiDAI,
-    TiUSDC,
-    TiUSDT,
-    nil,
-    nil
-  );
+end;
 
 { TFulcrum }
 
@@ -181,19 +201,21 @@ class procedure TFulcrum.Approve(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const iToken = iTokenClass[reserve].Create(client);
-  if Assigned(iToken) then
-  begin
-    iToken.LoanTokenAddress(procedure(addr: TAddress; err: IError)
-    begin try
-      if Assigned(err) then
-        callback(nil, err)
-      else
-        web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, iToken.Contract, amount, callback);
-    finally
-      iToken.Free;
-    end; end);
-  end;
+  iToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(iToken: IiToken)
+    begin
+      iToken.LoanTokenAddress(procedure(address: TAddress; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          web3.eth.erc20.approve(web3.eth.erc20.create(client, address), from, iToken.Contract, amount, callback);
+      end);
+    end);
 end;
 
 class procedure TFulcrum.TokenToUnderlying(
@@ -202,19 +224,21 @@ class procedure TFulcrum.TokenToUnderlying(
   amount  : BigInteger;
   callback: TProc<BigInteger, IError>);
 begin
-  const iToken = iTokenClass[reserve].Create(client);
-  if Assigned(iToken) then
-  try
-    iToken.TokenPrice(procedure(price: BigInteger; err: IError)
+  iToken(client, reserve)
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(BigInteger.Create(amount.AsDouble * (price.AsDouble / 1e18)), nil);
+      callback(0, err)
+    end)
+    .&else(procedure(iToken: IiToken)
+    begin
+      iToken.TokenPrice(procedure(price: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          callback(BigInteger.Create(amount.AsDouble * (price.AsDouble / 1e18)), nil);
+      end);
     end);
-  finally
-    iToken.Free;
-  end;
 end;
 
 class procedure TFulcrum.UnderlyingToToken(
@@ -223,19 +247,21 @@ class procedure TFulcrum.UnderlyingToToken(
   amount  : BIgInteger;
   callback: TProc<BigInteger, IError>);
 begin
-  const iToken = iTokenClass[reserve].Create(client);
-  if Assigned(iToken) then
-  try
-    iToken.TokenPrice(procedure(price: BigInteger; err: IError)
+  iToken(client, reserve)
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(BigInteger.Create(amount.AsDouble / (price.AsDouble / 1e18)), nil);
+      callback(0, err)
+    end)
+    .&else(procedure(iToken: IiToken)
+    begin
+      iToken.TokenPrice(procedure(price: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          callback(BigInteger.Create(amount.AsDouble / (price.AsDouble / 1e18)), nil);
+      end);
     end);
-  finally
-    iToken.Free;
-  end;
 end;
 
 class function TFulcrum.Name: string;
@@ -256,19 +282,21 @@ class procedure TFulcrum.APY(
   period   : TPeriod;
   callback : TProc<Double, IError>);
 begin
-  const iToken = iTokenClass[reserve].Create(client);
-  if Assigned(iToken) then
-  try
-    iToken.SupplyInterestRate(procedure(value: BigInteger; err: IError)
+  iToken(client, reserve)
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(BigInteger.Divide(value, BigInteger.Create(1e14)).AsInt64 / 1e4, nil);
+      callback(0, err)
+    end)
+    .&else(procedure(iToken: IiToken)
+    begin
+      iToken.SupplyInterestRate(procedure(value: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          callback(BigInteger.Divide(value, BigInteger.Create(1e14)).AsInt64 / 1e4, nil);
+      end);
     end);
-  finally
-    iToken.Free;
-  end;
 end;
 
 // Deposits an underlying asset into the lending pool.
@@ -283,17 +311,17 @@ begin
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    const iToken = iTokenClass[reserve].Create(client);
-    if Assigned(iToken) then
-    try
-      iToken.Mint(from, amount, callback);
-    finally
-      iToken.Free;
-    end;
+      callback(nil, err)
+    else
+      iToken(client, reserve)
+        .ifErr(procedure(err: IError)
+        begin
+          callback(nil, err)
+        end)
+        .&else(procedure(iToken: IiToken)
+        begin
+          iToken.Mint(from, amount, callback)
+        end);
   end);
 end;
 
@@ -304,46 +332,29 @@ class procedure TFulcrum.Balance(
   reserve : TReserve;
   callback: TProc<BigInteger, IError>);
 begin
-  ( // get balance of the underlying asset
-  procedure(callback: TProc<BigInteger, IError>)
-  begin
-    const iToken = iTokenClass[reserve].Create(client);
-    if Assigned(iToken) then
-    try
-      iToken.AssetBalanceOf(owner, callback);
-    finally
-      iToken.Free;
-    end;
-  end)(procedure(balance: BigInteger; err: IError)
-  begin
-    if Assigned(err) then
+  iToken(client, reserve)
+    .ifErr(procedure(err: IError)
     begin
-      callback(balance, err);
-      EXIT;
-    end;
-    ( // get decimals
-    procedure(callback: TProc<BigInteger, IError>)
+      callback(0, err)
+    end)
+    .&else(procedure(iToken: IiToken)
     begin
-      const iToken = iTokenClass[reserve].Create(client);
-      if Assigned(iToken) then
-      try
-        iToken.Decimals(callback);
-      finally
-        iToken.Free;
-      end;
-    end)(procedure(decimals: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
+      // get balance of the underlying asset
+      iToken.AssetBalanceOf(owner, procedure(balance: BigInteger; err: IError)
       begin
-        callback(balance, err);
-        EXIT;
-      end;
-      if reserve.Decimals = Power(10, decimals.AsInteger) then
-        callback(balance, err)
-      else
-        callback(reserve.Scale(balance.AsDouble / Power(10, decimals.AsInteger)), err);
+        if Assigned(err) then
+          callback(0, err)
+        else
+          // get decimals
+          iToken.Decimals(procedure(decimals: BigInteger; err: IError)
+          begin
+            if Assigned(err) or (reserve.Decimals = Power(10, decimals.AsInteger)) then
+              callback(balance, err)
+            else
+              callback(reserve.Scale(balance.AsDouble / Power(10, decimals.AsInteger)), err);
+          end);
+      end);
     end);
-  end);
 end;
 
 // Redeems your balance of iTokens for the underlying asset.
@@ -360,31 +371,35 @@ begin
     end)
     .&else(procedure(owner: TAddress)
     begin
-      const iToken = iTokenClass[reserve].Create(client);
-      if Assigned(iToken) then
-        // step #1: get the iToken balance
-        iToken.BalanceOf(owner, procedure(amount: BigInteger; err: IError)
-        begin try
-          if Assigned(err) then
-            callback(nil, 0, err)
-          else
-            // step #2: redeem iToken-amount in exchange for the underlying asset
-            iToken.Burn(from, amount, procedure(rcpt: ITxReceipt; err: IError)
-            begin
-              if Assigned(err) then
-                callback(nil, 0, err)
-              else
-                TokenToUnderlying(client, reserve, amount, procedure(output: BigInteger; err: IError)
-                begin
-                  if Assigned(err) then
-                    callback(rcpt, 0, err)
-                  else
-                    callback(rcpt, output, nil);
-                end);
-            end);
-        finally
-          iToken.Free;
-        end; end);
+      iToken(client, reserve)
+        .ifErr(procedure(err: IError)
+        begin
+          callback(nil, 0, err)
+        end)
+        .&else(procedure(iToken: IiToken)
+        begin
+          // step #1: get the iToken balance
+          iToken.BalanceOf(owner, procedure(amount: BigInteger; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, 0, err)
+            else
+              // step #2: redeem iToken-amount in exchange for the underlying asset
+              iToken.Burn(from, amount, procedure(rcpt: ITxReceipt; err: IError)
+              begin
+                if Assigned(err) then
+                  callback(nil, 0, err)
+                else
+                  TokenToUnderlying(client, reserve, amount, procedure(output: BigInteger; err: IError)
+                  begin
+                    if Assigned(err) then
+                      callback(rcpt, 0, err)
+                    else
+                      callback(rcpt, output, nil);
+                  end);
+              end);
+          end);
+        end);
     end);
 end;
 
@@ -399,24 +414,24 @@ begin
   UnderlyingToToken(client, reserve, amount, procedure(input: BigInteger; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(nil, 0, err);
-      EXIT;
-    end;
-    const iToken = iTokenClass[reserve].Create(client);
-    if Assigned(iToken) then
-    try
-      // step #2: redeem iToken-amount in exchange for the underlying asset
-      iToken.Burn(from, input, procedure(rcpt: ITxReceipt; err: IError)
-      begin
-        if Assigned(err) then
+      callback(nil, 0, err)
+    else
+      iToken(client, reserve)
+        .ifErr(procedure(err: IError)
+        begin
           callback(nil, 0, err)
-        else
-          callback(rcpt, amount, err);
-      end);
-    finally
-      iToken.Free;
-    end;
+        end)
+        .&else(procedure(iToken: IiToken)
+        begin
+          // step #2: redeem iToken-amount in exchange for the underlying asset
+          iToken.Burn(from, input, procedure(rcpt: ITxReceipt; err: IError)
+          begin
+            if Assigned(err) then
+              callback(nil, 0, err)
+            else
+              callback(rcpt, amount, err);
+          end);
+        end);
   end);
 end;
 
@@ -424,9 +439,7 @@ end;
 
 function TiToken.ListenForLatestBlock: Boolean;
 begin
-  Result := inherited ListenForLatestBlock
-            or Assigned(FOnMint)
-            or Assigned(FOnBurn);
+  Result := inherited ListenForLatestBlock or Assigned(FOnMint) or Assigned(FOnBurn);
 end;
 
 procedure TiToken.OnLatestBlockMined(log: PLog; err: IError);
@@ -455,14 +468,16 @@ begin
               log^.Data[2].toUInt256); // price
 end;
 
-procedure TiToken.SetOnMint(Value: TOnMint);
+function TiToken.SetOnMint(Value: TOnMint): IiToken;
 begin
+  Result := Self;
   FOnMint := Value;
   EventChanged;
 end;
 
-procedure TiToken.SetOnBurn(Value: TOnBurn);
+function TiToken.SetOnBurn(Value: TOnBurn): IiToken;
 begin
+  Result := Self;
   FOnBurn := Value;
   EventChanged;
 end;
@@ -527,33 +542,6 @@ end;
 procedure TiToken.TokenPrice(callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'tokenPrice()', [], callback);
-end;
-
-{ TiDAI }
-
-constructor TiDAI.Create(aClient: IWeb3);
-begin
-  // https://bzx.network/itokens
-  inherited Create(aClient, '0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0');
-end;
-
-{ TiUSDC }
-
-constructor TiUSDC.Create(aClient: IWeb3);
-begin
-  // https://bzx.network/itokens
-  inherited Create(aClient, '0x32e4c68b3a4a813b710595aeba7f6b7604ab9c15');
-end;
-
-{ TiUSDT }
-
-constructor TiUSDT.Create(aClient: IWeb3);
-begin
-  // https://bzx.network/itokens
-  if aClient.Chain = BNB then
-    inherited Create(aClient, '0xf326b42a237086f1de4e7d68f2d2456fc787bc01')
-  else
-    inherited Create(aClient, '0x7e9997a38a439b2be7ed9c9c4628391d3e055d48');
 end;
 
 end.
