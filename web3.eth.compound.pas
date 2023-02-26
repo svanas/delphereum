@@ -103,17 +103,7 @@ type
     Amount  : BigInteger;
     Tokens  : BigInteger);
 
-  TcToken = class abstract(TERC20)
-  strict private
-    FOnMint  : TOnMint;
-    FOnRedeem: TOnRedeem;
-    procedure SetOnMint(Value: TOnMint);
-    procedure SetOnRedeem(Value: TOnRedeem);
-  protected
-    function  ListenForLatestBlock: Boolean; override;
-    procedure OnLatestBlockMined(log: PLog; err: IError); override;
-  public
-    constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
+  IcToken = interface(IERC20)
     //------- read from contract -----------------------------------------------
     procedure APY(callback: TProc<BigInteger, IError>);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TProc<BigInteger, IError>);
@@ -125,28 +115,8 @@ type
     procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
     procedure RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
     //------- https://compound.finance/docs/ctokens#ctoken-events --------------
-    property OnMint  : TOnMint   read FOnMint   write SetOnMint;
-    property OnRedeem: TOnRedeem read FOnRedeem write SetOnRedeem;
-  end;
-
-  TcDAI = class(TcToken)
-  public
-    constructor Create(aClient: IWeb3); override;
-  end;
-
-  TcUSDC = class(TcToken)
-  public
-    constructor Create(aClient: IWeb3); override;
-  end;
-
-  TcUSDT = class(TcToken)
-  public
-    constructor Create(aClient: IWeb3); override;
-  end;
-
-  TcTUSD = class(TcToken)
-  public
-    constructor Create(aClient: IWeb3); override;
+    function SetOnMint(Value: TOnMint): IcToken;
+    function SetOnRedeem(Value: TOnRedeem): IcToken;
   end;
 
 const
@@ -170,17 +140,74 @@ const
 
 implementation
 
-type
-  TcTokenClass = class of TcToken;
+{ TcToken }
 
-const
-  cTokenClass: array[TReserve] of TcTokenClass = (
-    TcDAI,
-    TcUSDC,
-    TcUSDT,
-    TcTUSD,
-    nil
-  );
+type
+  TcToken = class(TERC20, IcToken)
+  strict private
+    FOnMint  : TOnMint;
+    FOnRedeem: TOnRedeem;
+  protected
+    function  ListenForLatestBlock: Boolean; override;
+    procedure OnLatestBlockMined(log: PLog; err: IError); override;
+  public
+    constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
+    //------- read from contract -----------------------------------------------
+    procedure APY(callback: TProc<BigInteger, IError>);
+    procedure BalanceOfUnderlying(owner: TAddress; callback: TProc<BigInteger, IError>);
+    procedure ExchangeRateCurrent(callback: TProc<BigInteger, IError>);
+    procedure SupplyRatePerBlock(callback: TProc<BigInteger, IError>);
+    procedure Underlying(callback: TProc<TAddress, IError>);
+    //------- write to contract ------------------------------------------------
+    procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure RedeemUnderlying(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    //------- https://compound.finance/docs/ctokens#ctoken-events --------------
+    function SetOnMint(Value: TOnMint): IcToken;
+    function SetOnRedeem(Value: TOnRedeem): IcToken;
+  end;
+
+function cDAI(aClient: IWeb3): IcToken;
+begin
+  // https://compound.finance/docs#networks
+  if aClient.Chain = Goerli then
+    Result := TcToken.Create(aClient, '0x822397d9a55d0fefd20f5c4bcab33c5f65bd28eb')
+  else
+    Result := TcToken.Create(aClient, '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643');
+end;
+
+function cUSDC(aClient: IWeb3): IcToken;
+begin
+  // https://compound.finance/docs#networks
+  if aClient.Chain = Goerli then
+    Result := TcToken.Create(aClient, '0xcec4a43ebb02f9b80916f1c718338169d6d5c1f0')
+  else
+    Result := TcToken.Create(aClient, '0x39aa39c021dfbae8fac545936693ac917d5e7563');
+end;
+
+function cUSDT(aClient: IWeb3): IcToken;
+begin
+  // https://compound.finance/docs#networks
+  Result := TcToken.Create(aClient, '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9');
+end;
+
+function cTUSD(aClient: IWeb3): IcToken;
+begin
+  // https://compound.finance/docs#networks
+  Result := TcToken.Create(aClient, '0x12392f67bdf24fae0af363c24ac620a2f67dad86');
+end;
+
+function cToken(aClient: IWeb3; aReserve: TReserve): IResult<IcToken>;
+begin
+  case aReserve of
+    DAI : Result := TResult<IcToken>.Ok(cDAI(aClient));
+    USDC: Result := TResult<IcToken>.Ok(cUSDC(aClient));
+    USDT: Result := TResult<IcToken>.Ok(cUSDT(aClient));
+    TUSD: Result := TResult<IcToken>.Ok(cTUSD(aClient));
+  else
+    Result := TResult<IcToken>.Err(nil, TError.Create('%s not supported', [aReserve.Symbol]));
+  end;
+end;
 
 { TCompound }
 
@@ -192,21 +219,21 @@ class procedure TCompound.Approve(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  const cToken = cTokenClass[reserve].Create(client);
-  if Assigned(cToken) then
-  begin
-    cToken.Underlying(procedure(addr: TAddress; err: IError)
-    begin try
-      if Assigned(err) then
+  cToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(cToken: IcToken)
+    begin
+      cToken.Underlying(procedure(address: TAddress; err: IError)
       begin
-        callback(nil, err);
-        EXIT;
-      end;
-      web3.eth.erc20.approve(web3.eth.erc20.create(client, addr), from, cToken.Contract, amount, callback);
-    finally
-      cToken.Free;
-    end; end);
-  end;
+        if Assigned(err) then
+          callback(nil, err)
+        else
+          web3.eth.erc20.approve(web3.eth.erc20.create(client, address), from, cToken.Contract, amount, callback);
+      end);
+    end);
 end;
 
 class function TCompound.Name: string;
@@ -231,19 +258,21 @@ class procedure TCompound.APY(
   period   : TPeriod;
   callback : TProc<Double, IError>);
 begin
-  const cToken = cTokenClass[reserve].Create(client);
-  if Assigned(cToken) then
-  try
-    cToken.APY(procedure(value: BigInteger; err: IError)
+  cToken(client, reserve)
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(0, err)
-      else
-        callback(BigInteger.Divide(value, BigInteger.Create(1e12)).AsInt64 / 1e4, nil);
+      callback(0, err)
+    end)
+    .&else(procedure(cToken: IcToken)
+    begin
+      cToken.APY(procedure(value: BigInteger; err: IError)
+      begin
+        if Assigned(err) then
+          callback(0, err)
+        else
+          callback(BigInteger.Divide(value, BigInteger.Create(1e12)).AsInt64 / 1e4, nil);
+      end);
     end);
-  finally
-    cToken.Free;
-  end;
 end;
 
 // Deposits an underlying asset into the lending pool.
@@ -258,17 +287,17 @@ begin
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
     if Assigned(err) then
-    begin
-      callback(nil, err);
-      EXIT;
-    end;
-    const cToken = cTokenClass[reserve].Create(client);
-    if Assigned(cToken) then
-    try
-      cToken.Mint(from, amount, callback);
-    finally
-      cToken.Free;
-    end;
+      callback(nil, err)
+    else
+      cToken(client, reserve)
+        .ifErr(procedure(err: IError)
+        begin
+          callback(nil, err)
+        end)
+        .&else(procedure(cToken: IcToken)
+        begin
+          cToken.Mint(from, amount, callback)
+        end);
   end);
 end;
 
@@ -279,13 +308,15 @@ class procedure TCompound.Balance(
   reserve : TReserve;
   callback: TProc<BigInteger, IError>);
 begin
-  const cToken = cTokenClass[reserve].Create(client);
-  if Assigned(cToken) then
-  try
-    cToken.BalanceOfUnderlying(owner, callback);
-  finally
-    cToken.Free;
-  end;
+  cToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(0, err)
+    end)
+    .&else(procedure(cToken: IcToken)
+    begin
+      cToken.BalanceOfUnderlying(owner, callback)
+    end);
 end;
 
 // Redeems your balance of cTokens for the underlying asset.
@@ -305,29 +336,29 @@ begin
       Balance(client, owner, reserve, procedure(underlyingAmount: BigInteger; err: IError)
       begin
         if Assigned(err) then
-        begin
-          callback(nil, 0, err);
-          EXIT;
-        end;
-        const cToken = cTokenClass[reserve].Create(client);
-        if Assigned(cToken) then
-        begin
-          cToken.BalanceOf(owner, procedure(cTokenAmount: BigInteger; err: IError)
-          begin try
-            if Assigned(err) then
+          callback(nil, 0, err)
+        else
+          cToken(client, reserve)
+            .ifErr(procedure(err: IError)
+            begin
               callback(nil, 0, err)
-            else
-              cToken.Redeem(from, cTokenAmount, procedure(rcpt: ITxReceipt; err: IError)
+            end)
+            .&else(procedure(cToken: IcToken)
+            begin
+              cToken.BalanceOf(owner, procedure(cTokenAmount: BigInteger; err: IError)
               begin
                 if Assigned(err) then
                   callback(nil, 0, err)
                 else
-                  callback(rcpt, underlyingAmount, err);
+                  cToken.Redeem(from, cTokenAmount, procedure(rcpt: ITxReceipt; err: IError)
+                  begin
+                    if Assigned(err) then
+                      callback(nil, 0, err)
+                    else
+                      callback(rcpt, underlyingAmount, err);
+                  end);
               end);
-          finally
-            cToken.Free;
-          end; end);
-        end;
+            end);
       end);
     end);
 end;
@@ -339,27 +370,28 @@ class procedure TCompound.WithdrawEx(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const cToken = cTokenClass[reserve].Create(client);
-  if Assigned(cToken) then
-  try
-    cToken.RedeemUnderlying(from, amount, procedure(rcpt: ITxReceipt; err: IError)
+  cToken(client, reserve)
+    .ifErr(procedure(err: IError)
     begin
-      if Assigned(err) then
-        callback(nil, 0, err)
-      else
-        callback(rcpt, amount, err);
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(cToken: IcToken)
+    begin
+      cToken.RedeemUnderlying(from, amount, procedure(rcpt: ITxReceipt; err: IError)
+      begin
+        if Assigned(err) then
+          callback(nil, 0, err)
+        else
+          callback(rcpt, amount, err);
+      end);
     end);
-  finally
-    cToken.Free;
-  end;
 end;
 
 { TcToken }
 
 function TcToken.ListenForLatestBlock: Boolean;
 begin
-  Result := inherited ListenForLatestBlock
-         or Assigned(FOnMint) or Assigned(FOnRedeem);
+  Result := inherited ListenForLatestBlock or Assigned(FOnMint) or Assigned(FOnRedeem);
 end;
 
 procedure TcToken.OnLatestBlockMined(log: PLog; err: IError);
@@ -386,14 +418,16 @@ begin
                 log^.Data[1].toUInt256); // tokens
 end;
 
-procedure TcToken.SetOnMint(Value: TOnMint);
+function TcToken.SetOnMint(Value: TOnMint): IcToken;
 begin
+  Result := Self;
   FOnMint := Value;
   EventChanged;
 end;
 
-procedure TcToken.SetOnRedeem(Value: TOnRedeem);
+function TcToken.SetOnRedeem(Value: TOnRedeem): IcToken;
 begin
+  Result := Self;
   FOnRedeem := Value;
   EventChanged;
 end;
@@ -481,44 +515,6 @@ begin
     else
       callback(TAddress.Create(hex), nil);
   end);
-end;
-
-{ TcDAI }
-
-constructor TcDAI.Create(aClient: IWeb3);
-begin
-  // https://compound.finance/docs#networks
-  if aClient.Chain = Goerli then
-    inherited Create(aClient, '0x822397d9a55d0fefd20f5c4bcab33c5f65bd28eb')
-  else
-    inherited Create(aClient, '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643');
-end;
-
-{ TcUSDC }
-
-constructor TcUSDC.Create(aClient: IWeb3);
-begin
-  // https://compound.finance/docs#networks
-  if aClient.Chain = Goerli then
-    inherited Create(aClient, '0xcec4a43ebb02f9b80916f1c718338169d6d5c1f0')
-  else
-    inherited Create(aClient, '0x39aa39c021dfbae8fac545936693ac917d5e7563');
-end;
-
-{ TcUSDT }
-
-constructor TcUSDT.Create(aClient: IWeb3);
-begin
-  // https://compound.finance/docs#networks
-  inherited Create(aClient, '0xf650c3d88d12db855b8bf7d11be6c55a4e07dcc9');
-end;
-
-{ TcTUSD }
-
-constructor TcTUSD.Create(aClient: IWeb3);
-begin
-  // https://compound.finance/docs#networks
-  inherited Create(aClient, '0x12392f67bdf24fae0af363c24ac620a2f67dad86');
 end;
 
 end.

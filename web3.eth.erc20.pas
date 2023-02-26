@@ -53,7 +53,7 @@ type
     Spender: TAddress;
     Value  : BigInteger);
 
-  IERC20 = interface
+  IERC20 = interface(ICustomContract)
     //------- read from contract -----------------------------------------------
     procedure Name       (callback: TProc<string, IError>);
     procedure Symbol     (callback: TProc<string, IError>);
