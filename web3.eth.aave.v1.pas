@@ -259,40 +259,32 @@ class procedure TAave.Balance(
   reserve : TReserve;
   callback: TProc<BigInteger, IError>);
 begin
-  const aAp = TAaveAddressesProvider.Create(client);
-  if Assigned(aAp) then
+  const aap = TAaveAddressesProvider.Create(client);
+  if Assigned(aap) then
   try
-    aAp.GetLendingPool(procedure(addr: TAddress; err: IError)
+    aap.GetLendingPool(procedure(addr: TAddress; err: IError)
     begin
       if Assigned(err) then
       begin
         callback(0, err);
         EXIT;
       end;
-      const aPool = TAaveLendingPool.Create(client, addr);
-      if Assigned(aPool) then
+      const pool = TAaveLendingPool.Create(client, addr);
+      if Assigned(pool) then
       try
-        aPool.aTokenAddress(reserve, procedure(addr: TAddress; err: IError)
+        pool.aTokenAddress(reserve, procedure(address: TAddress; err: IError)
         begin
           if Assigned(err) then
-          begin
-            callback(0, err);
-            EXIT;
-          end;
-          const aToken = TaToken.Create(client, addr);
-          if Assigned(aToken) then
-          try
-            aToken.BalanceOf(owner, callback);
-          finally
-            aToken.Free;
-          end;
+            callback(0, err)
+          else
+            web3.eth.erc20.create(client, address).BalanceOf(owner, callback);
         end);
       finally
-        aPool.Free;
+        pool.Free;
       end;
     end);
   finally
-    aAp.Free;
+    aap.Free;
   end;
 end;
 
@@ -327,27 +319,27 @@ class procedure TAave.WithdrawEx(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  const aAp = TAaveAddressesProvider.Create(client);
-  if Assigned(aAp) then
+  const aap = TAaveAddressesProvider.Create(client);
+  if Assigned(aap) then
   try
-    aAp.GetLendingPool(procedure(addr: TAddress; err: IError)
+    aap.GetLendingPool(procedure(addr: TAddress; err: IError)
     begin
       if Assigned(err) then
       begin
         callback(nil, 0, err);
         EXIT;
       end;
-      const aPool = TAaveLendingPool.Create(client, addr);
-      if Assigned(aPool) then
+      const pool = TAaveLendingPool.Create(client, addr);
+      if Assigned(pool) then
       try
-        aPool.aTokenAddress(reserve, procedure(addr: TAddress; err: IError)
+        pool.aTokenAddress(reserve, procedure(address: TAddress; err: IError)
         begin
           if Assigned(err) then
           begin
             callback(nil, 0, err);
             EXIT;
           end;
-          const aToken = TaToken.Create(client, addr);
+          const aToken = TaToken.Create(client, address);
           if Assigned(aToken) then
           try
             aToken.Redeem(from, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -362,11 +354,11 @@ begin
           end;
         end);
       finally
-        aPool.Free;
+        pool.Free;
       end;
     end);
   finally
-    aAp.Free;
+    aap.Free;
   end;
 end;
 
