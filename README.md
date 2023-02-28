@@ -93,7 +93,7 @@ You can download bankless for [Windows](https://github.com/svanas/bankless/relea
 
 ### 3. PubSub
 
-[PubSub](https://github.com/svanas/PubSub) is a simple "Hello World" example project, demonstrating how to subscribe to an Ethereum gateway and get notified every time a new block got mined. You can download PubSub [for Windows](https://github.com/svanas/PubSub/releases/latest/download/Windows.zip).
+[PubSub](https://github.com/svanas/PubSub) is a simple "Hello World" example project, demonstrating how to subscribe to an Ethereum node (or RPC provider) and get notified every time a new block got mined. You can download PubSub [for Windows](https://github.com/svanas/PubSub/releases/latest/download/Windows.zip).
 
 ### 4. Enumerable
 
