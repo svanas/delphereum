@@ -151,7 +151,6 @@ type
     function  ListenForLatestBlock: Boolean; override;
     procedure OnLatestBlockMined(log: PLog; err: IError); override;
   public
-    constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
     procedure APY(callback: TProc<BigInteger, IError>);
     procedure BalanceOfUnderlying(owner: TAddress; callback: TProc<BigInteger, IError>);

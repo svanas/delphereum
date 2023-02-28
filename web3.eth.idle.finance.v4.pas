@@ -124,7 +124,6 @@ implementation
 type
   TIdleToken = class(TERC20, IIdleToken)
   public
-    constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
     procedure Token(callback: TProc<TAddress, IError>);
     procedure GetAvgAPR(callback: TProc<BigInteger, IError>);
     procedure GetFullAPR(callback: TProc<BigInteger, IError>);

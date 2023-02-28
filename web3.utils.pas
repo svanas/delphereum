@@ -86,6 +86,7 @@ uses
   HlpSHA3,
   // CryptoLib4Pascal
   ClpDigestUtilities,
+  ClpIDigest,
   ClpHMac,
   ClpKeyParameter,
   // web3

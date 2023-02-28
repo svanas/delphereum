@@ -145,7 +145,6 @@ type
     function  ListenForLatestBlock: Boolean; override;
     procedure OnLatestBlockMined(log: PLog; err: IError); override;
   public
-    constructor Create(aClient: IWeb3); reintroduce; overload; virtual; abstract;
     //------- read from contract -----------------------------------------------
     procedure AssetBalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
     procedure LoanTokenAddress(callback: TProc<TAddress, IError>);
