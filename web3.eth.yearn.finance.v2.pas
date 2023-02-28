@@ -41,7 +41,7 @@ uses
   web3.eth.yearn.finance;
 
 type
-  TyEarnV2 = class(TyEarnCustom)
+  TyEarnV2 = class(TCustomYearn)
   public
     class function Name: string; override;
     class function Supports(
@@ -79,35 +79,37 @@ type
 
 implementation
 
-type
-  TyDAIv2 = class(TyToken)
-  public
-    class function DeployedAt: TAddress; override;
-  end;
+function yDAIv2(client: IWeb3): IyToken;
+begin
+  Result := TyToken.Create(client, '0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01');
+end;
 
-  TyUSDCv2 = class(TyToken)
-  public
-    class function DeployedAt: TAddress; override;
-  end;
+function yUSDCv2(client: IWeb3): IyToken;
+begin
+  Result := TyToken.Create(client, '0xd6aD7a6750A7593E092a9B218d66C0A814a3436e');
+end;
 
-  TyUSDTv2 = class(TyToken)
-  public
-    class function DeployedAt: TAddress; override;
-  end;
+function yUSDTv2(client: IWeb3): IyToken;
+begin
+  Result := TyToken.Create(client, '0x83f798e925BcD4017Eb265844FDDAbb448f1707D');
+end;
 
-  TyTUSDv2 = class(TyToken)
-  public
-    class function DeployedAt: TAddress; override;
-  end;
+function yTUSDv2(client: IWeb3): IyToken;
+begin
+  Result := TyToken.Create(client, '0x73a052500105205d34daf004eab301916da8190f');
+end;
 
-const
-  yTokenClass: array[TReserve] of TyTokenClass = (
-    TyDAIv2,  // DAI
-    TyUSDCv2, // USDC
-    TyUSDTv2, // USDT
-    TyTUSDv2, // TUSD
-    nil       // mUSD
-  );
+function yToken(client: IWeb3; reserve: TReserve): IResult<IyToken>;
+begin
+  case reserve of
+    DAI : Result := TResult<IyToken>.Ok(yDAIv2(client));
+    USDC: Result := TResult<IyToken>.Ok(yUSDCv2(client));
+    USDT: Result := TResult<IyToken>.Ok(yUSDTv2(client));
+    TUSD: Result := TResult<IyToken>.Ok(yTUSDv2(client));
+  else
+    Result := TResult<IyToken>.Err(nil, TError.Create('%s not supported', [reserve.Symbol]));
+  end;
+end;
 
 { TyEarnV2 }
 
@@ -128,7 +130,15 @@ class procedure TyEarnV2.APY(
   period   : TPeriod;
   callback : TProc<Double, IError>);
 begin
-  Self.yAPY(client, etherscan, yTokenClass[reserve], period, callback);
+  yToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(0, err)
+    end)
+    .&else(procedure(yToken: IyToken)
+    begin
+      Self.yAPY(yToken, etherscan, period, callback)
+    end);
 end;
 
 class procedure TyEarnV2.Deposit(
@@ -138,7 +148,15 @@ class procedure TyEarnV2.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  Self.yDeposit(client, from, yTokenClass[reserve], amount, callback);
+  yToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(yToken: IyToken)
+    begin
+      Self.yDeposit(client, yToken, from, amount, callback)
+    end);
 end;
 
 class procedure TyEarnV2.Balance(
@@ -147,7 +165,15 @@ class procedure TyEarnV2.Balance(
   reserve : TReserve;
   callback: TProc<BigInteger, IError>);
 begin
-  Self.yBalance(client, owner, yTokenClass[reserve], callback);
+  yToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(0, err)
+    end)
+    .&else(procedure(yToken: IyToken)
+    begin
+      Self.yBalance(yToken, owner, callback)
+    end);
 end;
 
 class procedure TyEarnV2.Withdraw(
@@ -156,7 +182,15 @@ class procedure TyEarnV2.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  Self.yWithdraw(client, from, yTokenClass[reserve], callback);
+  yToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(yToken: IyToken)
+    begin
+      Self.yWithdraw(yToken, from, callback)
+    end);
 end;
 
 class procedure TyEarnV2.WithdrawEx(
@@ -166,35 +200,15 @@ class procedure TyEarnV2.WithdrawEx(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  Self.yWithdrawEx(client, from, yTokenClass[reserve], amount, callback);
-end;
-
-{ TyDAIv2 }
-
-class function TyDAIv2.DeployedAt: TAddress;
-begin
-  Result := TAddress('0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01');
-end;
-
-{ TyUSDCv2 }
-
-class function TyUSDCv2.DeployedAt: TAddress;
-begin
-  Result := TAddress('0xd6aD7a6750A7593E092a9B218d66C0A814a3436e');
-end;
-
-{ TyUSDTv2 }
-
-class function TyUSDTv2.DeployedAt: TAddress;
-begin
-  Result := TAddress('0x83f798e925BcD4017Eb265844FDDAbb448f1707D');
-end;
-
-{ TyTUSDv2 }
-
-class function TyTUSDv2.DeployedAt: TAddress;
-begin
-  Result := TAddress('0x73a052500105205d34daf004eab301916da8190f');
+  yToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(yToken: IyToken)
+    begin
+      Self.yWithdraw(yToken, from, amount, callback)
+    end);
 end;
 
 end.

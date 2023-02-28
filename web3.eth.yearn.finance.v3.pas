@@ -41,7 +41,7 @@ uses
   web3.eth.yearn.finance;
 
 type
-  TyEarnV3 = class(TyEarnCustom)
+  TyEarnV3 = class(TCustomYearn)
   public
     class function Name: string; override;
     class function Supports(
@@ -79,30 +79,31 @@ type
 
 implementation
 
-type
-  TyDAIv3 = class(TyToken)
-  public
-    class function DeployedAt: TAddress; override;
-  end;
+function yDAIv3(client: IWeb3): IyToken;
+begin
+  Result := TyToken.Create(client, '0xC2cB1040220768554cf699b0d863A3cd4324ce32');
+end;
 
-  TyUSDCv3 = class(TyToken)
-  public
-    class function DeployedAt: TAddress; override;
-  end;
+function yUSDCv3(client: IWeb3): IyToken;
+begin
+  Result := TyToken.Create(client, '0x26EA744E5B887E5205727f55dFBE8685e3b21951');
+end;
 
-  TyUSDTv3 = class(TyToken)
-  public
-    class function DeployedAt: TAddress; override;
-  end;
+function yUSDTv3(client: IWeb3): IyToken;
+begin
+  Result := TyToken.Create(client, '0xE6354ed5bC4b393a5Aad09f21c46E101e692d447');
+end;
 
-const
-  yTokenClass: array[TReserve] of TyTokenClass = (
-    TyDAIv3,  // DAI
-    TyUSDCv3, // USDC
-    TyUSDTv3, // USDT
-    nil,      // TUSD
-    nil       // mUSD
-  );
+function yToken(client: IWeb3; reserve: TReserve): IResult<IyToken>;
+begin
+  case reserve of
+    DAI : Result := TResult<IyToken>.Ok(yDAIv3(client));
+    USDC: Result := TResult<IyToken>.Ok(yUSDCv3(client));
+    USDT: Result := TResult<IyToken>.Ok(yUSDTv3(client));
+  else
+    Result := TResult<IyToken>.Err(nil, TError.Create('%s not supported', [reserve.Symbol]));
+  end;
+end;
 
 { TyEarnV3 }
 
@@ -123,7 +124,15 @@ class procedure TyEarnV3.APY(
   period   : TPeriod;
   callback : TProc<Double, IError>);
 begin
-  Self.yAPY(client, etherscan, yTokenClass[reserve], period, callback);
+  yToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(0, err)
+    end)
+    .&else(procedure(yToken: IyToken)
+    begin
+      Self.yAPY(yToken, etherscan, period, callback)
+    end);
 end;
 
 class procedure TyEarnV3.Deposit(
@@ -133,7 +142,15 @@ class procedure TyEarnV3.Deposit(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, IError>);
 begin
-  Self.yDeposit(client, from, yTokenClass[reserve], amount, callback);
+  yToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(yToken: IyToken)
+    begin
+      Self.yDeposit(client, yToken, from, amount, callback)
+    end);
 end;
 
 class procedure TyEarnV3.Balance(
@@ -142,7 +159,15 @@ class procedure TyEarnV3.Balance(
   reserve : TReserve;
   callback: TProc<BigInteger, IError>);
 begin
-  Self.yBalance(client, owner, yTokenClass[reserve], callback);
+  yToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(0, err)
+    end)
+    .&else(procedure(yToken: IyToken)
+    begin
+      Self.yBalance(yToken, owner, callback)
+    end);
 end;
 
 class procedure TyEarnV3.Withdraw(
@@ -151,7 +176,15 @@ class procedure TyEarnV3.Withdraw(
   reserve : TReserve;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  Self.yWithdraw(client, from, yTokenClass[reserve], callback);
+  yToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(yToken: IyToken)
+    begin
+      Self.yWithdraw(yToken, from, callback)
+    end);
 end;
 
 class procedure TyEarnV3.WithdrawEx(
@@ -161,28 +194,15 @@ class procedure TyEarnV3.WithdrawEx(
   amount  : BigInteger;
   callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
-  Self.yWithdrawEx(client, from, yTokenClass[reserve], amount, callback);
-end;
-
-{ TyDAIv3 }
-
-class function TyDAIv3.DeployedAt: TAddress;
-begin
-  Result := TAddress('0xC2cB1040220768554cf699b0d863A3cd4324ce32');
-end;
-
-{ TyUSDCv3 }
-
-class function TyUSDCv3.DeployedAt: TAddress;
-begin
-  Result := TAddress('0x26EA744E5B887E5205727f55dFBE8685e3b21951');
-end;
-
-{ TyUSDTv2 }
-
-class function TyUSDTv3.DeployedAt: TAddress;
-begin
-  Result := TAddress('0xE6354ed5bC4b393a5Aad09f21c46E101e692d447');
+  yToken(client, reserve)
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, 0, err)
+    end)
+    .&else(procedure(yToken: IyToken)
+    begin
+      Self.yWithdraw(yToken, from, amount, callback)
+    end);
 end;
 
 end.
