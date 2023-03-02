@@ -235,7 +235,13 @@ end;
 
 function TSignature.ToHex: string;
 begin
-  Result := web3.utils.toHex(Self.R.ToByteArrayUnsigned + Self.S.ToByteArrayUnsigned + Self.V.ToByteArrayUnsigned);
+  var R := Self.R.ToByteArrayUnsigned;
+  while Length(R) < 32 do R := [0] + R;
+  var S := Self.S.ToByteArrayUnsigned;
+  while Length(S) < 32 do S := [0] + S;
+  var V := Self.V.ToByteArrayUnsigned;
+  if Length(V) < 1 then V := [0];
+  Result := web3.utils.toHex(R + S + V);
 end;
 
 end.
