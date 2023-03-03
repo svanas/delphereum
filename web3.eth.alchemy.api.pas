@@ -56,7 +56,8 @@ type
 
   IAssetChanges = interface(IDeserializedArray<IAssetChange>)
     function IndexOf(contract: TAddress): Integer;
-    procedure FilterBy(change: TChangeType);
+    function Incoming(address: TAddress): IAssetChanges;
+    function Outgoing(address: TAddress): IAssetChanges;
   end;
 
 procedure simulate(
@@ -173,7 +174,8 @@ type
   public
     function Item(const Index: Integer): IAssetChange; override;
     function IndexOf(contract: TAddress): Integer;
-    procedure FilterBy(change: TChangeType);
+    function Incoming(address: TAddress): IAssetChanges;
+    function Outgoing(address: TAddress): IAssetChanges;
   end;
 
 function TAssetChanges.Item(const Index: Integer): IAssetChange;
@@ -191,14 +193,42 @@ begin
   Result := -1;
 end;
 
-procedure TAssetChanges.FilterBy(change: TChangeType);
+function TAssetChanges.Incoming(address: TAddress): IAssetChanges;
 begin
-  var I := 0;
-  while I < Self.Count do
-    if Self.Item(I).Change = change then
-      Inc(I)
-    else
-      Self.Delete(I);
+  var value := Self.FJsonValue.Clone as TJsonArray;
+  try
+    var index := 0;
+    while index < value.Count do
+    begin
+      const change: IAssetChange = TAssetChange.Create(value[index]);
+      if change.&To.SameAs(address) then
+        Inc(index)
+      else
+        value.Remove(index);
+    end;
+    Result := TAssetChanges.Create(value);
+  finally
+    value.Free;
+  end;
+end;
+
+function TAssetChanges.Outgoing(address: TAddress): IAssetChanges;
+begin
+  var value := Self.FJsonValue.Clone as TJsonArray;
+  try
+    var index := 0;
+    while index < value.Count do
+    begin
+      const change: IAssetChange = TAssetChange.Create(value[index]);
+      if change.From.SameAs(address) then
+        Inc(index)
+      else
+        value.Remove(index);
+    end;
+    Result := TAssetChanges.Create(value);
+  finally
+    value.Free;
+  end;
 end;
 
 procedure _simulate(
