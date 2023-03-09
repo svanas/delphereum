@@ -32,8 +32,8 @@ uses
   // web3
   web3;
 
-function endpoint(chain: TChain; const apiKey: string; NFT: Boolean = False): IResult<string>; overload;
-function endpoint(chain: TChain; protocol: TTransport; const apiKey: string; NFT: Boolean = False): IResult<string>; overload;
+function endpoint(const chain: TChain; const apiKey: string; const NFT: Boolean = False): IResult<string>; overload;
+function endpoint(const chain: TChain; const protocol: TTransport; const apiKey: string; const NFT: Boolean = False): IResult<string>; overload;
 
 implementation
 
@@ -41,7 +41,7 @@ uses
   // Delphi
   System.SysUtils;
 
-function HTTPS(chain: TChain; const apiKey: string; NFT: Boolean): IResult<string>;
+function HTTPS(const chain: TChain; const apiKey: string; NFT: Boolean): IResult<string>;
 begin
   const api = (function: string
   begin
@@ -72,7 +72,7 @@ begin
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
-function WebSocket(chain: TChain; const projectId: string): IResult<string>;
+function WebSocket(const chain: TChain; const projectId: string): IResult<string>;
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok(Format('wss://eth-mainnet.g.alchemy.com/v2/%s', [projectId]))
@@ -96,12 +96,12 @@ begin
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
-function endpoint(chain: TChain; const apiKey: string; NFT: Boolean): IResult<string>;
+function endpoint(const chain: TChain; const apiKey: string; const NFT: Boolean): IResult<string>;
 begin
   Result := endpoint(chain, TTransport.HTTPS, apiKey, NFT);
 end;
 
-function endpoint(chain: TChain; protocol: TTransport; const apiKey: string; NFT: Boolean): IResult<string>;
+function endpoint(const chain: TChain; const protocol: TTransport; const apiKey: string; const NFT: Boolean): IResult<string>;
 begin
   if protocol = TTransport.WebSocket then
     Result := WebSocket(chain, apiKey)

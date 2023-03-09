@@ -55,18 +55,18 @@ type
   end;
 
   IAssetChanges = interface(IDeserializedArray<IAssetChange>)
-    function IndexOf(contract: TAddress): Integer;
-    function Incoming(address: TAddress): IAssetChanges;
-    function Outgoing(address: TAddress): IAssetChanges;
+    function IndexOf(const contract: TAddress): Integer;
+    function Incoming(const address: TAddress): IAssetChanges;
+    function Outgoing(const address: TAddress): IAssetChanges;
   end;
 
 procedure simulate(
-  const apiKey: string;
-  const chain : TChain;
-  from, &to   : TAddress;
-  value       : TWei;
-  const data  : string;
-  callback    : TProc<IAssetChanges, IError>);
+  const apiKey   : string;
+  const chain    : TChain;
+  const from, &to: TAddress;
+  const value    : TWei;
+  const data     : string;
+  const callback : TProc<IAssetChanges, IError>);
 
 type
   TContractType = (
@@ -173,9 +173,9 @@ type
   TAssetChanges = class(TDeserializedArray<IAssetChange>, IAssetChanges)
   public
     function Item(const Index: Integer): IAssetChange; override;
-    function IndexOf(contract: TAddress): Integer;
-    function Incoming(address: TAddress): IAssetChanges;
-    function Outgoing(address: TAddress): IAssetChanges;
+    function IndexOf(const contract: TAddress): Integer;
+    function Incoming(const address: TAddress): IAssetChanges;
+    function Outgoing(const address: TAddress): IAssetChanges;
   end;
 
 function TAssetChanges.Item(const Index: Integer): IAssetChange;
@@ -183,7 +183,7 @@ begin
   Result := TAssetChange.Create(TJsonArray(FJsonValue)[Index]);
 end;
 
-function TAssetChanges.IndexOf(contract: TAddress): Integer;
+function TAssetChanges.IndexOf(const contract: TAddress): Integer;
 begin
   const count = Self.Count;
   if count > 0 then
@@ -193,7 +193,7 @@ begin
   Result := -1;
 end;
 
-function TAssetChanges.Incoming(address: TAddress): IAssetChanges;
+function TAssetChanges.Incoming(const address: TAddress): IAssetChanges;
 begin
   var value := Self.FJsonValue.Clone as TJsonArray;
   try
@@ -212,7 +212,7 @@ begin
   end;
 end;
 
-function TAssetChanges.Outgoing(address: TAddress): IAssetChanges;
+function TAssetChanges.Outgoing(const address: TAddress): IAssetChanges;
 begin
   var value := Self.FJsonValue.Clone as TJsonArray;
   try
@@ -231,13 +231,13 @@ begin
   end;
 end;
 
-procedure _simulate(
-  const apiKey: string;
-  const chain : TChain;
-  from, &to   : TAddress;
-  value       : TWei;
-  const data  : string;
-  callback    : TProc<TJsonObject, IError>);
+procedure alchemy_simulateAssetChanges(
+  const apiKey   : string;
+  const chain    : TChain;
+  const from, &to: TAddress;
+  const value    : TWei;
+  const data     : string;
+  const callback : TProc<TJsonObject, IError>);
 begin
   web3.eth.alchemy.endpoint(chain, apiKey)
     .ifErr(procedure(err: IError)
@@ -272,14 +272,14 @@ begin
 end;
 
 procedure simulate(
-  const apiKey: string;
-  const chain : TChain;
-  from, &to   : TAddress;
-  value       : TWei;
-  const data  : string;
-  callback    : TProc<IAssetChanges, IError>);
+  const apiKey   : string;
+  const chain    : TChain;
+  const from, &to: TAddress;
+  const value    : TWei;
+  const data     : string;
+  const callback : TProc<IAssetChanges, IError>);
 begin
-  _simulate(apiKey, chain, from, &to, value, data, procedure(response: TJsonObject; err: IError)
+  alchemy_simulateAssetChanges(apiKey, chain, from, &to, value, data, procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -303,44 +303,43 @@ begin
 end;
 
 procedure getTokenIDs(
-  const apiKey   : string;
-  const chain    : TChain;
-  const contract : TAddress;
-  const startWith: string;
-  const callback : TProc<TJsonValue, IError>); overload;
-begin
-  web3.eth.alchemy.endpoint(chain, apiKey, True)
-    .ifErr(procedure(err: IError)
-    begin
-      callback(nil, err)
-    end)
-    .&else(procedure(endpoint: string)
-    begin
-      web3.http.get((function: string
-        begin
-          Result := Format('%s/getNFTsForCollection?contractAddress=%s', [endpoint, contract]);
-          if startWith <> '' then
-            Result := Result + '&startToken=' + startWith;
-        end)(),
-        [TNetHeader.Create('accept', 'application/json')],
-        callback
-      );
-    end);
-end;
-
-procedure getTokenIDs(
   const apiKey: string;
   const chain: TChain;
   const contract: TAddress;
-  const callback: TProc<TArray<string>, IError>); overload;
+  const callback: TProc<TArray<string>, IError>);
 type
   TPage = reference to procedure(const startWith: string; result: TArray<string>);
 begin
-  var page: TPage;
+  const get = procedure(
+    const apiKey   : string;
+    const chain    : TChain;
+    const contract : TAddress;
+    const startWith: string;
+    const callback : TProc<TJsonValue, IError>)
+  begin
+    web3.eth.alchemy.endpoint(chain, apiKey, True)
+      .ifErr(procedure(err: IError)
+      begin
+        callback(nil, err)
+      end)
+      .&else(procedure(endpoint: string)
+      begin
+        web3.http.get((function: string
+          begin
+            Result := Format('%s/getNFTsForCollection?contractAddress=%s', [endpoint, contract]);
+            if startWith <> '' then
+              Result := Result + '&startToken=' + startWith;
+          end)(),
+          [TNetHeader.Create('accept', 'application/json')],
+          callback
+        );
+      end);
+  end;
 
+  var page: TPage;
   page := procedure(const startWith: string; result: TArray<string>)
   begin
-    getTokenIDs(apiKey, chain, contract, startWith, procedure(response: TJsonValue; err: IError)
+    get(apiKey, chain, contract, startWith, procedure(response: TJsonValue; err: IError)
     begin
       if Assigned(err) then
       begin
