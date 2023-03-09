@@ -42,12 +42,12 @@ type
     function Call(
       const URL   : string;
       const method: string;
-      args        : array of const): IResult<TJsonObject>; overload;
+      const args  : array of const): IResult<TJsonObject>; overload;
     procedure Call(
-      const URL   : string;
-      const method: string;
-      args        : array of const;
-      callback    : TProc<TJsonObject, IError>); overload;
+      const URL     : string;
+      const method  : string;
+      const args    : array of const;
+      const callback: TProc<TJsonObject, IError>); overload;
   end;
 
 implementation
@@ -64,7 +64,7 @@ uses
 function TJsonRpcHttps.Call(
   const URL   : string;
   const method: string;
-  args        : array of const): IResult<TJsonObject>;
+  const args  : array of const): IResult<TJsonObject>;
 begin
   const response = web3.http.post(URL, CreatePayload(method, args));
   if Assigned(response.Value) then
@@ -86,10 +86,10 @@ begin
 end;
 
 procedure TJsonRpcHttps.Call(
-  const URL   : string;
-  const method: string;
-  args        : array of const;
-  callback    : TProc<TJsonObject, IError>);
+  const URL     : string;
+  const method  : string;
+  const args    : array of const;
+  const callback: TProc<TJsonObject, IError>);
 begin
   web3.http.post(URL, CreatePayload(method, args), [TNetHeader.Create('Content-Type', 'application/json')], procedure(response: TJsonValue; err: IError)
   begin

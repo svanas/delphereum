@@ -49,7 +49,7 @@ type
   private
     FStatus: Integer;
   public
-    constructor Create(aStatus: Integer; aBody: TJsonValue);
+    constructor Create(const aStatus: Integer; const aBody: TJsonValue);
     function Status: Integer;
   end;
 
@@ -71,7 +71,7 @@ type
 
   IContractSymbol = interface
     function Name: string;
-    function &Type: TSymbolType;
+    function SymbolType: TSymbolType;
     function Inputs: TJsonArray;
     function Outputs: TJsonArray;
     function StateMutability: TStateMutability;
@@ -80,39 +80,39 @@ type
   IContractABI = interface(IDeserializedArray<IContractSymbol>)
     function Contract: TAddress;
     function IndexOf(
-      const Name: string;
-      &Type     : TSymbolType;
-      InputCount: Integer): Integer; overload;
+      const Name      : string;
+      const SymbolType: TSymbolType;
+      const InputCount: Integer): Integer; overload;
     function IndexOf(
-      const Name     : string;
-      &Type          : TSymbolType;
-      StateMutability: TStateMutability): Integer; overload;
+      const Name           : string;
+      const SymbolType     : TSymbolType;
+      const StateMutability: TStateMutability): Integer; overload;
     function IndexOf(
-      const Name     : string;
-      &Type          : TSymbolType;
-      InputCount     : Integer;
-      StateMutability: TStateMutability): Integer; overload;
+      const Name           : string;
+      const SymbolType     : TSymbolType;
+      const InputCount     : Integer;
+      const StateMutability: TStateMutability): Integer; overload;
   end;
 
   IEtherscan = interface
     procedure getBlockNumberByTimestamp(
-      timestamp: TUnixDateTime;
-      callback : TProc<BigInteger, IError>);
+      const timestamp: TUnixDateTime;
+      const callback : TProc<BigInteger, IError>);
     procedure getTransactions(
-      address : TAddress;
-      callback: TProc<ITransactions, IError>);
+      const address : TAddress;
+      const callback: TProc<ITransactions, IError>);
     procedure getErc20TransferEvents(
-      address : TAddress;
-      callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
+      const address : TAddress;
+      const callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
     procedure getContractABI(
-      contract: TAddress;
-      callback: TProc<IContractABI, IError>);
+      const contract: TAddress;
+      const callback: TProc<IContractABI, IError>);
     procedure getContractSourceCode(
-      contract: TAddress;
-      callback: TProc<string, IError>);
+      const contract: TAddress;
+      const callback: TProc<string, IError>);
   end;
 
-function create(chain: TChain; const apiKey: string): IEtherscan;
+function create(const chain: TChain; const apiKey: string): IEtherscan;
 
 implementation
 
@@ -127,7 +127,7 @@ uses
   web3.eth.tx,
   web3.http;
 
-function endpoint(chain: TChain): IResult<string>; overload;
+function endpoint(const chain: TChain): IResult<string>; overload;
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok('https://api.etherscan.io/api?')
@@ -159,7 +159,7 @@ begin
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
-function endpoint(chain: TChain; const apiKey: string): IResult<string>; overload;
+function endpoint(const chain: TChain; const apiKey: string): IResult<string>; overload;
 begin
   Result := endpoint(chain);
   if Result.isOk and (apiKey <> '') then
@@ -168,7 +168,7 @@ end;
 
 {------------------------------ TEtherscanError -------------------------------}
 
-constructor TEtherscanError.Create(aStatus: Integer; aBody: TJsonValue);
+constructor TEtherscanError.Create(const aStatus: Integer; const aBody: TJsonValue);
 
   function msg: string;
   begin
@@ -271,7 +271,7 @@ type
   TContractSymbol = class(TDeserialized, IContractSymbol)
   public
     function Name: string;
-    function &Type: TSymbolType;
+    function SymbolType: TSymbolType;
     function Inputs: TJsonArray;
     function Outputs: TJsonArray;
     function StateMutability: TStateMutability;
@@ -282,7 +282,7 @@ begin
   Result := getPropAsStr(FJsonValue, 'name');
 end;
 
-function TContractSymbol.&Type: TSymbolType;
+function TContractSymbol.SymbolType: TSymbolType;
 begin
   const S = getPropAsStr(FJsonValue, 'type');
   for Result := System.Low(TSymbolType) to High(TSymbolType) do
@@ -322,22 +322,22 @@ type
     function Contract: TAddress;
     function Item(const Index: Integer): IContractSymbol; override;
     function IndexOf(
-      const Name: string;
-      &Type     : TSymbolType;
-      InputCount: Integer): Integer; overload;
+      const Name      : string;
+      const SymbolType: TSymbolType;
+      const InputCount: Integer): Integer; overload;
     function IndexOf(
-      const Name     : string;
-      &Type          : TSymbolType;
-      StateMutability: TStateMutability): Integer; overload;
+      const Name           : string;
+      const SymbolType     : TSymbolType;
+      const StateMutability: TStateMutability): Integer; overload;
     function IndexOf(
-      const Name     : string;
-      &Type          : TSymbolType;
-      InputCount     : Integer;
-      StateMutability: TStateMutability): Integer; overload;
-    constructor Create(aChain: TChain; aContract: TAddress; aJsonArray: TJsonArray); reintroduce;
+      const Name           : string;
+      const SymbolType     : TSymbolType;
+      const InputCount     : Integer;
+      const StateMutability: TStateMutability): Integer; overload;
+    constructor Create(const aChain: TChain; const aContract: TAddress; const aJsonArray: TJsonArray); reintroduce;
   end;
 
-constructor TContractABI.Create(aChain: TChain; aContract: TAddress; aJsonArray: TJsonArray);
+constructor TContractABI.Create(const aChain: TChain; const aContract: TAddress; const aJsonArray: TJsonArray);
 begin
   inherited Create(aJsonArray);
   FChain    := aChain;
@@ -360,9 +360,9 @@ begin
 end;
 
 function TContractABI.IndexOf(
-  const Name: string;
-  &Type     : TSymbolType;
-  InputCount: Integer): Integer;
+  const Name      : string;
+  const SymbolType: TSymbolType;
+  const InputCount: Integer): Integer;
 begin
   const count = Self.Count;
   if count > 0 then
@@ -370,7 +370,7 @@ begin
     begin
       const Item = Self.Item(Result);
       if  (Item.Name = Name)
-      and (Item.&Type = &Type)
+      and (Item.SymbolType = SymbolType)
       and (Item.Inputs.Count = InputCount) then
         EXIT;
     end;
@@ -378,9 +378,9 @@ begin
 end;
 
 function TContractABI.IndexOf(
-  const Name     : string;
-  &Type          : TSymbolType;
-  StateMutability: TStateMutability): Integer;
+  const Name           : string;
+  const SymbolType     : TSymbolType;
+  const StateMutability: TStateMutability): Integer;
 begin
   const count = Self.Count;
   if count > 0 then
@@ -388,7 +388,7 @@ begin
     begin
       const Item = Self.Item(Result);
       if  (Item.Name = Name)
-      and (Item.&Type = &Type)
+      and (Item.SymbolType = SymbolType)
       and (Item.StateMutability = StateMutability) then
         EXIT;
     end;
@@ -396,10 +396,10 @@ begin
 end;
 
 function TContractABI.IndexOf(
-  const Name     : string;
-  &Type          : TSymbolType;
-  InputCount     : Integer;
-  StateMutability: TStateMutability): Integer;
+  const Name           : string;
+  const SymbolType     : TSymbolType;
+  const InputCount     : Integer;
+  const StateMutability: TStateMutability): Integer;
 begin
   const count = Self.Count;
   if count > 0 then
@@ -407,7 +407,7 @@ begin
     begin
       const Item = Self.Item(Result);
       if  (Item.Name = Name)
-      and (Item.&Type = &Type)
+      and (Item.SymbolType = SymbolType)
       and (Item.Inputs.Count = InputCount)
       and (Item.StateMutability = StateMutability) then
         EXIT;
@@ -423,45 +423,45 @@ type
     chain : TChain;
     apiKey: string;
   protected
-    procedure get(const query: string; callback: TProc<TJsonValue, IError>); overload;
-    procedure get(const query: string; callback: TProc<TJsonValue, IError>; backoff: Integer); overload;
+    procedure get(const query: string; const callback: TProc<TJsonValue, IError>); overload;
+    procedure get(const query: string; const callback: TProc<TJsonValue, IError>; const backoff: Integer); overload;
   public
-    constructor Create(chain: TChain; const apiKey: string);
+    constructor Create(const chain: TChain; const apiKey: string);
     procedure getBlockNumberByTimestamp(
-      timestamp: TUnixDateTime;
-      callback : TProc<BigInteger, IError>);
+      const timestamp: TUnixDateTime;
+      const callback : TProc<BigInteger, IError>);
     procedure getTransactions(
-      address : TAddress;
-      callback: TProc<ITransactions, IError>);
+      const address : TAddress;
+      const callback: TProc<ITransactions, IError>);
     procedure getErc20TransferEvents(
-      address : TAddress;
-      callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
+      const address : TAddress;
+      const callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
     procedure getContractABI(
-      contract: TAddress;
-      callback: TProc<IContractABI, IError>);
+      const contract: TAddress;
+      const callback: TProc<IContractABI, IError>);
     procedure getContractSourceCode(
-      contract: TAddress;
-      callback: TProc<string, IError>);
+      const contract: TAddress;
+      const callback: TProc<string, IError>);
   end;
 
-function create(chain: TChain; const apiKey: string): IEtherscan;
+function create(const chain: TChain; const apiKey: string): IEtherscan;
 begin
   Result := TEtherscan.Create(chain, apiKey);
 end;
 
-constructor TEtherscan.Create(chain: TChain; const apiKey: string);
+constructor TEtherscan.Create(const chain: TChain; const apiKey: string);
 begin
   inherited Create;
   Self.chain  := chain;
   Self.apiKey := apiKey;
 end;
 
-procedure TEtherscan.get(const query: string; callback: TProc<TJsonValue, IError>);
+procedure TEtherscan.get(const query: string; const callback: TProc<TJsonValue, IError>);
 begin
   Self.get(query, callback, 250);
 end;
 
-procedure TEtherscan.get(const query: string; callback: TProc<TJsonValue, IError>; backoff: Integer);
+procedure TEtherscan.get(const query: string; const callback: TProc<TJsonValue, IError>; const backoff: Integer);
 begin
   endpoint(Self.chain, TNetEncoding.URL.Encode(Self.apiKey))
     .ifErr(procedure(err: IError)
@@ -487,8 +487,8 @@ begin
 end;
 
 procedure TEtherscan.getBlockNumberByTimestamp(
-  timestamp: TUnixDateTime;
-  callback : TProc<BigInteger, IError>);
+  const timestamp: TUnixDateTime;
+  const callback : TProc<BigInteger, IError>);
 begin
   Self.get(Format('module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
   procedure(response: TJsonValue; err: IError)
@@ -507,8 +507,8 @@ begin
 end;
 
 procedure TEtherscan.getTransactions(
-  address : TAddress;
-  callback: TProc<ITransactions, IError>);
+  const address : TAddress;
+  const callback: TProc<ITransactions, IError>);
 begin
   Self.get(Format('module=account&action=txlist&address=%s&sort=desc', [address]),
   procedure(response: TJsonValue; err: IError)
@@ -535,8 +535,8 @@ begin
 end;
 
 procedure TEtherscan.getErc20TransferEvents(
-  address : TAddress;
-  callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
+  const address : TAddress;
+  const callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
 begin
   Self.get(Format('module=account&action=tokentx&address=%s&sort=desc', [address]),
   procedure(response: TJsonValue; err: IError)
@@ -563,8 +563,8 @@ begin
 end;
 
 procedure TEtherscan.getContractABI(
-  contract: TAddress;
-  callback: TProc<IContractABI, IError>);
+  const contract: TAddress;
+  const callback: TProc<IContractABI, IError>);
 begin
   Self.get(Format('module=contract&action=getabi&address=%s', [contract]),
   procedure(response: TJsonValue; err: IError)
@@ -595,8 +595,8 @@ begin
 end;
 
 procedure TEtherscan.getContractSourceCode(
-  contract: TAddress;
-  callback: TProc<string, IError>);
+  const contract: TAddress;
+  const callback: TProc<string, IError>);
 begin
   Self.get(Format('module=contract&action=getsourcecode&address=%s', [contract]),
   procedure(response: TJsonValue; err: IError)

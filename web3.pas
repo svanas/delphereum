@@ -218,8 +218,6 @@ type
     function isErr: Boolean;
     function ifOk(const proc: TProc<T>): IResult<T>;
     function ifErr(const proc: TProc<IError>): IResult<T>;
-    function &and(const predicate: TFunc<T, Boolean>; const proc: TProc<T>): IResult<T>; overload;
-    function &and(const predicate: TFunc<IError, Boolean>; const proc: TProc<IError>): IResult<T>; overload;
     procedure &else(const proc: TProc<T>); overload;
     procedure &else(const proc: TProc<IError>); overload;
     procedure into(const callback: TProc<T, IError>);
@@ -230,17 +228,15 @@ type
     FValue: T;
     FError: IError;
   public
-    class function Ok(aValue: T): IResult<T>;
-    class function Err(aDefault: T; aError: IError): IResult<T>; overload;
-    class function Err(aDefault: T; aError: string): IResult<T>; overload;
+    class function Ok(const aValue: T): IResult<T>;
+    class function Err(const aDefault: T; const aError: IError): IResult<T>; overload;
+    class function Err(const aDefault: T; const aError: string): IResult<T>; overload;
     function Value: T;
     function Error: IError;
     function isOk: Boolean;
     function isErr: Boolean;
     function ifOk(const proc: TProc<T>): IResult<T>;
     function ifErr(const proc: TProc<IError>): IResult<T>;
-    function &and(const predicate: TFunc<T, Boolean>; const proc: TProc<T>): IResult<T>; overload;
-    function &and(const predicate: TFunc<IError, Boolean>; const proc: TProc<IError>): IResult<T>; overload;
     procedure &else(const proc: TProc<T>); overload;
     procedure &else(const proc: TProc<IError>); overload;
     procedure into(const callback: TProc<T, IError>);
@@ -253,29 +249,29 @@ type
     function Call(
       const URL   : string;
       const method: string;
-      args        : array of const): IResult<TJsonObject>; overload;
+      const args  : array of const): IResult<TJsonObject>; overload;
     procedure Call(
-      const URL   : string;
-      const method: string;
-      args        : array of const;
-      callback    : TProc<TJsonObject, IError>); overload;
+      const URL     : string;
+      const method  : string;
+      const args    : array of const;
+      const callback: TProc<TJsonObject, IError>); overload;
   end;
 
   IPubSub = interface
   ['{D63B43A1-60E4-4107-8B14-925399A4850A}']
     function Call(
-      const URL   : string;
-      security    : TSecurity;
-      const method: string;
-      args        : array of const): IResult<TJsonObject>; overload;
+      const URL     : string;
+      const security: TSecurity;
+      const method  : string;
+      const args    : array of const): IResult<TJsonObject>; overload;
     procedure Call(
-      const URL   : string;
-      security    : TSecurity;
-      const method: string;
-      args        : array of const;
-      callback    : TProc<TJsonObject, IError>); overload;
+      const URL     : string;
+      const security: TSecurity;
+      const method  : string;
+      const args    : array of const;
+      const callback: TProc<TJsonObject, IError>); overload;
 
-    procedure Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
+    procedure Subscribe(const subscription: string; const callback: TProc<TJsonObject, IError>);
     procedure Unsubscribe(const subscription: string);
     procedure Disconnect;
 
@@ -284,19 +280,26 @@ type
   end;
 
   TSignatureRequestResult = reference to procedure(approved: Boolean; err: IError);
-  TOnSignatureRequest     = reference to procedure(from, &to: TAddress; gasPrice: TWei;
-                            estimatedGas: BigInteger; callback: TSignatureRequestResult);
+  TOnSignatureRequest     = reference to procedure(
+                              const from, &to   : TAddress;
+                              const gasPrice    : TWei;
+                              const estimatedGas: BigInteger;
+                              const callback    : TSignatureRequestResult);
 
   IWeb3 = interface
   ['{D4C1A132-2296-40C0-B6FB-6B326EFB8A26}']
     function Chain: TChain;
-    procedure LatestPrice(callback: TProc<Double, IError>);
+    procedure LatestPrice(const callback: TProc<Double, IError>);
 
     function  GetCustomGasPrice: TWei;
-    procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
+    procedure CanSignTransaction(
+      const from, &to   : TAddress;
+      const gasPrice    : TWei;
+      const estimatedGas: BigInteger;
+      const callback    : TSignatureRequestResult);
 
-    function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload;
-    procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload;
+    function  Call(const method: string; const args: array of const): IResult<TJsonObject>; overload;
+    procedure Call(const method: string; const args: array of const; const callback: TProc<TJsonObject, IError>); overload;
   end;
 
   TCustomWeb3 = class abstract(TInterfacedObject, IWeb3)
@@ -306,13 +309,17 @@ type
     FOnSignatureRequest: TOnSignatureRequest;
   public
     function Chain: TChain;
-    procedure LatestPrice(callback: TProc<Double, IError>);
+    procedure LatestPrice(const callback: TProc<Double, IError>);
 
     function  GetCustomGasPrice: TWei;
-    procedure CanSignTransaction(from, &to: TAddress; gasPrice: TWei; estimatedGas: BigInteger; callback: TSignatureRequestResult);
+    procedure CanSignTransaction(
+      const from, &to   : TAddress;
+      const gasPrice    : TWei;
+      const estimatedGas: BigInteger;
+      const callback    : TSignatureRequestResult);
 
-    function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload; virtual; abstract;
-    procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; virtual; abstract;
+    function  Call(const method: string; const args: array of const): IResult<TJsonObject>; overload; virtual; abstract;
+    procedure Call(const method: string; const args: array of const; const callback: TProc<TJsonObject, IError>); overload; virtual; abstract;
 
     property OnCustomGasPrice  : TOnCustomGasPrice   read FOnCustomGasPrice   write FOnCustomGasPrice;
     property OnSignatureRequest: TOnSignatureRequest read FOnSignatureRequest write FOnSignatureRequest;
@@ -322,22 +329,22 @@ type
   private
     FProtocol: IJsonRpc;
   public
-    constructor Create(const aURL: string); overload;
-    constructor Create(const aURL: string; aTxType: Byte); overload;
-    constructor Create(aChain: TChain); overload;
-    constructor Create(aChain: TChain; aProtocol: IJsonRpc); overload;
+    constructor Create(const aURL: TURL); overload;
+    constructor Create(const aURL: TURL; const aTxType: Byte); overload;
+    constructor Create(const aChain: TChain); overload;
+    constructor Create(const aChain: TChain; const aProtocol: IJsonRpc); overload;
 
-    function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload; override;
-    procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; override;
+    function  Call(const method: string; const args: array of const): IResult<TJsonObject>; overload; override;
+    procedure Call(const method: string; const args: array of const; const callback: TProc<TJsonObject, IError>); overload; override;
   end;
 
   IWeb3Ex = interface(IWeb3)
   ['{DD13EBE0-3E4E-49B8-A41D-B58C7DD0322F}']
-    procedure Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
+    procedure Subscribe(const subscription: string; const callback: TProc<TJsonObject, IError>);
     procedure Unsubscribe(const subscription: string);
     procedure Disconnect;
-    function OnError(callback: TProc<IError>): IWeb3Ex;
-    function OnDisconnect(callback: TProc): IWeb3Ex;
+    function OnError(const callback: TProc<IError>): IWeb3Ex;
+    function OnDisconnect(const callback: TProc): IWeb3Ex;
   end;
 
   TWeb3Ex = class(TCustomWeb3, IWeb3Ex)
@@ -346,28 +353,28 @@ type
     FSecurity: TSecurity;
   public
     constructor Create(
-      const aURL: string;
-      aProtocol : IPubSub;
-      aSecurity : TSecurity = TSecurity.Automatic); overload;
+      const aURL     : TURL;
+      const aProtocol: IPubSub;
+      const aSecurity: TSecurity = TSecurity.Automatic); overload;
     constructor Create(
-      const aURL: string;
-      aTxType   : Byte;
-      aProtocol : IPubSub;
-      aSecurity : TSecurity = TSecurity.Automatic); overload;
+      const aURL     : TURL;
+      const aTxType  : Byte;
+      const aProtocol: IPubSub;
+      const aSecurity: TSecurity = TSecurity.Automatic); overload;
     constructor Create(
-      aChain    : TChain;
-      aProtocol : IPubSub;
-      aSecurity : TSecurity = TSecurity.Automatic); overload;
+      const aChain   : TChain;
+      const aProtocol: IPubSub;
+      const aSecurity: TSecurity = TSecurity.Automatic); overload;
 
-    function  Call(const method: string; args: array of const): IResult<TJsonObject>; overload; override;
-    procedure Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>); overload; override;
+    function  Call(const method: string; const args: array of const): IResult<TJsonObject>; overload; override;
+    procedure Call(const method: string; const args: array of const; const callback: TProc<TJsonObject, IError>); overload; override;
 
-    procedure Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
+    procedure Subscribe(const subscription: string; const callback: TProc<TJsonObject, IError>);
     procedure Unsubscribe(const subscription: string);
     procedure Disconnect;
 
-    function OnError(callback: TProc<IError>): IWeb3Ex;
-    function OnDisconnect(callback: TProc): IWeb3Ex;
+    function OnError(const callback: TProc<IError>): IWeb3Ex;
+    function OnDisconnect(const callback: TProc): IWeb3Ex;
   end;
 
 function Now: TUnixDateTime; inline;
@@ -508,7 +515,7 @@ end;
 
 { TResult }
 
-class function TResult<T>.Ok(aValue: T): IResult<T>;
+class function TResult<T>.Ok(const aValue: T): IResult<T>;
 begin
   const output = TResult<T>.Create;
   output.FValue := aValue;
@@ -516,7 +523,7 @@ begin
   Result := output;
 end;
 
-class function TResult<T>.Err(aDefault: T; aError: IError): IResult<T>;
+class function TResult<T>.Err(const aDefault: T; const aError: IError): IResult<T>;
 begin
   const output = TResult<T>.Create;
   output.FValue := aDefault;
@@ -527,7 +534,7 @@ begin
   Result := output;
 end;
 
-class function TResult<T>.Err(aDefault: T; aError: string): IResult<T>;
+class function TResult<T>.Err(const aDefault: T; const aError: string): IResult<T>;
 begin
   Result := TResult<T>.Err(aDefault, TError.Create(aError));
 end;
@@ -564,18 +571,6 @@ begin
   if Self.isErr then proc(Self.Error);
 end;
 
-function TResult<T>.&and(const predicate: TFunc<T, Boolean>; const proc: TProc<T>): IResult<T>;
-begin
-  Result := Self;
-  if Self.isOk and predicate(Self.Value) then proc(Self.Value);
-end;
-
-function TResult<T>.&and(const predicate: TFunc<IError, Boolean>; const proc: TProc<IError>): IResult<T>;
-begin
-  Result := Self;
-  if Self.isErr and predicate(Self.Error) then proc(Self.Error);
-end;
-
 procedure TResult<T>.&else(const proc: TProc<T>);
 begin
   if Self.isOk then proc(Self.Value);
@@ -599,7 +594,7 @@ begin
 end;
 
 // returns the chain’s latest asset price in USD (eg. ETH-USD for Ethereum, BNB-USD for BNB Chain, MATIC-USD for Polygon, etc)
-procedure TCustomWeb3.LatestPrice(callback: TProc<Double, IError>);
+procedure TCustomWeb3.LatestPrice(const callback: TProc<Double, IError>);
 begin
   if Chain = Ethereum then
     web3.eth.chainlink.TAggregatorV3.Create(Self, '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419').Price(procedure(price: Double; err: IError)
@@ -678,10 +673,10 @@ begin
 end;
 
 procedure TCustomWeb3.CanSignTransaction(
-  from, &to   : TAddress;
-  gasPrice    : TWei;
-  estimatedGas: BigInteger;
-  callback    : TSignatureRequestResult);
+  const from, &to   : TAddress;
+  const gasPrice    : TWei;
+  const estimatedGas: BigInteger;
+  const callback    : TSignatureRequestResult);
 resourcestring
   RS_SIGNATURE_REQUEST = 'Your signature is being requested.'
         + #13#10#13#10 + 'Network: %s'
@@ -745,33 +740,33 @@ end;
 
 { TWeb3 }
 
-constructor TWeb3.Create(const aURL: string);
+constructor TWeb3.Create(const aURL: TURL);
 begin
   Self.Create(Ethereum.SetRPC(HTTPS, aURL));
 end;
 
-constructor TWeb3.Create(const aURL: string; aTxType: Byte);
+constructor TWeb3.Create(const aURL: TURL; const aTxType: Byte);
 begin
   Self.Create(Ethereum.SetRPC(HTTPS, aURL).SetTxType(aTxType));
 end;
 
-constructor TWeb3.Create(aChain: TChain);
+constructor TWeb3.Create(const aChain: TChain);
 begin
   Self.Create(aChain, TJsonRpcHttps.Create);
 end;
 
-constructor TWeb3.Create(aChain: TChain; aProtocol: IJsonRpc);
+constructor TWeb3.Create(const aChain: TChain; const aProtocol: IJsonRpc);
 begin
   Self.FChain    := aChain;
   Self.FProtocol := aProtocol;
 end;
 
-function TWeb3.Call(const method: string; args: array of const): IResult<TJsonObject>;
+function TWeb3.Call(const method: string; const args: array of const): IResult<TJsonObject>;
 begin
   Result := Self.FProtocol.Call(Self.Chain.RPC[HTTPS], method, args);
 end;
 
-procedure TWeb3.Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>);
+procedure TWeb3.Call(const method: string; const args: array of const; const callback: TProc<TJsonObject, IError>);
 begin
   Self.FProtocol.Call(Self.Chain.RPC[HTTPS], method, args, callback);
 end;
@@ -779,43 +774,43 @@ end;
 { TWeb3Ex }
 
 constructor TWeb3Ex.Create(
-  const aURL: string;
-  aProtocol : IPubSub;
-  aSecurity : TSecurity = TSecurity.Automatic);
+  const aURL     : TURL;
+  const aProtocol: IPubSub;
+  const aSecurity: TSecurity = TSecurity.Automatic);
 begin
   Self.Create(Ethereum.SetRPC(WebSocket, aURL), aProtocol, aSecurity);
 end;
 
 constructor TWeb3Ex.Create(
-  const aURL: string;
-  aTxType   : Byte;
-  aProtocol : IPubSub;
-  aSecurity : TSecurity = TSecurity.Automatic);
+  const aURL     : TURL;
+  const aTxType  : Byte;
+  const aProtocol: IPubSub;
+  const aSecurity: TSecurity = TSecurity.Automatic);
 begin
   Self.Create(Ethereum.SetRPC(WebSocket, aURL).SetTxType(aTxType), aProtocol, aSecurity);
 end;
 
 constructor TWeb3Ex.Create(
-  aChain    : TChain;
-  aProtocol : IPubSub;
-  aSecurity : TSecurity = TSecurity.Automatic);
+  const aChain   : TChain;
+  const aProtocol: IPubSub;
+  const aSecurity: TSecurity = TSecurity.Automatic);
 begin
   Self.FChain    := aChain;
   Self.FProtocol := aProtocol;
   Self.FSecurity := aSecurity;
 end;
 
-function TWeb3Ex.Call(const method: string; args: array of const): IResult<TJsonObject>;
+function TWeb3Ex.Call(const method: string; const args: array of const): IResult<TJsonObject>;
 begin
   Result := Self.FProtocol.Call(Self.Chain.RPC[WebSocket], Self.FSecurity, method, args);
 end;
 
-procedure TWeb3Ex.Call(const method: string; args: array of const; callback: TProc<TJsonObject, IError>);
+procedure TWeb3Ex.Call(const method: string; const args: array of const; const callback: TProc<TJsonObject, IError>);
 begin
   Self.FProtocol.Call(Self.Chain.RPC[WebSocket], Self.FSecurity, method, args, callback);
 end;
 
-procedure TWeb3Ex.Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
+procedure TWeb3Ex.Subscribe(const subscription: string; const callback: TProc<TJsonObject, IError>);
 begin
   Self.FProtocol.Subscribe(subscription, callback);
 end;
@@ -830,13 +825,13 @@ begin
   Self.FProtocol.Disconnect;
 end;
 
-function TWeb3Ex.OnError(callback: TProc<IError>): IWeb3Ex;
+function TWeb3Ex.OnError(const callback: TProc<IError>): IWeb3Ex;
 begin
   Self.FProtocol.OnError(callback);
   Result := Self;
 end;
 
-function TWeb3Ex.OnDisconnect(callback: TProc): IWeb3Ex;
+function TWeb3Ex.OnDisconnect(const callback: TProc): IWeb3Ex;
 begin
   Self.FProtocol.OnDisconnect(callback);
   Result := Self;
