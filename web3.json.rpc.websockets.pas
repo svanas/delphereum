@@ -43,34 +43,34 @@ type
     FOnDisconnect: TProc;
   public
     function Call(
-      const URL   : string;
-      security    : TSecurity;
-      const method: string;
-      args        : array of const): IResult<TJsonObject>; overload; virtual; abstract;
+      const URL     : string;
+      const security: TSecurity;
+      const method  : string;
+      const args    : array of const): IResult<TJsonObject>; overload; virtual; abstract;
     procedure Call(
-      const URL   : string;
-      security    : TSecurity;
-      const method: string;
-      args        : array of const;
-      callback    : TProc<TJsonObject, IError>); overload; virtual; abstract;
+      const URL     : string;
+      const security: TSecurity;
+      const method  : string;
+      const args    : array of const;
+      const callback: TProc<TJsonObject, IError>); overload; virtual; abstract;
 
-    procedure Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>); virtual; abstract;
+    procedure Subscribe(const subscription: string; const callback: TProc<TJsonObject, IError>); virtual; abstract;
     procedure Unsubscribe(const subscription: string); virtual; abstract;
     procedure Disconnect; virtual; abstract;
 
-    function OnError(Value: TProc<IError>): IPubSub;
-    function OnDisconnect(Value: TProc): IPubSub;
+    function OnError(const Value: TProc<IError>): IPubSub;
+    function OnDisconnect(const Value: TProc): IPubSub;
   end;
 
 implementation
 
-function TJsonRpcWebSocket.OnError(Value: TProc<IError>): IPubSub;
+function TJsonRpcWebSocket.OnError(const Value: TProc<IError>): IPubSub;
 begin
   Self.FOnError := Value;
   Result := Self;
 end;
 
-function TJsonRpcWebSocket.OnDisconnect(Value: TProc): IPubSub;
+function TJsonRpcWebSocket.OnDisconnect(const Value: TProc): IPubSub;
 begin
   Self.FOnDisconnect := Value;
   Result := Self;

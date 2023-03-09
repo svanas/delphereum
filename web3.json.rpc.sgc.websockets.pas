@@ -65,17 +65,17 @@ type
   public
     destructor Destroy; override;
     function Call(
-      const URL   : string;
-      security    : TSecurity;
-      const method: string;
-      args        : array of const): IResult<TJsonObject>; overload; override;
+      const URL     : string;
+      const security: TSecurity;
+      const method  : string;
+      const args    : array of const): IResult<TJsonObject>; overload; override;
     procedure Call(
-      const URL   : string;
-      security    : TSecurity;
-      const method: string;
-      args        : array of const;
-      callback    : TProc<TJsonObject, IError>); overload; override;
-    procedure Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>); override;
+      const URL     : string;
+      const security: TSecurity;
+      const method  : string;
+      const args    : array of const;
+      const callback: TProc<TJsonObject, IError>); overload; override;
+    procedure Subscribe(const subscription: string; const callback: TProc<TJsonObject, IError>); override;
     procedure Unsubscribe(const subscription: string); override;
     procedure Disconnect; override;
   end;
@@ -274,10 +274,10 @@ begin
 end;
 
 function TJsonRpcSgcWebSocket.Call(
-  const URL   : string;
-  security    : TSecurity;
-  const method: string;
-  args        : array of const): IResult<TJsonObject>;
+  const URL     : string;
+  const security: TSecurity;
+  const method  : string;
+  const args    : array of const): IResult<TJsonObject>;
 begin
   const response = web3.json.unmarshal(Client[URL, security].WriteAndWaitData(CreatePayload(method, args)));
   if Assigned(response) then
@@ -299,11 +299,11 @@ begin
 end;
 
 procedure TJsonRpcSgcWebSocket.Call(
-  const URL   : string;
-  security    : TSecurity;
-  const method: string;
-  args        : array of const;
-  callback    : TProc<TJsonObject, IError>);
+  const URL     : string;
+  const security: TSecurity;
+  const method  : string;
+  const args    : array of const;
+  const callback: TProc<TJsonObject, IError>);
 begin
   const payload = (function(args: array of const): string
   begin
@@ -324,7 +324,7 @@ begin
   Client[URL, security].WriteData(payload);
 end;
 
-procedure TJsonRpcSgcWebSocket.Subscribe(const subscription: string; callback: TProc<TJsonObject, IError>);
+procedure TJsonRpcSgcWebSocket.Subscribe(const subscription: string; const callback: TProc<TJsonObject, IError>);
 begin
   Subscriptions.Enter;
   try

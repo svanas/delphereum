@@ -275,8 +275,8 @@ type
     procedure Unsubscribe(const subscription: string);
     procedure Disconnect;
 
-    function OnError(callback: TProc<IError>): IPubSub;
-    function OnDisconnect(callback: TProc): IPubSub;
+    function OnError(const callback: TProc<IError>): IPubSub;
+    function OnDisconnect(const callback: TProc): IPubSub;
   end;
 
   TSignatureRequestResult = reference to procedure(approved: Boolean; err: IError);
