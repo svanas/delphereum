@@ -93,7 +93,7 @@ function prefix(const msg: string): TBytes;
 begin
   Result := web3.utils.sha3(
     TEncoding.UTF8.GetBytes(
-      #25 + 'Ethereum Signed Message:' + #10 + IntToStr(Length(msg)) + msg
+      #25 + 'Ethereum Signed Message:' + #10 + IntToStr(TEncoding.UTF8.GetByteCount(msg)) + msg
     )
   );
 end;
