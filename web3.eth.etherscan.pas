@@ -54,7 +54,7 @@ type
   end;
 
   ITransactions = interface(IDeserializedArray<ITransaction>)
-    procedure FilterBy(recipient: TAddress);
+    procedure FilterBy(const recipient: TAddress);
   end;
 
   IErc20TransferEvent = interface
@@ -197,7 +197,7 @@ type
   TTransactions = class(TDeserializedArray<ITransaction>, ITransactions)
   public
     function Item(const Index: Integer): ITransaction; override;
-    procedure FilterBy(recipient: TAddress);
+    procedure FilterBy(const recipient: TAddress);
   end;
 
 function TTransactions.Item(const Index: Integer): ITransaction;
@@ -205,7 +205,7 @@ begin
   Result := createTransaction(TJsonArray(FJsonValue)[Index]);
 end;
 
-procedure TTransactions.FilterBy(recipient: TAddress);
+procedure TTransactions.FilterBy(const recipient: TAddress);
 begin
   var I := 0;
   while I < Self.Count do

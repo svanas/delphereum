@@ -40,14 +40,14 @@ type
   TItem = record
     Bytes   : TBytes;
     DataType: TDataType;
-    constructor Create(const aBytes: TBytes; aDataType: TDataType);
+    constructor Create(const aBytes: TBytes; const aDataType: TDataType);
   end;
 
-function encode(item: Integer): IResult<TBytes>; overload;
+function encode(const item: Integer): IResult<TBytes>; overload;
 function encode(const item: string): IResult<TBytes>; overload;
-function encode(item: TVarRec): IResult<TBytes>; overload;
-function encode(items: array of const): IResult<TBytes>; overload;
-function recode(items: array of TItem): IResult<TBytes>;
+function encode(const item: TVarRec): IResult<TBytes>; overload;
+function encode(const items: array of const): IResult<TBytes>; overload;
+function recode(const items: array of TItem): IResult<TBytes>;
 function decode(const input: TBytes): IResult<TArray<TItem>>;
 
 implementation
@@ -60,9 +60,9 @@ uses
   web3.error,
   web3.utils;
 
-function encodeLength(len, offset: Integer): IResult<TBytes>;
+function encodeLength(const len, offset: Integer): IResult<TBytes>;
 
-  function toBinary(x: Integer): TBytes;
+  function toBinary(const x: Integer): TBytes;
   begin
     if x = 0 then
       Result := []
@@ -135,7 +135,7 @@ begin
   end;
 end;
 
-function encode(item: Integer): IResult<TBytes>;
+function encode(const item: Integer): IResult<TBytes>;
 begin
   var arg: TVarRec;
   arg.VType := vtInteger;
@@ -151,7 +151,7 @@ begin
   Result := encode(arg);
 end;
 
-function encode(item: TVarRec): IResult<TBytes>;
+function encode(const item: TVarRec): IResult<TBytes>;
 begin
   if item.VType = vtVariant then
     Result := encodeItem(item.VVariant^)
@@ -159,7 +159,7 @@ begin
     Result := encodeItem(web3.utils.fromHex(web3.utils.toHex(item)));
 end;
 
-function encode(items: array of const): IResult<TBytes>;
+function encode(const items: array of const): IResult<TBytes>;
 begin
   var output: TBytes := [];
   for var item in items do
@@ -174,7 +174,7 @@ begin
     Result := TResult<TBytes>.Ok(Result.Value + output);
 end;
 
-function recode(items: array of TItem): IResult<TBytes>;
+function recode(const items: array of TItem): IResult<TBytes>;
 begin
   var output: TBytes := [];
   for var item in items do
@@ -200,10 +200,10 @@ type
     Offset  : Integer;
     Length  : Integer;
     DataType: TDataType;
-    constructor Create(aOffset, aLength: Integer; aDataType: TDataType);
+    constructor Create(const aOffset, aLength: Integer; const aDataType: TDataType);
   end;
 
-constructor TLength.Create(aOffset, aLength: Integer; aDataType: TDataType);
+constructor TLength.Create(const aOffset, aLength: Integer; const aDataType: TDataType);
 begin
   Self.Offset   := aOffset;
   Self.Length   := aLength;
@@ -304,7 +304,7 @@ begin
   Result := TResult<TLength>.Err(empty, 'input does not conform to RLP encoding');
 end;
 
-constructor TItem.Create(const aBytes: TBytes; aDataType: TDataType);
+constructor TItem.Create(const aBytes: TBytes; const aDataType: TDataType);
 begin
   Self.Bytes    := aBytes;
   Self.DataType := aDataType;

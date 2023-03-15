@@ -47,86 +47,86 @@ type
   TAave = class(TLendingProtocol)
   protected
     class procedure UNDERLYING_TO_TOKEN(
-      client  : IWeb3;
-      reserve : TReserve;
-      callback: TProc<TAddress, IError>);
+      const client  : IWeb3;
+      const reserve : TReserve;
+      const callback: TProc<TAddress, IError>);
     class procedure TOKEN_TO_UNDERLYING(
-      client  : IWeb3;
-      token   : TAddress;
-      callback: TProc<TAddress, IError>);
+      const client  : IWeb3;
+      const token   : TAddress;
+      const callback: TProc<TAddress, IError>);
     class procedure Approve(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
   public
     class function Name: string; override;
     class function Supports(
-      chain  : TChain;
-      reserve: TReserve): Boolean; override;
+      const chain  : TChain;
+      const reserve: TReserve): Boolean; override;
     class procedure APY(
-      client   : IWeb3;
-      etherscan: IEtherscan;
-      reserve  : TReserve;
-      period   : TPeriod;
-      callback : TProc<Double, IError>); override;
+      const client   : IWeb3;
+      const etherscan: IEtherscan;
+      const reserve  : TReserve;
+      const period   : TPeriod;
+      const callback : TProc<Double, IError>); override;
     class procedure Deposit(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
-      client  : IWeb3;
-      owner   : TAddress;
-      reserve : TReserve;
-      callback: TProc<BigInteger, IError>); override;
+      const client  : IWeb3;
+      const owner   : TAddress;
+      const reserve : TReserve;
+      const callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
   TAaveLendingPool = class(TCustomContract)
   protected
-    procedure GetReserveData(reserve: TReserve; callback: TProc<TTuple, IError>);
+    procedure GetReserveData(const reserve: TReserve; const callback: TProc<TTuple, IError>);
   public
     procedure Deposit(
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
     procedure Withdraw(
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
-    procedure CurrentLiquidityRate(reserve: TReserve; callback: TProc<BigInteger, IError>);
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
+    procedure CurrentLiquidityRate(const reserve: TReserve; const callback: TProc<BigInteger, IError>);
   end;
 
   TAaveProtocolDataProvider = class(TCustomContract)
-    procedure GetReserveTokensAddresses(reserve : TReserve; callback: TProc<TTuple, IError>);
+    procedure GetReserveTokensAddresses(const reserve: TReserve; const callback: TProc<TTuple, IError>);
   end;
 
   TAaveLendingPoolAddressesProvider = class(TCustomContract)
   public
-    constructor Create(aClient: IWeb3); reintroduce;
-    procedure GetLendingPool(callback: TProc<TAddress, IError>);
-    procedure GetAddress(id: TBytes32; callback: TProc<TAddress, IError>);
-    procedure GetProtocolDataProvider(callback: TProc<TAddress, IError>);
+    constructor Create(const aClient: IWeb3); reintroduce;
+    procedure GetLendingPool(const callback: TProc<TAddress, IError>);
+    procedure GetAddress(const id: TBytes32; const callback: TProc<TAddress, IError>);
+    procedure GetProtocolDataProvider(const callback: TProc<TAddress, IError>);
   end;
 
   TaToken = class(TERC20)
   public
-    procedure UNDERLYING_ASSET_ADDRESS(callback: TProc<TAddress, IError>);
+    procedure UNDERLYING_ASSET_ADDRESS(const callback: TProc<TAddress, IError>);
   end;
 
 implementation
@@ -134,9 +134,9 @@ implementation
 { TAave }
 
 class procedure TAave.UNDERLYING_TO_TOKEN(
-  client  : IWeb3;
-  reserve : TReserve;
-  callback: TProc<TAddress, IError>);
+  const client  : IWeb3;
+  const reserve : TReserve;
+  const callback: TProc<TAddress, IError>);
 begin
   const ap = TAaveLendingPoolAddressesProvider.Create(client);
   try
@@ -166,9 +166,9 @@ begin
 end;
 
 class procedure TAave.TOKEN_TO_UNDERLYING(
-  client  : IWeb3;
-  token   : TAddress;
-  callback: TProc<TAddress, IError>);
+  const client  : IWeb3;
+  const token   : TAddress;
+  const callback: TProc<TAddress, IError>);
 begin
   const erc20 = TaToken.Create(client, token);
   try
@@ -179,11 +179,11 @@ begin
 end;
 
 class procedure TAave.Approve(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   const ap = TAaveLendingPoolAddressesProvider.Create(client);
   if Assigned(ap) then
@@ -213,17 +213,17 @@ begin
   Result := 'Aave';
 end;
 
-class function TAave.Supports(chain: TChain; reserve: TReserve): Boolean;
+class function TAave.Supports(const chain: TChain; const reserve: TReserve): Boolean;
 begin
   Result := (chain = Ethereum) and (reserve in [DAI, USDC, USDT, TUSD]);
 end;
 
 class procedure TAave.APY(
-  client   : IWeb3;
-  etherscan: IEtherscan;
-  reserve  : TReserve;
-  period   : TPeriod;
-  callback : TProc<Double, IError>);
+  const client   : IWeb3;
+  const etherscan: IEtherscan;
+  const reserve  : TReserve;
+  const period   : TPeriod;
+  const callback : TProc<Double, IError>);
 begin
   const ap = TAaveLendingPoolAddressesProvider.Create(client);
   if Assigned(ap) then
@@ -255,11 +255,11 @@ begin
 end;
 
 class procedure TAave.Deposit(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   // Before supplying an asset, we must first approve the LendingPool contract.
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -294,10 +294,10 @@ begin
 end;
 
 class procedure TAave.Balance(
-  client  : IWeb3;
-  owner   : TAddress;
-  reserve : TReserve;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const owner   : TAddress;
+  const reserve : TReserve;
+  const callback: TProc<BigInteger, IError>);
 begin
   Self.UNDERLYING_TO_TOKEN(client, reserve, procedure(token: TAddress; err: IError)
   begin
@@ -309,10 +309,10 @@ begin
 end;
 
 class procedure TAave.Withdraw(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -332,11 +332,11 @@ begin
 end;
 
 class procedure TAave.WithdrawEx(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   const ap = TAaveLendingPoolAddressesProvider.Create(client);
   if Assigned(ap) then
@@ -370,10 +370,10 @@ end;
 { TAaveLendingPool }
 
 procedure TAaveLendingPool.Deposit(
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   reserve.Address(Client.Chain)
     .ifErr(procedure(err: IError)
@@ -395,10 +395,10 @@ begin
 end;
 
 procedure TAaveLendingPool.Withdraw(
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   reserve.Address(Client.Chain)
     .ifErr(procedure(err: IError)
@@ -419,7 +419,7 @@ begin
     end);
 end;
 
-procedure TAaveLendingPool.GetReserveData(reserve: TReserve; callback: TProc<TTuple, IError>);
+procedure TAaveLendingPool.GetReserveData(const reserve: TReserve; const callback: TProc<TTuple, IError>);
 begin
   reserve.Address(Client.Chain)
     .ifErr(procedure(err: IError)
@@ -432,7 +432,7 @@ begin
     end);
 end;
 
-procedure TAaveLendingPool.CurrentLiquidityRate(reserve: TReserve; callback: TProc<BigInteger, IError>);
+procedure TAaveLendingPool.CurrentLiquidityRate(const reserve: TReserve; const callback: TProc<BigInteger, IError>);
 begin
   GetReserveData(reserve, procedure(tup: TTuple; err: IError)
   begin
@@ -445,7 +445,7 @@ end;
 
 { TAaveProtocolDataProvider }
 
-procedure TAaveProtocolDataProvider.GetReserveTokensAddresses(reserve : TReserve; callback: TProc<TTuple, IError>);
+procedure TAaveProtocolDataProvider.GetReserveTokensAddresses(const reserve: TReserve; const callback: TProc<TTuple, IError>);
 begin
   reserve.Address(Client.Chain)
     .ifErr(procedure(err: IError)
@@ -460,12 +460,12 @@ end;
 
 { TAaveLendingPoolAddressesProvider }
 
-constructor TAaveLendingPoolAddressesProvider.Create(aClient: IWeb3);
+constructor TAaveLendingPoolAddressesProvider.Create(const aClient: IWeb3);
 begin
   inherited Create(aClient, '0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5');
 end;
 
-procedure TAaveLendingPoolAddressesProvider.GetLendingPool(callback: TProc<TAddress, IError>);
+procedure TAaveLendingPoolAddressesProvider.GetLendingPool(const callback: TProc<TAddress, IError>);
 begin
   web3.eth.call(Client, Contract, 'getLendingPool()', [], procedure(hex: string; err: IError)
   begin
@@ -476,7 +476,7 @@ begin
   end);
 end;
 
-procedure TAaveLendingPoolAddressesProvider.GetAddress(id: TBytes32; callback: TProc<TAddress, IError>);
+procedure TAaveLendingPoolAddressesProvider.GetAddress(const id: TBytes32; const callback: TProc<TAddress, IError>);
 begin
   web3.eth.call(Client, Contract, 'getAddress(bytes32)', [web3.utils.toHex(id)], procedure(hex: string; err: IError)
   begin
@@ -487,7 +487,7 @@ begin
   end);
 end;
 
-procedure TAaveLendingPoolAddressesProvider.GetProtocolDataProvider(callback: TProc<TAddress, IError>);
+procedure TAaveLendingPoolAddressesProvider.GetProtocolDataProvider(const callback: TProc<TAddress, IError>);
 const
   id: TBytes32 = (1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 begin
@@ -496,7 +496,7 @@ end;
 
 { TaToken }
 
-procedure TaToken.UNDERLYING_ASSET_ADDRESS(callback: TProc<TAddress, IError>);
+procedure TaToken.UNDERLYING_ASSET_ADDRESS(const callback: TProc<TAddress, IError>);
 begin
   web3.eth.call(Client, Contract, 'UNDERLYING_ASSET_ADDRESS()', [], procedure(hex: string; err: IError)
   begin

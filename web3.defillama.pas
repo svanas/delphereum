@@ -40,10 +40,10 @@ type
     function Price : Double; // volume-weighted price based on real-time market data, translated to USD
   end;
 
-function coin(chain: TChain; address: TAddress; callback: TProc<ICoin, IError>): IAsyncResult; overload;
-function coin(chain: TChain; address: TAddress; callback: TProc<TJsonValue, IError>): IAsyncResult; overload;
+function coin(const chain: TChain; const address: TAddress; const callback: TProc<ICoin, IError>): IAsyncResult; overload;
+function coin(const chain: TChain; const address: TAddress; const callback: TProc<TJsonValue, IError>): IAsyncResult; overload;
 
-function price(chain: TChain; address: TAddress; callback: TProc<Double, IError>): IAsyncResult;
+function price(const chain: TChain; const address: TAddress; const callback: TProc<Double, IError>): IAsyncResult;
 
 implementation
 
@@ -90,7 +90,7 @@ begin
     Result := 'arbitrum';
 end;
 
-function coin(chain: TChain; address: TAddress; callback: TProc<ICoin, IError>): IAsyncResult;
+function coin(const chain: TChain; const address: TAddress; const callback: TProc<ICoin, IError>): IAsyncResult;
 begin
   Result := coin(chain, address, procedure(obj: TJsonValue; err: IError)
   begin
@@ -115,7 +115,7 @@ begin
   end);
 end;
 
-function coin(chain: TChain; address: TAddress; callback: TProc<TJsonValue, IError>): IAsyncResult;
+function coin(const chain: TChain; const address: TAddress; const callback: TProc<TJsonValue, IError>): IAsyncResult;
 begin
   Result := web3.http.get(
     Format('https://coins.llama.fi/prices/current/%s:%s/', [network(chain), address.ToChecksum]),
@@ -123,7 +123,7 @@ begin
   );
 end;
 
-function price(chain: TChain; address: TAddress; callback: TProc<Double, IError>): IAsyncResult;
+function price(const chain: TChain; const address: TAddress; const callback: TProc<Double, IError>): IAsyncResult;
 begin
   Result := coin(chain, address, procedure(coin: ICoin; err: IError)
   begin

@@ -40,7 +40,7 @@ type
 
   IPrivateKey = interface(IPublicKey)
     function Data: TBytes;
-    function NewChildKey(childIdx: UInt32): IPrivateKey;
+    function NewChildKey(const childIdx: UInt32): IPrivateKey;
     function PublicKey: IPublicKey;
   end;
 
@@ -88,7 +88,7 @@ begin
   Result := data + Copy(digest, 0, 4);
 end;
 
-function publicKeyFromPrivateKey(key: TBytes): TBytes; inline;
+function publicKeyFromPrivateKey(const key: TBytes): TBytes; inline;
 begin
   const params = web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, key);
   const pubKey = web3.crypto.publicKeyFromPrivateKey(params);
@@ -123,11 +123,11 @@ type
   protected
     class function isPrivate: Boolean; virtual;
   public
-    constructor Create(version, keyData, chainCode, childNumber, fingerprint: TBytes; depth: Byte);
+    constructor Create(const version, keyData, chainCode, childNumber, fingerprint: TBytes; const depth: Byte);
     function ToString: string; override;
   end;
 
-constructor TPublicKey.Create(version, keyData, chainCode, childNumber, fingerprint: TBytes; depth: Byte);
+constructor TPublicKey.Create(const version, keyData, chainCode, childNumber, fingerprint: TBytes; const depth: Byte);
 begin
   Self.version     := version;
   Self.keyData     := keyData;
@@ -168,12 +168,12 @@ end;
 type
   TPrivateKey = class(TPublicKey, IPrivateKey)
   private
-    function getIntermediary(childIdx: UInt32): TBytes;
+    function getIntermediary(const childIdx: UInt32): TBytes;
   protected
     class function isPrivate: Boolean; override;
   public
     function Data: TBytes;
-    function NewChildKey(childIdx: UInt32): IPrivateKey;
+    function NewChildKey(const childIdx: UInt32): IPrivateKey;
     function PublicKey: IPublicKey;
   end;
 
@@ -190,7 +190,7 @@ begin
 end;
 
 // derives a child key from a given parent
-function TPrivateKey.NewChildKey(childIdx: UInt32): IPrivateKey;
+function TPrivateKey.NewChildKey(const childIdx: UInt32): IPrivateKey;
 begin
   const intermediary = Self.getIntermediary(childIdx);
   Result := TPrivateKey.Create(
@@ -204,7 +204,7 @@ begin
 end;
 
 // get intermediary to create keydata and chaincode from
-function TPrivateKey.getIntermediary(childIdx: UInt32): TBytes;
+function TPrivateKey.getIntermediary(const childIdx: UInt32): TBytes;
 begin
   // hardened children are based on the private key, non-hardened children are based on the public key
   if childIdx >= firstHardenedChild then

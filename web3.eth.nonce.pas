@@ -39,9 +39,9 @@ uses
   web3.sync;
 
 procedure get(
-  client  : IWeb3;
-  address : TAddress;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const address : TAddress;
+  const callback: TProc<BigInteger, IError>);
 
 implementation
 
@@ -56,9 +56,9 @@ begin
 end;
 
 procedure get(
-  client  : IWeb3;
-  address : TAddress;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const address : TAddress;
+  const callback: TProc<BigInteger, IError>);
 begin
   nonce.Enter;
   try

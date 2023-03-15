@@ -50,12 +50,12 @@ type
   TNFTs = TArray<INFT>;
 
   TNFTsHelper = record helper for TNFTs
-    procedure Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
+    procedure Enumerate(const foreach: TProc<Integer, TProc>; const done: TProc);
     function Length: Integer;
   end;
 
-procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TJsonArray, IError>); overload;
-procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TNFTs, IError>); overload;
+procedure NFTs(const chain: TChain; const apiKey: string; const owner: TAddress; const callback: TProc<TJsonArray, IError>); overload;
+procedure NFTs(const chain: TChain; const apiKey: string; const owner: TAddress; const callback: TProc<TNFTs, IError>); overload;
 
 implementation
 
@@ -138,7 +138,7 @@ end;
 
 {------------------------------- TTokensHelper --------------------------------}
 
-procedure TNFTsHelper.Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
+procedure TNFTsHelper.Enumerate(const foreach: TProc<Integer, TProc>; const done: TProc);
 begin
   var next: TProc<TNFTs, Integer>;
 
@@ -171,7 +171,7 @@ end;
 
 {------------------------------ public functions ------------------------------}
 
-function baseURL(chain: TChain): IResult<string>;
+function baseURL(const chain: TChain): IResult<string>;
 begin
   if chain = Goerli then
     Result := TResult<string>.Ok('https://testnets-api.opensea.io/api/v1/')
@@ -182,7 +182,7 @@ begin
       Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
-procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TJsonArray, IError>); overload;
+procedure NFTs(const chain: TChain; const apiKey: string; const owner: TAddress; const callback: TProc<TJsonArray, IError>); overload;
 begin
   var result := TJsonArray.Create;
 
@@ -232,7 +232,7 @@ begin
   get(base.Value + 'assets?owner=' + string(owner), result);
 end;
 
-procedure NFTs(chain: TChain; const apiKey: string; owner: TAddress; callback: TProc<TNFTs, IError>);
+procedure NFTs(const chain: TChain; const apiKey: string; const owner: TAddress; const callback: TProc<TNFTs, IError>);
 begin
   NFTs(chain, apiKey, owner, procedure(arr: TJsonArray; err: IError)
   begin

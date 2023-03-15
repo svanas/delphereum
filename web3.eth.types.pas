@@ -93,21 +93,21 @@ type
   end;
 
   TAddressHelper = record helper for TAddress
-    constructor Create(arg: TArg); overload;
+    constructor Create(const arg: TArg); overload;
     constructor Create(const hex: string); overload;
-    class procedure Create(client: IWeb3; const name: string; callback: TProc<TAddress, IError>); overload; static;
-    procedure ToString(client: IWeb3; callback: TProc<string, IError>; abbreviated: Boolean = False);
+    class procedure Create(const client: IWeb3; const name: string; const callback: TProc<TAddress, IError>); overload; static;
+    procedure ToString(const client: IWeb3; const callback: TProc<string, IError>; const abbreviated: Boolean = False);
     function  ToChecksum: TAddress;
     function  Abbreviated: string;
-    procedure IsEOA(client: IWeb3; callback: TProc<Boolean, IError>);
+    procedure IsEOA(const client: IWeb3; const callback: TProc<Boolean, IError>);
     function  IsZero: Boolean;
     function  SameAs(const other: TAddress): Boolean;
   end;
 
   TPrivateKeyHelper = record helper for TPrivateKey
     class function Generate: TPrivateKey; static;
-    constructor Create(params: IECPrivateKeyParameters);
-    class function Prompt(&public: TAddress): IResult<TPrivateKey>; static;
+    constructor Create(const params: IECPrivateKeyParameters);
+    class function Prompt(const &public: TAddress): IResult<TPrivateKey>; static;
     function Parameters: IECPrivateKeyParameters;
     function GetAddress: IResult<TAddress>;
   end;
@@ -121,7 +121,7 @@ type
     function ToString: string;
     function ToStrings: TStrings;
     class function From(const hex: string): TTuple;
-    procedure Enumerate(callback: TProc<TArg, TProc>; done: TProc);
+    procedure Enumerate(const callback: TProc<TArg, TProc>;const  done: TProc);
   end;
 
 implementation
@@ -212,7 +212,7 @@ end;
 
 { TAddressHelper }
 
-constructor TAddressHelper.Create(arg: TArg);
+constructor TAddressHelper.Create(const arg: TArg);
 begin
   Self := TAddress.Create(arg.toHex('0x'));
 end;
@@ -239,7 +239,7 @@ begin
       Self := TAddress(web3.utils.toHex(Copy(buf, Length(buf) - 20, 20))).ToChecksum;
 end;
 
-class procedure TAddressHelper.Create(client: IWeb3; const name: string; callback: TProc<TAddress, IError>);
+class procedure TAddressHelper.Create(const client: IWeb3; const name: string; const callback: TProc<TAddress, IError>);
 begin
   if web3.utils.isHex(name) then
     callback(TAddress.Create(name), nil)
@@ -247,7 +247,7 @@ begin
     web3.eth.ens.addr(client, name, callback);
 end;
 
-procedure TAddressHelper.ToString(client: IWeb3; callback: TProc<string, IError>; abbreviated: Boolean);
+procedure TAddressHelper.ToString(const client: IWeb3; const callback: TProc<string, IError>; const abbreviated: Boolean);
 begin
   const addr: TAddress = Self;
   web3.eth.ens.reverse(client, addr, procedure(name: string; err: IError)
@@ -300,7 +300,7 @@ begin
   Result := Copy(Result, System.Low(Result), 8);
 end;
 
-procedure TAddressHelper.IsEOA(client: IWeb3; callback: TProc<Boolean, IError>);
+procedure TAddressHelper.IsEOA(const client: IWeb3; const callback: TProc<Boolean, IError>);
 begin
   client.Call('eth_getCode', [Self.ToChecksum, BLOCK_LATEST], procedure(response: TJsonObject; err: IError)
   begin
@@ -334,12 +334,12 @@ begin
   Result := TPrivateKey.Create(web3.crypto.generatePrivateKey('ECDSA', SECP256K1));
 end;
 
-constructor TPrivateKeyHelper.Create(params: IECPrivateKeyParameters);
+constructor TPrivateKeyHelper.Create(const params: IECPrivateKeyParameters);
 begin
   Self := TPrivateKey(web3.utils.toHex('', params.D.ToByteArrayUnsigned));
 end;
 
-class function TPrivateKeyHelper.Prompt(&public: TAddress): IResult<TPrivateKey>;
+class function TPrivateKeyHelper.Prompt(const &public: TAddress): IResult<TPrivateKey>;
 begin
   var input: string;
   TThread.Synchronize(nil, procedure
@@ -507,7 +507,7 @@ begin
   Result := tup;
 end;
 
-procedure TTupleHelper.Enumerate(callback: TProc<TArg, TProc>; done: TProc);
+procedure TTupleHelper.Enumerate(const callback: TProc<TArg, TProc>; const done: TProc);
 begin
   var Next: TProc<Integer, TArray<TArg>>;
 

@@ -40,9 +40,9 @@ uses
 type
   TAggregatorV3 = class(TCustomContract)
   public
-    procedure LatestRoundData(callback: TProc<TTuple, IError>);
-    procedure Decimals(callback: TProc<BigInteger, IError>);
-    procedure Price(callback: TProc<Double, IError>);
+    procedure LatestRoundData(const callback: TProc<TTuple, IError>);
+    procedure Decimals(const callback: TProc<BigInteger, IError>);
+    procedure Price(const callback: TProc<Double, IError>);
   end;
 
 implementation
@@ -51,17 +51,17 @@ uses
   // Delphi
   System.Math;
 
-procedure TAggregatorV3.LatestRoundData(callback: TProc<TTuple, IError>);
+procedure TAggregatorV3.LatestRoundData(const callback: TProc<TTuple, IError>);
 begin
   web3.eth.call(Client, Contract, 'latestRoundData()', [], callback);
 end;
 
-procedure TAggregatorV3.Decimals(callback: TProc<BigInteger, IError>);
+procedure TAggregatorV3.Decimals(const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'decimals()', [], callback);
 end;
 
-procedure TAggregatorV3.Price(callback: TProc<Double, IError>);
+procedure TAggregatorV3.Price(const callback: TProc<Double, IError>);
 begin
   Self.LatestRoundData(procedure(tup: TTuple; err: IError)
   begin

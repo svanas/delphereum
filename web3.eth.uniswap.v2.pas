@@ -51,70 +51,70 @@ uses
 type
   TFactory = class(TCustomContract)
   public
-    constructor Create(aClient: IWeb3); reintroduce;
-    procedure GetPair(tokenA, tokenB: TAddress; callback: TProc<TAddress, IError>);
+    constructor Create(const aClient: IWeb3); reintroduce;
+    procedure GetPair(const tokenA, tokenB: TAddress; const callback: TProc<TAddress, IError>);
   end;
 
   TRouter02 = class(TCustomContract)
   private
     procedure SwapExactTokensForETH(
-      from        : TPrivateKey;   // Sender of the token.
-      amountIn    : BigInteger;    // The amount of input tokens to send.
-      amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
-      token0      : TAddress;      // The address of the pair token with the lower sort order.
-      token1      : TAddress;      // The address of the pair token with the higher sort order.
-      &to         : TAddress;      // Recipient of the ETH.
-      deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
-      callback    : TProc<ITxReceipt, IError>); overload;
+      const from        : TPrivateKey;   // Sender of the token.
+      const amountIn    : BigInteger;    // The amount of input tokens to send.
+      const amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
+      const token0      : TAddress;      // The address of the pair token with the lower sort order.
+      const token1      : TAddress;      // The address of the pair token with the higher sort order.
+      const &to         : TAddress;      // Recipient of the ETH.
+      const deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
+      const callback    : TProc<ITxReceipt, IError>); overload;
     procedure SwapExactETHForTokens(
-      from        : TPrivateKey;   // Sender of ETH.
-      amountIn    : BigInteger;    // The amount of ETH to send.
-      amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
-      token       : TAddress;      // The token address.
-      &to         : TAddress;      // Recipient of the output tokens.
-      deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
-      callback    : TProc<ITxReceipt, IError>); overload;
+      const from        : TPrivateKey;   // Sender of ETH.
+      const amountIn    : BigInteger;    // The amount of ETH to send.
+      const amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
+      const token       : TAddress;      // The token address.
+      const &to         : TAddress;      // Recipient of the output tokens.
+      const deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
+      const callback    : TProc<ITxReceipt, IError>); overload;
   public
-    constructor Create(aClient: IWeb3); reintroduce;
-    procedure WETH(callback: TProc<TAddress, IError>);
+    constructor Create(const aClient: IWeb3); reintroduce;
+    procedure WETH(const callback: TProc<TAddress, IError>);
     procedure SwapExactTokensForETH(
-      owner       : TPrivateKey; // Sender of the token, and recipient of the ETH.
-      amountIn    : BigInteger;  // The amount of input tokens to send.
-      amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
-      token       : TAddress;    // The address of the token you wish to swap.
-      minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
-      callback    : TProc<ITxReceipt, IError>); overload;
+      const owner       : TPrivateKey; // Sender of the token, and recipient of the ETH.
+      const amountIn    : BigInteger;  // The amount of input tokens to send.
+      const amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
+      const token       : TAddress;    // The address of the token you wish to swap.
+      const minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
+      const callback    : TProc<ITxReceipt, IError>); overload;
     procedure SwapExactETHForTokens(
-      owner       : TPrivateKey; // Sender of ETH.
-      amountIn    : BigInteger;  // The amount of ETH to send.
-      amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
-      token       : TAddress;    // The token address.
-      minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
-      callback    : TProc<ITxReceipt, IError>); overload;
+      const owner       : TPrivateKey; // Sender of ETH.
+      const amountIn    : BigInteger;  // The amount of ETH to send.
+      const amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
+      const token       : TAddress;    // The token address.
+      const minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
+      const callback    : TProc<ITxReceipt, IError>); overload;
   end;
 
   TPair = class(TERC20)
   protected
     function  Query  (const field: string): string;
-    procedure Execute(const field: string; callback: TProc<Double, IError>);
+    procedure Execute(const field: string; const callback: TProc<Double, IError>);
   public
-    procedure Token0(callback: TProc<TAddress, IError>);
-    procedure Token1(callback: TProc<TAddress, IError>);
-    procedure Token0Price(callback: TProc<Double, IError>);
-    procedure Token1Price(callback: TProc<Double, IError>);
+    procedure Token0(const callback: TProc<TAddress, IError>);
+    procedure Token1(const callback: TProc<TAddress, IError>);
+    procedure Token0Price(const callback: TProc<Double, IError>);
+    procedure Token1Price(const callback: TProc<Double, IError>);
   end;
 
 implementation
 
 { TFactory }
 
-constructor TFactory.Create(aClient: IWeb3);
+constructor TFactory.Create(const aClient: IWeb3);
 begin
   inherited Create(aClient, '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f');
 end;
 
 // Returns the address of the pair for tokenA and tokenB, if it has been created, else 0x0
-procedure TFactory.GetPair(tokenA, tokenB: TAddress; callback: TProc<TAddress, IError>);
+procedure TFactory.GetPair(const tokenA, tokenB: TAddress; const callback: TProc<TAddress, IError>);
 begin
   call(Client, Contract, 'getPair(address,address)', [tokenA, tokenB], procedure(hex: string; err: IError)
   begin
@@ -135,13 +135,13 @@ end;
 
 { TRouter02 }
 
-constructor TRouter02.Create(aClient: IWeb3);
+constructor TRouter02.Create(const aClient: IWeb3);
 begin
   inherited Create(aClient, '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D');
 end;
 
 // Returns the canonical WETH address; see https://blog.0xproject.com/canonical-weth-a9aa7d0279dd
-procedure TRouter02.WETH(callback: TProc<TAddress, IError>);
+procedure TRouter02.WETH(const callback: TProc<TAddress, IError>);
 begin
   call(Client, Contract, 'WETH()', [], procedure(hex: string; err: IError)
   begin
@@ -154,14 +154,14 @@ end;
 
 // Swaps an exact amount of tokens for as much ETH as possible.
 procedure TRouter02.SwapExactTokensForETH(
-  from        : TPrivateKey;   // Sender of the token.
-  amountIn    : BigInteger;    // The amount of input tokens to send.
-  amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
-  token0      : TAddress;      // The address of the pair token with the lower sort order.
-  token1      : TAddress;      // The address of the pair token with the higher sort order.
-  &to         : TAddress;      // Recipient of the ETH.
-  deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
-  callback    : TProc<ITxReceipt, IError>);
+  const from        : TPrivateKey;   // Sender of the token.
+  const amountIn    : BigInteger;    // The amount of input tokens to send.
+  const amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
+  const token0      : TAddress;      // The address of the pair token with the lower sort order.
+  const token1      : TAddress;      // The address of the pair token with the higher sort order.
+  const &to         : TAddress;      // Recipient of the ETH.
+  const deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
+  const callback    : TProc<ITxReceipt, IError>);
 begin
   web3.eth.erc20.approve(web3.eth.erc20.create(Self.Client, token0), from, Self.Contract, amountIn, procedure(rcpt: ITxReceipt; err: IError)
   begin
@@ -181,13 +181,13 @@ begin
 end;
 
 procedure TRouter02.SwapExactETHForTokens(
-  from        : TPrivateKey;   // Sender of ETH.
-  amountIn    : BigInteger;    // The amount of ETH to send.
-  amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
-  token       : TAddress;      // The token address.
-  &to         : TAddress;      // Recipient of the output tokens.
-  deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
-  callback    : TProc<ITxReceipt, IError>);
+  const from        : TPrivateKey;   // Sender of ETH.
+  const amountIn    : BigInteger;    // The amount of ETH to send.
+  const amountOutMin: BigInteger;    // The minimum amount of output tokens that must be received for the transaction not to revert.
+  const token       : TAddress;      // The token address.
+  const &to         : TAddress;      // Recipient of the output tokens.
+  const deadline    : TUnixDateTime; // Unix timestamp after which the transaction will revert.
+  const callback    : TProc<ITxReceipt, IError>);
 begin
   Self.WETH(procedure(WETH: TAddress; err: IError)
   begin
@@ -207,12 +207,12 @@ end;
 
 // Swaps an exact amount of tokens for as much ETH as possible.
 procedure TRouter02.SwapExactTokensForETH(
-  owner       : TPrivateKey; // Sender of the token, and recipient of the ETH.
-  amountIn    : BigInteger;  // The amount of input tokens to send.
-  amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
-  token       : TAddress;    // The address of the token you wish to swap.
-  minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
-  callback    : TProc<ITxReceipt, IError>);
+  const owner       : TPrivateKey; // Sender of the token, and recipient of the ETH.
+  const amountIn    : BigInteger;  // The amount of input tokens to send.
+  const amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
+  const token       : TAddress;    // The address of the token you wish to swap.
+  const minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
+  const callback    : TProc<ITxReceipt, IError>);
 begin
   owner.GetAddress
     .ifErr(procedure(err: IError)
@@ -241,12 +241,12 @@ begin
 end;
 
 procedure TRouter02.SwapExactETHForTokens(
-  owner       : TPrivateKey; // Sender of ETH.
-  amountIn    : BigInteger;  // The amount of ETH to send.
-  amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
-  token       : TAddress;    // The token address.
-  minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
-  callback    : TProc<ITxReceipt, IError>);
+  const owner       : TPrivateKey; // Sender of ETH.
+  const amountIn    : BigInteger;  // The amount of ETH to send.
+  const amountOutMin: BigInteger;  // The minimum amount of output tokens that must be received for the transaction not to revert.
+  const token       : TAddress;    // The token address.
+  const minutes     : Int64;       // Your transaction will revert if it is pending for more than this long.
+  const callback    : TProc<ITxReceipt, IError>);
 begin
   owner.GetAddress
     .ifErr(procedure(err: IError)
@@ -270,7 +270,7 @@ end;
 { TPair }
 
 // Returns the address of the pair token with the lower sort order.
-procedure TPair.Token0(callback: TProc<TAddress, IError>);
+procedure TPair.Token0(const callback: TProc<TAddress, IError>);
 begin
   call(Client, Contract, 'token0()', [], procedure(hex: string; err: IError)
   begin
@@ -282,7 +282,7 @@ begin
 end;
 
 // Returns the address of the pair token with the higher sort order.
-procedure TPair.Token1(callback: TProc<TAddress, IError>);
+procedure TPair.Token1(const callback: TProc<TAddress, IError>);
 begin
   call(Client, Contract, 'token1()', [], procedure(hex: string; err: IError)
   begin
@@ -300,7 +300,7 @@ begin
 end;
 
 // Execute a GraphQL query, return the result as a float (if any)
-procedure TPair.Execute(const field: string; callback: TProc<Double, IError>);
+procedure TPair.Execute(const field: string; const callback: TProc<Double, IError>);
 begin
   web3.graph.execute('https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2', Query(field), procedure(response: TJsonObject; err: IError)
   begin
@@ -324,13 +324,13 @@ begin
 end;
 
 // Token0 per Token1
-procedure TPair.Token0Price(callback: TProc<Double, IError>);
+procedure TPair.Token0Price(const callback: TProc<Double, IError>);
 begin
   Execute('token0Price', callback);
 end;
 
 // Token1 per Token0
-procedure TPair.Token1Price(callback: TProc<Double, IError>);
+procedure TPair.Token1Price(const callback: TProc<Double, IError>);
 begin
   Execute('token1Price', callback);
 end;

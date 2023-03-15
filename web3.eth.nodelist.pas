@@ -40,25 +40,25 @@ type
   TOnline = (Unknown, Offline, Online);
 
   INode = interface
-    function Client(apiKey: TFunc<string>): TWeb3;
+    function Client(const apiKey: TFunc<string>): TWeb3;
     function Freeware: Boolean;
     function Name: string;
-    procedure Online(apiKey: TFunc<string>; callback: TProc<TOnline, IError>);
-    function Rpc(apiKey: TFunc<string>): TURL;
+    procedure Online(const apiKey: TFunc<string>; const callback: TProc<TOnline, IError>);
+    function Rpc(const apiKey: TFunc<string>): TURL;
     function SetTag(const Value: IInterface): INode;
     function Tag: IInterface;
-    function Wss(apiKey: TFunc<string>): TURL;
+    function Wss(const apiKey: TFunc<string>): TURL;
   end;
 
   TNodes = TArray<INode>;
 
   TNodesHelper = record helper for TNodes
-    procedure Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
+    procedure Enumerate(const foreach: TProc<Integer, TProc>; const done: TProc);
     function Length: Integer;
   end;
 
-function get(chain: TChain; callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
-function get(chain: TChain; callback: TProc<TNodes, IError>): IAsyncResult; overload;
+function get(const chain: TChain; const callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
+function get(const chain: TChain; const callback: TProc<TNodes, IError>): IAsyncResult; overload;
 
 implementation
 
@@ -87,19 +87,19 @@ type
     FFreeware: Boolean;
     FName    : string;
     FTag     : IInterface;
-    function Rpc(getApiKey: TFunc<string>): TURL;
-    function Wss(getApiKey: TFunc<string>): TURL;
+    function Rpc(const getApiKey: TFunc<string>): TURL;
+    function Wss(const getApiKey: TFunc<string>): TURL;
   public
-    function Client(apiKey: TFunc<string>): TWeb3;
+    function Client(const apiKey: TFunc<string>): TWeb3;
     function Freeware: Boolean;
     function Name: string;
-    procedure Online(apiKey: TFunc<string>; callback: TProc<TOnline, IError>);
+    procedure Online(const apiKey: TFunc<string>; const callback: TProc<TOnline, IError>);
     function SetTag(const Value: IInterface): INode;
     function Tag: IInterface;
-    constructor Create(aChain: TChain; const aJsonValue: TJsonObject); reintroduce;
+    constructor Create(const aChain: TChain; const aJsonValue: TJsonObject); reintroduce;
   end;
 
-constructor TNode.Create(aChain: TChain; const aJsonValue: TJsonObject);
+constructor TNode.Create(const aChain: TChain; const aJsonValue: TJsonObject);
 begin
   inherited Create(aJsonValue);
 
@@ -111,7 +111,7 @@ begin
   FName     := getPropAsStr(aJsonValue, 'name');
 end;
 
-function TNode.Client(apiKey: TFunc<string>): TWeb3;
+function TNode.Client(const apiKey: TFunc<string>): TWeb3;
 begin
   Result := TWeb3.Create(Self.FChain.SetRPC(HTTPS, Self.Rpc(apiKey)));
 end;
@@ -126,7 +126,7 @@ begin
   Result := FName;
 end;
 
-procedure TNode.Online(apiKey: TFunc<string>; callback: TProc<TOnline, IError>);
+procedure TNode.Online(const apiKey: TFunc<string>; const callback: TProc<TOnline, IError>);
 begin
   if Self.Rpc(apiKey).IndexOf('$apiKey') > -1 then
   begin
@@ -143,7 +143,7 @@ begin
   end);
 end;
 
-function TNode.Rpc(getApiKey: TFunc<string>): TURL;
+function TNode.Rpc(const getApiKey: TFunc<string>): TURL;
 begin
   if FChain.RPC[HTTPS].IndexOf('$apiKey') > -1 then
   begin
@@ -172,7 +172,7 @@ begin
   Result := FTag;
 end;
 
-function TNode.Wss(getApiKey: TFunc<string>): TURL;
+function TNode.Wss(const getApiKey: TFunc<string>): TURL;
 begin
   if FChain.RPC[WebSocket].IndexOf('$apiKey') > -1 then
   begin
@@ -192,7 +192,7 @@ end;
 
 {------------------------------- TNodesHelper ---------------------------------}
 
-procedure TNodesHelper.Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
+procedure TNodesHelper.Enumerate(const foreach: TProc<Integer, TProc>; const done: TProc);
 begin
   var next: TProc<TNodes, Integer>;
 
@@ -225,7 +225,7 @@ end;
 
 {------------------------------ public functions ------------------------------}
 
-function get(chain: TChain; callback: TProc<TJsonArray, IError>): IAsyncResult;
+function get(const chain: TChain; const callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
   Result := web3.http.get('https://raw.githubusercontent.com/svanas/ethereum-node-list/main/ethereum-node-list.json', [], procedure(obj: TJsonValue; err: IError)
   begin
@@ -244,7 +244,7 @@ begin
   end);
 end;
 
-function get(chain: TChain; callback: TProc<TNodes, IError>): IAsyncResult;
+function get(const chain: TChain; const callback: TProc<TNodes, IError>): IAsyncResult;
 begin
   Result := get(chain, procedure(arr: TJsonArray; err: IError)
   begin

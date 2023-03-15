@@ -46,55 +46,55 @@ uses
 type
   IyToken = interface(IERC20)
     //------- read from contract -----------------------------------------------
-    procedure Token(callback: TProc<TAddress, IError>);
-    procedure GetPricePerFullShare(const block: string; callback: TProc<BigInteger, IError>);
+    procedure Token(const callback: TProc<TAddress, IError>);
+    procedure GetPricePerFullShare(const block: string; const callback: TProc<BigInteger, IError>);
     //------- helpers ----------------------------------------------------------
-    procedure TokenToUnderlying(amount: BigInteger; callback: TProc<BigInteger, IError>);
-    procedure UnderlyingToToken(amount: BigInteger; callback: TProc<BigInteger, IError>);
+    procedure TokenToUnderlying(const amount: BigInteger; const callback: TProc<BigInteger, IError>);
+    procedure UnderlyingToToken(const amount: BigInteger; const callback: TProc<BigInteger, IError>);
     //------- write to contract ------------------------------------------------
-    procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
-    procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Deposit(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
+    procedure Withdraw(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
   end;
 
   TCustomYearn = class abstract(TLendingProtocol)
   protected
     class procedure yAPY(
-      yToken   : IyToken;
-      etherscan: IEtherscan;
-      period   : TPeriod;
-      callback : TProc<Double, IError>);
+      const yToken   : IyToken;
+      const etherscan: IEtherscan;
+      const period   : TPeriod;
+      const callback : TProc<Double, IError>);
     class procedure yDeposit(
-      client  : IWeb3;
-      yToken  : IyToken;
-      from    : TPrivateKey;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const client  : IWeb3;
+      const yToken  : IyToken;
+      const from    : TPrivateKey;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
     class procedure yBalance(
-      yToken  : IyToken;
-      owner   : TAddress;
-      callback: TProc<BigInteger, IError>);
+      const yToken  : IyToken;
+      const owner   : TAddress;
+      const callback: TProc<BigInteger, IError>);
     class procedure yWithdraw(
-      yToken  : IyToken;
-      from    : TPrivateKey;
-      callback: TProc<ITxReceipt, BigInteger, IError>); overload;
+      const yToken  : IyToken;
+      const from    : TPrivateKey;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); overload;
     class procedure yWithdraw(
-      yToken  : IyToken;
-      from    : TPrivateKey;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, BigInteger, IError>); overload;
+      const yToken  : IyToken;
+      const from    : TPrivateKey;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); overload;
   end;
 
   TyToken = class(TERC20, IyToken)
   public
     //------- read from contract -----------------------------------------------
-    procedure Token(callback: TProc<TAddress, IError>);
-    procedure GetPricePerFullShare(const block: string; callback: TProc<BigInteger, IError>);
+    procedure Token(const callback: TProc<TAddress, IError>);
+    procedure GetPricePerFullShare(const block: string; const callback: TProc<BigInteger, IError>);
     //------- helpers ----------------------------------------------------------
-    procedure TokenToUnderlying(amount: BigInteger; callback: TProc<BigInteger, IError>);
-    procedure UnderlyingToToken(amount: BigInteger; callback: TProc<BigInteger, IError>);
+    procedure TokenToUnderlying(const amount: BigInteger; const callback: TProc<BigInteger, IError>);
+    procedure UnderlyingToToken(const amount: BigInteger; const callback: TProc<BigInteger, IError>);
     //------- write to contract ------------------------------------------------
-    procedure Deposit(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
-    procedure Withdraw(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Deposit(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
+    procedure Withdraw(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
   end;
 
 implementation
@@ -102,10 +102,10 @@ implementation
 { TCustomYearn }
 
 class procedure TCustomYearn.yAPY(
-  yToken   : IyToken;
-  etherscan: IEtherscan;
-  period   : TPeriod;
-  callback : TProc<Double, IError>);
+  const yToken   : IyToken;
+  const etherscan: IEtherscan;
+  const period   : TPeriod;
+  const callback : TProc<Double, IError>);
 begin
   yToken.GetPricePerFullShare(BLOCK_LATEST, procedure(currPrice: BigInteger; err: IError)
   begin
@@ -129,11 +129,11 @@ begin
 end;
 
 class procedure TCustomYearn.yDeposit(
-  client  : IWeb3;
-  yToken  : IyToken;
-  from    : TPrivateKey;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const yToken  : IyToken;
+  const from    : TPrivateKey;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   yToken.Token(procedure(address: TAddress; err: IError)
   begin
@@ -151,9 +151,9 @@ begin
 end;
 
 class procedure TCustomYearn.yBalance(
-  yToken  : IyToken;
-  owner   : TAddress;
-  callback: TProc<BigInteger, IError>);
+  const yToken  : IyToken;
+  const owner   : TAddress;
+  const callback: TProc<BigInteger, IError>);
 begin
   // step #1: get the yToken balance
   yToken.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
@@ -173,9 +173,9 @@ begin
 end;
 
 class procedure TCustomYearn.yWithdraw(
-  yToken  : IyToken;
-  from    : TPrivateKey;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const yToken  : IyToken;
+  const from    : TPrivateKey;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -210,10 +210,10 @@ begin
 end;
 
 class procedure TCustomYearn.yWithdraw(
-  yToken  : IyToken;
-  from    : TPrivateKey;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const yToken  : IyToken;
+  const from    : TPrivateKey;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   // step #1: from underlying-amount to yToken-amount
   yToken.UnderlyingToToken(amount, procedure(input: BigInteger; err: IError)
@@ -235,7 +235,7 @@ end;
 { TyToken }
 
 // Returns the underlying asset contract address for this yToken.
-procedure TyToken.Token(callback: TProc<TAddress, IError>);
+procedure TyToken.Token(const callback: TProc<TAddress, IError>);
 begin
   web3.eth.call(Client, Contract, 'token()', [], procedure(hex: string; err: IError)
   begin
@@ -247,12 +247,12 @@ begin
 end;
 
 // Current yToken price, in underlying (eg. DAI) terms.
-procedure TyToken.GetPricePerFullShare(const block: string; callback: TProc<BigInteger, IError>);
+procedure TyToken.GetPricePerFullShare(const block: string; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'getPricePerFullShare()', block, [], callback);
 end;
 
-procedure TyToken.TokenToUnderlying(amount: BigInteger; callback: TProc<BigInteger, IError>);
+procedure TyToken.TokenToUnderlying(const amount: BigInteger; const callback: TProc<BigInteger, IError>);
 begin
   Self.GetPricePerFullShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
   begin
@@ -263,7 +263,7 @@ begin
   end);
 end;
 
-procedure TyToken.UnderlyingToToken(amount: BigInteger; callback: TProc<BigInteger, IError>);
+procedure TyToken.UnderlyingToToken(const amount: BigInteger; const callback: TProc<BigInteger, IError>);
 begin
   Self.GetPricePerFullShare(BLOCK_LATEST, procedure(price: BigInteger; err: IError)
   begin
@@ -274,12 +274,12 @@ begin
   end);
 end;
 
-procedure TyToken.Deposit(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+procedure TyToken.Deposit(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'deposit(uint256)', [web3.utils.toHex(amount)], callback);
 end;
 
-procedure TyToken.Withdraw(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+procedure TyToken.Withdraw(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'withdraw(uint256)', [web3.utils.toHex(amount)], callback);
 end;

@@ -47,74 +47,74 @@ type
   TIdle = class(TLendingProtocol)
   protected
     class procedure Approve(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
     class procedure IdleToUnderlying(
-      client  : IWeb3;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<BigInteger, IError>);
+      const client  : IWeb3;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<BigInteger, IError>);
     class procedure UnderlyingToIdle(
-      client  : IWeb3;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<BigInteger, IError>);
+      const client  : IWeb3;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<BigInteger, IError>);
   public
     class function Name: string; override;
     class function Supports(
-      chain  : TChain;
-      reserve: TReserve): Boolean; override;
+      const chain  : TChain;
+      const reserve: TReserve): Boolean; override;
     class procedure APY(
-      client   : IWeb3;
-      etherscan: IEtherscan;
-      reserve  : TReserve;
-      period   : TPeriod;
-      callback : TProc<Double, IError>); override;
+      const client   : IWeb3;
+      const etherscan: IEtherscan;
+      const reserve  : TReserve;
+      const period   : TPeriod;
+      const callback : TProc<Double, IError>); override;
     class procedure Deposit(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
-      client  : IWeb3;
-      owner   : TAddress;
-      reserve : TReserve;
-      callback: TProc<BigInteger, IError>); override;
+      const client  : IWeb3;
+      const owner   : TAddress;
+      const reserve : TReserve;
+      const callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
   TIdleViewHelper = class(TCustomContract)
   public
-    constructor Create(aClient: IWeb3); reintroduce;
-    procedure GetFullAPR(idleToken: TAddress; callback: TProc<BigInteger, IError>);
+    constructor Create(const aClient: IWeb3); reintroduce;
+    procedure GetFullAPR(const idleToken: TAddress; const callback: TProc<BigInteger, IError>);
   end;
 
   IIdleToken = interface(IERC20)
-    procedure Token(callback: TProc<TAddress, IError>);
-    procedure GetAvgAPR(callback: TProc<BigInteger, IError>);
-    procedure GetFullAPR(callback: TProc<BigInteger, IError>);
-    procedure TokenPrice(callback: TProc<BigInteger, IError>);
+    procedure Token(const callback: TProc<TAddress, IError>);
+    procedure GetAvgAPR(const callback: TProc<BigInteger, IError>);
+    procedure GetFullAPR(const callback: TProc<BigInteger, IError>);
+    procedure TokenPrice(const callback: TProc<BigInteger, IError>);
     procedure MintIdleToken(
-      from              : TPrivateKey; // supplier of the underlying asset, and receiver of IdleTokens
-      amount            : BigInteger;  // amount of underlying asset to be lent
-      skipWholeRebalance: Boolean;     // triggers a rebalance of the whole pools if true
-      referral          : TAddress;    // address for eventual future referral program
-      callback          : TProc<ITxReceipt, IError>);
-    procedure RedeemIdleToken(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+      const from              : TPrivateKey; // supplier of the underlying asset, and receiver of IdleTokens
+      const amount            : BigInteger;  // amount of underlying asset to be lent
+      const skipWholeRebalance: Boolean;     // triggers a rebalance of the whole pools if true
+      const referral          : TAddress;    // address for eventual future referral program
+      const callback          : TProc<ITxReceipt, IError>);
+    procedure RedeemIdleToken(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
   end;
 
 implementation
@@ -124,40 +124,40 @@ implementation
 type
   TIdleToken = class(TERC20, IIdleToken)
   public
-    procedure Token(callback: TProc<TAddress, IError>);
-    procedure GetAvgAPR(callback: TProc<BigInteger, IError>);
-    procedure GetFullAPR(callback: TProc<BigInteger, IError>);
-    procedure TokenPrice(callback: TProc<BigInteger, IError>);
+    procedure Token(const callback: TProc<TAddress, IError>);
+    procedure GetAvgAPR(const callback: TProc<BigInteger, IError>);
+    procedure GetFullAPR(const callback: TProc<BigInteger, IError>);
+    procedure TokenPrice(const callback: TProc<BigInteger, IError>);
     procedure MintIdleToken(
-      from              : TPrivateKey; // supplier of the underlying asset, and receiver of IdleTokens
-      amount            : BigInteger;  // amount of underlying asset to be lent
-      skipWholeRebalance: Boolean;     // triggers a rebalance of the whole pools if true
-      referral          : TAddress;    // address for eventual future referral program
-      callback          : TProc<ITxReceipt, IError>);
-    procedure RedeemIdleToken(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+      const from              : TPrivateKey; // supplier of the underlying asset, and receiver of IdleTokens
+      const amount            : BigInteger;  // amount of underlying asset to be lent
+      const skipWholeRebalance: Boolean;     // triggers a rebalance of the whole pools if true
+      const referral          : TAddress;    // address for eventual future referral program
+      const callback          : TProc<ITxReceipt, IError>);
+    procedure RedeemIdleToken(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
   end;
 
-function idleDAI(aClient: IWeb3): IIdleToken;
+function idleDAI(const aClient: IWeb3): IIdleToken;
 begin
   Result := TIdleToken.Create(aClient, '0x3fe7940616e5bc47b0775a0dccf6237893353bb4');
 end;
 
-function idleUSDC(aClient: IWeb3): IIdleToken;
+function idleUSDC(const aClient: IWeb3): IIdleToken;
 begin
   Result := TIdleToken.Create(aClient, '0x5274891bEC421B39D23760c04A6755eCB444797C');
 end;
 
-function idleUSDT(aClient: IWeb3): IIdleToken;
+function idleUSDT(const aClient: IWeb3): IIdleToken;
 begin
   Result := TIdleToken.Create(aClient, '0xF34842d05A1c888Ca02769A633DF37177415C2f8');
 end;
 
-function idleTUSD(aClient: IWeb3): IIdleToken;
+function idleTUSD(const aClient: IWeb3): IIdleToken;
 begin
   Result := TIdleToken.Create(aClient, '0xc278041fDD8249FE4c1Aad1193876857EEa3D68c');
 end;
 
-function idleToken(aClient: IWeb3; aReserve: TReserve): IResult<IIdleToken>;
+function idleToken(const aClient: IWeb3; const aReserve: TReserve): IResult<IIdleToken>;
 begin
   case aReserve of
     DAI : Result := TResult<IIdleToken>.Ok(idleDAI(aClient));
@@ -172,11 +172,11 @@ end;
 { TIdle }
 
 class procedure TIdle.Approve(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   idleToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -196,10 +196,10 @@ begin
 end;
 
 class procedure TIdle.IdleToUnderlying(
-  client  : IWeb3;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<BigInteger, IError>);
 begin
   idleToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -219,10 +219,10 @@ begin
 end;
 
 class procedure TIdle.UnderlyingToIdle(
-  client  : IWeb3;
-  reserve : TReserve;
-  amount  : BIgInteger;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const reserve : TReserve;
+  const amount  : BIgInteger;
+  const callback: TProc<BigInteger, IError>);
 begin
   idleToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -246,17 +246,17 @@ begin
   Result := 'Idle';
 end;
 
-class function TIdle.Supports(chain: TChain; reserve: TReserve): Boolean;
+class function TIdle.Supports(const chain: TChain; const reserve: TReserve): Boolean;
 begin
   Result := (chain = Ethereum) and (reserve in [USDT, TUSD, DAI, USDC]);
 end;
 
 class procedure TIdle.APY(
-  client   : IWeb3;
-  etherscan: IEtherscan;
-  reserve  : TReserve;
-  period   : TPeriod;
-  callback : TProc<Double, IError>);
+  const client   : IWeb3;
+  const etherscan: IEtherscan;
+  const reserve  : TReserve;
+  const period   : TPeriod;
+  const callback : TProc<Double, IError>);
 begin
   idleToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -284,11 +284,11 @@ begin
 end;
 
 class procedure TIdle.Deposit(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
@@ -308,10 +308,10 @@ begin
 end;
 
 class procedure TIdle.Balance(
-  client  : IWeb3;
-  owner   : TAddress;
-  reserve : TReserve;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const owner   : TAddress;
+  const reserve : TReserve;
+  const callback: TProc<BigInteger, IError>);
 begin
   idleToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -339,10 +339,10 @@ begin
 end;
 
 class procedure TIdle.Withdraw(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   idleToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -376,11 +376,11 @@ begin
 end;
 
 class procedure TIdle.WithdrawEx(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   // step #1: from Underlying-amount to IdleToken-amount
   UnderlyingToIdle(client, reserve, amount, procedure(input: BigInteger; err: IError)
@@ -409,12 +409,12 @@ end;
 
 { TIdleViewHelper }
 
-constructor TIdleViewHelper.Create(aClient: IWeb3);
+constructor TIdleViewHelper.Create(const aClient: IWeb3);
 begin
   inherited Create(aClient, '0xae2Ebae0a2bC9a44BdAa8028909abaCcd336b8f5');
 end;
 
-procedure TIdleViewHelper.GetFullAPR(idleToken: TAddress; callback: TProc<BigInteger, IError>);
+procedure TIdleViewHelper.GetFullAPR(const idleToken: TAddress; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'getFullAPR(address)', [idleToken], callback);
 end;
@@ -422,7 +422,7 @@ end;
 { TIdleToken }
 
 // Returns the underlying asset contract address for this IdleToken.
-procedure TIdleToken.Token(callback: TProc<TAddress, IError>);
+procedure TIdleToken.Token(const callback: TProc<TAddress, IError>);
 begin
   web3.eth.call(Client, Contract, 'token()', [], procedure(hex: string; err: IError)
   begin
@@ -435,13 +435,13 @@ end;
 
 // Get base layer aggregated APR of IdleToken.
 // This does not take into account fees, unlent percentage and additional APR given by governance tokens.
-procedure TIdleToken.GetAvgAPR(callback: TProc<BigInteger, IError>);
+procedure TIdleToken.GetAvgAPR(const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'getAvgAPR()', [], callback);
 end;
 
 // Get current IdleToken average APR considering governance tokens.
-procedure TIdleToken.GetFullAPR(callback: TProc<BigInteger, IError>);
+procedure TIdleToken.GetFullAPR(const callback: TProc<BigInteger, IError>);
 begin
   const helper = TIdleViewHelper.Create(Self.Client);
   try
@@ -452,24 +452,24 @@ begin
 end;
 
 // Current IdleToken price, in underlying (eg. DAI) terms.
-procedure TIdleToken.TokenPrice(callback: TProc<BigInteger, IError>);
+procedure TIdleToken.TokenPrice(const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'tokenPrice()', [], callback);
 end;
 
 // Transfers the amount of underlying assets to IdleToken contract and then mints interest-bearing tokens with that amount.
 procedure TIdleToken.MintIdleToken(
-  from              : TPrivateKey; // supplier of the underlying asset, and receiver of IdleTokens
-  amount            : BigInteger;  // amount of underlying asset to be lent
-  skipWholeRebalance: Boolean;     // triggers a rebalance of the whole pools if true
-  referral          : TAddress;    // address for eventual future referral program
-  callback          : TProc<ITxReceipt, IError>);
+  const from              : TPrivateKey; // supplier of the underlying asset, and receiver of IdleTokens
+  const amount            : BigInteger;  // amount of underlying asset to be lent
+  const skipWholeRebalance: Boolean;     // triggers a rebalance of the whole pools if true
+  const referral          : TAddress;    // address for eventual future referral program
+  const callback          : TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'mintIdleToken(uint256,bool,address)', [web3.utils.toHex(amount), skipWholeRebalance, referral], callback);
 end;
 
 // Redeems your underlying balance by burning your IdleTokens.
-procedure TIdleToken.RedeemIdleToken(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+procedure TIdleToken.RedeemIdleToken(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'redeemIdleToken(uint256)', [web3.utils.toHex(amount)], callback);
 end;

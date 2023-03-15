@@ -66,7 +66,7 @@ type
   end;
 
 procedure show(const msg: string); overload;
-procedure show(chain: TChain; const err: IError); overload;
+procedure show(const chain: TChain; const err: IError); overload;
 
 implementation
 
@@ -116,7 +116,7 @@ begin
   end);
 end;
 
-procedure show(chain: TChain; const err: IError);
+procedure show(const chain: TChain; const err: IError);
 begin
   if Supports(err, ISignatureDenied) then
     EXIT;

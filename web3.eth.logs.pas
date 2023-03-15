@@ -44,12 +44,12 @@ type
     FBlockNumber: BigInteger;
     FTopics     : TTopics;
     FData       : TTuple;
-    function  GetTopic(idx: Integer): TArg;
-    procedure Load(tx: TJsonValue);
+    function  GetTopic(const idx: Integer): TArg;
+    procedure Load(const tx: TJsonValue);
   public
     function  isEvent(const name: string): Boolean;
     property  BlockNumber: BigInteger read FBlockNumber;
-    property  Topic[idx: Integer]: TArg read GetTopic;
+    property  Topic[const idx: Integer]: TArg read GetTopic;
     property  Data: TTuple read FData;
   end;
 
@@ -66,7 +66,7 @@ type
     procedure Wait;
   end;
 
-function get(client: IWeb3; address: TAddress; callback: TProc<PLog, IError>): ILogger;
+function get(const client: IWeb3; const address: TAddress; const callback: TProc<PLog, IError>): ILogger;
 
 implementation
 
@@ -83,12 +83,12 @@ uses
 
 { TLog }
 
-function TLog.GetTopic(idx: Integer): TArg;
+function TLog.GetTopic(const idx: Integer): TArg;
 begin
   Result := FTopics[idx];
 end;
 
-procedure TLog.Load(tx: TJsonValue);
+procedure TLog.Load(const tx: TJsonValue);
 begin
   FBlockNumber := web3.json.getPropAsStr(tx, 'blockNumber');
   // load the "topics"
@@ -150,7 +150,7 @@ end;
 
 { private functions }
 
-function getAsArr(client: IWeb3; fromBlock: BigInteger; address: TAddress): IResult<TJsonArray>;
+function getAsArr(const client: IWeb3; const fromBlock: BigInteger; const address: TAddress): IResult<TJsonArray>;
 begin
   const request = web3.json.unmarshal(Format(
     '{"fromBlock": "%s", "toBlock": %s, "address": %s}', [
@@ -178,7 +178,7 @@ begin
   end;
 end;
 
-function getAsLog(client: IWeb3; fromBlock: BigInteger; address: TAddress): IResult<TLogs>;
+function getAsLog(const client: IWeb3; const fromBlock: BigInteger; const address: TAddress): IResult<TLogs>;
 begin
   const arr = getAsArr(client, fromBlock, address);
   if Assigned(arr.Value) then
@@ -272,7 +272,7 @@ begin
     inherited Wait;
 end;
 
-function get(client: IWeb3; address: TAddress; callback: TProc<PLog, IError>): ILogger;
+function get(const client: IWeb3; const address: TAddress; const callback: TProc<PLog, IError>): ILogger;
 begin
   Result := TLogger.Create(procedure
   begin

@@ -66,16 +66,16 @@ type
 function marshal(const value: TJsonValue): string;
 function unmarshal(const value: string): TJsonValue;
 
-function getPropAsStr(obj: TJsonValue; const name: string; const def: string = ''): string;
-function getPropAsInt(obj: TJsonValue; const name: string; def: Integer = 0): Integer;
-function getPropAsDouble(obj: TJsonValue; const name: string; def: Double = 0): Double;
-function getPropAsBigInt(obj: TJsonValue; const name: string): BigInteger; overload;
-function getPropAsBigInt(obj: TJsonValue; const name: string; def: BigInteger): BigInteger; overload;
-function getPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
-function getPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
-function getPropAsBOOL(obj: TJsonValue; const name: string; def: Boolean = False): Boolean;
+function getPropAsStr(const obj: TJsonValue; const name: string; const def: string = ''): string;
+function getPropAsInt(const obj: TJsonValue; const name: string; const def: Integer = 0): Integer;
+function getPropAsDouble(const obj: TJsonValue; const name: string; const def: Double = 0): Double;
+function getPropAsBigInt(const obj: TJsonValue; const name: string): BigInteger; overload;
+function getPropAsBigInt(const obj: TJsonValue; const name: string; const def: BigInteger): BigInteger; overload;
+function getPropAsObj(const obj: TJsonValue; const name: string): TJsonObject;
+function getPropAsArr(const obj: TJsonValue; const name: string): TJsonArray;
+function getPropAsBOOL(const obj: TJsonValue; const name: string; const def: Boolean = False): Boolean;
 
-function quoteString(const S: string; Quote: Char = '"'): string;
+function quoteString(const S: string; const Quote: Char = '"'): string;
 
 implementation
 
@@ -147,7 +147,7 @@ begin
   Result := TJsonValue.ParseJsonValue(value.Trim);
 end;
 
-function getPropAsStr(obj: TJsonValue; const name: string; const def: string): string;
+function getPropAsStr(const obj: TJsonValue; const name: string; const def: string): string;
 begin
   Result := def;
   if not Assigned(obj) then
@@ -167,7 +167,7 @@ begin
     end;
 end;
 
-function getPropAsInt(obj: TJsonValue; const name: string; def: Integer): Integer;
+function getPropAsInt(const obj: TJsonValue; const name: string; const def: Integer): Integer;
 begin
   Result := def;
   if not Assigned(obj) then
@@ -186,7 +186,7 @@ begin
           Result := def;
 end;
 
-function getPropAsDouble(obj: TJsonValue; const name: string; def: Double): Double;
+function getPropAsDouble(const obj: TJsonValue; const name: string; const def: Double): Double;
 begin
   Result := def;
   if not Assigned(obj) then
@@ -207,12 +207,12 @@ begin
         end;
 end;
 
-function getPropAsBigInt(obj: TJsonValue; const name: string): BigInteger;
+function getPropAsBigInt(const obj: TJsonValue; const name: string): BigInteger;
 begin
   Result := getPropAsBigInt(obj, name, BigInteger.Zero);
 end;
 
-function getPropAsBigInt(obj: TJsonValue; const name: string; def: BigInteger): BigInteger;
+function getPropAsBigInt(const obj: TJsonValue; const name: string; const def: BigInteger): BigInteger;
 begin
   Result := def;
   if not Assigned(obj) then
@@ -231,7 +231,7 @@ begin
           Result := def;
 end;
 
-function getPropAsObj(obj: TJsonValue; const name: string): TJsonObject;
+function getPropAsObj(const obj: TJsonValue; const name: string): TJsonObject;
 begin
   Result := nil;
   if not Assigned(obj) then
@@ -245,7 +245,7 @@ begin
         Result := TJsonObject(P.JsonValue);
 end;
 
-function getPropAsArr(obj: TJsonValue; const name: string): TJsonArray;
+function getPropAsArr(const obj: TJsonValue; const name: string): TJsonArray;
 begin
   Result := nil;
   if not Assigned(obj) then
@@ -259,7 +259,7 @@ begin
         Result := TJsonArray(P.JsonValue);
 end;
 
-function getPropAsBOOL(obj: TJsonValue; const name: string; def: Boolean): Boolean;
+function getPropAsBOOL(const obj: TJsonValue; const name: string; const def: Boolean): Boolean;
 begin
   Result := def;
   if not Assigned(obj) then
@@ -281,7 +281,7 @@ begin
                    or SameText(TJsonString(P.JsonValue).Value, 'true');
 end;
 
-function quoteString(const S: string; Quote: Char): string;
+function quoteString(const S: string; const Quote: Char): string;
 begin
   Result := S;
   if Length(Result) > 0 then

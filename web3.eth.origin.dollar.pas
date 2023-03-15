@@ -48,61 +48,61 @@ type
   TOrigin = class(TLendingProtocol)
   protected
     class procedure Approve(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
   public
     class function Name: string; override;
     class function Supports(
-      chain  : TChain;
-      reserve: TReserve): Boolean; override;
+      const chain  : TChain;
+      const reserve: TReserve): Boolean; override;
     class procedure APY(
-      client   : IWeb3;
-      etherscan: IEtherscan;
-      reserve  : TReserve;
-      period   : TPeriod;
-      callback : TProc<Double, IError>); override;
+      const client   : IWeb3;
+      const etherscan: IEtherscan;
+      const reserve  : TReserve;
+      const period   : TPeriod;
+      const callback : TProc<Double, IError>); override;
     class procedure Deposit(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
-      client  : IWeb3;
-      owner   : TAddress;
-      reserve : TReserve;
-      callback: TProc<BigInteger, IError>); override;
+      const client  : IWeb3;
+      const owner   : TAddress;
+      const reserve : TReserve;
+      const callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
   TOriginVault = class(TCustomContract)
   public
-    constructor Create(aClient: IWeb3); reintroduce;
+    constructor Create(const aClient: IWeb3); reintroduce;
     class function DeployedAt: TAddress;
-    procedure Mint(from: TPrivateKey; reserve: TReserve; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
-    procedure Redeem(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Mint(const from: TPrivateKey; const reserve: TReserve; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
+    procedure Redeem(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
   end;
 
   IOriginDollar = interface(IERC20)
-    procedure RebasingCreditsPerToken(const block: string; callback: TProc<BigInteger, IError>);
+    procedure RebasingCreditsPerToken(const block: string; const callback: TProc<BigInteger, IError>);
   end;
 
 implementation
 
-procedure getAPY(ousd: IOriginDollar; etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
+procedure getAPY(const ousd: IOriginDollar; const etherscan: IEtherscan; const period: TPeriod; const callback: TProc<Double, IError>);
 begin
   ousd.RebasingCreditsPerToken(BLOCK_LATEST, procedure(curr: BigInteger; err: IError)
   begin
@@ -130,16 +130,16 @@ end;
 type
   TOriginDollar = class(TERC20, IOriginDollar)
   public
-    constructor Create(aClient: IWeb3); reintroduce;
-    procedure RebasingCreditsPerToken(const block: string; callback: TProc<BigInteger, IError>);
+    constructor Create(const aClient: IWeb3); reintroduce;
+    procedure RebasingCreditsPerToken(const block: string; const callback: TProc<BigInteger, IError>);
   end;
 
-constructor TOriginDollar.Create(aClient: IWeb3);
+constructor TOriginDollar.Create(const aClient: IWeb3);
 begin
   inherited Create(aClient, '0x2A8e1E676Ec238d8A992307B495b45B3fEAa5e86');
 end;
 
-procedure TOriginDollar.RebasingCreditsPerToken(const block: string; callback: TProc<BigInteger, IError>);
+procedure TOriginDollar.RebasingCreditsPerToken(const block: string; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'rebasingCreditsPerToken()', block, [], callback);
 end;
@@ -147,11 +147,11 @@ end;
 { TOrigin }
 
 class procedure TOrigin.Approve(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   reserve.Address(client.Chain)
     .ifErr(procedure(err: IError)
@@ -169,27 +169,27 @@ begin
   Result := 'Origin';
 end;
 
-class function TOrigin.Supports(chain: TChain; reserve: TReserve): Boolean;
+class function TOrigin.Supports(const chain: TChain; const reserve: TReserve): Boolean;
 begin
   Result := (chain = Ethereum) and (reserve = USDC);
 end;
 
 class procedure TOrigin.APY(
-  client   : IWeb3;
-  etherscan: IEtherscan;
-  reserve  : TReserve;
-  period   : TPeriod;
-  callback : TProc<Double, IError>);
+  const client   : IWeb3;
+  const etherscan: IEtherscan;
+  const reserve  : TReserve;
+  const period   : TPeriod;
+  const callback : TProc<Double, IError>);
 begin
   getAPY(TOriginDollar.Create(client), etherscan, period, callback);
 end;
 
 class procedure TOrigin.Deposit(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   Self.Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
   begin
@@ -208,10 +208,10 @@ begin
 end;
 
 class procedure TOrigin.Balance(
-  client  : IWeb3;
-  owner   : TAddress;
-  reserve : TReserve;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const owner   : TAddress;
+  const reserve : TReserve;
+  const callback: TProc<BigInteger, IError>);
 begin
   const ousd = TOriginDollar.Create(client);
   try
@@ -231,10 +231,10 @@ begin
 end;
 
 class procedure TOrigin.Withdraw(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -254,11 +254,11 @@ begin
 end;
 
 class procedure TOrigin.WithdrawEx(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   const vault = TOriginVault.Create(client);
   try
@@ -276,7 +276,7 @@ end;
 
 { TOriginVault }
 
-constructor TOriginVault.Create(aClient: IWeb3);
+constructor TOriginVault.Create(const aClient: IWeb3);
 begin
   inherited Create(aClient, Self.DeployedAt);
 end;
@@ -286,7 +286,7 @@ begin
   Result := '0xe75d77b1865ae93c7eaa3040b038d7aa7bc02f70';
 end;
 
-procedure TOriginVault.Mint(from: TPrivateKey; reserve: TReserve; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+procedure TOriginVault.Mint(const from: TPrivateKey; const reserve: TReserve; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
 begin
   reserve.Address(Client.Chain)
     .ifErr(procedure(err: IError)
@@ -299,7 +299,7 @@ begin
     end);
 end;
 
-procedure TOriginVault.Redeem(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+procedure TOriginVault.Redeem(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'redeem(uint256,uint256)', [web3.utils.toHex(amount), 0], callback);
 end;

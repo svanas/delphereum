@@ -55,54 +55,54 @@ type
   TFulcrum = class(TLendingProtocol)
   protected
     class procedure Approve(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
     class procedure TokenToUnderlying(
-      client  : IWeb3;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<BigInteger, IError>);
+      const client  : IWeb3;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<BigInteger, IError>);
     class procedure UnderlyingToToken(
-      client  : IWeb3;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<BigInteger, IError>);
+      const client  : IWeb3;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<BigInteger, IError>);
   public
     class function Name: string; override;
     class function Supports(
-      chain  : TChain;
-      reserve: TReserve): Boolean; override;
+      const chain  : TChain;
+      const reserve: TReserve): Boolean; override;
     class procedure APY(
-      client   : IWeb3;
-      etherscan: IEtherscan;
-      reserve  : TReserve;
-      period   : TPeriod;
-      callback : TProc<Double, IError>); override;
+      const client   : IWeb3;
+      const etherscan: IEtherscan;
+      const reserve  : TReserve;
+      const period   : TPeriod;
+      const callback : TProc<Double, IError>); override;
     class procedure Deposit(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
-      client  : IWeb3;
-      owner   : TAddress;
-      reserve : TReserve;
-      callback: TProc<BigInteger, IError>); override;
+      const client  : IWeb3;
+      const owner   : TAddress;
+      const reserve : TReserve;
+      const callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
   TOnMint = reference to procedure(
@@ -120,16 +120,16 @@ type
 
   IiToken = interface(IERC20)
     //------- read from contract -----------------------------------------------
-    procedure AssetBalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
-    procedure LoanTokenAddress(callback: TProc<TAddress, IError>);
-    procedure SupplyInterestRate(callback: TProc<BigInteger, IError>);
-    procedure TokenPrice(callback: TProc<BigInteger, IError>);
+    procedure AssetBalanceOf(const owner: TAddress; const callback: TProc<BigInteger, IError>);
+    procedure LoanTokenAddress(const callback: TProc<TAddress, IError>);
+    procedure SupplyInterestRate(const callback: TProc<BigInteger, IError>);
+    procedure TokenPrice(const callback: TProc<BigInteger, IError>);
     //------- write to contract ------------------------------------------------
-    procedure Burn(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
-    procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Burn(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
+    procedure Mint(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
     //------- events -----------------------------------------------------------
-    function SetOnMint(Value: TOnMint): IiToken;
-    function SetOnBurn(Value: TOnBurn): IiToken;
+    function SetOnMint(const Value: TOnMint): IiToken;
+    function SetOnBurn(const Value: TOnBurn): IiToken;
   end;
 
 implementation
@@ -146,31 +146,31 @@ type
     procedure OnLatestBlockMined(log: PLog; err: IError); override;
   public
     //------- read from contract -----------------------------------------------
-    procedure AssetBalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
-    procedure LoanTokenAddress(callback: TProc<TAddress, IError>);
-    procedure SupplyInterestRate(callback: TProc<BigInteger, IError>);
-    procedure TokenPrice(callback: TProc<BigInteger, IError>);
+    procedure AssetBalanceOf(const owner: TAddress; const callback: TProc<BigInteger, IError>);
+    procedure LoanTokenAddress(const callback: TProc<TAddress, IError>);
+    procedure SupplyInterestRate(const callback: TProc<BigInteger, IError>);
+    procedure TokenPrice(const callback: TProc<BigInteger, IError>);
     //------- write to contract ------------------------------------------------
-    procedure Burn(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
-    procedure Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+    procedure Burn(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
+    procedure Mint(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
     //------- events -----------------------------------------------------------
-    function SetOnMint(Value: TOnMint): IiToken;
-    function SetOnBurn(Value: TOnBurn): IiToken;
+    function SetOnMint(const Value: TOnMint): IiToken;
+    function SetOnBurn(const Value: TOnBurn): IiToken;
   end;
 
-function iDAI(aClient: IWeb3): IiToken;
+function iDAI(const aClient: IWeb3): IiToken;
 begin
   // https://bzx.network/itokens
   Result := TiToken.Create(aClient, '0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0');
 end;
 
-function iUSDC(aClient: IWeb3): IiToken;
+function iUSDC(const aClient: IWeb3): IiToken;
 begin
   // https://bzx.network/itokens
   Result := TiToken.Create(aClient, '0x32e4c68b3a4a813b710595aeba7f6b7604ab9c15');
 end;
 
-function iUSDT(aClient: IWeb3): IiToken;
+function iUSDT(const aClient: IWeb3): IiToken;
 begin
   // https://bzx.network/itokens
   if aClient.Chain = BNB then
@@ -179,7 +179,7 @@ begin
     Result := TiToken.Create(aClient, '0x7e9997a38a439b2be7ed9c9c4628391d3e055d48');
 end;
 
-function iToken(aClient: IWeb3; aReserve: TReserve): IResult<IiToken>;
+function iToken(const aClient: IWeb3; const aReserve: TReserve): IResult<IiToken>;
 begin
   case aReserve of
     DAI : Result := TResult<IiToken>.Ok(iDAI(aClient));
@@ -194,11 +194,11 @@ end;
 
 // Approve the iToken contract to move your underlying asset.
 class procedure TFulcrum.Approve(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   iToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -218,10 +218,10 @@ begin
 end;
 
 class procedure TFulcrum.TokenToUnderlying(
-  client  : IWeb3;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<BigInteger, IError>);
 begin
   iToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -241,10 +241,10 @@ begin
 end;
 
 class procedure TFulcrum.UnderlyingToToken(
-  client  : IWeb3;
-  reserve : TReserve;
-  amount  : BIgInteger;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const reserve : TReserve;
+  const amount  : BIgInteger;
+  const callback: TProc<BigInteger, IError>);
 begin
   iToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -268,18 +268,18 @@ begin
   Result := 'Ooki';
 end;
 
-class function TFulcrum.Supports(chain: TChain; reserve: TReserve): Boolean;
+class function TFulcrum.Supports(const chain: TChain; const reserve: TReserve): Boolean;
 begin
   Result := (chain = Ethereum) and (reserve in [DAI, USDC, USDT]);
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.
 class procedure TFulcrum.APY(
-  client   : IWeb3;
-  etherscan: IEtherscan;
-  reserve  : TReserve;
-  period   : TPeriod;
-  callback : TProc<Double, IError>);
+  const client   : IWeb3;
+  const etherscan: IEtherscan;
+  const reserve  : TReserve;
+  const period   : TPeriod;
+  const callback : TProc<Double, IError>);
 begin
   iToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -300,11 +300,11 @@ end;
 
 // Deposits an underlying asset into the lending pool.
 class procedure TFulcrum.Deposit(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   // Before supplying an asset, we must first approve the iToken.
   Approve(client, from, reserve, amount, procedure(rcpt: ITxReceipt; err: IError)
@@ -326,10 +326,10 @@ end;
 
 // Returns how much underlying assets you are entitled to.
 class procedure TFulcrum.Balance(
-  client  : IWeb3;
-  owner   : TAddress;
-  reserve : TReserve;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const owner   : TAddress;
+  const reserve : TReserve;
+  const callback: TProc<BigInteger, IError>);
 begin
   iToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -358,10 +358,10 @@ end;
 
 // Redeems your balance of iTokens for the underlying asset.
 class procedure TFulcrum.Withdraw(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -403,11 +403,11 @@ begin
 end;
 
 class procedure TFulcrum.WithdrawEx(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   // step #1: from underlying-amount to iToken-amount
   UnderlyingToToken(client, reserve, amount, procedure(input: BigInteger; err: IError)
@@ -467,14 +467,14 @@ begin
               log^.Data[2].toUInt256); // price
 end;
 
-function TiToken.SetOnMint(Value: TOnMint): IiToken;
+function TiToken.SetOnMint(const Value: TOnMint): IiToken;
 begin
   Result := Self;
   FOnMint := Value;
   EventChanged;
 end;
 
-function TiToken.SetOnBurn(Value: TOnBurn): IiToken;
+function TiToken.SetOnBurn(const Value: TOnBurn): IiToken;
 begin
   Result := Self;
   FOnBurn := Value;
@@ -483,7 +483,7 @@ end;
 
 // Called to redeem owned iTokens for an equivalent amount of the underlying asset, at the current tokenPrice() rate.
 // The supplier will receive the asset proceeds.
-procedure TiToken.Burn(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+procedure TiToken.Burn(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -499,7 +499,7 @@ end;
 // Called to deposit assets to the iToken, which in turn mints iTokens to the lender�s wallet at the current tokenPrice() rate.
 // A prior ERC20 �approve� transaction should have been sent to the asset token for an amount greater than or equal to the specified amount.
 // The supplier will receive the minted iTokens.
-procedure TiToken.Mint(from: TPrivateKey; amount: BigInteger; callback: TProc<ITxReceipt, IError>);
+procedure TiToken.Mint(const from: TPrivateKey; const amount: BigInteger; const callback: TProc<ITxReceipt, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -514,13 +514,13 @@ end;
 
 // Returns the user's balance of the underlying asset, scaled by 1e18
 // This is the same as multiplying the user's token balance by the token price.
-procedure TiToken.AssetBalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
+procedure TiToken.AssetBalanceOf(const owner: TAddress; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'assetBalanceOf(address)', [owner], callback);
 end;
 
 // Returns the underlying asset contract address for this iToken.
-procedure TiToken.LoanTokenAddress(callback: TProc<TAddress, IError>);
+procedure TiToken.LoanTokenAddress(const callback: TProc<TAddress, IError>);
 begin
   web3.eth.call(Client, Contract, 'loanTokenAddress()', [], procedure(hex: string; err: IError)
   begin
@@ -532,13 +532,13 @@ begin
 end;
 
 // Returns the aggregate rate that all lenders are receiving from borrowers, scaled by 1e18
-procedure TiToken.SupplyInterestRate(callback: TProc<BigInteger, IError>);
+procedure TiToken.SupplyInterestRate(const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'supplyInterestRate()', [], callback);
 end;
 
 // Returns the current price of the iToken, scaled by 1e18
-procedure TiToken.TokenPrice(callback: TProc<BigInteger, IError>);
+procedure TiToken.TokenPrice(const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'tokenPrice()', [], callback);
 end;

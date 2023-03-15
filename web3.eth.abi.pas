@@ -44,13 +44,13 @@ type
     function Tuple: TArray<Variant>;
   end;
 
-function tuple(args: array of Variant): Variant;
+function tuple(const args: array of Variant): Variant;
 
-function &array(args: array of Variant): TContractArray; overload;
-function &array(args: array of TAddress): TContractArray; overload;
-function &array(args: array of BigInteger): TContractArray; overload;
+function &array(const args: array of Variant): TContractArray; overload;
+function &array(const args: array of TAddress): TContractArray; overload;
+function &array(const args: array of BigInteger): TContractArray; overload;
 
-function encode(const func: string; args: array of const): string;
+function encode(const func: string; const args: array of const): string;
 
 implementation
 
@@ -61,46 +61,46 @@ uses
   // web3
   web3.utils;
 
-function tuple(args: array of Variant): Variant;
+function tuple(const args: array of Variant): Variant;
 begin
   Result := VarArrayCreate([0, High(args)], varVariant);
   for var I := 0 to High(args) do Result[I] := args[I];
 end;
 
-function &array(args: array of Variant): TContractArray;
+function &array(const args: array of Variant): TContractArray;
 begin
   Result := TContractArray.Create;
   for var arg in args do Result.Add(arg);
 end;
 
-function &array(args: array of TAddress): TContractArray;
+function &array(const args: array of TAddress): TContractArray;
 begin
   Result := TContractArray.Create;
   for var arg in args do Result.Add(arg);
 end;
 
-function &array(args: array of BigInteger): TContractArray;
+function &array(const args: array of BigInteger): TContractArray;
 begin
   Result := TContractArray.Create;
   for var arg in args do Result.Add(web3.utils.toHex(arg));
 end;
 
-function encode(const func: string; args: array of const): string;
+function encode(const func: string; const args: array of const): string;
 
   // https://github.com/ethereum/wiki/wiki/Ethereum-Contract-ABI#argument-encoding
-  function encodeArgs(args: array of const): TBytes;
+  function encodeArgs(const args: array of const): TBytes;
 
-    function encodeArg(bool: Boolean): TBytes; overload;
+    function encodeArg(const bool: Boolean): TBytes; overload;
     begin
       Result := web3.utils.fromHex('0x' + IntToHex(Ord(bool), 64));
     end;
 
-    function encodeArg(int: Integer): TBytes; overload;
+    function encodeArg(const int: Integer): TBytes; overload;
     begin
       Result := web3.utils.fromHex('0x' + IntToHex(int, 64));
     end;
 
-    function encodeArg(int: Int64): TBytes; overload;
+    function encodeArg(const int: Int64): TBytes; overload;
     begin
       Result := web3.utils.fromHex('0x' + IntToHex(int, 64));
     end;
@@ -309,7 +309,7 @@ function encode(const func: string; args: array of const): string;
       end;
     end;
 
-    function len(args: array of const): Integer;
+    function len(const args: array of const): Integer;
 
       function len(const arg: TVarRec): Integer;
       begin

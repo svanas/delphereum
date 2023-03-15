@@ -80,10 +80,10 @@ type
   );
 
   IFilters = interface
-    function Status(Value: TStatus): IFilters;
+    function Status(const Value: TStatus): IFilters;
     function MethodName(const Value: string): IFilters;
-    function Direction(Value: TDirection): IFilters;
-    function CounterParty(Value: TAddress): IFilters;
+    function Direction(const Value: TDirection): IFilters;
+    function CounterParty(const Value: TAddress): IFilters;
     function AsArray: TJsonArray;
   end;
 
@@ -100,22 +100,22 @@ type
       const eventCode   : string): string;
   public
     class function Subscribe(
-      const chain  : TChain;
-      const apiKey : string;                     // your blocknative API key
-      const address: TAddress;                   // address to watch
-      onEvent      : TProc<TJsonObject, IError>; // continuous events (or a blocknative error)
-      onError      : TProc<IError>;              // non-blocknative-error handler (probably a socket error)
-      onDisconnect : TProc                       // connection closed
+      const chain       : TChain;
+      const apiKey      : string;                     // your blocknative API key
+      const address     : TAddress;                   // address to watch
+      const onEvent     : TProc<TJsonObject, IError>; // continuous events (or a blocknative error)
+      const onError     : TProc<IError>;              // non-blocknative-error handler (probably a socket error)
+      const onDisconnect: TProc                       // connection closed
     ): IMempool; overload; virtual; abstract;
     class function Subscribe(
-      const chain  : TChain;
-      const apiKey : string;                     // your blocknative API key
-      const address: TAddress;                   // address to watch
-      const filters: IFilters;                   // an array of valid filters. please see: https://github.com/deitch/searchjs
-      const abi    : TJsonArray;                 // a valid ABI that will be used to decode input data for transactions
-      onEvent      : TProc<TJsonObject, IError>; // continuous events (or a blocknative error)
-      onError      : TProc<IError>;              // non-blocknative-error handler (probably a socket error)
-      onDisconnect : TProc                       // connection closed
+      const chain       : TChain;
+      const apiKey      : string;                     // your blocknative API key
+      const address     : TAddress;                   // address to watch
+      const filters     : IFilters;                   // an array of valid filters. please see: https://github.com/deitch/searchjs
+      const abi         : TJsonArray;                 // a valid ABI that will be used to decode input data for transactions
+      const onEvent     : TProc<TJsonObject, IError>; // continuous events (or a blocknative error)
+      const onError     : TProc<IError>;              // non-blocknative-error handler (probably a socket error)
+      const onDisconnect: TProc                       // connection closed
     ): IMempool; overload; virtual; abstract;
   end;
 
@@ -174,7 +174,7 @@ function TCustomMempool.CreatePayload(
   const categoryCode: string;
   const eventCode   : string): string;
 
-  function NETWORK(chain: TChain): string; inline;
+  function NETWORK(const chain: TChain): string; inline;
   begin
     if chain = Ethereum then
       Result := 'main'
@@ -211,10 +211,10 @@ type
     FDirection: TDirection;
     FCounterParty: TAddress;
   public
-    function Status(Value: TStatus): IFilters;
+    function Status(const Value: TStatus): IFilters;
     function MethodName(const Value: string): IFilters;
-    function Direction(Value: TDirection): IFilters;
-    function CounterParty(Value: TAddress): IFilters;
+    function Direction(const Value: TDirection): IFilters;
+    function CounterParty(const Value: TAddress): IFilters;
     function AsArray: TJsonArray;
   end;
 
@@ -223,7 +223,7 @@ begin
   Result := TFilters.Create;
 end;
 
-function TFilters.Status(Value: TStatus): IFilters;
+function TFilters.Status(const Value: TStatus): IFilters;
 begin
   Self.FStatus := Value;
   Result := Self;
@@ -235,13 +235,13 @@ begin
   Result := Self;
 end;
 
-function TFilters.Direction(Value: TDirection): IFilters;
+function TFilters.Direction(const Value: TDirection): IFilters;
 begin
   Self.FDirection := Value;
   Result := Self;
 end;
 
-function TFilters.CounterParty(Value: TAddress): IFilters;
+function TFilters.CounterParty(const Value: TAddress): IFilters;
 begin
   Self.FCounterParty := Value;
   Result := Self;

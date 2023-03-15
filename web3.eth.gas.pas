@@ -43,26 +43,26 @@ uses
   web3.json.rpc,
   web3.utils;
 
-procedure getGasPrice(client: IWeb3; callback: TProc<BigInteger, IError>; allowCustom: Boolean = True);
-procedure getBaseFeePerGas(client: IWeb3; callback: TProc<BigInteger, IError>);
-procedure getMaxPriorityFeePerGas(client: IWeb3; callback: TProc<BigInteger, IError>);
-procedure getMaxFeePerGas(client: IWeb3; callback: TProc<BigInteger, IError>; allowCustom: Boolean = True);
+procedure getGasPrice(const client: IWeb3; const callback: TProc<BigInteger, IError>; const allowCustom: Boolean = True);
+procedure getBaseFeePerGas(const client: IWeb3; const callback: TProc<BigInteger, IError>);
+procedure getMaxPriorityFeePerGas(const client: IWeb3; const callback: TProc<BigInteger, IError>);
+procedure getMaxFeePerGas(const client: IWeb3; const callback: TProc<BigInteger, IError>; const allowCustom: Boolean = True);
 
 procedure estimateGas(
-  client    : IWeb3;
-  from, &to : TAddress;
-  const func: string;
-  args      : array of const;
-  callback  : TProc<BigInteger, IError>); overload;
+  const client   : IWeb3;
+  const from, &to: TAddress;
+  const func     : string;
+  const args     : array of const;
+  const callback : TProc<BigInteger, IError>); overload;
 procedure estimateGas(
-  client    : IWeb3;
-  from, &to : TAddress;
-  const data: string;
-  callback  : TProc<BigInteger, IError>); overload;
+  const client   : IWeb3;
+  const from, &to: TAddress;
+  const data     : string;
+  const callback : TProc<BigInteger, IError>); overload;
 
 implementation
 
-procedure eth_gasPrice(client: IWeb3; callback: TProc<BigInteger, IError>);
+procedure eth_gasPrice(const client: IWeb3; const callback: TProc<BigInteger, IError>);
 begin
   client.Call('eth_gasPrice', [], procedure(response: TJsonObject; err: IError)
   begin
@@ -73,7 +73,7 @@ begin
   end);
 end;
 
-procedure getGasPrice(client: IWeb3; callback: TProc<BigInteger, IError>; allowCustom: Boolean);
+procedure getGasPrice(const client: IWeb3; const callback: TProc<BigInteger, IError>; const allowCustom: Boolean);
 begin
   if allowCustom then
   begin
@@ -106,7 +106,7 @@ begin
   eth_gasPrice(client, callback);
 end;
 
-procedure getBaseFeePerGas(client: IWeb3; callback: TProc<BigInteger, IError>);
+procedure getBaseFeePerGas(const client: IWeb3; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.getBlockByNumber(client, procedure(block: IBlock; err: IError)
   begin
@@ -117,7 +117,7 @@ begin
   end);
 end;
 
-procedure getMaxPriorityFeePerGas(client: IWeb3; callback: TProc<BigInteger, IError>);
+procedure getMaxPriorityFeePerGas(const client: IWeb3; const callback: TProc<BigInteger, IError>);
 begin
   client.Call('eth_maxPriorityFeePerGas', [], procedure(response: TJsonObject; err: IError)
   begin
@@ -142,7 +142,7 @@ begin
   end);
 end;
 
-procedure getMaxFeePerGas(client: IWeb3; callback: TProc<BigInteger, IError>; allowCustom: Boolean);
+procedure getMaxFeePerGas(const client: IWeb3; const callback: TProc<BigInteger, IError>; const allowCustom: Boolean);
 begin
   if allowCustom then
   begin
@@ -170,20 +170,20 @@ begin
 end;
 
 procedure estimateGas(
-  client    : IWeb3;
-  from, &to : TAddress;
-  const func: string;
-  args      : array of const;
-  callback  : TProc<BigInteger, IError>);
+  const client   : IWeb3;
+  const from, &to: TAddress;
+  const func     : string;
+  const args     : array of const;
+  const callback : TProc<BigInteger, IError>);
 begin
   estimateGas(client, from, &to, web3.eth.abi.encode(func, args), callback);
 end;
 
 procedure estimateGas(
-  client    : IWeb3;
-  from, &to : TAddress;
-  const data: string;
-  callback  : TProc<BigInteger, IError>);
+  const client   : IWeb3;
+  const from, &to: TAddress;
+  const data     : string;
+  const callback : TProc<BigInteger, IError>);
 type
   Teth_estimateGas = reference to procedure(client: IWeb3; const json: string; callback: TProc<BigInteger, IError>);
   TdoEstimateGasEx = reference to procedure(client: IWeb3; from, &to: TAddress; &strict: Boolean; callback: TProc<BigInteger, IError>);

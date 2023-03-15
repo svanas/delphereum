@@ -98,8 +98,8 @@ type
     function  Length: Integer;
     procedure Add(const Item: T);
     function  First: T;
-    function  Get(Index: Integer): T;
-    procedure Delete(Index, Count: Integer);
+    function  Get(const Index: Integer): T;
+    procedure Delete(const Index, Count: Integer);
   end;
 
   TCriticalQueue<T> = class(TCriticalThing, ICriticalQueue<T>)
@@ -109,8 +109,8 @@ type
     function  Length: Integer;
     procedure Add(const Item: T);
     function  First: T;
-    function  Get(Index: Integer): T;
-    procedure Delete(Index, Count: Integer);
+    function  Get(const Index: Integer): T;
+    procedure Delete(const Index, Count: Integer);
   end;
 
 type
@@ -118,10 +118,10 @@ type
   strict private
     Inner: TList<IInterface>;
   strict protected
-    function  Get(Index: Integer): IInterface;
-    procedure Put(Index: Integer; const Item: IInterface);
+    function  Get(const Index: Integer): IInterface;
+    procedure Put(const Index: Integer; const Item: IInterface);
     procedure Clear;
-    procedure Delete(Index: Integer);
+    procedure Delete(const Index: Integer);
     function  First: IInterface;
     function  Add(const Item: IInterface): Integer;
     function  Count: Integer;
@@ -229,12 +229,12 @@ begin
   Result := Get(0);
 end;
 
-function TCriticalQueue<T>.Get(Index: Integer): T;
+function TCriticalQueue<T>.Get(const Index: Integer): T;
 begin
   Result := Inner[Index];
 end;
 
-procedure TCriticalQueue<T>.Delete(Index: Integer; Count: Integer);
+procedure TCriticalQueue<T>.Delete(const Index, Count: Integer);
 begin
   System.Delete(Inner, Index, Count);
 end;
@@ -264,7 +264,7 @@ begin
   end;
 end;
 
-procedure TCriticalList.Delete(Index: Integer);
+procedure TCriticalList.Delete(const Index: Integer);
 begin
   if (Index < 0) or (Index >= Count) then
     Inner.Error(SListIndexError, Index);
@@ -277,7 +277,7 @@ begin
   Result := Get(0);
 end;
 
-function TCriticalList.Get(Index: Integer): IInterface;
+function TCriticalList.Get(const Index: Integer): IInterface;
 begin
   if (Index < 0) or (Index >= Count) then
     Inner.Error(SListIndexError, Index);
@@ -295,7 +295,7 @@ begin
   Inner[Result] := Item;
 end;
 
-procedure TCriticalList.Put(Index: Integer; const Item: IInterface);
+procedure TCriticalList.Put(const Index: Integer; const Item: IInterface);
 begin
   if (Index < 0) or (Index >= Count) then
     Inner.Error(SListIndexError, Index);

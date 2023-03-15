@@ -41,10 +41,10 @@ type
     function Price : Double; // volume-weighted price based on real-time market data, translated to USD
   end;
 
-function ticker(const asset: string; callback: TProc<ITicker, IError>): IAsyncResult; overload;
-function ticker(const asset: string; callback: TProc<TJsonValue, IError>): IAsyncResult; overload;
+function ticker(const asset: string; const callback: TProc<ITicker, IError>): IAsyncResult; overload;
+function ticker(const asset: string; const callback: TProc<TJsonValue, IError>): IAsyncResult; overload;
 
-function price(const asset: string; callback: TProc<Double, IError>): IAsyncResult;
+function price(const asset: string; const callback: TProc<Double, IError>): IAsyncResult;
 
 implementation
 
@@ -71,7 +71,7 @@ begin
   Result := getPropAsDouble(FJsonValue, 'priceUsd');
 end;
 
-function ticker(const asset: string; callback: TProc<ITicker, IError>): IAsyncResult;
+function ticker(const asset: string; const callback: TProc<ITicker, IError>): IAsyncResult;
 begin
   Result := ticker(asset, procedure(obj: TJsonValue; err: IError)
   begin
@@ -90,7 +90,7 @@ begin
   end);
 end;
 
-function ticker(const asset: string; callback: TProc<TJsonValue, IError>): IAsyncResult;
+function ticker(const asset: string; const callback: TProc<TJsonValue, IError>): IAsyncResult;
 begin
   Result := web3.http.get(
     'https://api.coincap.io/v2/assets/' + TNetEncoding.URL.Encode(asset),
@@ -98,7 +98,7 @@ begin
   );
 end;
 
-function price(const asset: string; callback: TProc<Double, IError>): IAsyncResult;
+function price(const asset: string; const callback: TProc<Double, IError>): IAsyncResult;
 begin
   Result := ticker(asset, procedure(ticker: ITicker; err: IError)
   begin

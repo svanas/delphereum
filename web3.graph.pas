@@ -44,7 +44,7 @@ type
 
   TGraphError = class(TError, IGraphError);
 
-function execute(const URL, query: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
+function execute(const URL, query: string; const callback: TProc<TJsonObject, IError>): IAsyncResult;
 
 implementation
 
@@ -56,7 +56,7 @@ uses
   // web3
   web3.json;
 
-function execute(const URL, query: string; callback: TProc<TJsonObject, IError>): IAsyncResult;
+function execute(const URL, query: string; const callback: TProc<TJsonObject, IError>): IAsyncResult;
 begin
   Result := web3.http.post(
     URL,

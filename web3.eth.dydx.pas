@@ -50,48 +50,48 @@ type
   TdYdX = class(TLendingProtocol)
   protected
     class procedure TokenAddress(
-      client  : IWeb3;
-      reserve : TReserve;
-      callback: TProc<TAddress, IError>);
+      const client  : IWeb3;
+      const reserve : TReserve;
+      const callback: TProc<TAddress, IError>);
     class procedure Approve(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
   public
     class function Name: string; override;
     class function Supports(
-      chain   : TChain;
-      reserve : TReserve): Boolean; override;
+      const chain   : TChain;
+      const reserve : TReserve): Boolean; override;
     class procedure APY(
-      client   : IWeb3;
-      etherscan: IEtherscan;
-      reserve  : TReserve;
-      period   : TPeriod;
-      callback : TProc<Double, IError>); override;
+      const client   : IWeb3;
+      const etherscan: IEtherscan;
+      const reserve  : TReserve;
+      const period   : TPeriod;
+      const callback : TProc<Double, IError>); override;
     class procedure Deposit(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
-      client  : IWeb3;
-      owner   : TAddress;
-      reserve : TReserve;
-      callback: TProc<BigInteger, IError>); override;
+      const client  : IWeb3;
+      const owner   : TAddress;
+      const reserve : TReserve;
+      const callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
   TSoloTotalPar = record
@@ -140,9 +140,9 @@ type
 
   TSoloMargin = class(TCustomContract)
   private
-    class function DeployedAt(chain: TChain): IResult<TAddress>;
+    class function DeployedAt(const chain: TChain): IResult<TAddress>;
   protected
-    class function ToBigInt(value: TTuple): IResult<BigInteger>;
+    class function ToBigInt(const value: TTuple): IResult<BigInteger>;
   public
     const
       marketId: array[TReserve] of Integer = (
@@ -152,33 +152,33 @@ type
         -1, // TUSD
         -1  // mUSD
       );
-    procedure GetAccountWei(owner: TAddress; marketId: Integer; callback: TProc<BigInteger, IError>);
-    procedure GetEarningsRate(callback: TProc<Double, IError>);
-    procedure GetMarket(marketId: Integer; callback: TProc<ISoloMarket, IError>);
-    procedure GetMarketInterestRate(marketId: Integer; callback: TProc<Double, IError>);
-    procedure GetMarketSupplyInterestRate(marketId: Integer; callback: TProc<Double, IError>);
-    procedure GetMarketUtilization(marketId: Integer; callback: TProc<Double, IError>);
+    procedure GetAccountWei(const owner: TAddress; const marketId: Integer; const callback: TProc<BigInteger, IError>);
+    procedure GetEarningsRate(const callback: TProc<Double, IError>);
+    procedure GetMarket(const marketId: Integer; const callback: TProc<ISoloMarket, IError>);
+    procedure GetMarketInterestRate(const marketId: Integer; const callback: TProc<Double, IError>);
+    procedure GetMarketSupplyInterestRate(const marketId: Integer; const callback: TProc<Double, IError>);
+    procedure GetMarketUtilization(const marketId: Integer; const callback: TProc<Double, IError>);
     procedure Operate(
-      owner            : TPrivateKey;
-      actionType       : TSoloActionType;
-      amount           : BigInteger;
-      denomination     : TSoloDenomination;
-      reference        : TSoloReference;
-      primaryMarketId  : Integer;
-      secondaryMarketId: Integer;
-      otherAddress     : TAddress;
-      otherAccountId   : Integer;
-      callback         : TProc<ITxReceipt, IError>);
+      const owner            : TPrivateKey;
+      const actionType       : TSoloActionType;
+      const amount           : BigInteger;
+      const denomination     : TSoloDenomination;
+      const reference        : TSoloReference;
+      const primaryMarketId  : Integer;
+      const secondaryMarketId: Integer;
+      const otherAddress     : TAddress;
+      const otherAccountId   : Integer;
+      const callback         : TProc<ITxReceipt, IError>);
     procedure Deposit(
-      owner   : TPrivateKey;
-      marketId: Integer;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const owner   : TPrivateKey;
+      const marketId: Integer;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
     procedure Withdraw(
-      owner   : TPrivateKey;
-      marketId: Integer;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const owner   : TPrivateKey;
+      const marketId: Integer;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
   end;
 
 implementation
@@ -190,9 +190,9 @@ const
 
 // Returns contract address of the associated ERC20 token
 class procedure TdYdX.TokenAddress(
-  client  : IWeb3;
-  reserve : TReserve;
-  callback: TProc<TAddress, IError>);
+  const client  : IWeb3;
+  const reserve : TReserve;
+  const callback: TProc<TAddress, IError>);
 begin
   TSoloMargin.DeployedAt(client.Chain)
     .ifErr(procedure(err: IError)
@@ -219,11 +219,11 @@ end;
 
 // Approve the Solo contract to move your tokens.
 class procedure TdYdX.Approve(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   TSoloMargin.DeployedAt(client.Chain)
     .ifErr(procedure(err: IError)
@@ -247,18 +247,18 @@ begin
   Result := 'dYdX';
 end;
 
-class function TdYdX.Supports(chain: TChain; reserve: TReserve): Boolean;
+class function TdYdX.Supports(const chain: TChain; const reserve: TReserve): Boolean;
 begin
   Result := (chain = Ethereum) and (reserve in [DAI, USDC]);
 end;
 
 // Returns the annual yield as a percentage.
 class procedure TdYdX.APY(
-  client   : IWeb3;
-  etherscan: IEtherscan;
-  reserve  : TReserve;
-  period   : TPeriod;
-  callback : TProc<Double, IError>);
+  const client   : IWeb3;
+  const etherscan: IEtherscan;
+  const reserve  : TReserve;
+  const period   : TPeriod;
+  const callback : TProc<Double, IError>);
 const
   SECONDS_PER_YEAR = 31536000;
 begin
@@ -286,11 +286,11 @@ begin
 end;
 
 class procedure TdYdX.Deposit(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   TSoloMargin.DeployedAt(client.Chain)
     .ifErr(procedure(err: IError)
@@ -319,10 +319,10 @@ begin
 end;
 
 class procedure TdYdX.Balance(
-  client  : IWeb3;
-  owner   : TAddress;
-  reserve : TReserve;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const owner   : TAddress;
+  const reserve : TReserve;
+  const callback: TProc<BigInteger, IError>);
 begin
   TSoloMargin.DeployedAt(client.Chain)
     .ifErr(procedure(err: IError)
@@ -342,10 +342,10 @@ begin
 end;
 
 class procedure TdYdX.Withdraw(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -365,11 +365,11 @@ begin
 end;
 
 class procedure TdYdX.WithdrawEx(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   TSoloMargin.DeployedAt(client.Chain)
     .ifErr(procedure(err: IError)
@@ -409,10 +409,10 @@ type
     function MarginPremium : Double;
     function SpreadPremium : Double;
     function IsClosing     : Boolean;
-    constructor Create(aTuple: TTuple);
+    constructor Create(const aTuple: TTuple);
   end;
 
-constructor TSoloMarket.Create(aTuple: TTuple);
+constructor TSoloMarket.Create(const aTuple: TTuple);
 begin
   inherited Create;
   FTuple := aTuple;
@@ -463,7 +463,7 @@ end;
 
 { TSoloMargin }
 
-class function TSoloMargin.DeployedAt(chain: TChain): IResult<TAddress>;
+class function TSoloMargin.DeployedAt(const chain: TChain): IResult<TAddress>;
 begin
   if chain = Ethereum then
     Result := TResult<TAddress>.Ok('0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e')
@@ -471,7 +471,7 @@ begin
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, TError.Create('dYdX is not deployed on %s', [chain.Name]));
 end;
 
-class function TSoloMargin.ToBigInt(value: TTuple): IResult<BigInteger>;
+class function TSoloMargin.ToBigInt(const value: TTuple): IResult<BigInteger>;
 begin
   if Length(value) < 2 then
   begin
@@ -489,9 +489,9 @@ end;
 
 // Get the token balance for a particular account and market.
 procedure TSoloMargin.GetAccountWei(
-  owner   : TAddress;
-  marketId: Integer;
-  callback: TProc<BigInteger, IError>);
+  const owner   : TAddress;
+  const marketId: Integer;
+  const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'getAccountWei((address,uint256),uint256)', [tuple([owner, 0]), marketId], procedure(tup: TTuple; err: IError)
   begin
@@ -504,7 +504,7 @@ end;
 
 // Get the global earnings-rate variable that determines what percentage of the
 // interest paid by borrowers gets passed-on to suppliers.
-procedure TSoloMargin.GetEarningsRate(callback: TProc<Double, IError>);
+procedure TSoloMargin.GetEarningsRate(const callback: TProc<Double, IError>);
 begin
   web3.eth.call(Client, Contract, 'getEarningsRate()', [], procedure(rate: BigInteger; err: IError)
   begin
@@ -516,7 +516,7 @@ begin
 end;
 
 // Get basic information about a particular market.
-procedure TSoloMargin.GetMarket(marketId: Integer; callback: TProc<ISoloMarket, IError>);
+procedure TSoloMargin.GetMarket(const marketId: Integer; const callback: TProc<ISoloMarket, IError>);
 begin
   web3.eth.call(Client, Contract, 'getMarket(uint256)', [marketId], procedure(tup: TTuple; err: IError)
   begin
@@ -528,7 +528,7 @@ begin
 end;
 
 // Get the current borrower interest rate for a market.
-procedure TSoloMargin.GetMarketInterestRate(marketId: Integer; callback: TProc<Double, IError>);
+procedure TSoloMargin.GetMarketInterestRate(const marketId: Integer; const callback: TProc<Double, IError>);
 begin
   web3.eth.call(Client, Contract, 'getMarketInterestRate(uint256)', [marketId], procedure(rate: BigInteger; err: IError)
   begin
@@ -540,7 +540,7 @@ begin
 end;
 
 // https://github.com/dydxprotocol/solo/blob/master/src/modules/Getters.ts#L253
-procedure TSoloMargin.GetMarketSupplyInterestRate(marketId: Integer; callback: TProc<Double, IError>);
+procedure TSoloMargin.GetMarketSupplyInterestRate(const marketId: Integer; const callback: TProc<Double, IError>);
 begin
   GetEarningsRate(procedure(earningsRate: Double; err: IError)
   begin
@@ -564,7 +564,7 @@ begin
 end;
 
 // https://github.com/dydxprotocol/solo/blob/master/src/modules/Getters.ts#L230
-procedure TSoloMargin.GetMarketUtilization(marketId: Integer; callback: TProc<Double, IError>);
+procedure TSoloMargin.GetMarketUtilization(const marketId: Integer; const callback: TProc<Double, IError>);
 begin
   GetMarket(marketId, procedure(market: ISoloMarket; err: IError)
   begin
@@ -581,16 +581,16 @@ end;
 
 // The main entry-point to Solo that allows users and contracts to manage accounts.
 procedure TSoloMargin.Operate(
-  owner            : TPrivateKey;
-  actionType       : TSoloActionType;
-  amount           : BigInteger;
-  denomination     : TSoloDenomination;
-  reference        : TSoloReference;
-  primaryMarketId  : Integer;
-  secondaryMarketId: Integer;
-  otherAddress     : TAddress;
-  otherAccountId   : Integer;
-  callback         : TProc<ITxReceipt, IError>);
+  const owner            : TPrivateKey;
+  const actionType       : TSoloActionType;
+  const amount           : BigInteger;
+  const denomination     : TSoloDenomination;
+  const reference        : TSoloReference;
+  const primaryMarketId  : Integer;
+  const secondaryMarketId: Integer;
+  const otherAddress     : TAddress;
+  const otherAccountId   : Integer;
+  const callback         : TProc<ITxReceipt, IError>);
 begin
   owner.GetAddress
     .ifErr(procedure(err: IError)
@@ -636,10 +636,10 @@ end;
 // Moves tokens from an address to Solo.
 // Can either repay a borrow or provide additional supply.
 procedure TSoloMargin.Deposit(
-  owner   : TPrivateKey;
-  marketId: Integer;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const owner   : TPrivateKey;
+  const marketId: Integer;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   owner.GetAddress
     .ifErr(procedure(err: IError)
@@ -665,10 +665,10 @@ end;
 // Moves tokens from Solo to another address.
 // Can either borrow tokens or reduce the amount previously supplied.
 procedure TSoloMargin.Withdraw(
-  owner   : TPrivateKey;
-  marketId: Integer;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const owner   : TPrivateKey;
+  const marketId: Integer;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   if not(amount.IsZero) then
     amount.Sign := -1;

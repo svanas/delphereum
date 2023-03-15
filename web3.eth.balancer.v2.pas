@@ -58,11 +58,11 @@ type
     FAmount  : BigInteger;
   public
     function Tuple: TArray<Variant>;
-    function PoolId(Value: TBytes32): TSingleSwap;
-    function Kind(Value: TSwapKind): TSingleSwap;
-    function AssetIn(Value: TAddress): TSingleSwap;
-    function AssetOut(Value: TAddress): TSingleSwap;
-    function Amount(Value: BigInteger): TSingleSwap;
+    function PoolId(const Value: TBytes32): TSingleSwap;
+    function Kind(const Value: TSwapKind): TSingleSwap;
+    function AssetIn(const Value: TAddress): TSingleSwap;
+    function AssetOut(const Value: TAddress): TSingleSwap;
+    function Amount(const Value: BigInteger): TSingleSwap;
   end;
 
   ISwapStep = interface end;
@@ -75,10 +75,10 @@ type
     FAmount       : BigInteger;
   public
     function Tuple: TArray<Variant>;
-    function PoolId(Value: TBytes32): TSwapStep;
-    function AssetInIndex(Value: Integer): TSwapStep;
-    function AssetOutIndex(Value: Integer): TSwapStep;
-    function Amount(Value: BigInteger): TSwapStep;
+    function PoolId(const Value: TBytes32): TSwapStep;
+    function AssetInIndex(const Value: Integer): TSwapStep;
+    function AssetOutIndex(const Value: Integer): TSwapStep;
+    function Amount(const Value: BigInteger): TSwapStep;
   end;
 
   TOnSwap = reference to procedure(
@@ -91,58 +91,58 @@ type
 
   TVault = class(TCustomContract)
   public
-    constructor Create(aClient: IWeb3); reintroduce;
+    constructor Create(const aClient: IWeb3); reintroduce;
     class function DeployedAt: TAddress;
     procedure Swap(
-      owner   : TPrivateKey;
-      swap    : ISingleSwap;
-      limit   : BigInteger;
-      deadline: BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const owner   : TPrivateKey;
+      const swap    : ISingleSwap;
+      const limit   : BigInteger;
+      const deadline: BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
     procedure BatchSwap(
-      owner   : TPrivateKey;
-      kind    : TSwapKind;
-      swaps   : TArray<ISwapStep>;
-      assets  : TArray<TAddress>;
-      limits  : TArray<BigInteger>;
-      deadline: BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const owner   : TPrivateKey;
+      const kind    : TSwapKind;
+      const swaps   : TArray<ISwapStep>;
+      const assets  : TArray<TAddress>;
+      const limits  : TArray<BigInteger>;
+      const deadline: BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
     procedure QueryBatchSwap(
-      owner   : TAddress;
-      kind    : TSwapKind;
-      swaps   : TArray<ISwapStep>;
-      assets  : TArray<TAddress>;
-      callback: TProc<TArray<BigInteger>, IError>);
-    procedure WETH(callback: TProc<TAddress, IError>);
+      const owner   : TAddress;
+      const kind    : TSwapKind;
+      const swaps   : TArray<ISwapStep>;
+      const assets  : TArray<TAddress>;
+      const callback: TProc<TArray<BigInteger>, IError>);
+    procedure WETH(const callback: TProc<TAddress, IError>);
   end;
 
 // get the Balancer token list
-procedure tokens(chain: TChain; callback: TProc<TTokens, IError>);
+procedure tokens(const chain: TChain; const callback: TProc<TTokens, IError>);
 
 // easy access function: simulate a trade between two tokens, returning Vault asset deltas.
 procedure simulate(
-  client  : IWeb3;
-  owner   : TAddress;
-  kind    : TSwapKind;
-  assetIn : TAddress;
-  assetOut: TAddress;
-  amount  : BigInteger;
-  callback: TProc<TArray<BigInteger>, IError>);
+  const client  : IWeb3;
+  const owner   : TAddress;
+  const kind    : TSwapKind;
+  const assetIn : TAddress;
+  const assetOut: TAddress;
+  const amount  : BigInteger;
+  const callback: TProc<TArray<BigInteger>, IError>);
 
 // easy access function: make a trade between two tokens.
 procedure swap(
-  client  : IWeb3;
-  owner   : TPrivateKey; // owner of the tokens we are sending to the pool
-  kind    : TSwapKind;   // the type of swap we want to perform - either (a) "Given In" or (b) "Given Out"
-  assetIn : TAddress;    // the address of the token which we are sending to the pool
-  assetOut: TAddress;    // the address of the token which we will receive in return
-  amount  : BigInteger;  // the amount of tokens we (a) are sending to the pool, or (b) want to receive from the pool
-  limit   : BigInteger;  // the "other amount" aka (a) minimum amount of tokens to receive, or (b) maximum amount of tokens to send
-  deadline: BigInteger;  // your transaction will revert if it is still pending after this Unix epoch
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const owner   : TPrivateKey; // owner of the tokens we are sending to the pool
+  const kind    : TSwapKind;   // the type of swap we want to perform - either (a) "Given In" or (b) "Given Out"
+  const assetIn : TAddress;    // the address of the token which we are sending to the pool
+  const assetOut: TAddress;    // the address of the token which we will receive in return
+  const amount  : BigInteger;  // the amount of tokens we (a) are sending to the pool, or (b) want to receive from the pool
+  const limit   : BigInteger;  // the "other amount" aka (a) minimum amount of tokens to receive, or (b) maximum amount of tokens to send
+  const deadline: BigInteger;  // your transaction will revert if it is still pending after this Unix epoch
+  const callback: TProc<ITxReceipt, IError>);
 
 // easy access function: listen for swaps between two tokens.
-function listen(client: IWeb3; callback: TOnSwap): ILogger;
+function listen(const client: IWeb3; const callback: TOnSwap): ILogger;
 
 implementation
 
@@ -173,31 +173,31 @@ begin
   ];
 end;
 
-function TSingleSwap.PoolId(Value: TBytes32): TSingleSwap;
+function TSingleSwap.PoolId(const Value: TBytes32): TSingleSwap;
 begin
   Self.FPoolId := Value;
   Result := Self;
 end;
 
-function TSingleSwap.Kind(Value: TSwapKind): TSingleSwap;
+function TSingleSwap.Kind(const Value: TSwapKind): TSingleSwap;
 begin
   Self.FKind := Value;
   Result := Self;
 end;
 
-function TSingleSwap.AssetIn(Value: TAddress): TSingleSwap;
+function TSingleSwap.AssetIn(const Value: TAddress): TSingleSwap;
 begin
   Self.FAssetIn := Value;
   Result := Self;
 end;
 
-function TSingleSwap.AssetOut(Value: TAddress): TSingleSwap;
+function TSingleSwap.AssetOut(const Value: TAddress): TSingleSwap;
 begin
   Self.FAssetOut := Value;
   Result := Self;
 end;
 
-function TSingleSwap.Amount(Value: BigInteger): TSingleSwap;
+function TSingleSwap.Amount(const Value: BigInteger): TSingleSwap;
 begin
   Self.FAmount := Value;
   Result := Self;
@@ -216,25 +216,25 @@ begin
   ];
 end;
 
-function TSwapStep.PoolId(Value: TBytes32): TSwapStep;
+function TSwapStep.PoolId(const Value: TBytes32): TSwapStep;
 begin
   Self.FPoolId := Value;
   Result := Self;
 end;
 
-function TSwapStep.AssetInIndex(Value: Integer): TSwapStep;
+function TSwapStep.AssetInIndex(const Value: Integer): TSwapStep;
 begin
   Self.FAssetInIndex := Value;
   Result := Self;
 end;
 
-function TSwapStep.AssetOutIndex(Value: Integer): TSwapStep;
+function TSwapStep.AssetOutIndex(const Value: Integer): TSwapStep;
 begin
   Self.FAssetOutIndex := Value;
   Result := Self;
 end;
 
-function TSwapStep.Amount(Value: BigInteger): TSwapStep;
+function TSwapStep.Amount(const Value: BigInteger): TSwapStep;
 begin
   Self.FAmount := Value;
   Result := Self;
@@ -269,7 +269,7 @@ end;
 
 { TVault }
 
-constructor TVault.Create(aClient: IWeb3);
+constructor TVault.Create(const aClient: IWeb3);
 begin
   inherited Create(aClient, Self.DeployedAt);
 end;
@@ -280,11 +280,11 @@ begin
 end;
 
 procedure TVault.Swap(
-  owner   : TPrivateKey;
-  swap    : ISingleSwap;
-  limit   : BigInteger;
-  deadline: BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const owner   : TPrivateKey;
+  const swap    : ISingleSwap;
+  const limit   : BigInteger;
+  const deadline: BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   owner.GetAddress
     .ifErr(procedure(err: IError)
@@ -313,13 +313,13 @@ begin
 end;
 
 procedure TVault.BatchSwap(
-  owner   : TPrivateKey;
-  kind    : TSwapKind;
-  swaps   : TArray<ISwapStep>;
-  assets  : TArray<TAddress>;
-  limits  : TArray<BigInteger>;
-  deadline: BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const owner   : TPrivateKey;
+  const kind    : TSwapKind;
+  const swaps   : TArray<ISwapStep>;
+  const assets  : TArray<TAddress>;
+  const limits  : TArray<BigInteger>;
+  const deadline: BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   owner.GetAddress
     .ifErr(procedure(err: IError)
@@ -363,11 +363,11 @@ begin
 end;
 
 procedure TVault.QueryBatchSwap(
-  owner   : TAddress;
-  kind    : TSwapKind;
-  swaps   : TArray<ISwapStep>;
-  assets  : TArray<TAddress>;
-  callback: TProc<TArray<BigInteger>, IError>);
+  const owner   : TAddress;
+  const kind    : TSwapKind;
+  const swaps   : TArray<ISwapStep>;
+  const assets  : TArray<TAddress>;
+  const callback: TProc<TArray<BigInteger>, IError>);
 begin
   const funds: IContractStruct = TFundManagement.Create;
   with funds as TFundManagement do
@@ -411,7 +411,7 @@ begin
   );
 end;
 
-procedure TVault.WETH(callback: TProc<TAddress, IError>);
+procedure TVault.WETH(const callback: TProc<TAddress, IError>);
 begin
   call(Client, Contract, 'WETH()', [], procedure(hex: string; err: IError)
   begin
@@ -440,7 +440,7 @@ begin
   inherited Create('Pool does not exist');
 end;
 
-procedure getPoolId(chain: TChain; asset0, asset1: TAddress; callback: TProc<string, IError>);
+procedure getPoolId(const chain: TChain; const asset0, asset1: TAddress; const callback: TProc<string, IError>);
 const
   QUERY = '{"query":"{pools(where: {tokensList: [\"%s\", \"%s\"]}, orderBy: totalLiquidity, orderDirection: desc) { id }}"}';
 begin
@@ -495,7 +495,7 @@ end;
 
 {------------------------ get the Balancer token list -------------------------}
 
-procedure tokens(chain: TChain; callback: TProc<TTokens, IError>);
+procedure tokens(const chain: TChain; const callback: TProc<TTokens, IError>);
 begin
   if (chain = Ethereum) or (chain = Goerli) then
   begin
@@ -527,7 +527,7 @@ end;
 
 {---------- easy access function: returns the Vault's WETH instance -----------}
 
-procedure weth(client: IWeb3; callback: TProc<TAddress, IError>);
+procedure weth(const client: IWeb3; const callback: TProc<TAddress, IError>);
 begin
   const vault = TVault.Create(client);
   try
@@ -552,13 +552,13 @@ type
     FAssetIn : TAddress;
     FAssetOut: TAddress;
   public
-    constructor Create(aId: TBytes32; aAssetIn, aAssetOut: TAddress);
+    constructor Create(const aId: TBytes32; const aAssetIn, aAssetOut: TAddress);
     function Id      : TBytes32;
     function AssetIn : TAddress;
     function AssetOut: TAddress;
   end;
 
-constructor TPool.Create(aId: TBytes32; aAssetIn: TAddress; aAssetOut: TAddress);
+constructor TPool.Create(const aId: TBytes32; const aAssetIn, aAssetOut: TAddress);
 begin
   inherited Create;
   Self.FId       := aId;
@@ -586,8 +586,8 @@ type
     function First: IPool;
     function Length: Integer;
     function ToAssets: TArray<TAddress>;
-    function ToLimits(kind: TSwapKind; limit: BigInteger): TArray<BigInteger>;
-    function ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
+    function ToLimits(const kind: TSwapKind; const limit: BigInteger): TArray<BigInteger>;
+    function ToSwapSteps(const kind: TSwapKind; const amount: BigInteger): TArray<ISwapStep>;
   end;
 
   TPools = class(TInterfacedObject, IPools)
@@ -598,8 +598,8 @@ type
     function First: IPool;
     function Length: Integer;
     function ToAssets: TArray<TAddress>;
-    function ToLimits(kind: TSwapKind; limit: BigInteger): TArray<BigInteger>;
-    function ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
+    function ToLimits(const kind: TSwapKind; const limit: BigInteger): TArray<BigInteger>;
+    function ToSwapSteps(const kind: TSwapKind; const amount: BigInteger): TArray<ISwapStep>;
   end;
 
 constructor TPools.Create(const pools: TArray<IPool>);
@@ -632,7 +632,7 @@ begin
 end;
 
 // returns the minimum or maximum amount of each token the vault is allowed to transfer
-function TPools.ToLimits(kind: TSwapKind; limit: BigInteger): TArray<BigInteger>;
+function TPools.ToLimits(const kind: TSwapKind; const limit: BigInteger): TArray<BigInteger>;
 begin
   Result := [];
   if Self.Length = 0 then
@@ -668,7 +668,7 @@ begin
   end;
 end;
 
-function TPools.ToSwapSteps(kind: TSwapKind; amount: BigInteger): TArray<ISwapStep>;
+function TPools.ToSwapSteps(const kind: TSwapKind; const amount: BigInteger): TArray<ISwapStep>;
 begin
   Result := [];
   if Self.Length = 0 then
@@ -699,10 +699,10 @@ begin
 end;
 
 procedure getPools(
-  client  : IWeb3;
-  assetIn : TAddress;
-  assetOut: TAddress;
-  callback: TProc<IPools, IError>);
+  const client  : IWeb3;
+  const assetIn : TAddress;
+  const assetOut: TAddress;
+  const callback: TProc<IPools, IError>);
 begin
   // step #1: get the pool id for a single swap
   getPoolId(client.Chain, assetIn, assetOut, procedure(poolId: string; err: IError)
@@ -745,13 +745,13 @@ end;
 {--------- easy access function: simulate a trade between two tokens ----------}
 
 procedure simulate(
-  client  : IWeb3;
-  owner   : TAddress;
-  kind    : TSwapKind;
-  assetIn : TAddress;
-  assetOut: TAddress;
-  amount  : BigInteger;
-  callback: TProc<TArray<BigInteger>, IError>);
+  const client  : IWeb3;
+  const owner   : TAddress;
+  const kind    : TSwapKind;
+  const assetIn : TAddress;
+  const assetOut: TAddress;
+  const amount  : BigInteger;
+  const callback: TProc<TArray<BigInteger>, IError>);
 begin
   // step #1: get the pool IDs for a trade
   getPools(client, assetIn, assetOut, procedure(pools: IPools; err: IError)
@@ -780,15 +780,15 @@ end;
 {----------- easy access function: make a trade between two tokens ------------}
 
 procedure swap(
-  client  : IWeb3;
-  owner   : TPrivateKey;
-  kind    : TSwapKind;
-  assetIn : TAddress;
-  assetOut: TAddress;
-  amount  : BigInteger;
-  limit   : BigInteger;
-  deadline: BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const owner   : TPrivateKey;
+  const kind    : TSwapKind;
+  const assetIn : TAddress;
+  const assetOut: TAddress;
+  const amount  : BigInteger;
+  const limit   : BigInteger;
+  const deadline: BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   // step #1: get the pool IDs for a trade
   getPools(client, assetIn, assetOut, procedure(pools: IPools; err: IError)
@@ -857,7 +857,7 @@ end;
 
 {---------- easy access function: listen for swaps between two tokens ---------}
 
-function listen(client: IWeb3; callback: TOnSwap): ILogger;
+function listen(const client: IWeb3; const callback: TOnSwap): ILogger;
 begin
   Result := web3.eth.logs.get(client, TVault.DeployedAt, procedure(log: PLog; err: IError)
   begin

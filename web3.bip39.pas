@@ -33,8 +33,8 @@ uses
 
 type
   IWordList = interface
-    function Get(Index: Integer): string;
-    procedure LoadFromStream(Stream: TStream; Encoding: TEncoding);
+    function Get(const Index: Integer): string;
+    procedure LoadFromStream(const Stream: TStream; const Encoding: TEncoding);
   end;
 
   TMnemonic = record
@@ -51,7 +51,7 @@ type
   TSeed  = TBytes;
 
 function create: TMnemonic; overload;
-function create(length: TWords): TMnemonic; overload;
+function create(const length: TWords): TMnemonic; overload;
 function seed(const sentence, passphrase: string): TSeed;
 
 implementation
@@ -76,7 +76,7 @@ begin
   Result := create(Fifteen);
 end;
 
-function create(length: TWords): TMnemonic;
+function create(const length: TWords): TMnemonic;
 const
   ENTROPY: array[TWords] of Int32 = (
     128, // 12 words
@@ -117,8 +117,8 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    function Get(Index: Integer): string;
-    procedure LoadFromStream(Stream: TStream; Encoding: TEncoding);
+    function Get(const Index: Integer): string;
+    procedure LoadFromStream(const Stream: TStream; const Encoding: TEncoding);
   end;
 
 constructor TWordList.Create;
@@ -133,12 +133,12 @@ begin
   inherited Destroy;
 end;
 
-function TWordList.Get(Index: Integer): string;
+function TWordList.Get(const Index: Integer): string;
 begin
   Result := Inner[Index];
 end;
 
-procedure TWordList.LoadFromStream(Stream: TStream; Encoding: TEncoding);
+procedure TWordList.LoadFromStream(const Stream: TStream; const Encoding: TEncoding);
 begin
   Inner.LoadFromStream(Stream, Encoding);
 end;

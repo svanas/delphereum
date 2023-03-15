@@ -54,10 +54,10 @@ type
     function Migration: IMigration;
   end;
 
-function vaults(chain: TChain; callback: TProc<TArray<IYearnVault>, IError>): IAsyncResult; overload;
-function vaults(chain: TChain; callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
+function vaults(const chain: TChain; const callback: TProc<TArray<IYearnVault>, IError>): IAsyncResult; overload;
+function vaults(const chain: TChain; const callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
 
-function latest(chain: TChain; reserve: TAddress; &type: TVaultType; callback: TProc<IYearnVault, IError>): IAsyncResult;
+function latest(const chain: TChain; const reserve: TAddress; const &type: TVaultType; const callback: TProc<IYearnVault, IError>): IAsyncResult;
 
 implementation
 
@@ -155,7 +155,7 @@ end;
 
 {------------------------------ public functions ------------------------------}
 
-function vaults(chain: TChain; callback: TProc<TArray<IYearnVault>, IError>): IAsyncResult;
+function vaults(const chain: TChain; const callback: TProc<TArray<IYearnVault>, IError>): IAsyncResult;
 begin
   Result := vaults(chain, procedure(arr: TJsonArray; err: IError)
   begin
@@ -174,7 +174,7 @@ begin
   end);
 end;
 
-function vaults(chain: TChain; callback: TProc<TJsonArray, IError>): IAsyncResult;
+function vaults(const chain: TChain; const callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
   Result := web3.http.get(Format('https://api.yearn.finance/v1/chains/%d/vaults/all', [chain.Id]), [], procedure(value: TJsonValue; err: IError)
   begin
@@ -188,7 +188,7 @@ begin
   end);
 end;
 
-function latest(chain: TChain; reserve: TAddress; &type: TVaultType; callback: TProc<IYearnVault, IError>): IAsyncResult;
+function latest(const chain: TChain; const reserve: TAddress; const &type: TVaultType; const callback: TProc<IYearnVault, IError>): IAsyncResult;
 begin
   vaults(chain, procedure(vaults: TArray<IYearnVault>; err: IError)
   begin

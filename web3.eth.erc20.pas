@@ -55,28 +55,28 @@ type
 
   IERC20 = interface(ICustomContract)
     //------- read from contract -----------------------------------------------
-    procedure Name       (callback: TProc<string, IError>);
-    procedure Symbol     (callback: TProc<string, IError>);
-    procedure Decimals   (callback: TProc<BigInteger, IError>);
-    procedure TotalSupply(callback: TProc<BigInteger, IError>);
-    procedure BalanceOf  (owner: TAddress; callback: TProc<BigInteger, IError>);
-    procedure Allowance  (owner, spender: TAddress; callback: TProc<BigInteger, IError>);
+    procedure Name       (const callback: TProc<string, IError>);
+    procedure Symbol     (const callback: TProc<string, IError>);
+    procedure Decimals   (const callback: TProc<BigInteger, IError>);
+    procedure TotalSupply(const callback: TProc<BigInteger, IError>);
+    procedure BalanceOf  (const owner: TAddress; const callback: TProc<BigInteger, IError>);
+    procedure Allowance  (const owner, spender: TAddress; const callback: TProc<BigInteger, IError>);
     //------- write to contract ------------------------------------------------
     procedure Transfer(
-      from    : TPrivateKey;
-      &to     : TAddress;
-      value   : BigInteger;
-      callback: TProc<TTxHash, IError>);
+      const from    : TPrivateKey;
+      const &to     : TAddress;
+      const value   : BigInteger;
+      const callback: TProc<TTxHash, IError>);
     procedure TransferEx(
-      from    : TPrivateKey;
-      &to     : TAddress;
-      value   : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const from    : TPrivateKey;
+      const &to     : TAddress;
+      const value   : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
     procedure Approve(
-      owner   : TPrivateKey;
-      spender : TAddress;
-      value   : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const owner   : TPrivateKey;
+      const spender : TAddress;
+      const value   : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
   end;
 
   TERC20 = class(TCustomContract, IERC20)
@@ -84,73 +84,73 @@ type
     FLogger    : ILogger;
     FOnTransfer: TOnTransfer;
     FOnApproval: TOnApproval;
-    procedure SetOnTransfer(Value: TOnTransfer);
-    procedure SetOnApproval(Value: TOnApproval);
+    procedure SetOnTransfer(const Value: TOnTransfer);
+    procedure SetOnApproval(const Value: TOnApproval);
   protected
     procedure EventChanged;
     function  ListenForLatestBlock: Boolean; virtual;
     procedure OnLatestBlockMined(log: PLog; err: IError); virtual;
   public
-    constructor Create(aClient: IWeb3; aContract: TAddress); override;
+    constructor Create(const aClient: IWeb3; const aContract: TAddress); override;
     destructor  Destroy; override;
 
     //------- read from contract -----------------------------------------------
-    procedure Name       (callback: TProc<string, IError>);
-    procedure Symbol     (callback: TProc<string, IError>);
-    procedure Decimals   (callback: TProc<BigInteger, IError>);
-    procedure TotalSupply(callback: TProc<BigInteger, IError>); overload;
-    procedure TotalSupply(const block: string; callback: TProc<BigInteger, IError>); overload;
-    procedure BalanceOf  (owner: TAddress; callback: TProc<BigInteger, IError>);
-    procedure Allowance  (owner, spender: TAddress; callback: TProc<BigInteger, IError>);
+    procedure Name       (const callback: TProc<string, IError>);
+    procedure Symbol     (const callback: TProc<string, IError>);
+    procedure Decimals   (const callback: TProc<BigInteger, IError>);
+    procedure TotalSupply(const callback: TProc<BigInteger, IError>); overload;
+    procedure TotalSupply(const block: string; const callback: TProc<BigInteger, IError>); overload;
+    procedure BalanceOf  (const owner: TAddress; const callback: TProc<BigInteger, IError>);
+    procedure Allowance  (const owner, spender: TAddress; const callback: TProc<BigInteger, IError>);
 
     //------- helpers ----------------------------------------------------------
-    procedure Scale  (amount: Double; callback: TProc<BigInteger, IError>);
-    procedure Unscale(amount: BigInteger; callback: TProc<Double, IError>);
+    procedure Scale  (const amount: Double; const callback: TProc<BigInteger, IError>);
+    procedure Unscale(const amount: BigInteger; const callback: TProc<Double, IError>);
 
     //------- write to contract ------------------------------------------------
     procedure Transfer(
-      from    : TPrivateKey;
-      &to     : TAddress;
-      value   : BigInteger;
-      callback: TProc<TTxHash, IError>);
+      const from    : TPrivateKey;
+      const &to     : TAddress;
+      const value   : BigInteger;
+      const callback: TProc<TTxHash, IError>);
     procedure TransferEx(
-      from    : TPrivateKey;
-      &to     : TAddress;
-      value   : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const from    : TPrivateKey;
+      const &to     : TAddress;
+      const value   : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
     procedure Approve(
-      owner   : TPrivateKey;
-      spender : TAddress;
-      value   : BigInteger;
-      callback: TProc<ITxReceipt, IError>);
+      const owner   : TPrivateKey;
+      const spender : TAddress;
+      const value   : BigInteger;
+      const callback: TProc<ITxReceipt, IError>);
 
     //------- events -----------------------------------------------------------
     property OnTransfer: TOnTransfer read FOnTransfer write SetOnTransfer;
     property OnApproval: TOnApproval read FOnApproval write SetOnApproval;
   end;
 
-function create(client: IWeb3; contract: TAddress): IERC20;
+function create(const client: IWeb3; const contract: TAddress): IERC20;
 
 procedure approve(
-  token  : IERC20;
-  owner  : TPrivateKey;
-  spender: TAddress;
-  value  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const token   : IERC20;
+  const owner   : TPrivateKey;
+  const spender : TAddress;
+  const value   : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 
 implementation
 
-function create(client: IWeb3; contract: TAddress): IERC20;
+function create(const client: IWeb3; const contract: TAddress): IERC20;
 begin
   Result := TERC20.Create(client, contract);
 end;
 
 procedure approve(
-  token   : IERC20;
-  owner   : TPrivateKey;
-  spender : TAddress;
-  value   : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const token   : IERC20;
+  const owner   : TPrivateKey;
+  const spender : TAddress;
+  const value   : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   owner.GetAddress
     .ifErr(procedure(err: IError)
@@ -175,7 +175,7 @@ end;
 
 { TERC20 }
 
-constructor TERC20.Create(aClient: IWeb3; aContract: TAddress);
+constructor TERC20.Create(const aClient: IWeb3; const aContract: TAddress);
 begin
   inherited Create(aClient, aContract);
   FLogger := web3.eth.logs.get(aClient, aContract, OnLatestBlockMined);
@@ -222,19 +222,19 @@ begin
                   log^.Data[0].toUInt256); // value
 end;
 
-procedure TERC20.SetOnTransfer(Value: TOnTransfer);
+procedure TERC20.SetOnTransfer(const Value: TOnTransfer);
 begin
   FOnTransfer := Value;
   EventChanged;
 end;
 
-procedure TERC20.SetOnApproval(Value: TOnApproval);
+procedure TERC20.SetOnApproval(const Value: TOnApproval);
 begin
   FOnApproval := Value;
   EventChanged;
 end;
 
-procedure TERC20.Name(callback: TProc<string, IError>);
+procedure TERC20.Name(const callback: TProc<string, IError>);
 begin
   web3.eth.call(Client, Contract, 'name()', [], procedure(tup: TTuple; err: IError)
   begin
@@ -245,7 +245,7 @@ begin
   end);
 end;
 
-procedure TERC20.Symbol(callback: TProc<string, IError>);
+procedure TERC20.Symbol(const callback: TProc<string, IError>);
 begin
   web3.eth.call(Client, Contract, 'symbol()', [], procedure(tup: TTuple; err: IError)
   begin
@@ -256,32 +256,32 @@ begin
   end);
 end;
 
-procedure TERC20.Decimals(callback: TProc<BigInteger, IError>);
+procedure TERC20.Decimals(const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'decimals()', [], callback);
 end;
 
-procedure TERC20.TotalSupply(callback: TProc<BigInteger, IError>);
+procedure TERC20.TotalSupply(const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'totalSupply()', [], callback);
 end;
 
-procedure TERC20.TotalSupply(const block: string; callback: TProc<BigInteger, IError>);
+procedure TERC20.TotalSupply(const block: string; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'totalSupply()', block, [], callback);
 end;
 
-procedure TERC20.BalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
+procedure TERC20.BalanceOf(const owner: TAddress; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
 end;
 
-procedure TERC20.Allowance(owner, spender: TAddress; callback: TProc<BigInteger, IError>);
+procedure TERC20.Allowance(const owner, spender: TAddress; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'allowance(address,address)', [owner, spender], callback);
 end;
 
-procedure TERC20.Scale(amount: Double; callback: TProc<BigInteger, IError>);
+procedure TERC20.Scale(const amount: Double; const callback: TProc<BigInteger, IError>);
 begin
   Self.Decimals(procedure(dec: BigInteger; err: IError)
   begin
@@ -295,7 +295,7 @@ begin
   end);
 end;
 
-procedure TERC20.Unscale(amount: BigInteger; callback: TProc<Double, IError>);
+procedure TERC20.Unscale(const amount: BigInteger; const callback: TProc<Double, IError>);
 begin
   Self.Decimals(procedure(dec: BigInteger; err: IError)
   begin
@@ -310,28 +310,28 @@ begin
 end;
 
 procedure TERC20.Transfer(
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : BigInteger;
-  callback: TProc<TTxHash, IError>);
+  const from    : TPrivateKey;
+  const &to     : TAddress;
+  const value   : BigInteger;
+  const callback: TProc<TTxHash, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'transfer(address,uint256)', [&to, web3.utils.toHex(value)], callback);
 end;
 
 procedure TERC20.TransferEx(
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const from    : TPrivateKey;
+  const &to     : TAddress;
+  const value   : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, from, Contract, 'transfer(address,uint256)', [&to, web3.utils.toHex(value)], callback);
 end;
 
 procedure TERC20.Approve(
-  owner   : TPrivateKey;
-  spender : TAddress;
-  value   : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const owner   : TPrivateKey;
+  const spender : TAddress;
+  const value   : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   web3.eth.write(Client, owner, Contract, 'approve(address,uint256)', [spender, web3.utils.toHex(value)], callback);
 end;

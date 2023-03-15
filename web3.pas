@@ -56,9 +56,9 @@ type
     TokenList    : TURL;
     class operator Equal(const Left, Right: TChain): Boolean;
     class operator NotEqual(const Left, Right: TChain): Boolean;
-    function SetTxType(Value: Byte): TChain;
+    function SetTxType(const Value: Byte): TChain;
     function SetRPC(const URL: TURL): TChain; overload;
-    function SetRPC(transport: TTransport; const URL: TURL): TChain; overload;
+    function SetRPC(const transport: TTransport; const URL: TURL): TChain; overload;
   end;
   PChain = ^TChain;
 
@@ -380,7 +380,7 @@ type
 function Now: TUnixDateTime; inline;
 function Infinite: BigInteger; inline;
 function MaxInt256: BigInteger; inline;
-function Chain(Id: UInt32): IResult<PChain>; inline;
+function Chain(const Id: UInt32): IResult<PChain>; inline;
 
 implementation
 
@@ -415,7 +415,7 @@ begin
   Result := BigInteger.Create('57896044618658097711785492504343953926634992332820282019728792003956564819967');
 end;
 
-function Chain(Id: UInt32): IResult<PChain>;
+function Chain(const Id: UInt32): IResult<PChain>;
 begin
   if Id = Ethereum.Id then
     Result := TResult<PChain>.Ok(@Ethereum)
@@ -465,7 +465,7 @@ begin
   Result := Left.Id <> Right.Id;
 end;
 
-function TChain.SetTxType(Value: Byte): TChain;
+function TChain.SetTxType(const Value: Byte): TChain;
 begin
   Self.TxType := Value;
   Result := Self;
@@ -476,7 +476,7 @@ begin
   Result := Self.SetRPC(HTTPS, URL);
 end;
 
-function TChain.SetRPC(transport: TTransport; const URL: TURL): TChain;
+function TChain.SetRPC(const transport: TTransport; const URL: TURL): TChain;
 begin
   Self.RPC[transport] := URL;
   Result := Self;

@@ -49,19 +49,19 @@ type
   );
 
 procedure subscribe(
-  client      : IWeb3Ex;
-  subscription: TSubscription;
-  callback    : TProc<string, IError>;      // one-time callback (subscribed, or a JSON-RPC error)
-  notification: TProc<TJsonObject, IError>; // continuous notifications (or a JSON-RPC error)
-  onError     : TProc<IError>;              // non-JSON-RPC-error handler (probably a socket error)
-  onDisconnect: TProc);                     // connection closed
+  const client      : IWeb3Ex;
+  const subscription: TSubscription;
+  const callback    : TProc<string, IError>;      // one-time callback (subscribed, or a JSON-RPC error)
+  const notification: TProc<TJsonObject, IError>; // continuous notifications (or a JSON-RPC error)
+  const onError     : TProc<IError>;              // non-JSON-RPC-error handler (probably a socket error)
+  const onDisconnect: TProc);                     // connection closed
 
 procedure unsubscribe(
-  client   : IWeb3Ex;
-  const sub: string;                  // as returned by the eth_subscribe callback
-  callback : TProc<Boolean, IError>); // true if successful, otherwise false
+  const client  : IWeb3Ex;
+  const sub     : string;                  // as returned by the eth_subscribe callback
+  const callback: TProc<Boolean, IError>); // true if successful, otherwise false
 
-function blockNumber(notification: TJsonObject): BigInteger;
+function blockNumber(const notification: TJsonObject): BigInteger;
 
 implementation
 
@@ -87,12 +87,12 @@ end;
 {---------------------------------- globals -----------------------------------}
 
 procedure subscribe(
-  client      : IWeb3Ex;
-  subscription: TSubscription;
-  callback    : TProc<string, IError>;
-  notification: TProc<TJsonObject, IError>;
-  onError     : TProc<IError>;
-  onDisconnect: TProc);
+  const client      : IWeb3Ex;
+  const subscription: TSubscription;
+  const callback    : TProc<string, IError>;
+  const notification: TProc<TJsonObject, IError>;
+  const onError     : TProc<IError>;
+  const onDisconnect: TProc);
 begin
   client.OnError(onError);
   client.OnDisconnect(onDisconnect);
@@ -113,9 +113,9 @@ begin
 end;
 
 procedure unsubscribe(
-  client   : IWeb3Ex;
-  const sub: string;
-  callback : TProc<Boolean, IError>);
+  const client  : IWeb3Ex;
+  const sub     : string;
+  const callback: TProc<Boolean, IError>);
 begin
   client.Call('eth_unsubscribe', [sub], procedure(response: TJsonObject; err: IError)
   begin
@@ -133,7 +133,7 @@ begin
   end);
 end;
 
-function blockNumber(notification: TJsonObject): BigInteger;
+function blockNumber(const notification: TJsonObject): BigInteger;
 begin
   Result := 0;
   const params = web3.json.getPropAsObj(notification, 'params');

@@ -47,25 +47,25 @@ type
     function Symbol: string;
     function Decimals: Integer;
     function Logo: TURL;
-    procedure Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
+    procedure Balance(const client: IWeb3; const owner: TAddress; const callback: TProc<BigInteger, IError>);
   end;
 
   TTokens = TArray<IToken>;
 
   TTokensHelper = record helper for TTokens
-    procedure Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
-    function IndexOf(address: TAddress): Integer;
+    procedure Enumerate(const foreach: TProc<Integer, TProc>; const done: TProc);
+    function IndexOf(const address: TAddress): Integer;
     function Length: Integer;
   end;
 
-function count(const source: string; callback: TProc<BigInteger, IError>): IAsyncResult; overload;
-function count(chain: TChain; callback: TProc<BigInteger, IError>): IAsyncResult; overload;
+function count(const source: string; const callback: TProc<BigInteger, IError>): IAsyncResult; overload;
+function count(const chain: TChain; const callback: TProc<BigInteger, IError>): IAsyncResult; overload;
 
-function tokens(const source: string; callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
-function tokens(const source: string; callback: TProc<TTokens, IError>): IAsyncResult; overload;
-function tokens(chain: TChain; callback: TProc<TTokens, IError>): IAsyncResult; overload;
+function tokens(const source: string; const callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
+function tokens(const source: string; const callback: TProc<TTokens, IError>): IAsyncResult; overload;
+function tokens(const chain: TChain; const callback: TProc<TTokens, IError>): IAsyncResult; overload;
 
-function token(chain: TChain; const token: TAddress; callback: TProc<IToken, IError>): IAsyncResult;
+function token(const chain: TChain; const token: TAddress; const callback: TProc<IToken, IError>): IAsyncResult;
 
 implementation
 
@@ -95,7 +95,7 @@ type
     function Symbol: string;
     function Decimals: Integer;
     function Logo: TURL;
-    procedure Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
+    procedure Balance(const client: IWeb3; const owner: TAddress; const callback: TProc<BigInteger, IError>);
     constructor Create(const aJsonValue: TJsonValue); override;
   end;
 
@@ -140,14 +140,14 @@ begin
   Result := FLogo;
 end;
 
-procedure TToken.Balance(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
+procedure TToken.Balance(const client: IWeb3; const owner: TAddress; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.erc20.create(client, Self.Address).BalanceOf(owner, callback);
 end;
 
 {------------------------------- TTokensHelper --------------------------------}
 
-procedure TTokensHelper.Enumerate(foreach: TProc<Integer, TProc>; done: TProc);
+procedure TTokensHelper.Enumerate(const foreach: TProc<Integer, TProc>; const done: TProc);
 begin
   var next: TProc<TTokens, Integer>;
 
@@ -173,7 +173,7 @@ begin
   next(Self, 0);
 end;
 
-function TTokensHelper.IndexOf(address: TAddress): Integer;
+function TTokensHelper.IndexOf(const address: TAddress): Integer;
 begin
   for Result := 0 to Self.Length - 1 do
     if Self[Result].Address.SameAs(address) then
@@ -188,7 +188,7 @@ end;
 
 {------------------------------ public functions ------------------------------}
 
-function count(const source: string; callback: TProc<BigInteger, IError>): IAsyncResult;
+function count(const source: string; const callback: TProc<BigInteger, IError>): IAsyncResult;
 begin
   Result := tokens(source, procedure(arr: TJsonArray; err: IError)
   begin
@@ -201,7 +201,7 @@ begin
   end);
 end;
 
-function count(chain: TChain; callback: TProc<BigInteger, IError>): IAsyncResult;
+function count(const chain: TChain; const callback: TProc<BigInteger, IError>): IAsyncResult;
 begin
   Result := tokens(chain, procedure(tokens: TTokens; err: IError)
   begin
@@ -209,7 +209,7 @@ begin
   end);
 end;
 
-function tokens(const source: string; callback: TProc<TJsonArray, IError>): IAsyncResult;
+function tokens(const source: string; const callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
   Result := web3.http.get(source, [], procedure(obj: TJsonValue; err: IError)
   begin
@@ -217,7 +217,7 @@ begin
   end);
 end;
 
-function tokens(const source: string; callback: TProc<TTokens, IError>): IAsyncResult;
+function tokens(const source: string; const callback: TProc<TTokens, IError>): IAsyncResult;
 begin
   Result := tokens(source, procedure(arr: TJsonArray; err: IError)
   begin
@@ -236,7 +236,7 @@ begin
   end);
 end;
 
-function tokens(chain: TChain; callback: TProc<TTokens, IError>): IAsyncResult;
+function tokens(const chain: TChain; const callback: TProc<TTokens, IError>): IAsyncResult;
 begin
   // step #1: get the (multi-chain) Uniswap list
   Result := tokens('https://tokens.uniswap.org', procedure(tokens1: TTokens; err1: IError)
@@ -271,7 +271,7 @@ begin
   end);
 end;
 
-function token(chain: TChain; const token: TAddress; callback: TProc<IToken, IError>): IAsyncResult;
+function token(const chain: TChain; const token: TAddress; const callback: TProc<IToken, IError>): IAsyncResult;
 begin
   Result := tokens(chain, procedure(tokens: TTokens; err: IError)
   begin

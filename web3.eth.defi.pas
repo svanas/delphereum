@@ -45,10 +45,10 @@ type
   TReserveHelper = record helper for TReserve
     function  Symbol  : string;
     function  Decimals: Double;
-    function  Address(chain: TChain): IResult<TAddress>;
-    function  Scale(amount: Double): BigInteger;
-    function  Unscale(amount: BigInteger): Double;
-    procedure BalanceOf(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
+    function  Address(const chain: TChain): IResult<TAddress>;
+    function  Scale(const amount: Double): BigInteger;
+    function  Unscale(const amount: BigInteger): Double;
+    procedure BalanceOf(const client: IWeb3; const owner: TAddress; const callback: TProc<BigInteger, IError>);
   end;
 
   TPeriod = (oneDay, threeDays, oneWeek, twoWeeks, oneMonth);
@@ -65,40 +65,40 @@ type
   public
     class function Name: string; virtual; abstract;
     class function Supports(
-      chain  : TChain;
-      reserve: TReserve): Boolean; virtual; abstract;
+      const chain  : TChain;
+      const reserve: TReserve): Boolean; virtual; abstract;
     // Returns the annual yield as a percentage with 4 decimals.
     class procedure APY(
-      client   : IWeb3;
-      etherscan: IEtherscan;
-      reserve  : TReserve;
-      period   : TPeriod;
-      callback : TProc<Double, IError>); virtual; abstract;
+      const client   : IWeb3;
+      const etherscan: IEtherscan;
+      const reserve  : TReserve;
+      const period   : TPeriod;
+      const callback : TProc<Double, IError>); virtual; abstract;
     // Deposits an underlying asset into the lending pool.
     class procedure Deposit(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>); virtual; abstract;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>); virtual; abstract;
     // Returns how much underlying assets you are entitled to.
     class procedure Balance(
-      client  : IWeb3;
-      owner   : TAddress;
-      reserve : TReserve;
-      callback: TProc<BigInteger, IError>); virtual; abstract;
+      const client  : IWeb3;
+      const owner   : TAddress;
+      const reserve : TReserve;
+      const callback: TProc<BigInteger, IError>); virtual; abstract;
     // Withdraws your underlying asset from the lending pool.
     class procedure Withdraw(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      callback: TProc<ITxReceipt, BigInteger, IError>); virtual; abstract;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); virtual; abstract;
     class procedure WithdrawEx(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, BigInteger, IError>); virtual; abstract;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); virtual; abstract;
   end;
 
   TLendingProtocolClass = class of TLendingProtocol;
@@ -160,7 +160,7 @@ begin
     Result := 1e18;
 end;
 
-function TReserveHelper.Address(chain: TChain): IResult<TAddress>;
+function TReserveHelper.Address(const chain: TChain): IResult<TAddress>;
 begin
   if chain <> Ethereum then
   begin
@@ -178,17 +178,17 @@ begin
   end;
 end;
 
-function TReserveHelper.Scale(amount: Double): BigInteger;
+function TReserveHelper.Scale(const amount: Double): BigInteger;
 begin
   Result := BigInteger.Create(amount * Self.Decimals);
 end;
 
-function TReserveHelper.Unscale(amount: BigInteger): Double;
+function TReserveHelper.Unscale(const amount: BigInteger): Double;
 begin
   Result := amount.AsDouble / Self.Decimals;
 end;
 
-procedure TReserveHelper.BalanceOf(client: IWeb3; owner: TAddress; callback: TProc<BigInteger, IError>);
+procedure TReserveHelper.BalanceOf(const client: IWeb3; const owner: TAddress; const callback: TProc<BigInteger, IError>);
 begin
   Self.Address(client.Chain)
     .ifErr(procedure(err: IError)

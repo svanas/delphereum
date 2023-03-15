@@ -42,7 +42,7 @@ type
     FClient  : IWeb3;
     FContract: TAddress;
   public
-    constructor Create(aClient: IWeb3; aContract: TAddress); virtual;
+    constructor Create(const aClient: IWeb3; const aContract: TAddress); virtual;
     function Client  : IWeb3;
     function Contract: TAddress;
   end;
@@ -51,7 +51,7 @@ implementation
 
 { TCustomContract }
 
-constructor TCustomContract.Create(aClient: IWeb3; aContract: TAddress);
+constructor TCustomContract.Create(const aClient: IWeb3; const aContract: TAddress);
 begin
   inherited Create;
   FClient   := aClient;

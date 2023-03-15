@@ -34,7 +34,7 @@ uses
   // web3
   web3;
 
-procedure sanctioned(const apiKey: string; chain: TChain; address: TAddress; callback: TProc<Boolean, IError>);
+procedure sanctioned(const apiKey: string; const chain: TChain; const address: TAddress; const callback: TProc<Boolean, IError>);
 
 implementation
 
@@ -48,7 +48,7 @@ uses
   web3.http,
   web3.json;
 
-procedure sanctioned(const apiKey: string; chain: TChain; address: TAddress; callback: TProc<Boolean, IError>);
+procedure sanctioned(const apiKey: string; const chain: TChain; const address: TAddress; const callback: TProc<Boolean, IError>);
 begin
   if (chain <> Ethereum) and (chain <> Polygon) then
   begin

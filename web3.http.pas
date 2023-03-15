@@ -50,68 +50,68 @@ type
   private
     FStatusCode: Integer;
   public
-    constructor Create(aStatusCode: Integer; const aBody: string);
+    constructor Create(const aStatusCode: Integer; const aBody: string);
     function StatusCode: Integer;
   end;
 
 {---------------------------- async function calls ----------------------------}
 
 function get(
-  const URL: string;
-  headers  : TNetHeaders;
-  callback : TProc<IHttpResponse, IError>;
-  backoff  : Integer = 1): IAsyncResult; overload;
+  const URL     : string;
+  const headers : TNetHeaders;
+  const callback: TProc<IHttpResponse, IError>;
+  const backoff : Integer = 1): IAsyncResult; overload;
 function get(
-  const URL: string;
-  headers  : TNetHeaders;
-  callback : TProc<TJsonValue, IError>;
-  backoff  : Integer = 1): IAsyncResult; overload;
+  const URL     : string;
+  const headers : TNetHeaders;
+  const callback: TProc<TJsonValue, IError>;
+  const backoff : Integer = 1): IAsyncResult; overload;
 
 function post(
-  const URL: string;
-  const src: string;
-  headers  : TNetHeaders;
-  callback : TProc<IHttpResponse, IError>;
-  backoff  : Integer = 1): IAsyncResult; overload;
+  const URL     : string;
+  const src     : string;
+  const headers : TNetHeaders;
+  const callback: TProc<IHttpResponse, IError>;
+  const backoff : Integer = 1): IAsyncResult; overload;
 function post(
-  const URL: string;
-  const src: string;
-  headers  : TNetHeaders;
-  callback : TProc<TJsonValue, IError>;
-  backoff  : Integer = 1): IAsyncResult; overload;
+  const URL     : string;
+  const src     : string;
+  const headers : TNetHeaders;
+  const callback: TProc<TJsonValue, IError>;
+  const backoff : Integer = 1): IAsyncResult; overload;
 
 function post(
-  const URL: string;
-  source   : TMultipartFormData;
-  headers  : TNetHeaders;
-  callback : TProc<IHttpResponse, IError>;
-  backoff  : Integer = 1): IAsyncResult; overload;
+  const URL     : string;
+  const source  : TMultipartFormData;
+  const headers : TNetHeaders;
+  const callback: TProc<IHttpResponse, IError>;
+  const backoff : Integer = 1): IAsyncResult; overload;
 function post(
-  const URL: string;
-  source   : TMultipartFormData;
-  headers  : TNetHeaders;
-  callback : TProc<TJsonValue, IError>;
-  backoff  : Integer = 1): IAsyncResult; overload;
+  const URL     : string;
+  const source  : TMultipartFormData;
+  const headers : TNetHeaders;
+  const callback: TProc<TJsonValue, IError>;
+  const backoff : Integer = 1): IAsyncResult; overload;
 
 {-------------------------- blocking function calls ---------------------------}
 
 function get(
-  const URL: string;
-  headers  : TNetHeaders;
-  backoff  : Integer = 1): IResult<IHttpResponse>; overload;
+  const URL    : string;
+  const headers: TNetHeaders;
+  const backoff: Integer = 1): IResult<IHttpResponse>; overload;
 function get(
-  const URL: string;
-  backoff  : Integer = 1): IResult<TJsonValue>; overload;
+  const URL    : string;
+  const backoff: Integer = 1): IResult<TJsonValue>; overload;
 
 function post(
-  const URL: string;
-  const src: string;
-  headers  : TNetHeaders;
-  backoff  : Integer = 1): IResult<IHttpResponse>; overload;
+  const URL    : string;
+  const src    : string;
+  const headers: TNetHeaders;
+  const backoff: Integer = 1): IResult<IHttpResponse>; overload;
 function post(
-  const URL: string;
-  const src: string;
-  backoff  : Integer = 1): IResult<TJsonValue>; overload;
+  const URL    : string;
+  const src    : string;
+  const backoff: Integer = 1): IResult<TJsonValue>; overload;
 
 const
   MAX_BACKOFF_SECONDS = 32;
@@ -125,7 +125,7 @@ uses
 
 {--------------------------------- THttpError ---------------------------------}
 
-constructor THttpError.Create(aStatusCode: Integer; const aBody: string);
+constructor THttpError.Create(const aStatusCode: Integer; const aBody: string);
 begin
   inherited Create(aBody);
   FStatusCode := aStatusCode;
@@ -138,7 +138,7 @@ end;
 
 {---------------------------- async function calls ----------------------------}
 
-function get(const URL: string; headers: TNetHeaders; callback: TProc<IHttpResponse, IError>; backoff: Integer): IAsyncResult;
+function get(const URL: string; const headers: TNetHeaders; const callback: TProc<IHttpResponse, IError>; const backoff: Integer): IAsyncResult;
 begin
   try
     const client = THttpClient.Create;
@@ -180,7 +180,7 @@ begin
   end;
 end;
 
-function get(const URL: string; headers: TNetHeaders; callback: TProc<TJsonValue, IError>; backoff: Integer): IAsyncResult;
+function get(const URL: string; const headers: TNetHeaders; const callback: TProc<TJsonValue, IError>; const backoff: Integer): IAsyncResult;
 begin
   Result := get(URL, headers, procedure(response: IHttpResponse; err: IError)
   begin
@@ -202,11 +202,11 @@ begin
 end;
 
 function post(
-  const URL: string;
-  const src: string;
-  headers  : TNetHeaders;
-  callback : TProc<IHttpResponse, IError>;
-  backoff  : Integer): IAsyncResult;
+  const URL     : string;
+  const src     : string;
+  const headers : TNetHeaders;
+  const callback: TProc<IHttpResponse, IError>;
+  const backoff : Integer): IAsyncResult;
 begin
   try
     const client = THttpClient.Create;
@@ -249,11 +249,11 @@ begin
 end;
 
 function post(
-  const URL: string;
-  const src: string;
-  headers  : TNetHeaders;
-  callback : TProc<TJsonValue, IError>;
-  backoff  : Integer): IAsyncResult;
+  const URL     : string;
+  const src     : string;
+  const headers : TNetHeaders;
+  const callback: TProc<TJsonValue, IError>;
+  const backoff : Integer): IAsyncResult;
 begin
   Result := post(URL, src, headers, procedure(response: IHttpResponse; err: IError)
   begin
@@ -275,11 +275,11 @@ begin
 end;
 
 function post(
-  const URL: string;
-  source   : TMultipartFormData;
-  headers  : TNetHeaders;
-  callback : TProc<IHttpResponse, IError>;
-  backoff  : Integer): IAsyncResult;
+  const URL     : string;
+  const source  : TMultipartFormData;
+  const headers : TNetHeaders;
+  const callback: TProc<IHttpResponse, IError>;
+  const backoff : Integer): IAsyncResult;
 begin
   try
     const client = THttpClient.Create;
@@ -322,11 +322,11 @@ begin
 end;
 
 function post(
-  const URL: string;
-  source   : TMultipartFormData;
-  headers  : TNetHeaders;
-  callback : TProc<TJsonValue, IError>;
-  backoff  : Integer): IAsyncResult;
+  const URL     : string;
+  const source  : TMultipartFormData;
+  const headers : TNetHeaders;
+  const callback: TProc<TJsonValue, IError>;
+  const backoff : Integer): IAsyncResult;
 begin
   Result := post(URL, source, headers, procedure(response: IHttpResponse; err: IError)
   begin
@@ -349,7 +349,7 @@ end;
 
 {-------------------------- blocking function calls ---------------------------}
 
-function get(const URL: string; headers: TNetHeaders; backoff: Integer): IResult<IHttpResponse>;
+function get(const URL: string; const headers: TNetHeaders; const backoff: Integer): IResult<IHttpResponse>;
 begin
   const client = THttpClient.Create;
   try
@@ -386,7 +386,7 @@ begin
   end;
 end;
 
-function get(const URL: string; backoff: Integer): IResult<TJsonValue>;
+function get(const URL: string; const backoff: Integer): IResult<TJsonValue>;
 begin
   const response = get(URL, [TNetHeader.Create('Content-Type', 'application/json')], backoff);
   if Assigned(response.Value) then
@@ -402,10 +402,10 @@ begin
 end;
 
 function post(
-  const URL: string;
-  const src: string;
-  headers  : TNetHeaders;
-  backoff  : Integer): IResult<IHttpResponse>;
+  const URL    : string;
+  const src    : string;
+  const headers: TNetHeaders;
+  const backoff: Integer): IResult<IHttpResponse>;
 begin
   const client = THttpClient.Create;
   try
@@ -443,9 +443,9 @@ begin
 end;
 
 function post(
-  const URL: string;
-  const src: string;
-  backoff  : Integer): IResult<TJsonValue>;
+  const URL    : string;
+  const src    : string;
+  const backoff: Integer): IResult<TJsonValue>;
 begin
   const response = post(URL, src, [TNetHeader.Create('Content-Type', 'application/json')], backoff);
   if Assigned(response.Value) then

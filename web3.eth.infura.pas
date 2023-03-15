@@ -32,8 +32,8 @@ uses
   // web3
   web3;
 
-function endpoint(chain: TChain; const projectId: string): IResult<string>; overload;
-function endpoint(chain: TChain; protocol: TTransport; const projectId: string): IResult<string>; overload;
+function endpoint(const chain: TChain; const projectId: string): IResult<string>; overload;
+function endpoint(const chain: TChain; const protocol: TTransport; const projectId: string): IResult<string>; overload;
 
 implementation
 
@@ -41,7 +41,7 @@ uses
   // Delphi
   System.SysUtils;
 
-function HTTPS(chain: TChain; const projectId: string): IResult<string>;
+function HTTPS(const chain: TChain; const projectId: string): IResult<string>;
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok(Format('https://mainnet.infura.io/v3/%s', [projectId]))
@@ -67,7 +67,7 @@ begin
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
-function WebSocket(chain: TChain; const projectId: string): IResult<string>;
+function WebSocket(const chain: TChain; const projectId: string): IResult<string>;
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok(Format('wss://mainnet.infura.io/ws/v3/%s', [projectId]))
@@ -81,12 +81,12 @@ begin
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
-function endpoint(chain: TChain; const projectId: string): IResult<string>;
+function endpoint(const chain: TChain; const projectId: string): IResult<string>;
 begin
   Result := endpoint(chain, TTransport.HTTPS, projectId);
 end;
 
-function endpoint(chain: TChain; protocol: TTransport; const projectId: string): IResult<string>;
+function endpoint(const chain: TChain; const protocol: TTransport; const projectId: string): IResult<string>;
 begin
   if protocol = TTransport.WebSocket then
     Result := WebSocket(chain, projectId)

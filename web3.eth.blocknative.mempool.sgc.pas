@@ -57,28 +57,28 @@ type
     property  Client: TsgcWebSocketClient read GetClient;
   public
     constructor Create(
-      const chain : TChain;
-      const apiKey: string;
-      onEvent     : TProc<TJsonObject, IError>;
-      onError     : TProc<IError>;
-      onDisconnect: TProc);
+      const chain       : TChain;
+      const apiKey      : string;
+      const onEvent     : TProc<TJsonObject, IError>;
+      const onError     : TProc<IError>;
+      const onDisconnect: TProc);
     destructor Destroy; override;
     class function Subscribe(
-      const chain  : TChain;
-      const apiKey : string;
-      const address: TAddress;
-      onEvent      : TProc<TJsonObject, IError>;
-      onError      : TProc<IError>;
-      onDisconnect : TProc): IMempool; overload; override;
+      const chain       : TChain;
+      const apiKey      : string;
+      const address     : TAddress;
+      const onEvent     : TProc<TJsonObject, IError>;
+      const onError     : TProc<IError>;
+      const onDisconnect: TProc): IMempool; overload; override;
     class function Subscribe(
-      const chain  : TChain;
-      const apiKey : string;
-      const address: TAddress;
-      const filters: IFilters;
-      const abi    : TJsonArray;
-      onEvent      : TProc<TJsonObject, IError>;
-      onError      : TProc<IError>;
-      onDisconnect : TProc): IMempool; overload; override;
+      const chain       : TChain;
+      const apiKey      : string;
+      const address     : TAddress;
+      const filters     : IFilters;
+      const abi         : TJsonArray;
+      const onEvent     : TProc<TJsonObject, IError>;
+      const onError     : TProc<IError>;
+      const onDisconnect: TProc): IMempool; overload; override;
     procedure Unsubscribe(const address: TAddress);
     procedure Initialize;
     procedure Disconnect;
@@ -88,11 +88,11 @@ type
 implementation
 
 constructor TSgcMempool.Create(
-  const chain : TChain;
-  const apiKey: string;
-  onEvent     : TProc<TJsonObject, IError>;
-  onError     : TProc<IError>;
-  onDisconnect: TProc);
+  const chain       : TChain;
+  const apiKey      : string;
+  const onEvent     : TProc<TJsonObject, IError>;
+  const onError     : TProc<IError>;
+  const onDisconnect: TProc);
 begin
   inherited Create;
   FChain   := chain;
@@ -197,12 +197,12 @@ begin
 end;
 
 class function TSgcMempool.Subscribe(
-  const chain  : TChain;
-  const apiKey : string;
-  const address: TAddress;
-  onEvent      : TProc<TJsonObject, IError>;
-  onError      : TProc<IError>;
-  onDisconnect : TProc): IMempool;
+  const chain       : TChain;
+  const apiKey      : string;
+  const address     : TAddress;
+  const onEvent     : TProc<TJsonObject, IError>;
+  const onError     : TProc<IError>;
+  const onDisconnect: TProc): IMempool;
 begin
   const &output = TSgcMempool.Create(
     chain,
@@ -227,14 +227,14 @@ begin
 end;
 
 class function TSgcMempool.Subscribe(
-  const chain  : TChain;
-  const apiKey : string;
-  const address: TAddress;
-  const filters: IFilters;
-  const abi    : TJsonArray;
-  onEvent      : TProc<TJsonObject, IError>;
-  onError      : TProc<IError>;
-  onDisconnect : TProc): IMempool;
+  const chain       : TChain;
+  const apiKey      : string;
+  const address     : TAddress;
+  const filters     : IFilters;
+  const abi         : TJsonArray;
+  const onEvent     : TProc<TJsonObject, IError>;
+  const onError     : TProc<IError>;
+  const onDisconnect: TProc): IMempool;
 begin
   const &output = TSgcMempool.Create(
     chain,

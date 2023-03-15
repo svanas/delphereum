@@ -50,55 +50,55 @@ type
   public
     class function Name: string; override;
     class function Supports(
-      chain  : TChain;
-      reserve: TReserve): Boolean; override;
+      const chain  : TChain;
+      const reserve: TReserve): Boolean; override;
     class procedure APY(
-      client   : IWeb3;
-      etherscan: IEtherscan;
-      reserve  : TReserve;
-      period   : TPeriod;
-      callback : TProc<Double, IError>); override;
+      const client   : IWeb3;
+      const etherscan: IEtherscan;
+      const reserve  : TReserve;
+      const period   : TPeriod;
+      const callback : TProc<Double, IError>); override;
     class procedure Deposit(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
-      client  : IWeb3;
-      owner   : TAddress;
-      reserve : TReserve;
-      callback: TProc<BigInteger, IError>); override;
+      const client  : IWeb3;
+      const owner   : TAddress;
+      const reserve : TReserve;
+      const callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
 type
   IimUSD = interface(IERC20)
-    procedure BalanceOfUnderlying(owner: TAddress; callback: TProc<BigInteger, IError>);
-    procedure ExchangeRate(const block: string; callback: TProc<BigInteger, IError>);
-    procedure CreditsToUnderlying(credits: BigInteger; callback: TProc<BigInteger, IError>);
+    procedure BalanceOfUnderlying(const owner: TAddress; const callback: TProc<BigInteger, IError>);
+    procedure ExchangeRate(const block: string; const callback: TProc<BigInteger, IError>);
+    procedure CreditsToUnderlying(const credits: BigInteger; const callback: TProc<BigInteger, IError>);
   end;
 
 type
   TimVaultUSD = class(TCustomContract)
   public
-    constructor Create(aClient: IWeb3); reintroduce;
-    procedure BalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
+    constructor Create(const aClient: IWeb3); reintroduce;
+    procedure BalanceOf(const owner: TAddress; const callback: TProc<BigInteger, IError>);
   end;
 
 implementation
 
-procedure getAPY(imUSD: IimUSD; etherscan: IEtherscan; period: TPeriod; callback: TProc<Double, IError>);
+procedure getAPY(const imUSD: IimUSD; const etherscan: IEtherscan; const period: TPeriod; const callback: TProc<Double, IError>);
 begin
   imUSD.ExchangeRate(BLOCK_LATEST, procedure(curr: BigInteger; err: IError)
   begin
@@ -126,28 +126,28 @@ end;
 type
   TimUSD = class(TERC20, IimUSD)
   public
-    constructor Create(aClient: IWeb3); reintroduce;
-    procedure BalanceOfUnderlying(owner: TAddress; callback: TProc<BigInteger, IError>);
-    procedure ExchangeRate(const block: string; callback: TProc<BigInteger, IError>);
-    procedure CreditsToUnderlying(credits: BigInteger; callback: TProc<BigInteger, IError>);
+    constructor Create(const aClient: IWeb3); reintroduce;
+    procedure BalanceOfUnderlying(const owner: TAddress; const callback: TProc<BigInteger, IError>);
+    procedure ExchangeRate(const block: string; const callback: TProc<BigInteger, IError>);
+    procedure CreditsToUnderlying(const credits: BigInteger; const callback: TProc<BigInteger, IError>);
   end;
 
-constructor TimUSD.Create(aClient: IWeb3);
+constructor TimUSD.Create(const aClient: IWeb3);
 begin
   inherited Create(aClient, '0x30647a72dc82d7fbb1123ea74716ab8a317eac19');
 end;
 
-procedure TimUSD.BalanceOfUnderlying(owner: TAddress; callback: TProc<BigInteger, IError>);
+procedure TimUSD.BalanceOfUnderlying(const owner: TAddress; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'balanceOfUnderlying(address)', [owner], callback);
 end;
 
-procedure TimUSD.ExchangeRate(const block: string; callback: TProc<BigInteger, IError>);
+procedure TimUSD.ExchangeRate(const block: string; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'exchangeRate()', block, [], callback);
 end;
 
-procedure TimUSD.CreditsToUnderlying(credits: BigInteger; callback: TProc<BigInteger, IError>);
+procedure TimUSD.CreditsToUnderlying(const credits: BigInteger; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'creditsToUnderlying(uint256)', [web3.utils.toHex(credits)], callback);
 end;
@@ -159,36 +159,36 @@ begin
   Result := 'mStable';
 end;
 
-class function TmStable.Supports(chain: TChain; reserve: TReserve): Boolean;
+class function TmStable.Supports(const chain: TChain; const reserve: TReserve): Boolean;
 begin
   Result := (chain = Ethereum) and (reserve = mUSD);
 end;
 
 class procedure TmStable.APY(
-  client   : IWeb3;
-  etherscan: IEtherscan;
-  reserve  : TReserve;
-  period   : TPeriod;
-  callback : TProc<Double, IError>);
+  const client   : IWeb3;
+  const etherscan: IEtherscan;
+  const reserve  : TReserve;
+  const period   : TPeriod;
+  const callback : TProc<Double, IError>);
 begin
   getAPY(TimUSD.Create(client), etherscan, period, callback);
 end;
 
 class procedure TmStable.Deposit(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   callback(nil, TNotImplemented.Create);
 end;
 
 class procedure TmStable.Balance(
-  client  : IWeb3;
-  owner   : TAddress;
-  reserve : TReserve;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const owner   : TAddress;
+  const reserve : TReserve;
+  const callback: TProc<BigInteger, IError>);
 begin
   const imUSD: IimUSD = TimUSD.Create(client);
   imUSD.BalanceOfUnderlying(owner, procedure(balance1: BigInteger; err: IError)
@@ -220,32 +220,32 @@ begin
 end;
 
 class procedure TmStable.Withdraw(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   callback(nil, 0, TNotImplemented.Create);
 end;
 
 class procedure TmStable.WithdrawEx(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   callback(nil, 0, TNotImplemented.Create);
 end;
 
 { TimVaultUSD }
 
-constructor TimVaultUSD.Create(aClient: IWeb3);
+constructor TimVaultUSD.Create(const aClient: IWeb3);
 begin
   inherited Create(aClient, '0x78BefCa7de27d07DC6e71da295Cc2946681A6c7B');
 end;
 
-procedure TimVaultUSD.BalanceOf(owner: TAddress; callback: TProc<BigInteger, IError>);
+procedure TimVaultUSD.BalanceOf(const owner: TAddress; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
 end;

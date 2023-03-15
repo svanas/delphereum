@@ -47,7 +47,7 @@ type
   private
     FCode: Integer;
   public
-    constructor Create(aCode: Integer; const aMsg: string);
+    constructor Create(const aCode: Integer; const aMsg: string);
     function Code: Integer;
   end;
 
@@ -61,18 +61,18 @@ type
 
     class function CreatePayload(
       const method: string;
-      args        : array of const): string; overload;
+      const args  : array of const): string; overload;
     class function CreatePayload(
-      ID          : Int64;
+      const ID    : Int64;
       const method: string;
-      args        : array of const): string; overload;
+      const args  : array of const): string; overload;
   end;
 
 implementation
 
 { TJsonRpcError }
 
-constructor TJsonRpcError.Create(aCode: Integer; const aMsg: string);
+constructor TJsonRpcError.Create(const aCode: Integer; const aMsg: string);
 begin
   inherited Create(aMsg);
   FCode := aCode;
@@ -125,7 +125,7 @@ begin
   end;
 end;
 
-class function TCustomJsonRpc.CreatePayload(const method: string; args: array of const): string;
+class function TCustomJsonRpc.CreatePayload(const method: string; const args: array of const): string;
 begin
   ID.Enter;
   try
@@ -135,7 +135,7 @@ begin
   end;
 end;
 
-class function TCustomJsonRpc.CreatePayload(ID: Int64; const method: string; args: array of const): string;
+class function TCustomJsonRpc.CreatePayload(const ID: Int64; const method: string; const args: array of const): string;
 begin
   Result := Format(
     '{"jsonrpc": "2.0", "method": %s, "params": %s, "id": %d}',

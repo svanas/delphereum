@@ -48,66 +48,66 @@ type
   private
     FHash: TTxHash;
   public
-    constructor Create(aHash: TTxHash; const aMsg: string);
+    constructor Create(const aHash: TTxHash; const aMsg: string);
     function Hash: TTxHash;
   end;
 
 procedure signTransaction(
-  client      : IWeb3;
-  nonce       : BigInteger;
-  from        : TPrivateKey;
-  &to         : TAddress;
-  value       : TWei;
-  const data  : string;
-  gasLimit    : BigInteger;
-  estimatedGas: BigInteger;
-  callback    : TProc<string, IError>);
+  const client      : IWeb3;
+  const nonce       : BigInteger;
+  const from        : TPrivateKey;
+  const &to         : TAddress;
+  const value       : TWei;
+  const data        : string;
+  const gasLimit    : BigInteger;
+  const estimatedGas: BigInteger;
+  const callback    : TProc<string, IError>);
 
 function signTransactionLegacy(
-  chainId   : Integer;
-  nonce     : BigInteger;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  value     : TWei;
-  const data: string;
-  gasPrice  : TWei;
-  gasLimit  : BigInteger): IResult<string>;
+  const chainId : Integer;
+  const nonce   : BigInteger;
+  const from    : TPrivateKey;
+  const &to     : TAddress;
+  const value   : TWei;
+  const data    : string;
+  const gasPrice: TWei;
+  const gasLimit: BigInteger): IResult<string>;
 
 function signTransactionType2(
-  chainId       : Integer;
-  nonce         : BigInteger;
-  from          : TPrivateKey;
-  &to           : TAddress;
-  value         : TWei;
-  const data    : string;
-  maxPriorityFee: TWei;
-  maxFee        : TWei;
-  gasLimit      : BigInteger): IResult<string>;
+  const chainId       : Integer;
+  const nonce         : BigInteger;
+  const from          : TPrivateKey;
+  const &to           : TAddress;
+  const value         : TWei;
+  const data          : string;
+  const maxPriorityFee: TWei;
+  const maxFee        : TWei;
+  const gasLimit      : BigInteger): IResult<string>;
 
 // recover signer from Ethereum-signed transaction
-function ecrecoverTransaction(encoded: TBytes): IResult<TAddress>;
+function ecrecoverTransaction(const encoded: TBytes): IResult<TAddress>;
 
 // send raw (aka signed) transaction.
 procedure sendTransaction(
-  client   : IWeb3;
-  const raw: string;
-  callback : TProc<TTxHash, IError>); overload;
+  const client  : IWeb3;
+  const raw     : string;
+  const callback: TProc<TTxHash, IError>); overload;
 
 // send raw transaction, get the receipt, and get the reason if the transaction failed.
 procedure sendTransaction(
-  client   : IWeb3;
-  const raw: string;
-  callback : TProc<ITxReceipt, IError>); overload;
+  const client  : IWeb3;
+  const raw     : string;
+  const callback: TProc<ITxReceipt, IError>); overload;
 
 // 1. calculate the nonce, then
 // 2. sign the transaction, then
 // 3. send the raw transaction.
 procedure sendTransaction(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : TWei;
-  callback: TProc<TTxHash, IError>); overload;
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const &to     : TAddress;
+  const value   : TWei;
+  const callback: TProc<TTxHash, IError>); overload;
 
 // 1. calculate the nonce, then
 // 2. sign the transaction, then
@@ -115,39 +115,39 @@ procedure sendTransaction(
 // 4. get the transaction receipt, then
 // 5. get the reason if the transaction failed.
 procedure sendTransaction(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : TWei;
-  callback: TProc<ITxReceipt, IError>); overload;
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const &to     : TAddress;
+  const value   : TWei;
+  const callback: TProc<ITxReceipt, IError>); overload;
 
 // returns the information about a transaction requested by transaction hash.
 procedure getTransaction(
-  client  : IWeb3;
-  hash    : TTxHash;
-  callback: TProc<ITransaction, IError>);
+  const client  : IWeb3;
+  const hash    : TTxHash;
+  const callback: TProc<ITransaction, IError>);
 
 // returns the receipt of a transaction by transaction hash.
 procedure getTransactionReceipt(
-  client  : IWeb3;
-  hash    : TTxHash;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const hash    : TTxHash;
+  const callback: TProc<ITxReceipt, IError>);
 
 // get the revert reason for a failed transaction.
 procedure getTransactionRevertReason(
-  client  : IWeb3;
-  rcpt    : ITxReceipt;
-  callback: TProc<string, IError>);
+  const client  : IWeb3;
+  const rcpt    : ITxReceipt;
+  const callback: TProc<string, IError>);
 
 // cancel a pending transaction
 procedure cancelTransaction(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  nonce   : BigInteger;
-  callback: TProc<TTxHash, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const nonce   : BigInteger;
+  const callback: TProc<TTxHash, IError>);
 
 // open transaction in block explorer
-procedure openTransaction(chain: TChain; hash: TTxHash);
+procedure openTransaction(const chain: TChain; const hash: TTxHash);
 
 // create transaction from JSON value
 function createTransaction(const value: TJsonValue): ITransaction;
@@ -178,7 +178,7 @@ uses
 
 { TTxError }
 
-constructor TTxError.Create(aHash: TTxHash; const aMsg: string);
+constructor TTxError.Create(const aHash: TTxHash; const aMsg: string);
 begin
   inherited Create(aMsg);
   FHash := aHash;
@@ -190,15 +190,15 @@ begin
 end;
 
 procedure signTransaction(
-  client      : IWeb3;
-  nonce       : BigInteger;
-  from        : TPrivateKey;
-  &to         : TAddress;
-  value       : TWei;
-  const data  : string;
-  gasLimit    : BigInteger;
-  estimatedGas: BigInteger;
-  callback    : TProc<string, IError>);
+  const client      : IWeb3;
+  const nonce       : BigInteger;
+  const from        : TPrivateKey;
+  const &to         : TAddress;
+  const value       : TWei;
+  const data        : string;
+  const gasLimit    : BigInteger;
+  const estimatedGas: BigInteger;
+  const callback    : TProc<string, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -257,14 +257,14 @@ begin
 end;
 
 function signTransactionLegacy(
-  chainId   : Integer;
-  nonce     : BigInteger;
-  from      : TPrivateKey;
-  &to       : TAddress;
-  value     : TWei;
-  const data: string;
-  gasPrice  : TWei;
-  gasLimit  : BigInteger): IResult<string>;
+  const chainId : Integer;
+  const nonce   : BigInteger;
+  const from    : TPrivateKey;
+  const &to     : TAddress;
+  const value   : TWei;
+  const data    : string;
+  const gasPrice: TWei;
+  const gasLimit: BigInteger): IResult<string>;
 begin
   var encoded: IResult<TBytes>;
 
@@ -321,15 +321,15 @@ begin
 end;
 
 function signTransactionType2(
-  chainId       : Integer;
-  nonce         : BigInteger;
-  from          : TPrivateKey;
-  &to           : TAddress;
-  value         : TWei;
-  const data    : string;
-  maxPriorityFee: TWei;
-  maxFee        : TWei;
-  gasLimit      : BigInteger): IResult<string>;
+  const chainId       : Integer;
+  const nonce         : BigInteger;
+  const from          : TPrivateKey;
+  const &to           : TAddress;
+  const value         : TWei;
+  const data          : string;
+  const maxPriorityFee: TWei;
+  const maxFee        : TWei;
+  const gasLimit      : BigInteger): IResult<string>;
 begin
   var encoded: IResult<TBytes>;
 
@@ -389,7 +389,7 @@ begin
 end;
 
 // recover signer from legacy transaction
-function ecrecoverTransactionLegacy(encoded: TBytes): IResult<TAddress>;
+function ecrecoverTransactionLegacy(const encoded: TBytes): IResult<TAddress>;
 
   function getChainId(const V: TBytes): IResult<Int32>;
   begin
@@ -489,7 +489,7 @@ begin
 end;
 
 // recover signer from EIP-1559 transaction
-function ecrecoverTransactionType2(encoded: TBytes): IResult<TAddress>;
+function ecrecoverTransactionType2(const encoded: TBytes): IResult<TAddress>;
 begin
   const decoded = web3.rlp.decode(encoded);
   if decoded.isErr then
@@ -553,7 +553,7 @@ begin
 end;
 
 // recovery signer from Ethereum-signed transaction
-function ecrecoverTransaction(encoded: TBytes): IResult<TAddress>;
+function ecrecoverTransaction(const encoded: TBytes): IResult<TAddress>;
 begin
   const decoded = web3.rlp.decode(encoded);
   if decoded.isErr then
@@ -585,7 +585,7 @@ begin
 end;
 
 // send raw (aka signed) transaction.
-procedure sendTransaction(client: IWeb3; const raw: string; callback: TProc<TTxHash, IError>);
+procedure sendTransaction(const client: IWeb3; const raw: string; const callback: TProc<TTxHash, IError>);
 begin
   client.Call('eth_sendRawTransaction', [raw], procedure(response: TJsonObject; err: IError)
   begin
@@ -597,7 +597,7 @@ begin
 end;
 
 // send raw transaction, get the receipt, and get the reason if the transaction failed.
-procedure sendTransaction(client: IWeb3; const raw: string; callback: TProc<ITxReceipt, IError>);
+procedure sendTransaction(const client: IWeb3; const raw: string; const callback: TProc<ITxReceipt, IError>);
 var
   onReceiptReceived: TProc<ITxReceipt, IError>;
 begin
@@ -645,11 +645,11 @@ end;
 // 2. sign the transaction, then
 // 3. send the raw transaction.
 procedure sendTransaction(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : TWei;
-  callback: TProc<TTxHash, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const &to     : TAddress;
+  const value   : TWei;
+  const callback: TProc<TTxHash, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -686,11 +686,11 @@ end;
 // 4. get the transaction receipt, then
 // 5. get the reason if the transaction failed.
 procedure sendTransaction(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  &to     : TAddress;
-  value   : TWei;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const &to     : TAddress;
+  const value   : TWei;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -812,7 +812,7 @@ begin
 end;
 
 // returns the information about a transaction requested by transaction hash.
-procedure getTransaction(client: IWeb3; hash: TTxHash; callback: TProc<ITransaction, IError>);
+procedure getTransaction(const client: IWeb3; const hash: TTxHash; const callback: TProc<ITransaction, IError>);
 begin
   client.Call('eth_getTransactionByHash', [hash], procedure(response: TJsonObject; err: IError)
   begin
@@ -879,7 +879,7 @@ begin
 end;
 
 // returns the receipt of a transaction by transaction hash.
-procedure getTransactionReceipt(client: IWeb3; hash: TTxHash; callback: TProc<ITxReceipt, IError>);
+procedure getTransactionReceipt(const client: IWeb3; const hash: TTxHash; const callback: TProc<ITxReceipt, IError>);
 begin
   client.Call('eth_getTransactionReceipt', [hash], procedure(response: TJsonObject; err: IError)
   begin
@@ -902,7 +902,7 @@ resourcestring
   TX_UNKNOWN_ERROR = 'Unknown error encountered during contract execution';
 
 // get the revert reason for a failed transaction.
-procedure getTransactionRevertReason(client: IWeb3; rcpt: ITxReceipt; callback: TProc<string, IError>);
+procedure getTransactionRevertReason(const client: IWeb3; const rcpt: ITxReceipt; const callback: TProc<string, IError>);
 begin
   if rcpt.status then
   begin
@@ -993,10 +993,10 @@ begin
 end;
 
 procedure cancelTransaction(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  nonce   : BigInteger;
-  callback: TProc<TTxHash, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const nonce   : BigInteger;
+  const callback: TProc<TTxHash, IError>);
 begin
   from.GetAddress
     .ifErr(procedure(err: IError)
@@ -1015,7 +1015,7 @@ begin
     end);
 end;
 
-procedure openTransaction(chain: TChain; hash: TTxHash);
+procedure openTransaction(const chain: TChain; const hash: TTxHash);
 
   procedure open(const URL: string); inline;
   begin

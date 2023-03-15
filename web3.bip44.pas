@@ -40,7 +40,7 @@ procedure path(const client: IWeb3; const seed: web3.bip39.TSeed; const callback
 function wallet(const seed: web3.bip39.TSeed; const path: string): IResult<TPrivateKey>; overload;
 
 // returns the Ethereum private key for the public address and the bip39 mnemonic sentence, or a null string
-function wallet(&public: TAddress; const seed: web3.bip39.TSeed): IResult<TPrivateKey>; overload;
+function wallet(const &public: TAddress; const seed: web3.bip39.TSeed): IResult<TPrivateKey>; overload;
 
 // returns Ethereum private keys for the bip39 mnemonic sentence that have a positive balance
 procedure wallets(const client: IWeb3; const seed: web3.bip39.TSeed; const callback: TProc<TArray<TPrivateKey>, IError>);
@@ -119,7 +119,7 @@ begin
 end;
 
 // returns Ethereum private key for the (prefix + [0..19] + suffix) derivation path if it matches the public address, otherwise a null string
-function get(&public: TAddress; const master: web3.bip32.IMasterKey; const prefix, suffix: string): IResult<TPrivateKey>; overload;
+function get(const &public: TAddress; const master: web3.bip32.IMasterKey; const prefix, suffix: string): IResult<TPrivateKey>; overload;
 begin
   const keys = traverse(master, prefix, suffix);
   if keys.isErr then
@@ -140,7 +140,7 @@ begin
 end;
 
 // m/44'/60'/0'/0/0
-function long(&public: TAddress; const master: web3.bip32.IMasterKey): IResult<TPrivateKey>; overload;
+function long(const &public: TAddress; const master: web3.bip32.IMasterKey): IResult<TPrivateKey>; overload;
 begin
   // m/44'/60'/0'/0/x
   Result := get(&public, master, 'm/44H/60H/0H/0/', '');
@@ -153,7 +153,7 @@ begin
 end;
 
 // m/44'/60'/0'/0
-function shorter(&public: TAddress; const master: web3.bip32.IMasterKey): IResult<TPrivateKey>; overload;
+function shorter(const &public: TAddress; const master: web3.bip32.IMasterKey): IResult<TPrivateKey>; overload;
 begin
   // m/44'/60'/0'/x
   Result := get(&public, master, 'm/44H/60H/0H/', '');
@@ -163,7 +163,7 @@ begin
 end;
 
 // m/44'/60'/0'
-function shortest(&public: TAddress; const master: web3.bip32.IMasterKey): IResult<TPrivateKey>; overload;
+function shortest(const &public: TAddress; const master: web3.bip32.IMasterKey): IResult<TPrivateKey>; overload;
 begin
   // m/44'/60'/x'
   Result := get(&public, master, 'm/44H/60H/', 'H');
@@ -317,7 +317,7 @@ begin
   Result := get(web3.bip32.master(seed), path);
 end;
 
-function wallet(&public: TAddress; const seed: web3.bip39.TSeed): IResult<TPrivateKey>;
+function wallet(const &public: TAddress; const seed: web3.bip39.TSeed): IResult<TPrivateKey>;
 begin
   const master = web3.bip32.master(seed);
   Result := long(&public, master);

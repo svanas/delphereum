@@ -45,61 +45,61 @@ type
   public
     class function Name: string; override;
     class function Supports(
-      chain  : TChain;
-      reserve: TReserve): Boolean; override;
+      const chain  : TChain;
+      const reserve: TReserve): Boolean; override;
     class procedure APY(
-      client   : IWeb3;
-      etherscan: IEtherscan;
-      reserve  : TReserve;
-      period   : TPeriod;
-      callback : TProc<Double, IError>); override;
+      const client   : IWeb3;
+      const etherscan: IEtherscan;
+      const reserve  : TReserve;
+      const period   : TPeriod;
+      const callback : TProc<Double, IError>); override;
     class procedure Deposit(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, IError>); override;
     class procedure Balance(
-      client  : IWeb3;
-      owner   : TAddress;
-      reserve : TReserve;
-      callback: TProc<BigInteger, IError>); override;
+      const client  : IWeb3;
+      const owner   : TAddress;
+      const reserve : TReserve;
+      const callback: TProc<BigInteger, IError>); override;
     class procedure Withdraw(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
     class procedure WithdrawEx(
-      client  : IWeb3;
-      from    : TPrivateKey;
-      reserve : TReserve;
-      amount  : BigInteger;
-      callback: TProc<ITxReceipt, BigInteger, IError>); override;
+      const client  : IWeb3;
+      const from    : TPrivateKey;
+      const reserve : TReserve;
+      const amount  : BigInteger;
+      const callback: TProc<ITxReceipt, BigInteger, IError>); override;
   end;
 
 implementation
 
-function yDAIv2(client: IWeb3): IyToken;
+function yDAIv2(const client: IWeb3): IyToken;
 begin
   Result := TyToken.Create(client, '0x16de59092dAE5CcF4A1E6439D611fd0653f0Bd01');
 end;
 
-function yUSDCv2(client: IWeb3): IyToken;
+function yUSDCv2(const client: IWeb3): IyToken;
 begin
   Result := TyToken.Create(client, '0xd6aD7a6750A7593E092a9B218d66C0A814a3436e');
 end;
 
-function yUSDTv2(client: IWeb3): IyToken;
+function yUSDTv2(const client: IWeb3): IyToken;
 begin
   Result := TyToken.Create(client, '0x83f798e925BcD4017Eb265844FDDAbb448f1707D');
 end;
 
-function yTUSDv2(client: IWeb3): IyToken;
+function yTUSDv2(const client: IWeb3): IyToken;
 begin
   Result := TyToken.Create(client, '0x73a052500105205d34daf004eab301916da8190f');
 end;
 
-function yToken(client: IWeb3; reserve: TReserve): IResult<IyToken>;
+function yToken(const client: IWeb3; const reserve: TReserve): IResult<IyToken>;
 begin
   case reserve of
     DAI : Result := TResult<IyToken>.Ok(yDAIv2(client));
@@ -118,17 +118,17 @@ begin
   Result := 'yEarn v2';
 end;
 
-class function TyEarnV2.Supports(chain: TChain; reserve: TReserve): Boolean;
+class function TyEarnV2.Supports(const chain: TChain; const reserve: TReserve): Boolean;
 begin
   Result := (chain = Ethereum) and (reserve in [DAI, USDC, USDT, TUSD]);
 end;
 
 class procedure TyEarnV2.APY(
-  client   : IWeb3;
-  etherscan: IEtherscan;
-  reserve  : TReserve;
-  period   : TPeriod;
-  callback : TProc<Double, IError>);
+  const client   : IWeb3;
+  const etherscan: IEtherscan;
+  const reserve  : TReserve;
+  const period   : TPeriod;
+  const callback : TProc<Double, IError>);
 begin
   yToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -142,11 +142,11 @@ begin
 end;
 
 class procedure TyEarnV2.Deposit(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, IError>);
 begin
   yToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -160,10 +160,10 @@ begin
 end;
 
 class procedure TyEarnV2.Balance(
-  client  : IWeb3;
-  owner   : TAddress;
-  reserve : TReserve;
-  callback: TProc<BigInteger, IError>);
+  const client  : IWeb3;
+  const owner   : TAddress;
+  const reserve : TReserve;
+  const callback: TProc<BigInteger, IError>);
 begin
   yToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -177,10 +177,10 @@ begin
 end;
 
 class procedure TyEarnV2.Withdraw(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   yToken(client, reserve)
     .ifErr(procedure(err: IError)
@@ -194,11 +194,11 @@ begin
 end;
 
 class procedure TyEarnV2.WithdrawEx(
-  client  : IWeb3;
-  from    : TPrivateKey;
-  reserve : TReserve;
-  amount  : BigInteger;
-  callback: TProc<ITxReceipt, BigInteger, IError>);
+  const client  : IWeb3;
+  const from    : TPrivateKey;
+  const reserve : TReserve;
+  const amount  : BigInteger;
+  const callback: TProc<ITxReceipt, BigInteger, IError>);
 begin
   yToken(client, reserve)
     .ifErr(procedure(err: IError)

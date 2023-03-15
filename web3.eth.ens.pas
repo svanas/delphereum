@@ -37,11 +37,11 @@ uses
 
 function namehash(const name: string): string;
 // resolve a name to an Ethereum address
-procedure addr(client: IWeb3; const name: string; callback: TProc<TAddress, IError>);
+procedure addr(const client: IWeb3; const name: string; const callback: TProc<TAddress, IError>);
 // retrieves text metadata for a name
-procedure text(client: IWeb3; const name, key: string; callback: TProc<TTuple, IError>);
+procedure text(const client: IWeb3; const name, key: string; const callback: TProc<TTuple, IError>);
 // reverse resolution maps from an address back to a name
-procedure reverse(client: IWeb3; addr: TAddress; callback: TProc<string, IError>);
+procedure reverse(const client: IWeb3; const addr: TAddress; const callback: TProc<string, IError>);
 
 implementation
 
@@ -80,7 +80,7 @@ begin
   Result := web3.utils.toHex(node);
 end;
 
-procedure resolver(client: IWeb3; const name: string; callback: TProc<TAddress, IError>);
+procedure resolver(const client: IWeb3; const name: string; const callback: TProc<TAddress, IError>);
 begin
   web3.eth.call(client, ENS_REGISTRY, 'resolver(bytes32)', [namehash(name)], procedure(hex: string; err: IError)
   begin
@@ -92,7 +92,7 @@ begin
 end;
 
 // resolve a name to an Ethereum address
-procedure addr(client: IWeb3; const name: string; callback: TProc<TAddress, IError>);
+procedure addr(const client: IWeb3; const name: string; const callback: TProc<TAddress, IError>);
 begin
   resolver(client, name, procedure(resolver: TAddress; err: IError)
   begin
@@ -112,7 +112,7 @@ end;
 // retrieves text metadata for a name.
 // each name may have multiple pieces of metadata, identified by a unique string key.
 // if no text data exists for node with the key key, the empty string is returned.
-procedure text(client: IWeb3; const name, key: string; callback: TProc<TTuple, IError>);
+procedure text(const client: IWeb3; const name, key: string; const callback: TProc<TTuple, IError>);
 begin
   resolver(client, name, procedure(resolver: TAddress; err: IError)
   begin
@@ -124,7 +124,7 @@ begin
 end;
 
 // reverse resolution maps from an address back to a name
-procedure reverse(client: IWeb3; addr: TAddress; callback: TProc<string, IError>);
+procedure reverse(const client: IWeb3; const addr: TAddress; const callback: TProc<string, IError>);
 begin
   var name := string(addr).ToLower + '.addr.reverse';
   while Copy(name, System.Low(name), 2).ToLower = '0x' do

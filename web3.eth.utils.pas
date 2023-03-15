@@ -65,11 +65,11 @@ type
     tether
   );
 
-function fromWei(wei: TWei; &to: TDenomination; decimals: Byte = 18): string;
-function toWei(value: string; from: TDenomination): IResult<TWei>;
+function fromWei(wei: TWei; const &to: TDenomination; const decimals: Byte = 18): string;
+function toWei(value: string; const from: TDenomination): IResult<TWei>;
 
 function DotToFloat(const value: string): Double;
-function FloatToDot(value: Double): string;
+function FloatToDot(const value: Double): string;
 
 implementation
 
@@ -100,7 +100,7 @@ const
     '1000000000000000000000000000',
     '1000000000000000000000000000000');
 
-function fromWei(wei: TWei; &to: TDenomination; decimals: Byte): string;
+function fromWei(wei: TWei; const &to: TDenomination; const decimals: Byte): string;
 begin
   Result := '';
   const negative = wei.Negative;
@@ -128,7 +128,7 @@ begin
     Result := '-' + Result;
 end;
 
-function toWei(value: string; from: TDenomination): IResult<TWei>;
+function toWei(value: string; const from: TDenomination): IResult<TWei>;
 begin
   const base = ToBase[from];
   const baseLen = ToBase[from].Length;
@@ -174,7 +174,7 @@ begin
   Result := StrToFloat(value, FS);
 end;
 
-function FloatToDot(value: Double): string;
+function FloatToDot(const value: Double): string;
 begin
   var FS := TFormatSettings.Create;
   FS.DecimalSeparator := '.';
