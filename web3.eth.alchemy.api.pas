@@ -239,7 +239,7 @@ procedure alchemy_simulateAssetChanges(
   const data     : string;
   const callback : TProc<TJsonObject, IError>);
 begin
-  web3.eth.alchemy.endpoint(chain, apiKey)
+  web3.eth.alchemy.endpoint(chain, apiKey, core)
     .ifErr(procedure(err: IError)
     begin
       callback(nil, err)
@@ -317,7 +317,7 @@ begin
     const startWith: string;
     const callback : TProc<TJsonValue, IError>)
   begin
-    web3.eth.alchemy.endpoint(chain, apiKey, True)
+    web3.eth.alchemy.endpoint(chain, apiKey, nft)
       .ifErr(procedure(err: IError)
       begin
         callback(nil, err)
@@ -374,7 +374,7 @@ procedure isAirdrop(
   const contract: TAddress;
   const callback: TProc<Boolean, IError>);
 begin
-  web3.eth.alchemy.endpoint(chain, apiKey, True)
+  web3.eth.alchemy.endpoint(chain, apiKey, nft)
     .ifErr(procedure(err: IError)
     begin
       callback(False, err)
@@ -419,7 +419,7 @@ procedure isSpam(
   const contract: TAddress;
   const callback: TProc<TJsonValue, IError>);
 begin
-  web3.eth.alchemy.endpoint(chain, apiKey, True)
+  web3.eth.alchemy.endpoint(chain, apiKey, nft)
     .ifErr(procedure(err: IError)
     begin
       callback(nil, err)
