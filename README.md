@@ -77,7 +77,7 @@ SimpleBaseLib4Pascal
 11. [Delphi and the Ethereum Dark Forest](https://svanas.medium.com/delphi-and-the-ethereum-dark-forest-5b430da3ad93)
 12. [Swap one token for another in Delphi](https://svanas.medium.com/swap-one-token-for-another-in-delphi-bcb999c47f7)
 
-## Case study
+## Case studies
 
 ### 1. Migratooor
 
@@ -91,13 +91,13 @@ Made with Delphi, bankless is a small and simple dapp that makes it super easy t
 
 You can download bankless for [Windows](https://github.com/svanas/bankless/releases/latest/download/Windows.zip) or [macOS](https://github.com/svanas/bankless/releases/latest/download/macOS.zip).
 
-### 3. PubSub
+### 3. Balancer
 
-[PubSub](https://github.com/svanas/PubSub) is a simple "Hello World" example project, demonstrating how to subscribe to an Ethereum node (or RPC provider) and get notified every time a new block got mined. You can download PubSub [for Windows](https://github.com/svanas/PubSub/releases/latest/download/Windows.zip).
+[Balancer](https://github.com/svanas/balancer) is an implementation of the https://balancer.finance protocol in native code, made possible by an awesome grant from the Balancer DAO. You can download balancer [Windows](https://github.com/svanas/balancer/releases/latest/download/Windows.zip) or [macOS](https://github.com/svanas/balancer/releases/latest/download/macOS.zip).
 
-### 4. Enumerable
+### 4. PubSub
 
-[Enumerable](https://github.com/svanas/Enumerable) is another "Hello World" example project, demonstrating how to enumerate over the NFTs in an ERC-721 contract and display the associated image for each and every one of them.
+[PubSub](https://github.com/svanas/PubSub) is a simple "Hello World" example project, demonstrating how to subscribe to a RPC provider and get notified every time a new block got mined. You can download PubSub [for Windows](https://github.com/svanas/PubSub/releases/latest/download/Windows.zip).
 
 ## License
 
