@@ -53,6 +53,7 @@ type
 
   IDeserializedArray<T: IInterface> = interface
     function Count: Integer;
+    procedure Delete(const Index: Integer);
     function Item(const Index: Integer): T;
   end;
 

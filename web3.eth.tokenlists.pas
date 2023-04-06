@@ -58,11 +58,11 @@ type
     function Length: Integer;
   end;
 
-function count(const source: string; const callback: TProc<BigInteger, IError>): IAsyncResult; overload;
+function count(const source: TURL; const callback: TProc<BigInteger, IError>): IAsyncResult; overload;
 function count(const chain: TChain; const callback: TProc<BigInteger, IError>): IAsyncResult; overload;
 
-function tokens(const source: string; const callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
-function tokens(const source: string; const callback: TProc<TTokens, IError>): IAsyncResult; overload;
+function tokens(const source: TURL; const callback: TProc<TJsonArray, IError>): IAsyncResult; overload;
+function tokens(const source: TURL; const callback: TProc<TTokens, IError>): IAsyncResult; overload;
 function tokens(const chain: TChain; const callback: TProc<TTokens, IError>): IAsyncResult; overload;
 
 function token(const chain: TChain; const token: TAddress; const callback: TProc<IToken, IError>): IAsyncResult;
@@ -188,7 +188,7 @@ end;
 
 {------------------------------ public functions ------------------------------}
 
-function count(const source: string; const callback: TProc<BigInteger, IError>): IAsyncResult;
+function count(const source: TURL; const callback: TProc<BigInteger, IError>): IAsyncResult;
 begin
   Result := tokens(source, procedure(arr: TJsonArray; err: IError)
   begin
@@ -209,7 +209,7 @@ begin
   end);
 end;
 
-function tokens(const source: string; const callback: TProc<TJsonArray, IError>): IAsyncResult;
+function tokens(const source: TURL; const callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
   Result := web3.http.get(source, [], procedure(obj: TJsonValue; err: IError)
   begin
@@ -217,7 +217,7 @@ begin
   end);
 end;
 
-function tokens(const source: string; const callback: TProc<TTokens, IError>): IAsyncResult;
+function tokens(const source: TURL; const callback: TProc<TTokens, IError>): IAsyncResult;
 begin
   Result := tokens(source, procedure(arr: TJsonArray; err: IError)
   begin
