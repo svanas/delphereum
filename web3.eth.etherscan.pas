@@ -155,6 +155,8 @@ begin
     Result := TResult<string>.Ok('https://goerli.arbiscan.io/api?')
   else if chain = Sepolia then
     Result := TResult<string>.Ok('https://api-sepolia.etherscan.io/api?')
+  else if chain = BaseGoerli then
+    Result := TResult<string>.Ok('https://api-goerli.basescan.org/api?')
   else
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;

@@ -191,6 +191,20 @@ const
     RPC          : ('https://rpc.sepolia.org', '');
     BlockExplorer: 'https://sepolia.etherscan.io';
   );
+  Base: TChain = (
+    Id           : 8453;
+    Name         : 'Base';
+    Symbol       : 'ETH';
+    TxType       : 2;
+  );
+  BaseGoerli: TChain = (
+    Id           : 84531;
+    Name         : 'Base Goerli';
+    Symbol       : 'ETH';
+    TxType       : 2;
+    RPC          : ('https://goerli.base.org', '');
+    BlockExplorer: 'https://goerli.basescan.org';
+  );
 
 type
   TAssetTypeHelper = record helper for TAssetType
@@ -449,6 +463,10 @@ begin
     Result := TResult<PChain>.Ok(@ArbitrumGoerli)
   else if Id = Sepolia.Id then
     Result := TResult<PChain>.Ok(@Sepolia)
+  else if Id = Base.Id then
+    Result := TResult<PChain>.Ok(@Base)
+  else if Id = BaseGoerli.Id then
+    Result := TResult<PChain>.Ok(@BaseGoerli)
   else
     Result := TResult<PChain>.Err(nil, TError.Create('Unknown chain id: %d', [Id]));
 end;
@@ -602,7 +620,10 @@ begin
       if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
     end)
   else if Chain = Sepolia then
-    web3.coincap.price('ethereum', callback)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x694AA1769357215DE4FAC081bf1f309aDC325306').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
+    end)
   else if Chain = Goerli then
     web3.eth.chainlink.TAggregatorV3.Create(Self, '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e').Price(procedure(price: Double; err: IError)
     begin
@@ -621,12 +642,12 @@ begin
   else if (Chain = RSK) or (Chain = RSK_test_net) then
     web3.coincap.price('bitcoin', callback)
   else if Chain = BNB then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e').Price(procedure(price: Double; err: IError)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE').Price(procedure(price: Double; err: IError)
     begin
       if Assigned(err) then web3.coincap.price('binance-coin', callback) else callback(price, nil);
     end)
   else if Chain = BNB_test_net then
-    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x143db3CEEfbdfe5631aDD3E50f7614B6ba708BA7').Price(procedure(price: Double; err: IError)
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0x2514895c72f50D8bd4B4F9b1110F0D6bD2c97526').Price(procedure(price: Double; err: IError)
     begin
       if Assigned(err) then web3.coincap.price('binance-coin', callback) else callback(price, nil);
     end)
@@ -659,6 +680,13 @@ begin
     end)
   else if Chain = ArbitrumGoerli then
     web3.eth.chainlink.TAggregatorV3.Create(Self, '0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08').Price(procedure(price: Double; err: IError)
+    begin
+      if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
+    end)
+  else if Chain = Base then
+    web3.coincap.price('ethereum', callback)
+  else if Chain = BaseGoerli then
+    web3.eth.chainlink.TAggregatorV3.Create(Self, '0xcD2A119bD1F7DF95d706DE6F2057fDD45A0503E2').Price(procedure(price: Double; err: IError)
     begin
       if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
     end)
