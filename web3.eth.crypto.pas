@@ -103,7 +103,7 @@ function sign(const privateKey: TPrivateKey; const msg: string): TSignature;
 begin
   const Signer = TEthereumSigner.Create;
   try
-    Signer.Init(True, privateKey.Parameters);
+    Signer.Init(True, privateKey);
     const Signature = Signer.GenerateSignature(prefix(msg));
     const v = Signature.rec.Add(TBigInteger.ValueOf(27));
     Result := TSignature.Create(Signature.r, Signature.s, v);

@@ -104,11 +104,16 @@ type
     function  SameAs(const other: TAddress): Boolean;
   end;
 
-  TPrivateKeyHelper = record helper for TPrivateKey
+  TPrivateKey = record
+  private
+    Inner: string[64];
+  public
     class function Generate: TPrivateKey; static;
-    constructor Create(const params: IECPrivateKeyParameters);
+    class operator Implicit(const value: string): TPrivateKey;
+    class operator Implicit(const value: TPrivateKey): string;
+    class operator Implicit(const value: IECPrivateKeyParameters): TPrivateKey;
+    class operator Implicit(const value: TPrivateKey): IECPrivateKeyParameters;
     class function Prompt(const &public: TAddress): IResult<TPrivateKey>; static;
-    function Parameters: IECPrivateKeyParameters;
     function GetAddress: IResult<TAddress>;
   end;
 
@@ -327,19 +332,39 @@ begin
   Result := SameText(string(self), string(other));
 end;
 
-{ TPrivateKeyHelper }
+{ TPrivateKey }
 
-class function TPrivateKeyHelper.Generate: TPrivateKey;
+class function TPrivateKey.Generate: TPrivateKey;
 begin
-  Result := TPrivateKey.Create(web3.crypto.generatePrivateKey('ECDSA', SECP256K1));
+  Result := web3.crypto.generatePrivateKey('ECDSA', SECP256K1);
 end;
 
-constructor TPrivateKeyHelper.Create(const params: IECPrivateKeyParameters);
+class operator TPrivateKey.Implicit(const value: string): TPrivateKey;
 begin
-  Self := TPrivateKey(web3.utils.toHex('', params.D.ToByteArrayUnsigned));
+  Result.Inner := (function: string
+  begin
+    Result := value;
+    if Copy(Result, System.Low(Result), 2).ToLower = '0x' then
+      Delete(Result, System.Low(Result), 2);
+  end)()
 end;
 
-class function TPrivateKeyHelper.Prompt(const &public: TAddress): IResult<TPrivateKey>;
+class operator TPrivateKey.Implicit(const value: TPrivateKey): string;
+begin
+  Result := value.Inner;
+end;
+
+class operator TPrivateKey.Implicit(const value: IECPrivateKeyParameters): TPrivateKey;
+begin
+  Result.Inner := web3.utils.toHex('', value.D.ToByteArrayUnsigned);
+end;
+
+class operator TPrivateKey.Implicit(const value: TPrivateKey): IECPrivateKeyParameters;
+begin
+  Result := web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, fromHex(value.Inner));
+end;
+
+class function TPrivateKey.Prompt(const &public: TAddress): IResult<TPrivateKey>;
 begin
   var input: string;
   TThread.Synchronize(nil, procedure
@@ -393,16 +418,10 @@ begin
   Result := TResult<TPrivateKey>.Ok(&private);
 end;
 
-function TPrivateKeyHelper.Parameters: IECPrivateKeyParameters;
-begin
-  Result := web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, fromHex(string(Self)));
-end;
-
-function TPrivateKeyHelper.GetAddress: IResult<TAddress>;
+function TPrivateKey.GetAddress: IResult<TAddress>;
 begin
   try
-    const pubKey = web3.crypto.publicKeyFromPrivateKey(Self.Parameters);
-    Result := TResult<TAddress>.Ok(web3.eth.crypto.publicKeyToAddress(pubKey));
+    Result := TResult<TAddress>.Ok(web3.eth.crypto.publicKeyToAddress(web3.crypto.publicKeyFromPrivateKey(Self)));
   except
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'Private key is invalid');
   end;

@@ -145,7 +145,7 @@ end;
 
 function unmarshal(const value: string): TJsonValue;
 begin
-  Result := TJsonValue.ParseJsonValue(value.Trim);
+  Result := TJsonObject.ParseJsonValue(value.Trim);
 end;
 
 function getPropAsStr(const obj: TJsonValue; const name: string; const def: string): string;

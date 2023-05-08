@@ -31,7 +31,8 @@ uses
   System.SysUtils,
   // web3
   web3,
-  web3.bip39;
+  web3.bip39,
+  web3.eth.types;
 
 // returns the bip32 derivation path for the bip39 mnemonic sentence
 procedure path(const client: IWeb3; const seed: web3.bip39.TSeed; const callback: TProc<string, IError>);
@@ -53,7 +54,6 @@ uses
   // web3
   web3.bip32,
   web3.eth,
-  web3.eth.types,
   web3.utils;
 
 // returns the Ethereum private key for the bip32 master key and the bip32 derivation path

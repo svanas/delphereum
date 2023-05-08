@@ -288,7 +288,7 @@ begin
 
   const Signer = TEthereumSigner.Create;
   try
-    Signer.Init(True, from.Parameters);
+    Signer.Init(True, from);
 
     const Signature = Signer.GenerateSignature(sha3(encoded.Value));
 
@@ -353,7 +353,7 @@ begin
 
   const Signer = TEthereumSigner.Create;
   try
-    Signer.Init(True, from.Parameters);
+    Signer.Init(True, from);
 
     const Signature = Signer.GenerateSignature(sha3([2] + encoded.Value));
 

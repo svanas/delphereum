@@ -38,7 +38,6 @@ uses
 type
   TURL          = string;
   TAddress      = string[42];
-  TPrivateKey   = string[64];
   TWei          = BigInteger;
   TTxHash       = string[66];
   TUnixDateTime = Int64;
@@ -70,6 +69,13 @@ const
     TxType       : 2;
     BlockExplorer: 'https://etherscan.io';
     TokenList    : 'https://tokens.coingecko.com/uniswap/all.json'
+  );
+  Ganache: TChain = (
+    Id           : 1337;
+    Name         : 'Ganache';
+    Symbol       : 'ETH';
+    TxType       : 2;
+    RPC          : ('http://127.0.0.1:7545', '')
   );
   Goerli: TChain = (
     Id           : 5;
@@ -683,7 +689,7 @@ begin
     begin
       if Assigned(err) then web3.coincap.price('ethereum', callback) else callback(price, nil);
     end)
-  else if Chain = Base then
+  else if (Chain = Ganache) or (Chain = Base) then
     web3.coincap.price('ethereum', callback)
   else if Chain = BaseGoerli then
     web3.eth.chainlink.TAggregatorV3.Create(Self, '0xcD2A119bD1F7DF95d706DE6F2057fDD45A0503E2').Price(procedure(price: Double; err: IError)
