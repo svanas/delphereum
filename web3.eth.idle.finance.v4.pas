@@ -351,27 +351,35 @@ begin
     end)
     .&else(procedure(idleToken: IIdleToken)
     begin
-      // step #1: get the IdleToken balance
-      idleToken.BalanceOf(from, procedure(balance: BigInteger; err: IError)
-      begin
-        if Assigned(err) then
+      from.GetAddress
+        .ifErr(procedure(err: IError)
+        begin
           callback(nil, 0, err)
-        else
-          // step #2: redeem IdleToken-amount in exchange for the underlying asset.
-          idleToken.RedeemIdleToken(from, balance, procedure(rcpt: ITxReceipt; err: IError)
+        end)
+        .&else(procedure(owner: TAddress)
+        begin
+          // step #1: get the IdleToken balance
+          idleToken.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
           begin
             if Assigned(err) then
               callback(nil, 0, err)
             else
-              IdleToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
+              // step #2: redeem IdleToken-amount in exchange for the underlying asset.
+              idleToken.RedeemIdleToken(from, balance, procedure(rcpt: ITxReceipt; err: IError)
               begin
                 if Assigned(err) then
-                  callback(rcpt, 0, err)
+                  callback(nil, 0, err)
                 else
-                  callback(rcpt, output, nil);
+                  IdleToUnderlying(client, reserve, balance, procedure(output: BigInteger; err: IError)
+                  begin
+                    if Assigned(err) then
+                      callback(rcpt, 0, err)
+                    else
+                      callback(rcpt, output, nil);
+                  end);
               end);
           end);
-      end);
+        end);
     end);
 end;
 

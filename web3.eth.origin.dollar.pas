@@ -131,12 +131,18 @@ type
   TOriginDollar = class(TERC20, IOriginDollar)
   public
     constructor Create(const aClient: IWeb3); reintroduce;
+    class function DeployedAt: TAddress;
     procedure RebasingCreditsPerToken(const block: string; const callback: TProc<BigInteger, IError>);
   end;
 
 constructor TOriginDollar.Create(const aClient: IWeb3);
 begin
-  inherited Create(aClient, '0x2A8e1E676Ec238d8A992307B495b45B3fEAa5e86');
+  inherited Create(aClient, Self.DeployedAt);
+end;
+
+class function TOriginDollar.DeployedAt: TAddress;
+begin
+  Result := '0x2A8e1E676Ec238d8A992307B495b45B3fEAa5e86';
 end;
 
 procedure TOriginDollar.RebasingCreditsPerToken(const block: string; const callback: TProc<BigInteger, IError>);
@@ -213,21 +219,16 @@ class procedure TOrigin.Balance(
   const reserve : TReserve;
   const callback: TProc<BigInteger, IError>);
 begin
-  const ousd = TOriginDollar.Create(client);
-  try
-    ousd.BalanceOf(owner, procedure(balance: BigInteger; err: IError)
-    begin
-      if Assigned(err) then
+  web3.eth.erc20.create(client, TOriginDollar.DeployedAt).BalanceOf(owner, procedure(balance: BigInteger; err: IError)
+  begin
+    if Assigned(err) then
+      callback(balance, err)
+    else
+      if reserve.Decimals = 1e18 then
         callback(balance, err)
       else
-        if reserve.Decimals = 1e18 then
-          callback(balance, err)
-        else
-          callback(reserve.Scale(balance.AsDouble / 1e18), err);
-    end);
-  finally
-    ousd.Free;
-  end;
+        callback(reserve.Scale(balance.AsDouble / 1e18), err);
+  end);
 end;
 
 class procedure TOrigin.Withdraw(
@@ -243,13 +244,13 @@ begin
     end)
     .&else(procedure(owner: TAddress)
     begin
-      Self.Balance(client, owner, reserve, procedure(balance: BigInteger; err: IError)
+      web3.eth.erc20.create(client, TOriginDollar.DeployedAt).BalanceOf(owner, procedure(balance: BigInteger; err: IError)
       begin
         if Assigned(err) then
           callback(nil, 0, err)
         else
           Self.WithdrawEx(client, from, reserve, balance, callback);
-      end)
+      end);
     end);
 end;
 

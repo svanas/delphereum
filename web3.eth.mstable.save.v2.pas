@@ -83,10 +83,16 @@ type
   end;
 
 type
+  ImUSD = interface(IERC20)
+    procedure Redeem(const from: TPrivateKey; const quantity: BigInteger; const reserve: TReserve; const callback: TProc<ITxReceipt, IError>);
+  end;
+
+type
   IimUSD = interface(IERC20)
     procedure BalanceOfUnderlying(const owner: TAddress; const callback: TProc<BigInteger, IError>);
     procedure ExchangeRate(const block: string; const callback: TProc<BigInteger, IError>);
     procedure CreditsToUnderlying(const credits: BigInteger; const callback: TProc<BigInteger, IError>);
+    procedure Redeem(const from: TPrivateKey; const credits: BigInteger; const callback: TProc<ITxReceipt, IError>);
   end;
 
 type
@@ -94,6 +100,7 @@ type
   public
     constructor Create(const aClient: IWeb3); reintroduce;
     procedure BalanceOf(const owner: TAddress; const callback: TProc<BigInteger, IError>);
+    procedure Exit(const from: TPrivateKey; const callback: TProc<ITxReceipt, IError>);
   end;
 
 implementation
@@ -121,6 +128,41 @@ begin
   end);
 end;
 
+{ TmUSD }
+
+type
+  TmUSD = class(TERC20, ImUSD)
+  public
+    constructor Create(const aClient: IWeb3); reintroduce;
+    procedure Redeem(const from: TPrivateKey; const quantity: BigInteger; const reserve: TReserve; const callback: TProc<ITxReceipt, IError>);
+  end;
+
+constructor TmUSD.Create(const aClient: IWeb3);
+begin
+  inherited Create(aClient, '0xe2f2a5C287993345a840Db3B0845fbC70f5935a5');
+end;
+
+procedure TmUSD.Redeem(const from: TPrivateKey; const quantity: BigInteger; const reserve: TReserve; const callback: TProc<ITxReceipt, IError>);
+begin
+  from.GetAddress
+    .ifErr(procedure(err: IError)
+    begin
+      callback(nil, err)
+    end)
+    .&else(procedure(owner: TAddress)
+    begin
+      reserve.Address(Self.Client.Chain)
+        .ifErr(procedure(err: IError)
+        begin
+          callback(nil, err)
+        end)
+        .&else(procedure(output: TAddress)
+        begin
+          web3.eth.write(Client, from, Contract, 'redeem(address,uint256,uint256,address)', [output, web3.utils.toHex(quantity), 0, owner], callback);
+        end);
+    end);
+end;
+
 { TimUSD }
 
 type
@@ -130,6 +172,7 @@ type
     procedure BalanceOfUnderlying(const owner: TAddress; const callback: TProc<BigInteger, IError>);
     procedure ExchangeRate(const block: string; const callback: TProc<BigInteger, IError>);
     procedure CreditsToUnderlying(const credits: BigInteger; const callback: TProc<BigInteger, IError>);
+    procedure Redeem(const from: TPrivateKey; const credits: BigInteger; const callback: TProc<ITxReceipt, IError>);
   end;
 
 constructor TimUSD.Create(const aClient: IWeb3);
@@ -150,6 +193,11 @@ end;
 procedure TimUSD.CreditsToUnderlying(const credits: BigInteger; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'creditsToUnderlying(uint256)', [web3.utils.toHex(credits)], callback);
+end;
+
+procedure TimUSD.Redeem(const from: TPrivateKey; const credits: BigInteger; const callback: TProc<ITxReceipt, IError>);
+begin
+  web3.eth.write(Client, from, Contract, 'redeem(uint256)', [web3.utils.toHex(credits)], callback);
 end;
 
 { TmStable }
@@ -248,6 +296,11 @@ end;
 procedure TimVaultUSD.BalanceOf(const owner: TAddress; const callback: TProc<BigInteger, IError>);
 begin
   web3.eth.call(Client, Contract, 'balanceOf(address)', [owner], callback);
+end;
+
+procedure TimVaultUSD.Exit(const from: TPrivateKey; const callback: TProc<ITxReceipt, IError>);
+begin
+  web3.eth.write(Client, from, Contract, 'exit()', [], callback);
 end;
 
 end.

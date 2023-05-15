@@ -227,6 +227,15 @@ const
     Explorer : 'https://goerli.basescan.org';
     Chainlink: '0xcD2A119bD1F7DF95d706DE6F2057fDD45A0503E2'
   );
+  PulseChain: TChain = (
+    Id       : 369;
+    Name     : 'PulseChain';
+    Symbol   : 'PLS';
+    TxType   : 2;
+    RPC      : ('https://rpc.pulsechain.com', '');
+    Explorer : 'https://scan.pulsechain.com';
+    Tokens   : 'https://pulsechain-sacrifice-checker.vercel.app/tokens.json'
+  );
 
 type
   TAssetTypeHelper = record helper for TAssetType
@@ -392,11 +401,6 @@ type
       const aProtocol: IPubSub;
       const aSecurity: TSecurity = TSecurity.Automatic); overload;
     constructor Create(
-      const aURL     : TURL;
-      const aTxType  : Byte;
-      const aProtocol: IPubSub;
-      const aSecurity: TSecurity = TSecurity.Automatic); overload;
-    constructor Create(
       const aChain   : TChain;
       const aProtocol: IPubSub;
       const aSecurity: TSecurity = TSecurity.Automatic); overload;
@@ -488,6 +492,8 @@ begin
     Result := TResult<PChain>.Ok(@Base)
   else if Id = BaseGoerli.Id then
     Result := TResult<PChain>.Ok(@BaseGoerli)
+  else if Id = PulseChain.Id then
+    Result := TResult<PChain>.Ok(@PulseChain)
   else
     Result := TResult<PChain>.Err(nil, TError.Create('Unknown chain id: %d', [Id]));
 end;
@@ -762,15 +768,6 @@ constructor TWeb3Ex.Create(
   const aSecurity: TSecurity = TSecurity.Automatic);
 begin
   Self.Create(Ethereum.SetRPC(WebSocket, aURL), aProtocol, aSecurity);
-end;
-
-constructor TWeb3Ex.Create(
-  const aURL     : TURL;
-  const aTxType  : Byte;
-  const aProtocol: IPubSub;
-  const aSecurity: TSecurity = TSecurity.Automatic);
-begin
-  Self.Create(Ethereum.SetRPC(WebSocket, aURL).SetTxType(aTxType), aProtocol, aSecurity);
 end;
 
 constructor TWeb3Ex.Create(
