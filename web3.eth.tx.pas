@@ -1028,7 +1028,7 @@ procedure openTransaction(const chain: TChain; const hash: TTxHash);
   end;
 
 begin
-  open(chain.BlockExplorer + '/tx/' + string(hash));
+  open(chain.Explorer + '/tx/' + string(hash));
 end;
 
 end.

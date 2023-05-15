@@ -251,12 +251,12 @@ begin
       if token1.ChainId = chain.Id then
         result := result + [token1];
     // step #2: add tokens from a chain-specific token list (if any)
-    if chain.TokenList = '' then
+    if chain.Tokens = '' then
     begin
       callback(result, nil);
       EXIT;
     end;
-    tokens(chain.TokenList, procedure(tokens2: TTokens; err2: IError)
+    tokens(chain.Tokens, procedure(tokens2: TTokens; err2: IError)
     begin
       if Assigned(err2) or not Assigned(tokens2) then
       begin

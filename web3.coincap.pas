@@ -28,84 +28,118 @@ interface
 
 uses
   // Delphi
-  System.JSON,
   System.SysUtils,
   System.Types,
   // web3
   web3,
-  web3.http;
+  web3.json;
 
 type
-  ITicker = interface
+  IAsset = interface
+    function Id    : string; // unique identifier for asset
     function Symbol: string; // most common symbol used to identify this asset on an exchange
     function Price : Double; // volume-weighted price based on real-time market data, translated to USD
   end;
 
-function ticker(const asset: string; const callback: TProc<ITicker, IError>): IAsyncResult; overload;
-function ticker(const asset: string; const callback: TProc<TJsonValue, IError>): IAsyncResult; overload;
-
-function price(const asset: string; const callback: TProc<Double, IError>): IAsyncResult;
+function assets(const callback: TProc<IDeserializedArray<IAsset>, IError>): IAsyncResult;
+function asset(const symbol: string; const callback: TProc<IAsset, IError>): IAsyncResult;
+function price(const symbol: string; const callback: TProc<Double, IError>): IAsyncResult;
 
 implementation
 
 uses
   // Delphi
+  System.Generics.Collections,
+  System.JSON,
   System.NetEncoding,
   // web3
-  web3.json;
+  web3.http;
 
 type
-  TTicker = class(TDeserialized, ITicker)
+  TAsset = class(TDeserialized, IAsset)
   public
+    function Id    : string;
     function Symbol: string;
     function Price : Double;
   end;
 
-function TTicker.Symbol: string;
+function TAsset.Id: string;
+begin
+  Result := getPropAsStr(FJsonValue, 'id');
+end;
+
+function TAsset.Symbol: string;
 begin
   Result := getPropAsStr(FJsonValue, 'symbol');
 end;
 
-function TTicker.Price: Double;
+function TAsset.Price: Double;
 begin
   Result := getPropAsDouble(FJsonValue, 'priceUsd');
 end;
 
-function ticker(const asset: string; const callback: TProc<ITicker, IError>): IAsyncResult;
+type
+  TAssets = class(TDeserializedArray<IAsset>)
+  public
+    function Item(const Index: Integer): IAsset; override;
+  end;
+
+function TAssets.Item(const Index: Integer): IAsset;
 begin
-  Result := ticker(asset, procedure(obj: TJsonValue; err: IError)
+  Result := TAsset.Create(TJsonArray(FJsonValue)[Index]);
+end;
+
+function assets(const callback: TProc<IDeserializedArray<IAsset>, IError>): IAsyncResult;
+begin
+  Result := web3.http.get('https://api.coincap.io/v2/assets', [],
+    procedure(obj: TJsonValue; err: IError)
+    begin
+      if Assigned(err) then
+      begin
+        callback(nil, err);
+        EXIT;
+      end;
+      const data = getPropAsArr(obj, 'data');
+      if not Assigned(data) then
+      begin
+        callback(nil, TError.Create('data is null'));
+        EXIT;
+      end;
+      callback(TAssets.Create(data), nil);
+    end
+  );
+end;
+
+function asset(const symbol: string; const callback: TProc<IAsset, IError>): IAsyncResult;
+begin
+  Result := assets(procedure(assets: IDeserializedArray<IAsset>; err: IError)
   begin
     if Assigned(err) then
     begin
       callback(nil, err);
       EXIT;
     end;
-    const data = getPropAsObj(obj, 'data');
-    if not Assigned(data) then
+    for var I := 0 to Pred(assets.Count) do
     begin
-      callback(nil, TError.Create('%s.data is null', [asset]));
-      EXIT;
+      const asset = assets.Item(I);
+      if SameText(asset.Symbol, symbol) then
+      begin
+        callback(asset, nil);
+        EXIT;
+      end;
     end;
-    callback(TTicker.Create(data), nil);
+    callback(nil, TError.Create('%s does not exist', [symbol]));
   end);
 end;
 
-function ticker(const asset: string; const callback: TProc<TJsonValue, IError>): IAsyncResult;
+function price(const symbol: string; const callback: TProc<Double, IError>): IAsyncResult;
 begin
-  Result := web3.http.get(
-    'https://api.coincap.io/v2/assets/' + TNetEncoding.URL.Encode(asset),
-    [], callback
-  );
-end;
-
-function price(const asset: string; const callback: TProc<Double, IError>): IAsyncResult;
-begin
-  Result := ticker(asset, procedure(ticker: ITicker; err: IError)
+  Result := asset(symbol, procedure(asset: IAsset; err: IError)
   begin
-    if not Assigned(ticker) then
+    if not Assigned(asset) then
       callback(0, err)
     else
-      callback(ticker.Price, err);
+      callback(asset.Price, err);
   end);
 end;
 

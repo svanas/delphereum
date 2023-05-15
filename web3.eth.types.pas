@@ -351,7 +351,7 @@ end;
 
 class operator TPrivateKey.Implicit(const value: TPrivateKey): string;
 begin
-  Result := value.Inner;
+  Result := string(value.Inner);
 end;
 
 class operator TPrivateKey.Implicit(const value: IECPrivateKeyParameters): TPrivateKey;
@@ -361,7 +361,7 @@ end;
 
 class operator TPrivateKey.Implicit(const value: TPrivateKey): IECPrivateKeyParameters;
 begin
-  Result := web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, fromHex(value.Inner));
+  Result := web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, fromHex(string(value.Inner)));
 end;
 
 class function TPrivateKey.Prompt(const &public: TAddress): IResult<TPrivateKey>;
