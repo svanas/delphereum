@@ -31,6 +31,7 @@ Delphereum supports [every EVM-compatible network](https://chainlist.org/), incl
 * [Gnosis](https://www.gnosischain.com/)
 * [BNB Chain](https://www.bnbchain.org/)
 * [Fantom](https://fantom.foundation/)
+* [PulseChain](https://pulsechain.com/)
 
 ## Dependencies
 
