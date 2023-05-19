@@ -103,11 +103,19 @@ constructor TToken.Create(const aJsonValue: TJsonValue);
 begin
   inherited Create(aJsonValue);
   FChainId := getPropAsInt(aJsonValue, 'chainId');
-  FAddress := TAddress.Create(getPropAsStr(aJsonValue, 'address'));
+  FAddress := TAddress.Create((function: string
+  begin
+    Result := getPropAsStr(aJsonValue, 'address');
+    if Result = '' then Result := getPropAsStr(aJsonValue, 'contract');
+  end)());
   FName := getPropAsStr(aJsonValue, 'name');
   FSymbol := getPropAsStr(aJsonValue, 'symbol');
   FDecimals := getPropAsInt(aJsonValue, 'decimals');
-  FLogo := getPropAsStr(aJsonValue, 'logoURI');
+  FLogo := (function: string
+  begin
+    Result := getPropAsStr(aJsonValue, 'logoURI');
+    if Result = '' then Result := getPropAsStr(aJsonValue, 'image');
+  end)();
 end;
 
 function TToken.ChainId: UInt32;
@@ -211,9 +219,14 @@ end;
 
 function tokens(const source: TURL; const callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
-  Result := web3.http.get(source, [], procedure(obj: TJsonValue; err: IError)
+  Result := web3.http.get(source, [], procedure(response: TJsonValue; err: IError)
   begin
-    callback(getPropAsArr(obj, 'tokens'), err);
+    const result = (function: TJsonArray
+    begin
+      Result := getPropAsArr(response, 'tokens');
+      if (Result = nil) and (response is TJsonArray) then Result := response as TJsonArray;
+    end)();
+    callback(result, err);
   end);
 end;
 
@@ -264,7 +277,7 @@ begin
         EXIT;
       end;
       for var token2 in tokens2 do
-        if (token2.ChainId = chain.Id) and (result.IndexOf(token2.Address) = -1) then
+        if ((token2.ChainId = chain.Id) or (token2.ChainId = 0)) and (result.IndexOf(token2.Address) = -1) then
           result := result + [token2];
       callback(result, nil);
     end);
