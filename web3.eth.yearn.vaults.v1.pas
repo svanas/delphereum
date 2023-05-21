@@ -99,11 +99,6 @@ begin
   Result := TyToken.Create(client, '0x37d19d1c4E1fa9DC47bD1eA12f742a0887eDa74a');
 end;
 
-function yMUSD(const client: IWeb3): IyToken;
-begin
-  Result := TyToken.Create(client, '0xE0db48B4F71752C4bEf16De1DBD042B82976b8C7');
-end;
-
 function yToken(const client: IWeb3; const reserve: TReserve): IResult<IyToken>;
 begin
   case reserve of
@@ -111,7 +106,6 @@ begin
     USDC: Result := TResult<IyToken>.Ok(yUSDC(client));
     USDT: Result := TResult<IyToken>.Ok(yUSDT(client));
     TUSD: Result := TResult<IyToken>.Ok(yTUSD(client));
-    MUSD: Result := TResult<IyToken>.Ok(yMUSD(client));
   else
     Result := TResult<IyToken>.Err(nil, TError.Create('%s not supported', [reserve.Symbol]));
   end;
@@ -126,7 +120,7 @@ end;
 
 class function TyVaultV1.Supports(const chain: TChain; const reserve: TReserve): Boolean;
 begin
-  Result := (chain = Ethereum) and (Reserve in [DAI, USDC, USDT, MUSD, TUSD]);
+  Result := (chain = Ethereum) and (Reserve in [DAI, USDC, USDT, TUSD]);
 end;
 
 class procedure TyVaultV1.APY(

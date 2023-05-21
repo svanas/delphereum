@@ -149,8 +149,7 @@ type
         3,  // DAI
         2,  // USDC
         -1, // USDT
-        -1, // TUSD
-        -1  // mUSD
+        -1  // TUSD
       );
     procedure GetAccountWei(const owner: TAddress; const marketId: Integer; const callback: TProc<BigInteger, IError>);
     procedure GetEarningsRate(const callback: TProc<Double, IError>);

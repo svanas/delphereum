@@ -40,7 +40,7 @@ uses
   web3.eth.types;
 
 type
-  TReserve = (DAI, USDC, USDT, TUSD, mUSD);
+  TReserve = (DAI, USDC, USDT, TUSD);
 
   TReserveHelper = record helper for TReserve
     function  Symbol  : string;
@@ -172,7 +172,6 @@ begin
     USDC: Result := TResult<TAddress>.Ok('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48');
     USDT: Result := TResult<TAddress>.Ok('0xdac17f958d2ee523a2206206994597c13d831ec7');
     TUSD: Result := TResult<TAddress>.Ok('0x0000000000085d4780B73119b644AE5ecd22b376');
-    mUSD: Result := TResult<TAddress>.Ok('0xe2f2a5C287993345a840Db3B0845fbC70f5935a5');
   else
     Result := TResult<TAddress>.Err(EMPTY_ADDRESS, TSilent.Create('%s not implemented', [Self.Symbol]));
   end;

@@ -162,7 +162,6 @@
         <DCCReference Include="..\web3.eth.idle.finance.v4.pas"/>
         <DCCReference Include="..\web3.eth.infura.pas"/>
         <DCCReference Include="..\web3.eth.logs.pas"/>
-        <DCCReference Include="..\web3.eth.mstable.save.v2.pas"/>
         <DCCReference Include="..\web3.eth.nodelist.pas"/>
         <DCCReference Include="..\web3.eth.nonce.pas"/>
         <DCCReference Include="..\web3.eth.opensea.pas"/>

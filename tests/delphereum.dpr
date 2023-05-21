@@ -75,7 +75,6 @@ uses
   web3.eth.idle.finance.v4 in '..\web3.eth.idle.finance.v4.pas',
   web3.eth.infura in '..\web3.eth.infura.pas',
   web3.eth.logs in '..\web3.eth.logs.pas',
-  web3.eth.mstable.save.v2 in '..\web3.eth.mstable.save.v2.pas',
   web3.eth.nodelist in '..\web3.eth.nodelist.pas',
   web3.eth.nonce in '..\web3.eth.nonce.pas',
   web3.eth.opensea in '..\web3.eth.opensea.pas',
