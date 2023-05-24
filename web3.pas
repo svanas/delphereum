@@ -93,6 +93,7 @@ const
     Name     : 'Optimism';
     Symbol   : 'ETH';
     TxType   : 2;
+    RPC      : ('https://mainnet.optimism.io', '');
     Explorer : 'https://optimistic.etherscan.io';
     Tokens   : 'https://static.optimism.io/optimism.tokenlist.json';
     Chainlink: '0x13e3Ee699D1909E989722E753853AE30b17e08c5'
@@ -102,6 +103,7 @@ const
     Name     : 'Optimism Goerli';
     Symbol   : 'ETH';
     TxType   : 2;
+    RPC      : ('https://goerli.optimism.io', '');
     Explorer : 'https://goerli-optimistic.etherscan.io';
     Chainlink: '0x57241A37733983F97C4Ab06448F244A1E0Ca0ba8'
   );
@@ -191,6 +193,7 @@ const
     Name     : 'Arbitrum';
     Symbol   : 'ETH';
     TxType   : 0;
+    RPC      : ('https://arb1.arbitrum.io/rpc', '');
     Explorer : 'https://explorer.arbitrum.io';
     Tokens   : 'https://bridge.arbitrum.io/token-list-42161.json';
     Chainlink: '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612'
@@ -200,6 +203,7 @@ const
     Name     : 'Arbitrum Goerli';
     Symbol   : 'ETH';
     TxType   : 0;
+    RPC      : ('https://goerli-rollup.arbitrum.io/rpc', '');
     Explorer : 'https://goerli-rollup-explorer.arbitrum.io';
     Chainlink: '0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08'
   );
