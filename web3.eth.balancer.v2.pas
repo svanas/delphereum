@@ -164,12 +164,12 @@ uses
 function TSingleSwap.Tuple: TArray<Variant>;
 begin
   Result := [
-    web3.utils.toHex(Self.FPoolId), // bytes32
-    Self.FKind,                     // uint8
-    Self.FAssetIn,                  // address
-    Self.FAssetOut,                 // address
-    web3.utils.toHex(Self.FAmount), // uint256
-    '0b0'                           // bytes
+    web3.utils.toHex(bytes32ToByteArray(Self.FPoolId)), // bytes32
+    Self.FKind,                                         // uint8
+    Self.FAssetIn,                                      // address
+    Self.FAssetOut,                                     // address
+    web3.utils.toHex(Self.FAmount),                     // uint256
+    '0b0'                                               // bytes
   ];
 end;
 
@@ -208,11 +208,11 @@ end;
 function TSwapStep.Tuple: TArray<Variant>;
 begin
   Result := [
-    web3.utils.toHex(Self.FPoolId), // bytes32
-    Self.FAssetInIndex,             // uint256
-    Self.FAssetOutIndex,            // uint256
-    web3.utils.toHex(Self.FAmount), // uint256
-    '0b0'                           // bytes
+    web3.utils.toHex(bytes32ToByteArray(Self.FPoolId)), // bytes32
+    Self.FAssetInIndex,                                 // uint256
+    Self.FAssetOutIndex,                                // uint256
+    web3.utils.toHex(Self.FAmount),                     // uint256
+    '0b0'                                               // bytes
   ];
 end;
 
@@ -416,7 +416,7 @@ begin
   call(Client, Contract, 'WETH()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(EMPTY_ADDRESS, err)
+      callback(TAddress.Zero, err)
     else
       callback(TAddress.Create(hex), nil);
   end);
@@ -709,7 +709,7 @@ begin
   begin
     if not Assigned(err) then
       callback(TPools.Create([
-        TPool.Create(web3.utils.fromHex32(poolId), assetIn, assetOut)
+        TPool.Create(byteArrayToBytes32(web3.utils.fromHex(poolId)), assetIn, assetOut)
       ]), nil)
     else
       // step #2: get the Vault's WETH instance
@@ -733,8 +733,8 @@ begin
                     callback(nil, err)
                   else
                     callback(TPools.Create([
-                      TPool.Create(web3.utils.fromHex32(pool1), assetIn, weth),
-                      TPool.Create(web3.utils.fromHex32(pool2), weth, assetOut)
+                      TPool.Create(byteArrayToBytes32(web3.utils.fromHex(pool1)), assetIn, weth),
+                      TPool.Create(byteArrayToBytes32(web3.utils.fromHex(pool2)), weth, assetOut)
                     ]), nil);
                 end);
             end);

@@ -110,7 +110,7 @@ end;
 
 function TYearnVault.Token: TAddress;
 begin
-  Result := EMPTY_ADDRESS;
+  Result := TAddress.Zero;
   const token = getPropAsObj(FJsonValue, 'token');
   if Assigned(token) then
     Result := TAddress.Create(getPropAsStr(token, 'address'));

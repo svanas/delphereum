@@ -62,19 +62,20 @@ uses
   // web3
   web3,
   web3.eth.tx,
+  web3.eth.types,
   web3.utils;
 
 procedure TTests.TestCase1;
 begin
   web3.eth.tx.signTransactionLegacy(
-    1,                                                                          // chainId
-    9,                                                                          // nonce
-    '4646464646464646464646464646464646464646464646464646464646464646',         // from
-    '0x3535353535353535353535353535353535353535',                               // to
-    1000000000000000000,                                                        // value
-    '',                                                                         // data
-    20000000000,                                                                // gasPrice
-    21000                                                                       // gasLimit
+    1,                                                                               // chainId
+    9,                                                                               // nonce
+    TPrivateKey('4646464646464646464646464646464646464646464646464646464646464646'), // from
+    '0x3535353535353535353535353535353535353535',                                    // to
+    1000000000000000000,                                                             // value
+    '',                                                                              // data
+    20000000000,                                                                     // gasPrice
+    21000                                                                            // gasLimit
   ).ifErr(procedure(err: IError)
   begin
     Assert.Fail(err.Message)
@@ -88,14 +89,14 @@ end;
 procedure TTests.TestCase2;
 begin
   signTransactionLegacy(
-    1,                                                                          // chainId
-    2,                                                                          // nonce
-    'b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7',         // from private key
-    '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',                               // to public key
-    100000000000000000,                                                         // 0.1 ETH
-    'Chancellor on the Brink of Second Bailout for Banks',                      // data
-    4000000000,                                                                 // 4 Gwei
-    21000                                                                       // gasLimit
+    1,                                                                               // chainId
+    2,                                                                               // nonce
+    TPrivateKey('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7'), // from private key
+    '0xd8da6bf26964af9d7eed9e03e53415d37aa96045',                                    // to public key
+    100000000000000000,                                                              // 0.1 ETH
+    'Chancellor on the Brink of Second Bailout for Banks',                           // data
+    4000000000,                                                                      // 4 Gwei
+    21000                                                                            // gasLimit
   ).ifErr(procedure(err: IError)
   begin
     Assert.Fail(err.Message)
@@ -117,15 +118,15 @@ end;
 procedure TTests.TestCase3;
 begin
   web3.eth.tx.signTransactionType2(
-    1559,                                                                       // chainId
-    0,                                                                          // nonce
-    'b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7',         // from
-    '',                                                                         // to
-    10,                                                                         // value
-    '',                                                                         // data
-    3,                                                                          // maxPriorityFeePerGas
-    4,                                                                          // maxFeePerGas
-    3500                                                                        // gasLimit
+    1559,                                                                            // chainId
+    0,                                                                               // nonce
+    TPrivateKey('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7'), // from
+    '',                                                                              // to
+    10,                                                                              // value
+    '',                                                                              // data
+    3,                                                                               // maxPriorityFeePerGas
+    4,                                                                               // maxFeePerGas
+    3500                                                                             // gasLimit
   ).ifErr(procedure(err: IError)
   begin
     Assert.Fail(err.Message)
@@ -148,15 +149,15 @@ end;
 procedure TTests.TestCase4;
 begin
   web3.eth.tx.signTransactionType2(
-    1559,                                                                       // chainId
-    2,                                                                          // nonce
-    'b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7',         // from
-    '0x1ad91ee08f21be3de0ba2ba6918e714da6b45836',                               // to
-    10,                                                                         // value
-    '0x1232',                                                                   // data
-    3,                                                                          // maxPriorityFeePerGas
-    4,                                                                          // maxFeePerGas
-    3500                                                                        // gasLimit
+    1559,                                                                            // chainId
+    2,                                                                               // nonce
+    TPrivateKey('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7'), // from
+    '0x1ad91ee08f21be3de0ba2ba6918e714da6b45836',                                    // to
+    10,                                                                              // value
+    '0x1232',                                                                        // data
+    3,                                                                               // maxPriorityFeePerGas
+    4,                                                                               // maxFeePerGas
+    3500                                                                             // gasLimit
   ).ifErr(procedure(err: IError)
   begin
     Assert.Fail(err.Message)
@@ -179,15 +180,15 @@ end;
 procedure TTests.TestCase5;
 begin
   web3.eth.tx.signTransactionType2(
-    0,                                                                          // chainId
-    0,                                                                          // nonce
-    'b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7',         // from
-    '',                                                                         // to
-    0,                                                                          // value
-    '',                                                                         // data
-    0,                                                                          // maxPriorityFeePerGas
-    0,                                                                          // maxFeePerGas
-    0                                                                           // gasLimit
+    0,                                                                               // chainId
+    0,                                                                               // nonce
+    TPrivateKey('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7'), // from
+    '',                                                                              // to
+    0,                                                                               // value
+    '',                                                                              // data
+    0,                                                                               // maxPriorityFeePerGas
+    0,                                                                               // maxFeePerGas
+    0                                                                                // gasLimit
   ).ifErr(procedure(err: IError)
   begin
     Assert.Fail(err.Message)
@@ -210,15 +211,15 @@ end;
 procedure TTests.TestCase6;
 begin
   web3.eth.tx.signTransactionType2(
-    2,                                                                          // chainId
-    0,                                                                          // nonce
-    'b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7',         // from
-    '',                                                                         // to
-    10,                                                                         // value
-    '',                                                                         // data
-    3,                                                                          // maxPriorityFeePerGas
-    4,                                                                          // maxFeePerGas
-    3500                                                                        // gasLimit
+    2,                                                                               // chainId
+    0,                                                                               // nonce
+    TPrivateKey('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7'), // from
+    '',                                                                              // to
+    10,                                                                              // value
+    '',                                                                              // data
+    3,                                                                               // maxPriorityFeePerGas
+    4,                                                                               // maxFeePerGas
+    3500                                                                             // gasLimit
   ).ifErr(procedure(err: IError)
   begin
     Assert.Fail(err.Message)
@@ -241,15 +242,15 @@ end;
 procedure TTests.TestCase7;
 begin
   web3.eth.tx.signTransactionType2(
-    1559,                                                                       // chainId
-    0,                                                                          // nonce
-    'b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7',         // from
-    '',                                                                         // to
-    0,                                                                          // value
-    '0x1232',                                                                   // data
-    3,                                                                          // maxPriorityFeePerGas
-    0,                                                                          // maxFeePerGas
-    3500                                                                        // gasLimit
+    1559,                                                                            // chainId
+    0,                                                                               // nonce
+    TPrivateKey('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7'), // from
+    '',                                                                              // to
+    0,                                                                               // value
+    '0x1232',                                                                        // data
+    3,                                                                               // maxPriorityFeePerGas
+    0,                                                                               // maxFeePerGas
+    3500                                                                             // gasLimit
   ).ifErr(procedure(err: IError)
   begin
     Assert.Fail(err.Message)
@@ -272,15 +273,15 @@ end;
 procedure TTests.TestCase8;
 begin
   web3.eth.tx.signTransactionType2(
-    1559,                                                                       // chainId
-    100,                                                                        // nonce
-    'b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7',         // from
-    '0x1ad91ee08f21be3de0ba2ba6918e714da6b45836',                               // to
-    10,                                                                         // value
-    '0x1232',                                                                   // data
-    3,                                                                          // maxPriorityFeePerGas
-    4,                                                                          // maxFeePerGas
-    3500                                                                        // gasLimit
+    1559,                                                                            // chainId
+    100,                                                                             // nonce
+    TPrivateKey('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7'), // from
+    '0x1ad91ee08f21be3de0ba2ba6918e714da6b45836',                                    // to
+    10,                                                                              // value
+    '0x1232',                                                                        // data
+    3,                                                                               // maxPriorityFeePerGas
+    4,                                                                               // maxFeePerGas
+    3500                                                                             // gasLimit
   ).ifErr(procedure(err: IError)
   begin
     Assert.Fail(err.Message)
@@ -303,15 +304,15 @@ end;
 procedure TTests.TestCase9;
 begin
   web3.eth.tx.signTransactionType2(
-    1559,                                                                       // chainId
-    2,                                                                          // nonce
-    'b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7',         // from
-    '0x1ad91ee08f21be3de0ba2ba6918e714da6b45836',                               // to
-    10,                                                                         // value
-    '',                                                                         // data
-    3,                                                                          // maxPriorityFeePerGas
-    4,                                                                          // maxFeePerGas
-    3500                                                                        // gasLimit
+    1559,                                                                            // chainId
+    2,                                                                               // nonce
+    TPrivateKey('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7'), // from
+    '0x1ad91ee08f21be3de0ba2ba6918e714da6b45836',                                    // to
+    10,                                                                              // value
+    '',                                                                              // data
+    3,                                                                               // maxPriorityFeePerGas
+    4,                                                                               // maxFeePerGas
+    3500                                                                             // gasLimit
   ).ifErr(procedure(err: IError)
   begin
     Assert.Fail(err.Message)

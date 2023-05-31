@@ -34,14 +34,12 @@ uses
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
-  web3,
-  web3.eth.types;
+  web3;
 
 type
   TToHex = set of (padToEven, zeroAs0x0, noPrefix);
 
 function toHex(const buf: TBytes): string; overload;
-function toHex(const bytes32: TBytes32): string; overload;
 function toHex(const prefix: string; const buf: TBytes): string; overload;
 function toHex(const buf: TBytes; const offset, len: Integer): string; overload;
 function toHex(const prefix: string; const buf: TBytes; const offset, len: Integer): string; overload;
@@ -59,7 +57,6 @@ function isHex(const str: string): Boolean; overload;
 function isHex(const prefix, str: string): Boolean; overload;
 
 function fromHex(hex: string): TBytes;
-function fromHex32(hex: string): TBytes32;
 
 function scale(const amount: Double; const decimals: Byte): BigInteger;
 function unscale(const amount: BigInteger; const decimals: Byte): Double;
@@ -94,14 +91,6 @@ uses
 
 function toHex(const buf: TBytes): string;
 begin
-  Result := toHex('0x', buf);
-end;
-
-function toHex(const bytes32: TBytes32): string;
-begin
-  var buf: TBytes;
-  SetLength(buf, 32);
-  Move(bytes32, buf[0], 32);
   Result := toHex('0x', buf);
 end;
 
@@ -242,13 +231,6 @@ begin
   SetLength(Result, Length(hex) div 2);
   for var I := System.Low(hex) to Length(hex) div 2 do
     Result[I - 1] := StrToInt('$' + Copy(hex, (I - 1) * 2 + 1, 2));
-end;
-
-function fromHex32(hex: string): TBytes32;
-begin
-  FillChar(Result, SizeOf(Result), 0);
-  var buf := fromHex(hex);
-  Move(buf[0], Result[0], Min(Length(buf), SizeOf(Result)));
 end;
 
 function scale(const amount: Double; const decimals: Byte): BigInteger;

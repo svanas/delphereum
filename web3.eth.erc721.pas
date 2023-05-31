@@ -308,7 +308,7 @@ begin
   web3.eth.call(Client, Contract, 'ownerOf(uint256)', [web3.utils.toHex(tokenId)], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(EMPTY_ADDRESS, err)
+      callback(TAddress.Zero, err)
     else
       callback(TAddress.Create(hex), nil);
   end);
@@ -405,7 +405,7 @@ begin
   web3.eth.call(Client, Contract, 'getApproved(uint256)', [web3.utils.toHex(tokenId)], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(EMPTY_ADDRESS, err)
+      callback(TAddress.Zero, err)
     else
       callback(TAddress.Create(hex), nil);
   end);

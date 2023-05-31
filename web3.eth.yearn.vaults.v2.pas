@@ -110,7 +110,7 @@ begin
   web3.eth.call(Client, Contract, 'latestVault(address)', [reserve], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(EMPTY_ADDRESS, err)
+      callback(TAddress.Zero, err)
     else
       callback(TAddress.Create(hex), nil);
   end);
@@ -118,7 +118,7 @@ end;
 
 procedure createRegistry(const client: IWeb3; const callback: TProc<IyVaultRegistry, IError>);
 begin
-  TAddress.Create(client, 'v2.registry.ychad.eth', procedure(address: TAddress; err: IError)
+  TAddress.FromName(client, 'v2.registry.ychad.eth', procedure(address: TAddress; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)

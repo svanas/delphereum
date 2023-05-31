@@ -61,7 +61,7 @@ function get(const master: web3.bip32.IMasterKey; const path: string): IResult<T
 begin
   const child = master.GetChildKey(path);
   if child.isErr then
-    Result := TResult<TPrivateKey>.Err('', child.Error)
+    Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, child.Error)
   else
     Result := TResult<TPrivateKey>.Ok(TPrivateKey(web3.utils.toHex('', child.Value.Data)));
 end;
@@ -89,13 +89,13 @@ begin
   const address = privKey.Value.GetAddress;
   if address.isErr then
   begin
-    callback('', address.Error);
+    callback(TPrivateKey.Zero, address.Error);
     EXIT;
   end;
   web3.eth.getBalance(client, address.Value, procedure(balance: BigInteger; err: IError)
   begin
     if Assigned(err) or (balance = 0) then
-      callback('', err)
+      callback(TPrivateKey.Zero, err)
     else
       callback(privKey.Value, nil);
   end);
@@ -124,7 +124,7 @@ begin
   const keys = traverse(master, prefix, suffix);
   if keys.isErr then
   begin
-    Result := TResult<TPrivateKey>.Err('', keys.Error);
+    Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, keys.Error);
     EXIT;
   end;
   for var key in keys.Value do
@@ -136,7 +136,7 @@ begin
       EXIT;
     end;
   end;
-  Result := TResult<TPrivateKey>.Ok('');
+  Result := TResult<TPrivateKey>.Ok(TPrivateKey.Zero);
 end;
 
 // m/44'/60'/0'/0/0
@@ -144,10 +144,10 @@ function long(const &public: TAddress; const master: web3.bip32.IMasterKey): IRe
 begin
   // m/44'/60'/0'/0/x
   Result := get(&public, master, 'm/44H/60H/0H/0/', '');
-  if Result.isErr or (Result.Value <> '') then EXIT;
+  if Result.isErr or (not Result.Value.IsZero) then EXIT;
   // m/44'/60'/0'/x/0
   Result := get(&public, master, 'm/44H/60H/0H/', '/0');
-  if Result.isErr or (Result.Value <> '') then EXIT;
+  if Result.isErr or (not Result.Value.IsZero) then EXIT;
   // m/44'/60'/x'/0/0
   Result := get(&public, master, 'm/44H/60H/', 'H/0/0');
 end;
@@ -157,7 +157,7 @@ function shorter(const &public: TAddress; const master: web3.bip32.IMasterKey): 
 begin
   // m/44'/60'/0'/x
   Result := get(&public, master, 'm/44H/60H/0H/', '');
-  if Result.isErr or (Result.Value <> '') then EXIT;
+  if Result.isErr or (not Result.Value.IsZero) then EXIT;
   // m/44'/60'/x'/0
   Result := get(&public, master, 'm/44H/60H/', 'H/0');
 end;
@@ -180,7 +180,7 @@ begin
   begin
     get(client, master, prefix, suffix, index, procedure(key: TPrivateKey; err: IError)
     begin
-      if Assigned(err) or (key = '') then
+      if Assigned(err) or key.IsZero then
         done(keys, err)
       else
         next(keys + [key], index + 1, done);
@@ -195,7 +195,7 @@ procedure long(const client: IWeb3; const master: web3.bip32.IMasterKey; const c
 begin
   get(client, master, 'm/44H/60H/0H/0/', '', 0, procedure(key: TPrivateKey; err: IError)
   begin
-    if Assigned(err) or (key = '') then
+    if Assigned(err) or key.IsZero then
     begin
       callback([], err);
       EXIT;
@@ -237,7 +237,7 @@ procedure shorter(const client: IWeb3; const master: web3.bip32.IMasterKey; cons
 begin
   get(client, master, 'm/44H/60H/0H/', '', 0, procedure(key: TPrivateKey; err: IError)
   begin
-    if Assigned(err) or (key = '') then
+    if Assigned(err) or key.IsZero then
     begin
       callback([], err);
       EXIT;
@@ -269,7 +269,7 @@ procedure shortest(const client: IWeb3; const master: web3.bip32.IMasterKey; con
 begin
   get(client, master, 'm/44H/60H/', 'H', 0, procedure(key: TPrivateKey; err: IError)
   begin
-    if Assigned(err) or (key = '') then
+    if Assigned(err) or key.IsZero then
     begin
       callback([], err);
       EXIT;
@@ -293,17 +293,17 @@ begin
   const master = web3.bip32.master(seed);
   get(client, master, 'm/44H/60H/0H/0/', '', 0, procedure(key: TPrivateKey; err: IError)
   begin
-    if Assigned(err) or (key <> '') then
+    if Assigned(err) or (not key.IsZero) then
       callback('m/44''/60''/0''/0/0', err)
     else
       get(client, master, 'm/44H/60H/0H/', '', 0, procedure(key: TPrivateKey; err: IError)
       begin
-        if Assigned(err) or (key <> '') then
+        if Assigned(err) or (not key.IsZero) then
           callback('m/44''/60''/0''/0', err)
         else
           get(client, master, 'm/44H/60H/', 'H', 0, procedure(key: TPrivateKey; err: IError)
           begin
-            if Assigned(err) or (key <> '') then
+            if Assigned(err) or (not key.IsZero) then
               callback('m/44''/60''/0''', err)
             else
               callback('', TError.Create('derivation path not found'));
@@ -321,9 +321,9 @@ function wallet(const &public: TAddress; const seed: web3.bip39.TSeed): IResult<
 begin
   const master = web3.bip32.master(seed);
   Result := long(&public, master);
-  if Result.isErr or (Result.Value <> '') then EXIT;
+  if Result.isErr or (not Result.Value.IsZero) then EXIT;
   Result := shorter(&public, master);
-  if Result.isErr or (Result.Value <> '') then EXIT;
+  if Result.isErr or (not Result.Value.IsZero) then EXIT;
   Result := shortest(&public, master);
 end;
 

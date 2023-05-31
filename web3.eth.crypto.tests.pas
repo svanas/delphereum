@@ -47,7 +47,8 @@ implementation
 uses
   // web3
   web3,
-  web3.eth.crypto;
+  web3.eth.crypto,
+  web3.eth.types;
 
 procedure TTests.TestCase1;
 const
@@ -55,7 +56,7 @@ const
   hex = '0xC7327D84F2790F7255E1B6DEB5090788867E4712753D2F9AA1CC2F5CBCB47F9B7A1EFF2875EE59A7C2BA7CF40715C07241CA056F766134F8F14F2EBA72DAFFA11B';
 begin
   // sign
-  const signature = web3.eth.crypto.sign('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7', msg);
+  const signature = web3.eth.crypto.sign(TPrivateKey('b5b1870957d373ef0eeffecc6e4812c0fd08f554b37b233526acc331bf1544f7'), msg);
   Assert.AreEqual(signature.ToHex, hex);
   // recover
   TSignature.FromHex(hex)
@@ -83,7 +84,7 @@ const
   hex = '0xB080B3B050F8D0854DA7AB3971455B0D6641EB579784B5BF75D6779931DEC08A00AEB67008D1015CB64DC804EFD90789B9E595FB70A44FCA1084616B7F0CA26D1C';
 begin
   // sign
-  const signature = web3.eth.crypto.sign('5b9cd58f644091919ea9eb81d03f771c2e5c15a2ad956ab5e51ac74d533232a8', msg);
+  const signature = web3.eth.crypto.sign(TPrivateKey('5b9cd58f644091919ea9eb81d03f771c2e5c15a2ad956ab5e51ac74d533232a8'), msg);
   Assert.AreEqual(signature.ToHex, hex);
   // recover
   TSignature.FromHex(hex)

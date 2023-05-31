@@ -510,7 +510,7 @@ begin
   web3.eth.call(Client, Contract, 'underlying()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(EMPTY_ADDRESS, err)
+      callback(TAddress.Zero, err)
     else
       callback(TAddress.Create(hex), nil);
   end);

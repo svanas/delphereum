@@ -93,26 +93,35 @@ type
   end;
 
   TAddressHelper = record helper for TAddress
+    class function Zero: TAddress; static;
+    function IsZero: Boolean;
+
     constructor Create(const arg: TArg); overload;
     constructor Create(const hex: string); overload;
-    class procedure Create(const client: IWeb3; const name: string; const callback: TProc<TAddress, IError>); overload; static;
+
+    class procedure FromName(const client: IWeb3; const name: string; const callback: TProc<TAddress, IError>); static;
     procedure ToString(const client: IWeb3; const callback: TProc<string, IError>; const abbreviated: Boolean = False);
+
     function  ToChecksum: TAddress;
     function  Abbreviated: string;
     procedure IsEOA(const client: IWeb3; const callback: TProc<Boolean, IError>);
-    function  IsZero: Boolean;
     function  SameAs(const other: TAddress): Boolean;
   end;
 
   TPrivateKey = record
   private
-    Inner: string[64];
+    Inner: TBytes32;
   public
-    class function Generate: TPrivateKey; static;
-    class operator Implicit(const value: string): TPrivateKey;
-    class operator Implicit(const value: TPrivateKey): string;
+    class function Zero: TPrivateKey; static;
+    function IsZero: Boolean;
+
+    class operator Explicit(const hex: string): TPrivateKey;
+    function ToString: string;
+
     class operator Implicit(const value: IECPrivateKeyParameters): TPrivateKey;
     class operator Implicit(const value: TPrivateKey): IECPrivateKeyParameters;
+
+    class function Generate: TPrivateKey; static;
     class function Prompt(const &public: TAddress): IResult<TPrivateKey>; static;
     function GetAddress: IResult<TAddress>;
   end;
@@ -128,6 +137,9 @@ type
     class function From(const hex: string): TTuple;
     procedure Enumerate(const callback: TProc<TArg, TProc>;const  done: TProc);
   end;
+
+function byteArrayToBytes32(const value: TBytes): TBytes32;
+function bytes32ToByteArray(const value: TBytes32): TBytes;
 
 implementation
 
@@ -148,6 +160,20 @@ uses
   web3.http,
   web3.json,
   web3.utils;
+
+function byteArrayToBytes32(const value: TBytes): TBytes32;
+begin
+  FillChar(Result, 32, 0);
+  var input := value;
+  while Length(input) < 32 do input := [0] + input;
+  Move(input[0], Result[0], 32);
+end;
+
+function bytes32ToByteArray(const value: TBytes32): TBytes;
+begin
+  SetLength(Result, 32);
+  Move(value[0], Result[0], 32);
+end;
 
 { TArg }
 
@@ -226,7 +252,7 @@ constructor TAddressHelper.Create(const hex: string);
 begin
   if not web3.utils.isHex(hex) then
   begin
-    Self := EMPTY_ADDRESS;
+    Self := TAddress.Zero;
     EXIT;
   end;
   var buf := web3.utils.fromHex(hex);
@@ -244,7 +270,7 @@ begin
       Self := TAddress(web3.utils.toHex(Copy(buf, Length(buf) - 20, 20))).ToChecksum;
 end;
 
-class procedure TAddressHelper.Create(const client: IWeb3; const name: string; const callback: TProc<TAddress, IError>);
+class procedure TAddressHelper.FromName(const client: IWeb3; const name: string; const callback: TProc<TAddress, IError>);
 begin
   if web3.utils.isHex(name) then
     callback(TAddress.Create(name), nil)
@@ -319,6 +345,11 @@ begin
   end);
 end;
 
+class function TAddressHelper.Zero: TAddress;
+begin
+  Result := '0x0000000000000000000000000000000000000000';
+end;
+
 function TAddressHelper.IsZero: Boolean;
 begin
   Result := (Self = '')
@@ -334,34 +365,45 @@ end;
 
 { TPrivateKey }
 
+class function TPrivateKey.Zero: TPrivateKey;
+begin
+  FillChar(Result.Inner, 32, 0);
+end;
+
+function TPrivateKey.IsZero: Boolean;
+begin
+  for var I := 0 to 31 do
+    if Self.Inner[I] <> 0 then
+    begin
+      Result := False;
+      EXIT;
+    end;
+  Result := True;
+end;
+
 class function TPrivateKey.Generate: TPrivateKey;
 begin
   Result := web3.crypto.generatePrivateKey('ECDSA', SECP256K1);
 end;
 
-class operator TPrivateKey.Implicit(const value: string): TPrivateKey;
+class operator TPrivateKey.Explicit(const hex: string): TPrivateKey;
 begin
-  Result.Inner := (function: string
-  begin
-    Result := value;
-    if Copy(Result, System.Low(Result), 2).ToLower = '0x' then
-      Delete(Result, System.Low(Result), 2);
-  end)()
+  Result.Inner := byteArrayToBytes32(web3.utils.fromHex(hex));
 end;
 
-class operator TPrivateKey.Implicit(const value: TPrivateKey): string;
+function TPrivateKey.ToString: string;
 begin
-  Result := string(value.Inner);
+  Result := web3.utils.toHex('', bytes32ToByteArray(Self.Inner));
 end;
 
 class operator TPrivateKey.Implicit(const value: IECPrivateKeyParameters): TPrivateKey;
 begin
-  Result.Inner := web3.utils.toHex('', value.D.ToByteArrayUnsigned);
+  Result.Inner := byteArrayToBytes32(value.D.ToByteArrayUnsigned);
 end;
 
 class operator TPrivateKey.Implicit(const value: TPrivateKey): IECPrivateKeyParameters;
 begin
-  Result := web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, fromHex(string(value.Inner)));
+  Result := web3.crypto.privateKeyFromByteArray('ECDSA', SECP256K1, bytes32ToByteArray(value.Inner));
 end;
 
 class function TPrivateKey.Prompt(const &public: TAddress): IResult<TPrivateKey>;
@@ -376,7 +418,7 @@ begin
 
   if input = '' then
   begin
-    Result := TResult<TPrivateKey>.Err('', TCancelled.Create);
+    Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, TCancelled.Create);
     EXIT;
   end;
 
@@ -385,16 +427,16 @@ begin
   begin
     if Length(input) <> SizeOf(TPrivateKey) - 1 then
     begin
-      Result := TResult<TPrivateKey>.Err('', 'Private key is invalid');
+      Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, 'Private key is invalid');
       EXIT;
     end;
     &private := TPrivateKey(input);
   end else
   begin
     Result := web3.bip44.wallet(&public, web3.bip39.seed(input, ''));
-    if Result.isErr or (Result.Value = '') then
+    if Result.isErr or Result.Value.IsZero then
     begin
-      Result := TResult<TPrivateKey>.Err('', 'Secret recovery phrase is invalid');
+      Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, 'Secret recovery phrase is invalid');
       EXIT;
     end;
     &private := Result.Value;
@@ -403,15 +445,15 @@ begin
   const address = &private.GetAddress;
   if address.isErr then
   begin
-    Result := TResult<TPrivateKey>.Err('', address.Error);
+    Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, address.Error);
     EXIT;
   end;
   if address.Value.ToChecksum <> &public.ToChecksum then
   begin
     if web3.utils.isHex('', input) then
-      Result := TResult<TPrivateKey>.Err('', 'Private key is invalid')
+      Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, 'Private key is invalid')
     else
-      Result := TResult<TPrivateKey>.Err('', 'Secret recovery phrase is invalid');
+      Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, 'Secret recovery phrase is invalid');
     EXIT;
   end;
 
@@ -423,7 +465,7 @@ begin
   try
     Result := TResult<TAddress>.Ok(web3.eth.crypto.publicKeyToAddress(web3.crypto.publicKeyFromPrivateKey(Self)));
   except
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'Private key is invalid');
+    Result := TResult<TAddress>.Err(TAddress.Zero, 'Private key is invalid');
   end;
 end;
 

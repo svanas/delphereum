@@ -196,7 +196,7 @@ begin
   TSoloMargin.DeployedAt(client.Chain)
     .ifErr(procedure(err: IError)
     begin
-      callback(EMPTY_ADDRESS, err)
+      callback(TAddress.Zero, err)
     end)
     .&else(procedure(address: TAddress)
     begin
@@ -206,7 +206,7 @@ begin
         solo.GetMarket(TSoloMargin.marketId[reserve], procedure(market: ISoloMarket; err: IError)
         begin
           if Assigned(err) then
-            callback(EMPTY_ADDRESS, err)
+            callback(TAddress.Zero, err)
           else
             callback(market.Token, nil);
         end);
@@ -467,7 +467,7 @@ begin
   if chain = Ethereum then
     Result := TResult<TAddress>.Ok('0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e')
   else
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, TError.Create('dYdX is not deployed on %s', [chain.Name]));
+    Result := TResult<TAddress>.Err(TAddress.Zero, TError.Create('dYdX is not deployed on %s', [chain.Name]));
 end;
 
 class function TSoloMargin.ToBigInt(const value: TTuple): IResult<BigInteger>;

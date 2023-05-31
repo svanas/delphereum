@@ -151,7 +151,7 @@ begin
   const recId = getRecId(signature.V);
   if recId.isErr then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, recId.Error);
+    Result := TResult<TAddress>.Err(TAddress.Zero, recId.Error);
     EXIT;
   end;
 
@@ -162,14 +162,14 @@ begin
   const x = signature.R.Add(i.Multiply(n));
   if x.CompareTo(prime) >= 0 then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'an unknown error occurred');
+    Result := TResult<TAddress>.Err(TAddress.Zero, 'an unknown error occurred');
     EXIT;
   end;
 
   const R = decompressKey(curve.Curve, x, (recId.Value and 1) = 1);
   if not R.Multiply(n).IsInfinity then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'an unknown error occurred');
+    Result := TResult<TAddress>.Err(TAddress.Zero, 'an unknown error occurred');
     EXIT;
   end;
 

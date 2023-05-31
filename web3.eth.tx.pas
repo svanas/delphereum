@@ -415,33 +415,33 @@ begin
   const decoded = web3.rlp.decode(encoded);
   if decoded.isErr then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, decoded.Error);
+    Result := TResult<TAddress>.Err(TAddress.Zero, decoded.Error);
     EXIT;
   end;
 
   if (Length(decoded.Value) <> 1) or (decoded.Value[0].DataType <> dtList) then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'not a legacy transaction');
+    Result := TResult<TAddress>.Err(TAddress.Zero, 'not a legacy transaction');
     EXIT;
   end;
 
   const signature = web3.rlp.decode(decoded.Value[0].Bytes);
   if signature.isErr then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, signature.Error);
+    Result := TResult<TAddress>.Err(TAddress.Zero, signature.Error);
     EXIT;
   end;
 
   if Length(signature.Value) < 9 then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'not a legacy transaction');
+    Result := TResult<TAddress>.Err(TAddress.Zero, 'not a legacy transaction');
     EXIT;
   end;
 
   const chainId = getChainId(signature.Value[6].Bytes);
   if chainId.isErr then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, signature.Error);
+    Result := TResult<TAddress>.Err(TAddress.Zero, signature.Error);
     EXIT;
   end;
 
@@ -459,7 +459,7 @@ begin
 
   if msg.isErr then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, msg.Error);
+    Result := TResult<TAddress>.Err(TAddress.Zero, msg.Error);
     EXIT;
   end;
 
@@ -494,7 +494,7 @@ begin
   const decoded = web3.rlp.decode(encoded);
   if decoded.isErr then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, decoded.Error);
+    Result := TResult<TAddress>.Err(TAddress.Zero, decoded.Error);
     EXIT;
   end;
 
@@ -503,20 +503,20 @@ begin
   or (decoded.Value[0].Bytes[0] < 2)
   or (decoded.Value[1].DataType <> dtList) then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'not an EIP-1559 transaction');
+    Result := TResult<TAddress>.Err(TAddress.Zero, 'not an EIP-1559 transaction');
     EXIT;
   end;
 
   const signature = web3.rlp.decode(decoded.Value[1].Bytes);
   if signature.isErr then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, signature.Error);
+    Result := TResult<TAddress>.Err(TAddress.Zero, signature.Error);
     EXIT;
   end;
 
   if Length(signature.Value) < 12 then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'not an EIP-1559 transactionn');
+    Result := TResult<TAddress>.Err(TAddress.Zero, 'not an EIP-1559 transactionn');
     EXIT;
   end;
 
@@ -534,7 +534,7 @@ begin
 
   if msg.isErr then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, msg.Error);
+    Result := TResult<TAddress>.Err(TAddress.Zero, msg.Error);
     EXIT;
   end;
 
@@ -558,7 +558,7 @@ begin
   const decoded = web3.rlp.decode(encoded);
   if decoded.isErr then
   begin
-    Result := TResult<TAddress>.Err(EMPTY_ADDRESS, decoded.Error);
+    Result := TResult<TAddress>.Err(TAddress.Zero, decoded.Error);
     EXIT;
   end;
 
@@ -581,7 +581,7 @@ begin
     EXIT;
   end;
 
-  Result := TResult<TAddress>.Err(EMPTY_ADDRESS, 'unknown transaction encoding');
+  Result := TResult<TAddress>.Err(TAddress.Zero, 'unknown transaction encoding');
 end;
 
 // send raw (aka signed) transaction.

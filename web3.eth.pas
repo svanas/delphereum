@@ -49,10 +49,6 @@ const
 const
   BLOCKS_PER_DAY = 5760; // 4 * 60 * 24
 
-const
-  EMPTY_ADDRESS: TAddress = '0x0000000000000000000000000000000000000000';
-  EMPTY_BYTES32: TBytes32 = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
-
 function  blockNumber(const client: IWeb3): IResult<BigInteger>; overload;                       // blocking
 procedure blockNumber(const client: IWeb3; const callback: TProc<BigInteger, IError>); overload; // async
 
@@ -252,7 +248,7 @@ end;
 
 procedure call(const client: IWeb3; const &to: TAddress; const func: string; const args: array of const; const callback: TProc<string, IError>);
 begin
-  call(client, EMPTY_ADDRESS, &to, func, args, callback);
+  call(client, TAddress.Zero, &to, func, args, callback);
 end;
 
 procedure call(const client: IWeb3; const from, &to: TAddress; const func: string; const args: array of const; const callback: TProc<string, IError>);
@@ -262,7 +258,7 @@ end;
 
 procedure call(const client: IWeb3; const &to: TAddress; const func, block: string; const args: array of const; const callback: TProc<string, IError>);
 begin
-  call(client, EMPTY_ADDRESS, &to, func, block, args, callback);
+  call(client, TAddress.Zero, &to, func, block, args, callback);
 end;
 
 procedure call(const client: IWeb3; const from, &to: TAddress; const func, block: string; const args: array of const; const callback: TProc<string, IError>);
@@ -293,7 +289,7 @@ end;
 
 procedure call(const client: IWeb3; const &to: TAddress; const func: string; const args: array of const; const callback: TProc<BigInteger, IError>);
 begin
-  call(client, EMPTY_ADDRESS, &to, func, args, callback);
+  call(client, TAddress.Zero, &to, func, args, callback);
 end;
 
 procedure call(const client: IWeb3; const from, &to: TAddress; const func: string; const args: array of const; const callback: TProc<BigInteger, IError>);
@@ -303,7 +299,7 @@ end;
 
 procedure call(const client: IWeb3; const &to: TAddress; const func, block: string; const args: array of const; const callback: TProc<BigInteger, IError>);
 begin
-  call(client, EMPTY_ADDRESS, &to, func, block, args, callback);
+  call(client, TAddress.Zero, &to, func, block, args, callback);
 end;
 
 procedure call(const client: IWeb3; const from, &to: TAddress; const func, block: string; const args: array of const; const callback: TProc<BigInteger, IError>);
@@ -328,7 +324,7 @@ end;
 
 procedure call(const client: IWeb3;const  &to: TAddress; const func: string; const args: array of const; const callback: TProc<Boolean, IError>);
 begin
-  call(client, EMPTY_ADDRESS, &to, func, args, callback);
+  call(client, TAddress.Zero, &to, func, args, callback);
 end;
 
 procedure call(const client: IWeb3; const from, &to: TAddress; const func: string; const args: array of const; const callback: TProc<Boolean, IError>);
@@ -338,7 +334,7 @@ end;
 
 procedure call(const client: IWeb3; const &to: TAddress; const func, block: string; const args: array of const; const callback: TProc<Boolean, IError>);
 begin
-  call(client, EMPTY_ADDRESS, &to, func, block, args, callback);
+  call(client, TAddress.Zero, &to, func, block, args, callback);
 end;
 
 procedure call(const client: IWeb3; const from, &to: TAddress; const func, block: string; const args: array of const; const callback: TProc<Boolean, IError>);
@@ -357,7 +353,7 @@ end;
 
 procedure call(const client: IWeb3; const &to: TAddress; const func: string; const args: array of const; const callback: TProc<TBytes32, IError>);
 begin
-  call(client, EMPTY_ADDRESS, &to, func, args, callback);
+  call(client, TAddress.Zero, &to, func, args, callback);
 end;
 
 procedure call(const client: IWeb3; const from, &to: TAddress; const func: string; const args: array of const; const callback: TProc<TBytes32, IError>);
@@ -367,33 +363,33 @@ end;
 
 procedure call(const client: IWeb3; const &to: TAddress; const func, block: string; const args: array of const; const callback: TProc<TBytes32, IError>);
 begin
-  call(client, EMPTY_ADDRESS, &to, func, block, args, callback);
+  call(client, TAddress.Zero, &to, func, block, args, callback);
 end;
 
 procedure call(const client: IWeb3; const from, &to: TAddress; const func, block: string; const args: array of const; const callback: TProc<TBytes32, IError>);
+const
+  ZERO: TBytes32 = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 begin
   call(client, from, &to, func, block, args, procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
     begin
-      callback(EMPTY_BYTES32, err);
+      callback(ZERO, err);
       EXIT;
     end;
     const buffer = web3.utils.fromHex(hex);
     if Length(buffer) < 32 then
     begin
-      callback(EMPTY_BYTES32, nil);
+      callback(ZERO, nil);
       EXIT;
     end;
-    var result: TBytes32;
-    Move(buffer[0], result[0], 32);
-    callback(result, nil);
+    callback(byteArrayToBytes32(buffer), nil);
   end);
 end;
 
 procedure call(const client: IWeb3; const &to: TAddress; const func: string; const args: array of const; const callback: TProc<TTuple, IError>);
 begin
-  call(client, EMPTY_ADDRESS, &to, func, args, callback);
+  call(client, TAddress.Zero, &to, func, args, callback);
 end;
 
 procedure call(const client: IWeb3; const from, &to: TAddress; const func: string; const args: array of const; const callback: TProc<TTuple, IError>);
@@ -403,7 +399,7 @@ end;
 
 procedure call(const client: IWeb3; const &to: TAddress; const func, block: string; const args: array of const; const callback: TProc<TTuple, IError>);
 begin
-  call(client, EMPTY_ADDRESS, &to, func, block, args, callback);
+  call(client, TAddress.Zero, &to, func, block, args, callback);
 end;
 
 procedure call(const client: IWeb3; const from, &to: TAddress; const func, block: string; const args: array of const; const callback: TProc<TTuple, IError>);

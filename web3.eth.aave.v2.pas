@@ -144,7 +144,7 @@ begin
     begin
       if Assigned(err) then
       begin
-        callback(EMPTY_ADDRESS, err);
+        callback(TAddress.Zero, err);
         EXIT;
       end;
       const dp = TAaveProtocolDataProvider.Create(client, addr);
@@ -152,7 +152,7 @@ begin
         dp.GetReserveTokensAddresses(reserve, procedure(tup: TTuple; err: IError)
         begin
           if Assigned(err) or (Length(tup) = 0) then
-            callback(EMPTY_ADDRESS, err)
+            callback(TAddress.Zero, err)
           else
             callback(tup[0].toAddress, nil);
         end);
@@ -470,7 +470,7 @@ begin
   web3.eth.call(Client, Contract, 'getLendingPool()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(EMPTY_ADDRESS, err)
+      callback(TAddress.Zero, err)
     else
       callback(TAddress.Create(hex), nil);
   end);
@@ -478,10 +478,10 @@ end;
 
 procedure TAaveLendingPoolAddressesProvider.GetAddress(const id: TBytes32; const callback: TProc<TAddress, IError>);
 begin
-  web3.eth.call(Client, Contract, 'getAddress(bytes32)', [web3.utils.toHex(id)], procedure(hex: string; err: IError)
+  web3.eth.call(Client, Contract, 'getAddress(bytes32)', [web3.utils.toHex(bytes32ToByteArray(id))], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(EMPTY_ADDRESS, err)
+      callback(TAddress.Zero, err)
     else
       callback(TAddress.Create(hex), nil);
   end);
@@ -501,7 +501,7 @@ begin
   web3.eth.call(Client, Contract, 'UNDERLYING_ASSET_ADDRESS()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(EMPTY_ADDRESS, err)
+      callback(TAddress.Zero, err)
     else
       callback(TAddress.Create(hex), nil);
   end);

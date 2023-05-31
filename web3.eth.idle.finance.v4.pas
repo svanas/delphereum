@@ -302,7 +302,7 @@ begin
         end)
         .&else(procedure(idleToken: IIdleToken)
         begin
-          idleToken.MintIdleToken(from, amount, True, EMPTY_ADDRESS, callback)
+          idleToken.MintIdleToken(from, amount, True, TAddress.Zero, callback)
         end);
   end);
 end;
@@ -435,7 +435,7 @@ begin
   web3.eth.call(Client, Contract, 'token()', [], procedure(hex: string; err: IError)
   begin
     if Assigned(err) then
-      callback(EMPTY_ADDRESS, err)
+      callback(TAddress.Zero, err)
     else
       callback(TAddress.Create(hex), nil);
   end);
