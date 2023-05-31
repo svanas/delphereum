@@ -306,15 +306,26 @@ type
       const callback: TProc<TJsonObject, IError>); overload;
   end;
 
+  TProxy = record
+    Enabled: Boolean;
+    Host: string;
+    Password: string;
+    Port: Integer;
+    Username: string;
+    class function Disabled: TProxy; static;
+  end;
+
   IPubSub = interface
   ['{D63B43A1-60E4-4107-8B14-925399A4850A}']
     function Call(
       const URL     : string;
+      const proxy   : TProxy;
       const security: TSecurity;
       const method  : string;
       const args    : array of const): IResult<TJsonObject>; overload;
     procedure Call(
       const URL     : string;
+      const proxy   : TProxy;
       const security: TSecurity;
       const method  : string;
       const args    : array of const;
@@ -398,15 +409,18 @@ type
   TWeb3Ex = class(TCustomWeb3, IWeb3Ex)
   private
     FProtocol: IPubSub;
+    FProxy   : TProxy;
     FSecurity: TSecurity;
   public
     constructor Create(
       const aURL     : TURL;
       const aProtocol: IPubSub;
+      const aProxy   : TProxy;
       const aSecurity: TSecurity = TSecurity.Automatic); overload;
     constructor Create(
       const aChain   : TChain;
       const aProtocol: IPubSub;
+      const aProxy   : TProxy;
       const aSecurity: TSecurity = TSecurity.Automatic); overload;
 
     function  Call(const method: string; const args: array of const): IResult<TJsonObject>; overload; override;
@@ -764,34 +778,44 @@ begin
   Self.FProtocol.Call(Self.Chain.RPC[HTTPS], method, args, callback);
 end;
 
+{ TProxy }
+
+class function TProxy.Disabled: TProxy;
+begin
+  Result.Enabled := False;
+end;
+
 { TWeb3Ex }
 
 constructor TWeb3Ex.Create(
   const aURL     : TURL;
   const aProtocol: IPubSub;
-  const aSecurity: TSecurity = TSecurity.Automatic);
+  const aProxy   : TProxy;
+  const aSecurity: TSecurity);
 begin
-  Self.Create(Ethereum.SetRPC(WebSocket, aURL), aProtocol, aSecurity);
+  Self.Create(Ethereum.SetRPC(WebSocket, aURL), aProtocol, aProxy, aSecurity);
 end;
 
 constructor TWeb3Ex.Create(
   const aChain   : TChain;
   const aProtocol: IPubSub;
-  const aSecurity: TSecurity = TSecurity.Automatic);
+  const aProxy   : TProxy;
+  const aSecurity: TSecurity);
 begin
   Self.FChain    := aChain;
   Self.FProtocol := aProtocol;
+  Self.FProxy    := aProxy;
   Self.FSecurity := aSecurity;
 end;
 
 function TWeb3Ex.Call(const method: string; const args: array of const): IResult<TJsonObject>;
 begin
-  Result := Self.FProtocol.Call(Self.Chain.RPC[WebSocket], Self.FSecurity, method, args);
+  Result := Self.FProtocol.Call(Self.Chain.RPC[WebSocket], Self.FProxy, Self.FSecurity, method, args);
 end;
 
 procedure TWeb3Ex.Call(const method: string; const args: array of const; const callback: TProc<TJsonObject, IError>);
 begin
-  Self.FProtocol.Call(Self.Chain.RPC[WebSocket], Self.FSecurity, method, args, callback);
+  Self.FProtocol.Call(Self.Chain.RPC[WebSocket], Self.FProxy, Self.FSecurity, method, args, callback);
 end;
 
 procedure TWeb3Ex.Subscribe(const subscription: string; const callback: TProc<TJsonObject, IError>);

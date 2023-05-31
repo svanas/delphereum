@@ -44,11 +44,13 @@ type
   public
     function Call(
       const URL     : string;
+      const proxy   : TProxy;
       const security: TSecurity;
       const method  : string;
       const args    : array of const): IResult<TJsonObject>; overload; virtual; abstract;
     procedure Call(
       const URL     : string;
+      const proxy   : TProxy;
       const security: TSecurity;
       const method  : string;
       const args    : array of const;
