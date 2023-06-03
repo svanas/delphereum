@@ -58,6 +58,7 @@ type
   public
     constructor Create(
       const chain       : TChain;
+      const proxy       : TProxy;
       const apiKey      : string;
       const onEvent     : TProc<TJsonObject, IError>;
       const onError     : TProc<IError>;
@@ -65,6 +66,7 @@ type
     destructor Destroy; override;
     class function Subscribe(
       const chain       : TChain;
+      const proxy       : TProxy;
       const apiKey      : string;
       const address     : TAddress;
       const onEvent     : TProc<TJsonObject, IError>;
@@ -72,6 +74,7 @@ type
       const onDisconnect: TProc): IMempool; overload; override;
     class function Subscribe(
       const chain       : TChain;
+      const proxy       : TProxy;
       const apiKey      : string;
       const address     : TAddress;
       const filters     : IFilters;
@@ -89,6 +92,7 @@ implementation
 
 constructor TSgcMempool.Create(
   const chain       : TChain;
+  const proxy       : TProxy;
   const apiKey      : string;
   const onEvent     : TProc<TJsonObject, IError>;
   const onError     : TProc<IError>;
@@ -96,6 +100,7 @@ constructor TSgcMempool.Create(
 begin
   inherited Create;
   FChain   := chain;
+  FProxy   := proxy;
   FApiKey  := apiKey;
   FOnEvent := onEvent;
   FOnError := onError;
@@ -119,6 +124,15 @@ begin
     FClient.HeartBeat.Timeout  := 0;
 
     FClient.URL := BLOCKNATIVE_ENDPOINT;
+  end;
+
+  if FProxy.Enabled <> FClient.Proxy.Enabled then
+  begin
+    FClient.Proxy.Host     := FProxy.Host;
+    FClient.Proxy.Password := FProxy.Password;
+    FClient.Proxy.Port     := FProxy.Port;
+    FClient.Proxy.Username := FProxy.Username;
+    FClient.Proxy.Enabled  := FProxy.Enabled;
   end;
 
   if not FClient.Active then repeat until FClient.Connect;
@@ -198,6 +212,7 @@ end;
 
 class function TSgcMempool.Subscribe(
   const chain       : TChain;
+  const proxy       : TProxy;
   const apiKey      : string;
   const address     : TAddress;
   const onEvent     : TProc<TJsonObject, IError>;
@@ -206,6 +221,7 @@ class function TSgcMempool.Subscribe(
 begin
   const &output = TSgcMempool.Create(
     chain,
+    proxy,
     apiKey,
     onEvent,
     onError,
@@ -228,6 +244,7 @@ end;
 
 class function TSgcMempool.Subscribe(
   const chain       : TChain;
+  const proxy       : TProxy;
   const apiKey      : string;
   const address     : TAddress;
   const filters     : IFilters;
@@ -238,6 +255,7 @@ class function TSgcMempool.Subscribe(
 begin
   const &output = TSgcMempool.Create(
     chain,
+    proxy,
     apiKey,
     onEvent,
     onError,

@@ -307,10 +307,10 @@ type
   end;
 
   TProxy = record
-    Enabled: Boolean;
-    Host: string;
+    Enabled : Boolean;
+    Host    : string;
     Password: string;
-    Port: Integer;
+    Port    : Integer;
     Username: string;
     class function Disabled: TProxy; static;
   end;

@@ -91,6 +91,7 @@ type
   TCustomMempool = class abstract(TInterfacedObject)
   protected
     FChain  : TChain;
+    FProxy  : TProxy;
     FApiKey : string;
     FOnEvent: TProc<TJsonObject, IError>;
     FOnError: TProc<IError>;
@@ -101,6 +102,7 @@ type
   public
     class function Subscribe(
       const chain       : TChain;
+      const proxy       : TProxy;                     // TProxy.Disabled will probably "just work"
       const apiKey      : string;                     // your blocknative API key
       const address     : TAddress;                   // address to watch
       const onEvent     : TProc<TJsonObject, IError>; // continuous events (or a blocknative error)
@@ -109,6 +111,7 @@ type
     ): IMempool; overload; virtual; abstract;
     class function Subscribe(
       const chain       : TChain;
+      const proxy       : TProxy;                     // TProxy.Disabled will probably "just work"
       const apiKey      : string;                     // your blocknative API key
       const address     : TAddress;                   // address to watch
       const filters     : IFilters;                   // an array of valid filters. please see: https://github.com/deitch/searchjs
