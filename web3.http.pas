@@ -140,8 +140,8 @@ end;
 
 function get(const URL: string; const headers: TNetHeaders; const callback: TProc<IHttpResponse, IError>; const backoff: Integer): IAsyncResult;
 begin
+  const client = THttpClient.Create;
   try
-    const client = THttpClient.Create;
     Result := client.BeginGet(procedure(const aSyncResult: IAsyncResult)
     begin
       try try
@@ -208,8 +208,8 @@ function post(
   const callback: TProc<IHttpResponse, IError>;
   const backoff : Integer): IAsyncResult;
 begin
+  const client = THttpClient.Create;
   try
-    const client = THttpClient.Create;
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
     begin
       try try
@@ -281,8 +281,8 @@ function post(
   const callback: TProc<IHttpResponse, IError>;
   const backoff : Integer): IAsyncResult;
 begin
+  const client = THttpClient.Create;
   try
-    const client = THttpClient.Create;
     Result := client.BeginPost(procedure(const aSyncResult: IAsyncResult)
     begin
       try try
@@ -352,7 +352,7 @@ end;
 function get(const URL: string; const headers: TNetHeaders; const backoff: Integer): IResult<IHttpResponse>;
 begin
   const client = THttpClient.Create;
-  try
+  try try
     const response = client.Get(URL, nil, headers);
     if not Assigned(response) then
     begin
@@ -381,6 +381,9 @@ begin
       EXIT;
     end;
     Result := TResult<IHttpResponse>.Ok(response);
+  except
+    on E: Exception do Result := TResult<IHttpResponse>.Err(nil, TError.Create(E.Message));
+  end;
   finally
     client.Free;
   end;
@@ -408,7 +411,7 @@ function post(
   const backoff: Integer): IResult<IHttpResponse>;
 begin
   const client = THttpClient.Create;
-  try
+  try try
     const response = client.Post(URL, TStringStream.Create(src), nil, headers);
     if not Assigned(response) then
     begin
@@ -437,6 +440,9 @@ begin
       EXIT;
     end;
     Result := TResult<IHttpResponse>.Ok(response);
+  except
+    on E: Exception do Result := TResult<IHttpResponse>.Err(nil, TError.Create(E.Message));
+  end;
   finally
     client.Free;
   end;
