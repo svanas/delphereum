@@ -65,6 +65,7 @@ function tokens(const source: TURL; const callback: TProc<TJsonArray, IError>): 
 function tokens(const source: TURL; const callback: TProc<TTokens, IError>): IAsyncResult; overload;
 function tokens(const chain: TChain; const callback: TProc<TTokens, IError>): IAsyncResult; overload;
 
+function unsupported(const chain: TChain; const callback: TProc<TTokens, IError>): IAsyncResult;
 function token(const chain: TChain; const token: TAddress; const callback: TProc<IToken, IError>): IAsyncResult;
 
 implementation
@@ -281,6 +282,21 @@ begin
           result := result + [token2];
       callback(result, nil);
     end);
+  end);
+end;
+
+function unsupported(const chain: TChain; const callback: TProc<TTokens, IError>): IAsyncResult;
+begin
+  Result := tokens('https://unsupportedtokens.uniswap.org', procedure(tokens: TTokens; err: IError)
+  begin
+    if Assigned(err) or not Assigned(tokens) then
+      callback(nil, err)
+    else
+      callback((function: TTokens
+      begin
+        Result := [];
+        for var token in tokens do if token.ChainId = chain.Id then result := result + [token];
+      end)(), nil);
   end);
 end;
 
