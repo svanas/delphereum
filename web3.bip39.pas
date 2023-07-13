@@ -33,6 +33,7 @@ uses
 
 type
   IWordList = interface
+    function Count: Integer;
     function Get(const Index: Integer): string;
     procedure LoadFromStream(const Stream: TStream; const Encoding: TEncoding);
   end;
@@ -117,6 +118,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    function Count: Integer;
     function Get(const Index: Integer): string;
     procedure LoadFromStream(const Stream: TStream; const Encoding: TEncoding);
   end;
@@ -131,6 +133,11 @@ destructor TWordList.Destroy;
 begin
   if Assigned(Inner) then Inner.Free;
   inherited Destroy;
+end;
+
+function TWordList.Count: Integer;
+begin
+  if Assigned(Inner) then Result := Inner.Count else Result := 0;
 end;
 
 function TWordList.Get(const Index: Integer): string;
