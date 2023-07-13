@@ -227,7 +227,14 @@ type
     property OnApprovalForAll: TOnApprovalForAll read FOnApprovalForAll write SetOnApprovalForAll;
   end;
 
+function create(const client: IWeb3; const contract: TAddress): IERC721Metadata;
+
 implementation
+
+function create(const client: IWeb3; const contract: TAddress): IERC721Metadata;
+begin
+  Result := TERC721.Create(client, contract);
+end;
 
 { TERC721}
 
