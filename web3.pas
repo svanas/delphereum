@@ -220,7 +220,9 @@ const
     Id       : 8453;
     Name     : 'Base';
     Symbol   : 'ETH';
-    TxType   : 2
+    TxType   : 2;
+    RPC      : ('https://mainnet.base.org', '');
+    Explorer : 'https://basescan.org';
   );
   BaseGoerli: TChain = (
     Id       : 84531;
