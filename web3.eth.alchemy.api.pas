@@ -395,10 +395,17 @@ begin
     begin
       getTokenIDs(apiKey, chain, contract, procedure(TokenIDs: TArray<string>; err: IError)
       begin
-        if Assigned(err) then
+        if Assigned(err) or (Length(TokenIDs) = 0) then
         begin
           callback(False, err);
           EXIT;
+        end;
+
+        // because it takes forever to go over each and every token ID, we limit ourselves to the first and the last
+        if Length(TokenIDs) > 1 then
+        begin
+          Delete(TokenIDs, 1, Length(TokenIDs) - 2);
+          SetLength(TokenIDs, 2);
         end;
 
         var get: TProc<Integer>;

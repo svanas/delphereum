@@ -46,7 +46,7 @@ uses
 
 function HTTPS(const chain: TChain; const apiKey: string; api: TAlchemyApi): IResult<string>;
 const
-  path: array[TAlchemyApi] of string = ('', 'nft');
+  path: array[TAlchemyApi] of string = ('', 'nft/');
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok(Format('https://eth-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
