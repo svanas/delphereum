@@ -222,11 +222,11 @@ function decodeLength(const input: TBytes): IResult<TLength>;
         Result := TResult<Integer>.Ok(input[0])
       else
       begin
-        const I = toInt(Copy(input, 0, -1));
+        const I = toInt(Copy(input, 0, Length(input) - 1));
         if I.isErr then
           Result := TResult<Integer>.Err(0, I.Error)
         else
-          Result := TResult<Integer>.Ok(Copy(input, -1)[0] + I.Value * 256);
+          Result := TResult<Integer>.Ok(input[High(input)] + I.Value * 256);
       end;
   end;
 
@@ -287,17 +287,14 @@ begin
   // single byte with value $F7 plus the length of the length of the payload in binary form,
   // followed by the length of the payload, followed by the concatenation of the RLP encodings
   // of the items. The range of the first byte is thus [0xF8, 0xFF].
-  if prefix <= $FF then
+  const len_of_len = prefix - $F7;
+  if len > len_of_len then
   begin
-    const len_of_len = prefix - $F7;
-    if len > len_of_len then
+    const len_of_payload = toInt(Copy(input, 1, len_of_len));
+    if len_of_payload.isOk and (len > len_of_len + len_of_payload.Value) then
     begin
-      const len_of_payload = toInt(Copy(input, 1, len_of_len));
-      if len_of_payload.isOk and (len > len_of_len + len_of_payload.Value) then
-      begin
-        Result := TResult<TLength>.Ok(TLength.Create(1 + len_of_len, len_of_payload.Value, dtList));
-        EXIT;
-      end;
+      Result := TResult<TLength>.Ok(TLength.Create(1 + len_of_len, len_of_payload.Value, dtList));
+      EXIT;
     end;
   end;
 

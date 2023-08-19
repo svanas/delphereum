@@ -70,16 +70,27 @@ begin
     1,                                                                          // v
     0,                                                                          // r
     0                                                                           // s
-  ]).ifErr(procedure(err: IError)
-  begin
-    Assert.Fail(err.Message)
-  end)
+  ]).ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
   .&else(procedure(encoded: TBytes)
   begin
-    Assert.AreEqual(
-      web3.utils.toHex(encoded),
-      '0xec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080'
-    )
+    Assert.AreEqual(web3.utils.toHex(encoded), '0xec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080');
+    web3.rlp.decode(encoded)
+      .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
+      .&else(procedure(decoded: TArray<TItem>)
+      begin
+        Assert.IsTrue((Length(decoded) = 1) and (decoded[0].DataType = dtList));
+        web3.rlp.decode(decoded[0].Bytes)
+          .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
+          .&else(procedure(decoded: TArray<TItem>)
+          begin
+            Assert.IsTrue(Length(decoded) = 9);
+            Assert.AreEqual(decoded[0].Bytes[0], Byte(9));
+            Assert.AreEqual(StrToInt64(web3.utils.toHex('$', decoded[1].Bytes)), Int64(20000000000));
+            Assert.AreEqual(StrToInt(web3.utils.toHex('$', decoded[2].Bytes)), Integer(21000));
+            Assert.AreEqual(web3.utils.toHex(decoded[3].Bytes), '0x3535353535353535353535353535353535353535');
+            Assert.AreEqual(StrToInt64(web3.utils.toHex('$', decoded[4].Bytes)), Int64(1000000000000000000));
+          end);
+      end);
   end);
 end;
 
@@ -104,13 +115,19 @@ begin
   for var TEST_CASE in TEST_CASES do
   begin
     web3.rlp.encode(TEST_CASE.input)
-      .ifErr(procedure(err: IError)
-      begin
-        Assert.Fail(err.Message)
-      end)
+      .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
       .&else(procedure(encoded: TBytes)
       begin
-        Assert.AreEqual(web3.utils.toHex(encoded), TEST_CASE.output)
+        Assert.AreEqual(web3.utils.toHex(encoded), TEST_CASE.output);
+        web3.rlp.decode(encoded)
+          .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
+          .&else(procedure(decoded: TArray<TItem>)
+          begin
+            if Length(decoded[0].Bytes) = 0 then
+              Assert.AreEqual(0, TEST_CASE.input)
+            else
+              Assert.AreEqual(StrToInt(web3.utils.toHex('$', decoded[0].Bytes)), TEST_CASE.input);
+          end);
       end);
   end;
 end;
@@ -118,43 +135,63 @@ end;
 procedure TTests.TestCase3;
 begin
   web3.rlp.encode('')
-    .ifErr(procedure(err: IError)
-    begin
-      Assert.Fail(err.Message)
-    end)
+    .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
     .&else(procedure(encoded: TBytes)
     begin
-      Assert.AreEqual(toHex(encoded), '0x80')
+      Assert.AreEqual(toHex(encoded), '0x80');
+      web3.rlp.decode(encoded)
+        .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
+        .&else(procedure(decoded: TArray<TItem>)
+        begin
+          Assert.IsTrue((Length(decoded) = 1) and (Length(decoded[0].Bytes) = 0) and (decoded[0].DataType = dtString));
+        end);
     end);
 
   web3.rlp.encode([])
-    .ifErr(procedure(err: IError)
-    begin
-      Assert.Fail(err.Message)
-    end)
+    .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
     .&else(procedure(encoded: TBytes)
     begin
-      Assert.AreEqual(toHex(encoded), '0xc0')
+      Assert.AreEqual(toHex(encoded), '0xc0');
+      web3.rlp.decode(encoded)
+        .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
+        .&else(procedure(decoded: TArray<TItem>)
+        begin
+          Assert.IsTrue((Length(decoded) = 1) and (Length(decoded[0].Bytes) = 0) and (decoded[0].DataType = dtList));
+        end);
     end);
 
   web3.rlp.encode(['dog', 'god', 'cat'])
-    .ifErr(procedure(err: IError)
-    begin
-      Assert.Fail(err.Message)
-    end)
+    .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
     .&else(procedure(encoded: TBytes)
     begin
-      Assert.AreEqual(toHex(encoded), '0xcc83646f6783676f6483636174')
+      Assert.AreEqual(toHex(encoded), '0xcc83646f6783676f6483636174');
+      web3.rlp.decode(encoded)
+        .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
+        .&else(procedure(decoded: TArray<TItem>)
+        begin
+          Assert.IsTrue((Length(decoded) = 1) and (decoded[0].DataType = dtList));
+          web3.rlp.decode(decoded[0].Bytes)
+            .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
+            .&else(procedure(decoded: TArray<TItem>)
+            begin
+              Assert.AreEqual(TEncoding.UTF8.GetString(decoded[0].Bytes), 'dog');
+              Assert.AreEqual(TEncoding.UTF8.GetString(decoded[1].Bytes), 'god');
+              Assert.AreEqual(TEncoding.UTF8.GetString(decoded[2].Bytes), 'cat');
+            end);
+        end);
     end);
 
   web3.rlp.encode('Lorem ipsum dolor sit amet, consectetur adipisicing elit')
-    .ifErr(procedure(err: IError)
-    begin
-      Assert.Fail(err.Message)
-    end)
+    .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
     .&else(procedure(encoded: TBytes)
     begin
-      Assert.AreEqual(toHex(encoded), '0xb8384c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f6e7365637465747572206164697069736963696e6720656c6974')
+      Assert.AreEqual(toHex(encoded), '0xb8384c6f72656d20697073756d20646f6c6f722073697420616d65742c20636f6e7365637465747572206164697069736963696e6720656c6974');
+      web3.rlp.decode(encoded)
+        .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
+        .&else(procedure(decoded: TArray<TItem>)
+        begin
+          Assert.AreEqual(TEncoding.UTF8.GetString(decoded[0].Bytes), 'Lorem ipsum dolor sit amet, consectetur adipisicing elit');
+        end);
     end);
 end;
 
@@ -181,13 +218,16 @@ begin
   for var TEST_CASE in TEST_CASES do
   begin
     web3.rlp.encode(toHex(BigInteger.Create(TEST_CASE.bigInt), [padToEven]))
-      .ifErr(procedure(err: IError)
-      begin
-        Assert.Fail(err.Message)
-      end)
+      .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
       .&else(procedure(encoded: TBytes)
       begin
-        Assert.AreEqual(toHex(encoded), TEST_CASE.output)
+        Assert.AreEqual(toHex(encoded), TEST_CASE.output);
+        web3.rlp.decode(encoded)
+          .ifErr(procedure(err: IError) begin Assert.Fail(err.Message) end)
+          .&else(procedure(decoded: TArray<TItem>)
+          begin
+            Assert.AreEqual(BigInteger.Create(web3.utils.toHex(decoded[0].Bytes)).ToString, TEST_CASE.bigInt);
+          end);
       end);
   end;
 end;
