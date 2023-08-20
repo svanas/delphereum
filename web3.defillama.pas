@@ -36,8 +36,9 @@ uses
 
 type
   ICoin = interface
-    function Symbol: string; // most common symbol used to identify this asset on an exchange
-    function Price : Double; // volume-weighted price based on real-time market data, translated to USD
+    function Symbol  : string; // most common symbol used to identify this asset on an exchange
+    function Price   : Double; // volume-weighted price based on real-time market data, translated to USD
+    function Decimals: Integer;
   end;
 
 function coin(const chain: TChain; const address: TAddress; const callback: TProc<ICoin, IError>): IAsyncResult; overload;
@@ -56,8 +57,9 @@ uses
 type
   TCoin = class(TDeserialized, ICoin)
   public
-    function Symbol: string;
-    function Price : Double;
+    function Symbol  : string;
+    function Price   : Double;
+    function Decimals: Integer;
   end;
 
 function TCoin.Symbol: string;
@@ -68,6 +70,11 @@ end;
 function TCoin.Price: Double;
 begin
   Result := getPropAsDouble(FJsonValue, 'price');
+end;
+
+function TCoin.Decimals: Integer;
+begin
+  Result := getPropAsInt(FJsonValue, 'decimals');
 end;
 
 function network(chain: TChain): string; inline;

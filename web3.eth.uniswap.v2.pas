@@ -315,7 +315,7 @@ begin
       const pair = web3.json.getPropAsObj(data, 'pair');
       if Assigned(pair) then
       begin
-        callback(DotToFloat(web3.json.getPropAsStr(pair, field)), nil);
+        callback(dotToFloat(web3.json.getPropAsStr(pair, field)), nil);
         EXIT;
       end;
     end;

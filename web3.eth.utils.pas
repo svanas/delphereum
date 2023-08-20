@@ -68,8 +68,8 @@ type
 function fromWei(wei: TWei; const &to: TDenomination; const decimals: Byte = 18): string;
 function toWei(value: string; const from: TDenomination): IResult<TWei>;
 
-function DotToFloat(const value: string): Double;
-function FloatToDot(const value: Double): string;
+function dotToFloat(const value: string): Double;
+function floatToDot(const value: Double): string;
 
 implementation
 
@@ -167,14 +167,14 @@ begin
   end;
 end;
 
-function DotToFloat(const value: string): Double;
+function dotToFloat(const value: string): Double;
 begin
   var FS := TFormatSettings.Create;
   FS.DecimalSeparator := '.';
   Result := StrToFloat(value, FS);
 end;
 
-function FloatToDot(const value: Double): string;
+function floatToDot(const value: Double): string;
 begin
   var FS := TFormatSettings.Create;
   FS.DecimalSeparator := '.';

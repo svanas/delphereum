@@ -740,7 +740,7 @@ begin
               &to,                                                        // To
               fromWei(gasPrice, gwei, 2),                                 // Gas price (gwei)
               estimatedGas.ToString,                                      // Estimated gas (units)
-              DotToFloat(fromWei(estimatedGas * gasPrice, ether)) * price // Gas fee
+              dotToFloat(fromWei(estimatedGas * gasPrice, ether)) * price // Gas fee
             ]),
             TMsgDlgType.mtConfirmation, mbYesNo, 0, TMsgDlgBtn.mbNo
           );
