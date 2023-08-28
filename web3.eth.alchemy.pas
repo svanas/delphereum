@@ -66,6 +66,10 @@ begin
     Result := TResult<string>.Ok(Format('https://arb-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = ArbitrumGoerli then
     Result := TResult<string>.Ok(Format('https://arb-goerli.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
+  else if chain = Base then
+    Result := TResult<string>.Ok(Format('https://base-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
+  else if chain = BaseGoerli then
+    Result := TResult<string>.Ok(Format('https://base-goerli.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain.RPC[TTransport.HTTPS] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.HTTPS])
   else

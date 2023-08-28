@@ -94,7 +94,11 @@ begin
   else if chain = Fantom then
     Result := 'fantom'
   else if chain = Arbitrum then
-    Result := 'arbitrum';
+    Result := 'arbitrum'
+  else if chain = Base then
+    Result := 'base'
+  else if chain = PulseChain then
+    Result := 'pulse';
 end;
 
 function coin(const chain: TChain; const address: TAddress; const callback: TProc<ICoin, IError>): IAsyncResult;

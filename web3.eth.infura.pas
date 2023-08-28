@@ -75,6 +75,10 @@ begin
     Result := TResult<string>.Ok(Format('wss://goerli.infura.io/ws/v3/%s', [projectId]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('wss://sepolia.infura.io/ws/v3/%s', [projectId]))
+  else if chain = Polygon then
+    Result := TResult<string>.Ok(Format('wss://polygon-mainnet.infura.io/ws/v3/%s', [projectId]))
+  else if chain = PolygonMumbai then
+    Result := TResult<string>.Ok(Format('wss://polygon-mumbai.infura.io/ws/v3/%s', [projectId]))
   else if chain.RPC[TTransport.WebSocket] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.WebSocket])
   else

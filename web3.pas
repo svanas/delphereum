@@ -223,6 +223,7 @@ const
     TxType   : 2;
     RPC      : ('https://mainnet.base.org', '');
     Explorer : 'https://basescan.org';
+    Chainlink: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70'
   );
   BaseGoerli: TChain = (
     Id       : 84531;
