@@ -176,7 +176,7 @@ end;
 
 function vaults(const chain: TChain; const callback: TProc<TJsonArray, IError>): IAsyncResult;
 begin
-  Result := web3.http.get(Format('https://api.yearn.finance/v1/chains/%d/vaults/all', [chain.Id]), [], procedure(value: TJsonValue; err: IError)
+  Result := web3.http.get(Format('https://api.yearn.fi/v1/chains/%d/vaults/all', [chain.Id]), [], procedure(value: TJsonValue; err: IError)
   begin
     if Assigned(err) then
       callback(nil, err)
