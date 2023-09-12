@@ -54,6 +54,7 @@ type
     Explorer : TURL;     // block explorer
     Tokens   : TURL;     // Uniswap-compatible token list
     Chainlink: TAddress; // address of chainlink's Symbol/USD price feed on this chain
+    WETH     : TAddress; // address of canonical WETH
     class operator Equal(const Left, Right: TChain): Boolean;
     class operator NotEqual(const Left, Right: TChain): Boolean;
     function SetTxType(const Value: Byte): TChain;
@@ -70,7 +71,8 @@ const
     TxType   : 2;
     Explorer : 'https://etherscan.io';
     Tokens   : 'https://tokens.coingecko.com/uniswap/all.json';
-    Chainlink: '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419'
+    Chainlink: '0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419';
+    WETH     : '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
   );
   Ganache: TChain = (
     Id       : 1337;
@@ -86,7 +88,8 @@ const
     TxType   : 2;
     Explorer : 'https://goerli.etherscan.io';
     Tokens   : 'https://raw.githubusercontent.com/svanas/delphereum/master/web3.eth.balancer.v2.tokenlist.goerli.json';
-    Chainlink: '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e'
+    Chainlink: '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e';
+    WETH     : '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6'
   );
   Optimism: TChain = (
     Id       : 10;
@@ -96,7 +99,8 @@ const
     RPC      : ('https://mainnet.optimism.io', '');
     Explorer : 'https://optimistic.etherscan.io';
     Tokens   : 'https://static.optimism.io/optimism.tokenlist.json';
-    Chainlink: '0x13e3Ee699D1909E989722E753853AE30b17e08c5'
+    Chainlink: '0x13e3Ee699D1909E989722E753853AE30b17e08c5';
+    WETH     : '0x4200000000000000000000000000000000000006'
   );
   OptimismGoerli: TChain = (
     Id       : 420;
@@ -131,9 +135,10 @@ const
     RPC      : ('https://bsc-dataseed.binance.org', '');
     Explorer : 'https://bscscan.com';
     Tokens   : 'https://tokens.pancakeswap.finance/pancakeswap-extended.json';
-    Chainlink: '0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE'
+    Chainlink: '0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE';
+    WETH     : '0x2170Ed0880ac9A755fd29B2688956BD959F933F8'
   );
-  BNB_test_net   : TChain = (
+  BNB_test_net: TChain = (
     Id       : 97;
     Name     : 'BNB Chain testnet';
     Symbol   : 'BNB';
@@ -150,7 +155,8 @@ const
     RPC      : ('https://rpc.gnosischain.com', 'wss://rpc.gnosischain.com/wss');
     Explorer : 'https://gnosisscan.io/';
     Tokens   : 'https://tokens.honeyswap.org';
-    Chainlink: '0x678df3415fc31947dA4324eC63212874be5a82f8'
+    Chainlink: '0x678df3415fc31947dA4324eC63212874be5a82f8';
+    WETH     : '0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1'
   );
   Polygon: TChain = (
     Id       : 137;
@@ -159,7 +165,8 @@ const
     TxType   : 2;
     Explorer : 'https://polygonscan.com';
     Tokens   : 'https://unpkg.com/quickswap-default-token-list@latest/build/quickswap-default.tokenlist.json';
-    Chainlink: '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0'
+    Chainlink: '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0';
+    WETH     : '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'
   );
   PolygonMumbai: TChain = (
     Id       : 80001;
@@ -177,7 +184,8 @@ const
     RPC      : ('https://rpc.fantom.network', '');
     Explorer : 'https://ftmscan.com';
     Tokens   : 'https://raw.githubusercontent.com/SpookySwap/spooky-info/master/src/constants/token/spookyswap.json';
-    Chainlink: '0xf4766552D15AE4d256Ad41B6cf2933482B0680dc'
+    Chainlink: '0xf4766552D15AE4d256Ad41B6cf2933482B0680dc';
+    WETH     : '0x658b0c7613e890EE50B8C4BC6A3f41ef411208aD'
   );
   Fantom_test_net: TChain = (
     Id       : 4002;
@@ -196,7 +204,8 @@ const
     RPC      : ('https://arb1.arbitrum.io/rpc', '');
     Explorer : 'https://explorer.arbitrum.io';
     Tokens   : 'https://bridge.arbitrum.io/token-list-42161.json';
-    Chainlink: '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612'
+    Chainlink: '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612';
+    WETH     : '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
   );
   ArbitrumGoerli: TChain = (
     Id       : 421613;
@@ -223,7 +232,8 @@ const
     TxType   : 2;
     RPC      : ('https://mainnet.base.org', '');
     Explorer : 'https://basescan.org';
-    Chainlink: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70'
+    Chainlink: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70';
+    WETH     : '0x4200000000000000000000000000000000000006'
   );
   BaseGoerli: TChain = (
     Id       : 84531;
