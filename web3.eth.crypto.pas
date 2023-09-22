@@ -184,7 +184,7 @@ begin
   const yu = curve.curve.DecodePoint(vch);
   const domain = TECDomainParameters.Create(curve.curve, curve.G, curve.n, curve.H, curve.GetSeed);
 
-  const pubKey = TECPublicKeyParameters.Create('EC', yu, domain);
+  const pubKey:IECPublicKeyParameters = TECPublicKeyParameters.Create('EC', yu, domain);
   Result := TResult<TAddress>.Ok(publicKeyToAddress(pubKey));
 end;
 
