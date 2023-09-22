@@ -399,6 +399,8 @@ function ecrecoverTransactionLegacy(const encoded: TBytes): IResult<TAddress>;
       EXIT;
     end;
     var I: Int32 := V[0];
+    if Length(V) = 2 then
+      I := 256 * I + V[1];
     if I < 35 then
     begin
       Result := TResult<Int32>.Err(0, 'V is out of range');
@@ -476,6 +478,8 @@ begin
         EXIT;
       end;
       var I: Int32 := B[0];
+      if Length(B) = 2 then
+        I := 256 * I + B[1];
       if I < 35 then
       begin
         Result := TResult<Int32>.Err(0, 'V is out of range');
