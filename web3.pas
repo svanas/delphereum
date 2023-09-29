@@ -258,7 +258,7 @@ const
     Name     : 'Holesky';
     Symbol   : 'ETH';
     TxType   : 2;
-    Explorer : 'https://holesky.beaconcha.in/'
+    Explorer : 'https://holesky.etherscan.io'
   );
 
 type
