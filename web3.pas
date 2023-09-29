@@ -253,6 +253,13 @@ const
     Explorer : 'https://scan.pulsechain.com';
     Tokens   : 'https://pulsechain-sacrifice-checker.vercel.app/tokens.json'
   );
+  Holesky: TChain = (
+    Id       : 17000;
+    Name     : 'Holesky';
+    Symbol   : 'ETH';
+    TxType   : 2;
+    Explorer : 'https://holesky.beaconcha.in/'
+  );
 
 type
   TAssetTypeHelper = record helper for TAssetType

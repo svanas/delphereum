@@ -59,11 +59,10 @@ type
 
   ILogger = interface
   ['{C2F29D30-00FC-4598-BEF4-59B65A9F55B5}']
-    procedure Pause;
-    procedure Start;
+    function Pause: IError;
+    function Start: IError;
     function Status: TStatus;
-    procedure Stop;
-    procedure Wait;
+    function Stop: IError;
   end;
 
 function get(const client: IWeb3; const address: TAddress; const callback: TProc<PLog, IError>): ILogger;
@@ -209,11 +208,10 @@ type
     FStopped: Boolean;
   public
     constructor Create(const Proc: TProc);
-    procedure Pause;
-    procedure Start;
+    function Pause: IError;
+    function Start: IError;
     function Status: TStatus;
-    procedure Stop;
-    procedure Wait;
+    function Stop: IError;
   end;
 
 constructor TLogger.Create(const Proc: TProc);
@@ -221,23 +219,25 @@ begin
   inherited Create(nil, TNotifyEvent(nil), Proc, TThreadPool.Default, nil);
 end;
 
-procedure TLogger.Pause;
+function TLogger.Pause: IError;
 begin
+  Result := nil;
   case Self.Status of
-    Idle   : raise EInvalidOperation.Create('Cannot pause a logger that is not running');
+    Idle   : Result := TError.Create('Cannot pause a logger that is not running');
     Running: FPaused := True;
     Paused : { nothing };
-    Stopped: raise EInvalidOperation.Create('Cannot pause a logger that has already stopped');
+    Stopped: Result := TError.Create('Cannot pause a logger that has already stopped');
   end;
 end;
 
-procedure TLogger.Start;
+function TLogger.Start: IError;
 begin
+  Result := nil;
   case Self.Status of
     Idle   : inherited Start;
     Running: { nothing };
     Paused : FPaused := False;
-    Stopped: raise EInvalidOperation.Create('Cannot start a logger that has already stopped');
+    Stopped: Result := TError.Create('Cannot start a logger that has already stopped');
   end;
 end;
 
@@ -254,22 +254,14 @@ begin
         Result := Running;
 end;
 
-procedure TLogger.Stop;
+function TLogger.Stop: IError;
 begin
   case Self.Status of
-    Idle   : raise EInvalidOperation.Create('Cannot stop a logger that is not running');
+    Idle   : Result := TError.Create('Cannot stop a logger that is not running');
     Running: FStopped := True;
     Paused : FStopped := True;
     Stopped: { nothing };
   end;
-end;
-
-procedure TLogger.Wait;
-begin
-  if Self.Status = Paused then
-    raise EInvalidOperation.Create('Cannot wait for a paused a logger to complete')
-  else
-    inherited Wait;
 end;
 
 function get(const client: IWeb3; const address: TAddress; const callback: TProc<PLog, IError>): ILogger;
@@ -285,9 +277,7 @@ begin
       begin
         while (TTask.CurrentTask as ILogger).Status <> Stopped do
         begin
-          try
-            TTask.CurrentTask.Wait(500);
-          except end;
+          TThread.Sleep(500);
           if (TTask.CurrentTask as ILogger).Status <> Stopped then
           begin
             web3.eth.logs.getAsLog(client, latest, address)
