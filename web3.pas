@@ -264,6 +264,7 @@ const
 type
   TAssetTypeHelper = record helper for TAssetType
     constructor Create(const name: string);
+    function IsNFT: Boolean;
   end;
 
   IError = interface
@@ -532,6 +533,8 @@ begin
     Result := TResult<PChain>.Ok(@BaseGoerli)
   else if Id = PulseChain.Id then
     Result := TResult<PChain>.Ok(@PulseChain)
+  else if Id = Holesky.Id then
+    Result := TResult<PChain>.Ok(@Holesky)
   else
     Result := TResult<PChain>.Err(nil, TError.Create('Unknown chain id: %d', [Id]));
 end;
@@ -576,7 +579,12 @@ begin
   else if SameText(name, 'ERC20') or SameText(name, 'ERC-20') then
     Self := erc20
   else
-    Self := native;
+    Self := native; // probably ETH, otherwise BNB or MATIC maybe
+end;
+
+function TAssetTypeHelper.IsNFT: Boolean;
+begin
+  Result := Self in [erc721, erc1155];
 end;
 
 { TError }

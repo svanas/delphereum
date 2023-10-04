@@ -243,9 +243,20 @@ begin
     end;
     const output = (function: TNFTs
     begin
-      SetLength(Result, arr.Count);
+      SetLength(Result, 0);
       for var I := 0 to Pred(arr.Count) do
-        Result[I] := TNFT.Create(chain.Id, arr[I] as TJsonObject);
+      begin
+        const contract = getPropAsObj(arr[I], 'asset_contract');
+        if Assigned(contract) then
+        begin
+          const asset = TAssetType.Create(getPropAsStr(contract, 'schema_name'));
+          if asset.IsNFT then
+          begin
+            SetLength(Result, Length(Result) + 1);
+            Result[High(Result)] := TNFT.Create(chain.Id, arr[I] as TJsonObject);
+          end;
+        end;
+      end;
     end)();
     callback(output, nil);
   end);
