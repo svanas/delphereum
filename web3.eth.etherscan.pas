@@ -79,6 +79,7 @@ type
 
   IContractABI = interface(IDeserializedArray<IContractSymbol>)
     function Contract: TAddress;
+    function IsERC20: Boolean;
     function IndexOf(
       const Name      : string;
       const SymbolType: TSymbolType;
@@ -325,6 +326,7 @@ type
     function Chain: TChain;
     function Contract: TAddress;
     function Item(const Index: Integer): IContractSymbol; override;
+    function IsERC20: Boolean;
     function IndexOf(
       const Name      : string;
       const SymbolType: TSymbolType;
@@ -361,6 +363,22 @@ end;
 function TContractABI.Item(const Index: Integer): IContractSymbol;
 begin
   Result := TContractSymbol.Create(TJsonArray(FJsonValue)[Index]);
+end;
+
+function TContractABI.IsERC20: Boolean;
+begin
+  Result :=
+    (Self.IndexOf('name', TSymbolType.Function, 0, TStateMutability.View) > -1)
+  and
+    (Self.IndexOf('symbol', TSymbolType.Function, 0, TStateMutability.View) > -1)
+  and
+    (Self.IndexOf('decimals', TSymbolType.Function, 0, TStateMutability.View) > -1)
+  and
+    (Self.IndexOf('balanceOf', TSymbolType.Function, 1, TStateMutability.View) > -1)
+  and
+    (Self.IndexOf('totalSupply', TSymbolType.Function, 0, TStateMutability.View) > -1)
+  and
+    (Self.IndexOf('transfer', TSymbolType.Function, 2, TStateMutability.NonPayable) > -1);
 end;
 
 function TContractABI.IndexOf(
