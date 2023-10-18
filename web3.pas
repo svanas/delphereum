@@ -242,7 +242,8 @@ const
     TxType   : 2;
     RPC      : ('https://goerli.base.org', '');
     Explorer : 'https://goerli.basescan.org';
-    Chainlink: '0xcD2A119bD1F7DF95d706DE6F2057fDD45A0503E2'
+    Chainlink: '0xcD2A119bD1F7DF95d706DE6F2057fDD45A0503E2';
+    WETH     : '0x4200000000000000000000000000000000000006'
   );
   PulseChain: TChain = (
     Id       : 369;
@@ -259,6 +260,24 @@ const
     Symbol   : 'ETH';
     TxType   : 2;
     Explorer : 'https://holesky.etherscan.io'
+  );
+  Scroll: TChain = (
+    Id       : 534352;
+    Name     : 'Scroll';
+    Symbol   : 'ETH';
+    TxType   : 2;
+    RPC      : ('https://rpc.scroll.io', '');
+    Explorer : 'https://scrollscan.com';
+    WETH     : '0x5300000000000000000000000000000000000004'
+  );
+  ScrollSepolia: TChain = (
+    Id       : 534351;
+    Name     : 'ScrollSepolia';
+    Symbol   : 'ETH';
+    TxType   : 2;
+    RPC      : ('https://sepolia-rpc.scroll.io', '');
+    Explorer : 'https://sepolia.scrollscan.com';
+    WETH     : '0x5300000000000000000000000000000000000004'
   );
 
 type
