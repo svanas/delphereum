@@ -99,7 +99,7 @@ type
     function Logo: TURL;
     procedure Balance(const client: IWeb3; const owner: TAddress; const callback: TProc<BigInteger, IError>);
     constructor Create(const aJsonValue: TJsonValue); overload; override;
-    constructor Create(const aChainId: UInt32; const aAddress: TAddress; const aName, aSymbol: string; const aDecimals: Integer; const aLogo: TURL); overload;
+    constructor Create(const aChainId: UInt32; const aAddress: TAddress; const aName, aSymbol: string; const aDecimals: Integer; const aLogo: TURL); reintroduce; overload;
   end;
 
 constructor TToken.Create(const aJsonValue: TJsonValue);

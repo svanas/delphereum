@@ -50,7 +50,7 @@ uses
 
 procedure sanctioned(const apiKey: string; const chain: TChain; const address: TAddress; const callback: TProc<Boolean, IError>);
 begin
-  if (chain <> Ethereum) and (chain <> Polygon) then
+  if (chain <> Ethereum) and (chain <> Goerli) and (chain <> Sepolia) and (chain <> Holesky) and (chain <> Polygon) then
   begin
     callback(False, TError.Create('%s not supported', [chain.Name]));
     EXIT;
