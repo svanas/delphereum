@@ -67,6 +67,7 @@ function tokens(const chain: TChain; const callback: TProc<TTokens, IError>): IA
 
 function unsupported(const chain: TChain; const callback: TProc<TTokens, IError>): IAsyncResult;
 function token(const chain: TChain; const token: TAddress; const callback: TProc<IToken, IError>): IAsyncResult;
+function DAI: IToken;
 
 implementation
 
@@ -97,7 +98,8 @@ type
     function Decimals: Integer;
     function Logo: TURL;
     procedure Balance(const client: IWeb3; const owner: TAddress; const callback: TProc<BigInteger, IError>);
-    constructor Create(const aJsonValue: TJsonValue); override;
+    constructor Create(const aJsonValue: TJsonValue); overload; override;
+    constructor Create(const aChainId: UInt32; const aAddress: TAddress; const aName, aSymbol: string; const aDecimals: Integer; const aLogo: TURL); overload;
   end;
 
 constructor TToken.Create(const aJsonValue: TJsonValue);
@@ -117,6 +119,17 @@ begin
     Result := getPropAsStr(aJsonValue, 'logoURI');
     if Result = '' then Result := getPropAsStr(aJsonValue, 'image');
   end)();
+end;
+
+constructor TToken.Create(const aChainId: UInt32; const aAddress: TAddress; const aName, aSymbol: string; const aDecimals: Integer; const aLogo: TURL);
+begin
+  inherited Create(nil);
+  FChainId  := aChainId;
+  FAddress  := aAddress;
+  FName     := aName;
+  FSymbol   := aSymbol;
+  FDecimals := aDecimals;
+  FLogo     := aLogo;
 end;
 
 function TToken.ChainId: UInt32;
@@ -315,6 +328,18 @@ begin
     else
       callback(tokens[I], nil);
   end);
+end;
+
+function DAI: IToken;
+begin
+  Result := TToken.Create(
+    1,
+    '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+    'Dai Stablecoin',
+    'DAI',
+    18,
+    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png'
+  );
 end;
 
 end.
