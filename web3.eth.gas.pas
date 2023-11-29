@@ -184,15 +184,9 @@ procedure estimateGas(
   const from, &to: TAddress;
   const data     : string;
   const callback : TProc<BigInteger, IError>);
-type
-  Teth_estimateGas = reference to procedure(client: IWeb3; const json: string; callback: TProc<BigInteger, IError>);
-  TdoEstimateGasEx = reference to procedure(client: IWeb3; from, &to: TAddress; &strict: Boolean; callback: TProc<BigInteger, IError>);
-var
-  eth_estimateGas: Teth_estimateGas;
-  doEstimateGasEx: TdoEstimateGasEx;
 begin
   // estimate how much gas is necessary for the transaction to complete (without creating a transaction on the blockchain)
-  eth_estimateGas := procedure(client: IWeb3; const json: string; callback: TProc<BigInteger, IError>)
+  const eth_estimateGas = procedure(client: IWeb3; const json: string; callback: TProc<BigInteger, IError>)
   begin
     const obj = web3.json.unmarshal(json) as TJsonObject;
     try
@@ -209,7 +203,7 @@ begin
   end;
 
   // if strict, then factor in your gas price (otherwise ignore your gas price while estimating gas)
-  doEstimateGasEx := procedure(client: IWeb3; from, &to: TAddress; &strict: Boolean; callback: TProc<BigInteger, IError>)
+  const doEstimateGasEx = procedure(client: IWeb3; from, &to: TAddress; &strict: Boolean; callback: TProc<BigInteger, IError>)
   begin
     if not &strict then
     begin

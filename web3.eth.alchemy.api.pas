@@ -55,6 +55,7 @@ type
   end;
 
   IAssetChanges = interface(IDeserializedArray<IAssetChange>)
+    function Raw: string;
     function IndexOf(const contract: TAddress): Integer;
     function Incoming(const address: TAddress): IAssetChanges;
     function Outgoing(const address: TAddress): IAssetChanges;
@@ -184,11 +185,17 @@ end;
 type
   TAssetChanges = class(TDeserializedArray<IAssetChange>, IAssetChanges)
   public
+    function Raw: string;
     function Item(const Index: Integer): IAssetChange; override;
     function IndexOf(const contract: TAddress): Integer;
     function Incoming(const address: TAddress): IAssetChanges;
     function Outgoing(const address: TAddress): IAssetChanges;
   end;
+
+function TAssetChanges.Raw: string;
+begin
+  Result := web3.json.marshal(Self.FJsonValue);
+end;
 
 function TAssetChanges.Item(const Index: Integer): IAssetChange;
 begin

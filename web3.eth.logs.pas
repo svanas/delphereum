@@ -59,10 +59,11 @@ type
 
   ILogger = interface
   ['{C2F29D30-00FC-4598-BEF4-59B65A9F55B5}']
-    function Pause: IError;
-    function Start: IError;
-    function Status: TStatus;
-    function Stop: IError;
+    function Pause: IError;   // pauses the logger
+    function Start: IError;   // starts the logger, adding it to the currect queue
+    function Status: TStatus; // return the logger's current status
+    function Stop: IError;    // signals the logger to stop
+    function Wait: IError;    // waits for the logger to complete execution
   end;
 
 function get(const client: IWeb3; const address: TAddress; const callback: TProc<PLog, IError>): ILogger;
@@ -212,6 +213,7 @@ type
     function Start: IError;
     function Status: TStatus;
     function Stop: IError;
+    function Wait: IError;
   end;
 
 constructor TLogger.Create(const Proc: TProc);
@@ -256,12 +258,22 @@ end;
 
 function TLogger.Stop: IError;
 begin
+  Result := nil;
   case Self.Status of
     Idle   : Result := TError.Create('Cannot stop a logger that is not running');
     Running: FStopped := True;
     Paused : FStopped := True;
     Stopped: { nothing };
   end;
+end;
+
+function TLogger.Wait: IError;
+begin
+  Result := nil;
+  if Self.Status = Paused then
+    Result := TError.Create('Cannot wait for a paused logger to complete')
+  else
+    inherited Wait;
 end;
 
 function get(const client: IWeb3; const address: TAddress; const callback: TProc<PLog, IError>): ILogger;
