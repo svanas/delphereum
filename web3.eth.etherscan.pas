@@ -136,8 +136,8 @@ begin
     Result := TResult<string>.Ok('https://api-goerli.etherscan.io/api?')
   else if chain = Optimism then
     Result := TResult<string>.Ok('https://api-optimistic.etherscan.io/api?')
-  else if chain = OptimismGoerli then
-    Result := TResult<string>.Ok('https://api-goerli-optimistic.etherscan.io/api?')
+  else if chain = OptimismSepolia then
+    Result := TResult<string>.Ok('https://api-sepolia-optimistic.etherscan.io/api?')
   else if chain = BNB then
     Result := TResult<string>.Ok('https://api.bscscan.com/api?')
   else if chain = BNB_test_net then

@@ -87,7 +87,6 @@ const
     Symbol   : 'ETH';
     TxType   : 2;
     Explorer : 'https://goerli.etherscan.io';
-    Tokens   : 'https://raw.githubusercontent.com/svanas/delphereum/master/web3.eth.balancer.v2.tokenlist.goerli.json';
     Chainlink: '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e';
     WETH     : '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6'
   );
@@ -102,14 +101,13 @@ const
     Chainlink: '0x13e3Ee699D1909E989722E753853AE30b17e08c5';
     WETH     : '0x4200000000000000000000000000000000000006'
   );
-  OptimismGoerli: TChain = (
-    Id       : 420;
-    Name     : 'Optimism Goerli';
+  OptimismSepolia: TChain = (
+    Id       : 11155420;
+    Name     : 'Optimism Sepolia';
     Symbol   : 'ETH';
     TxType   : 2;
-    RPC      : ('https://goerli.optimism.io', '');
-    Explorer : 'https://goerli-optimistic.etherscan.io';
-    Chainlink: '0x57241A37733983F97C4Ab06448F244A1E0Ca0ba8'
+    RPC      : ('https://sepolia.optimism.io', '');
+    Explorer : 'https://sepolia-optimism.etherscan.io';
   );
   RSK: TChain = (
     Id       : 30;
@@ -520,8 +518,8 @@ begin
     Result := TResult<PChain>.Ok(@Goerli)
   else if Id = Optimism.Id then
     Result := TResult<PChain>.Ok(@Optimism)
-  else if Id = OptimismGoerli.Id then
-    Result := TResult<PChain>.Ok(@OptimismGoerli)
+  else if Id = OptimismSepolia.Id then
+    Result := TResult<PChain>.Ok(@OptimismSepolia)
   else if Id = RSK.Id then
     Result := TResult<PChain>.Ok(@RSK)
   else if Id = RSK_test_net.Id then
@@ -703,7 +701,7 @@ begin
   Result := Self.FChain;
 end;
 
-// returns the chain’s latest native token price in USD (eg. ETH-USD for Ethereum, BNB-USD for BNB Chain, MATIC-USD for Polygon, etc)
+// returns the chainï¿½s latest native token price in USD (eg. ETH-USD for Ethereum, BNB-USD for BNB Chain, MATIC-USD for Polygon, etc)
 procedure TCustomWeb3.LatestPrice(const callback: TProc<Double, IError>);
 begin
   const coincap = procedure(const chain: TChain)

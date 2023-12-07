@@ -210,7 +210,7 @@ end;
 
 class function TAave.Name: string;
 begin
-  Result := 'Aave';
+  Result := 'Aave v2';
 end;
 
 class function TAave.Supports(const chain: TChain; const reserve: TReserve): Boolean;

@@ -56,8 +56,8 @@ begin
     Result := TResult<string>.Ok(Format('https://eth-sepolia.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Optimism then
     Result := TResult<string>.Ok(Format('https://opt-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
-  else if chain = OptimismGoerli then
-    Result := TResult<string>.Ok(Format('https://opt-goerli.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
+  else if chain = OptimismSepolia then
+    Result := TResult<string>.Ok(Format('https://opt-sepolia.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Polygon then
     Result := TResult<string>.Ok(Format('https://polygon-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = PolygonMumbai then
@@ -86,8 +86,8 @@ begin
     Result := TResult<string>.Ok(Format('wss://eth-sepolia.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = Optimism then
     Result := TResult<string>.Ok(Format('wss://opt-mainnet.g.alchemy.com/v2/%s', [apiKey]))
-  else if chain = OptimismGoerli then
-    Result := TResult<string>.Ok(Format('wss://opt-goerli.g.alchemy.com/v2/%s', [apiKey]))
+  else if chain = OptimismSepolia then
+    Result := TResult<string>.Ok(Format('wss://opt-sepolia.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = Polygon then
     Result := TResult<string>.Ok(Format('wss://polygon-mainnet.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = PolygonMumbai then

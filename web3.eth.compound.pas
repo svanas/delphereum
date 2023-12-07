@@ -237,7 +237,7 @@ end;
 
 class function TCompound.Name: string;
 begin
-  Result := 'Compound';
+  Result := 'Compound v2';
 end;
 
 class function TCompound.Supports(const chain: TChain; const reserve: TReserve): Boolean;

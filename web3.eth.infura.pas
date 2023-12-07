@@ -49,8 +49,8 @@ begin
     Result := TResult<string>.Ok(Format('https://goerli.infura.io/v3/%s', [projectId]))
   else if chain = Optimism then
     Result := TResult<string>.Ok(Format('https://optimism-mainnet.infura.io/v3/%s', [projectId]))
-  else if chain = OptimismGoerli then
-    Result := TResult<string>.Ok(Format('https://optimism-goerli.infura.io/v3/%s', [projectId]))
+  else if chain = OptimismSepolia then
+    Result := TResult<string>.Ok(Format('https://optimism-sepolia.infura.io/v3/%s', [projectId]))
   else if chain = Polygon then
     Result := TResult<string>.Ok(Format('https://polygon-mainnet.infura.io/v3/%s', [projectId]))
   else if chain = PolygonMumbai then
