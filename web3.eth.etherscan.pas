@@ -102,6 +102,9 @@ type
     procedure getTransactions(
       const address : TAddress;
       const callback: TProc<ITransactions, IError>);
+    procedure getLatestTransaction(
+      const address : TAddress;
+      const callback: TProc<ITransaction, IError>);
     procedure getErc20TransferEvents(
       const address : TAddress;
       const callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
@@ -455,6 +458,9 @@ type
     procedure getTransactions(
       const address : TAddress;
       const callback: TProc<ITransactions, IError>);
+    procedure getLatestTransaction(
+      const address : TAddress;
+      const callback: TProc<ITransaction, IError>);
     procedure getErc20TransferEvents(
       const address : TAddress;
       const callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
@@ -549,10 +555,43 @@ begin
     const &array = web3.json.getPropAsArr(response, 'result');
     if not Assigned(&array) then
     begin
-      callback(nil, TEtherscanError.Create(status, nil));
+      callback(nil, TEtherscanError.Create(status, response));
       EXIT;
     end;
     callback(TTransactions.Create(&array), nil);
+  end);
+end;
+
+procedure TEtherscan.getLatestTransaction(
+  const address : TAddress;
+  const callback: TProc<ITransaction, IError>);
+begin
+  Self.get(Format('module=account&action=txlist&address=%s&sort=desc&page=1&offset=1', [address]),
+  procedure(response: TJsonValue; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    const status = web3.json.getPropAsInt(response, 'status');
+    if status = 0 then
+    begin
+      callback(nil, TEtherscanError.Create(status, response));
+      EXIT;
+    end;
+    const &array = web3.json.getPropAsArr(response, 'result');
+    if not Assigned(&array) then
+    begin
+      callback(nil, TEtherscanError.Create(status, response));
+      EXIT;
+    end;
+    if &array.Count = 0 then
+    begin
+      callback(nil, nil);
+      EXIT;
+    end;
+    callback(createTransaction(&array.Items[0]), nil);
   end);
 end;
 
@@ -577,7 +616,7 @@ begin
     const &array = web3.json.getPropAsArr(response, 'result');
     if not Assigned(&array) then
     begin
-      callback(nil, TEtherscanError.Create(status, nil));
+      callback(nil, TEtherscanError.Create(status, response));
       EXIT;
     end;
     callback(TErc20TransferEvents.Create(&array), nil);
@@ -605,7 +644,7 @@ begin
     const &result = unmarshal(web3.json.getPropAsStr(response, 'result'));
     if not Assigned(&result) then
     begin
-      callback(nil, TEtherscanError.Create(status, nil));
+      callback(nil, TEtherscanError.Create(status, response));
       EXIT;
     end;
     try
@@ -637,7 +676,7 @@ begin
     const &result = unmarshal(web3.json.getPropAsStr(response, 'result'));
     if not Assigned(&result) then
     begin
-      callback('', TEtherscanError.Create(status, nil));
+      callback('', TEtherscanError.Create(status, response));
       EXIT;
     end;
     try
@@ -650,7 +689,7 @@ begin
           EXIT;
         end;
       end;
-      callback('', TEtherscanError.Create(status, nil));
+      callback('', TEtherscanError.Create(status, response));
     finally
       &result.Free;
     end;

@@ -733,6 +733,7 @@ type
     function &type: Byte;
     function ToString: string; override;
     function blockNumber: BigInteger;    // block number where this transaction was in. null when its pending.
+    function timeStamp: TUnixDateTime;   // the unix timestamp for when the transaction got mined.
     function from: TAddress;             // address of the sender.
     function gasLimit: BigInteger;       // gas limit provided by the sender.
     function gasPrice: TWei;             // gas price provided by the sender in Wei.
@@ -760,6 +761,12 @@ end;
 function TTransaction.blockNumber: BigInteger;
 begin
   Result := getPropAsStr(FJsonValue, 'blockNumber', '0x0');
+end;
+
+// the unix timestamp for when the transaction got mined.
+function TTransaction.timeStamp: TUnixDateTime;
+begin
+  Result := getPropAsBigInt(FJsonValue, 'timeStamp').AsInt64;
 end;
 
 // address of the sender.
