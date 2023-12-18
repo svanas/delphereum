@@ -54,6 +54,7 @@ uses
   web3.eth.alchemy.api in '..\web3.eth.alchemy.api.pas',
   web3.eth.alchemy in '..\web3.eth.alchemy.pas',
   web3.eth.balancer.v2 in '..\web3.eth.balancer.v2.pas',
+  web3.eth.blocknative in '..\web3.eth.blocknative.pas',
   web3.eth.blocknative.mempool in '..\web3.eth.blocknative.mempool.pas',
   web3.eth.blocknative.mempool.sgc in '..\web3.eth.blocknative.mempool.sgc.pas',
   web3.eth.breadcrumbs in '..\web3.eth.breadcrumbs.pas',

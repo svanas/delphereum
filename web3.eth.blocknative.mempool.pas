@@ -38,7 +38,7 @@ uses
   web3;
 
 const
-  BLOCKNATIVE_ENDPOINT = 'wss://api.blocknative.com/v0';
+  BLOCKNATIVE_WEBSOCKET_ENDPOINT = 'wss://api.blocknative.com/v0';
 
 type
   TEventCode = (
@@ -57,7 +57,7 @@ type
   );
 
   IMempool = interface
-    procedure Unsubscribe(const address: TAddress);
+    function  Unsubscribe(const address: TAddress): IError;
     procedure Disconnect;
     function  Connected: Boolean;
   end;
@@ -96,9 +96,7 @@ type
     FOnEvent: TProc<TJsonObject, IError>;
     FOnError: TProc<IError>;
     FOnDisconnect: TProc;
-    function CreatePayload(
-      const categoryCode: string;
-      const eventCode   : string): string;
+    function CreatePayload(const categoryCode, eventCode: string): IResult<string>;
   public
     class function Subscribe(
       const chain       : TChain;
@@ -108,7 +106,7 @@ type
       const onEvent     : TProc<TJsonObject, IError>; // continuous events (or a blocknative error)
       const onError     : TProc<IError>;              // non-blocknative-error handler (probably a socket error)
       const onDisconnect: TProc                       // connection closed
-    ): IMempool; overload; virtual; abstract;
+    ): IResult<IMempool>; overload; virtual; abstract;
     class function Subscribe(
       const chain       : TChain;
       const proxy       : TProxy;                     // TProxy.Disabled will probably "just work"
@@ -119,7 +117,7 @@ type
       const onEvent     : TProc<TJsonObject, IError>; // continuous events (or a blocknative error)
       const onError     : TProc<IError>;              // non-blocknative-error handler (probably a socket error)
       const onDisconnect: TProc                       // connection closed
-    ): IMempool; overload; virtual; abstract;
+    ): IResult<IMempool>; overload; virtual; abstract;
   end;
 
 function Filters: IFilters;
@@ -132,6 +130,7 @@ uses
   // Delphi
   System.DateUtils,
   // web3
+  web3.eth.blocknative,
   web3.eth.types,
   web3.json;
 
@@ -173,35 +172,20 @@ end;
 
 {------------------------------- TCustomMempool -------------------------------}
 
-function TCustomMempool.CreatePayload(
-  const categoryCode: string;
-  const eventCode   : string): string;
-
-  function NETWORK(const chain: TChain): string; inline;
-  begin
-    if chain = Ethereum then
-      Result := 'main'
-    else if chain = Goerli then
-      Result := 'goerli'
-    else if chain = BNB then
-      Result := 'bsc-main'
-    else if chain = Gnosis then
-      Result := 'xdai'
-    else if chain = Polygon then
-      Result := 'matic-main'
-    else if chain = Fantom then
-      Result := 'fantom-main';
-  end;
-
+function TCustomMempool.CreatePayload(const categoryCode, eventCode: string): IResult<string>;
 begin
-  Result := Format('{' +
-    '"categoryCode": "%s"' +
-    ',"eventCode"  : "%s"' +
-    ',"timeStamp"  : "%s"' +
-    ',"dappId"     : "%s"' +
-    ',"version"    : "0"' +
-    ',"blockchain" : {"system": "ethereum", "network": "%s"}'+
-  '}', [categoryCode, eventCode, DateToISO8601(System.SysUtils.Now, False), FApiKey, NETWORK(FChain)]);
+  const network = getNetwork(FChain);
+  if network.IsErr then
+    Result := network
+  else
+    Result := TResult<string>.Ok(Format('{' +
+      '"categoryCode": "%s"' +
+      ',"eventCode"  : "%s"' +
+      ',"timeStamp"  : "%s"' +
+      ',"dappId"     : "%s"' +
+      ',"version"    : "0"' +
+      ',"blockchain" : {"system": "ethereum", "network": "%s"}'+
+    '}', [categoryCode, eventCode, DateToISO8601(System.SysUtils.Now, False), FApiKey, network.Value]));
 end;
 
 {---------------------------------- TFilters ----------------------------------}

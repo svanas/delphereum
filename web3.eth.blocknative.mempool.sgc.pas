@@ -71,7 +71,7 @@ type
       const address     : TAddress;
       const onEvent     : TProc<TJsonObject, IError>;
       const onError     : TProc<IError>;
-      const onDisconnect: TProc): IMempool; overload; override;
+      const onDisconnect: TProc): IResult<IMempool>; overload; override;
     class function Subscribe(
       const chain       : TChain;
       const proxy       : TProxy;
@@ -81,11 +81,11 @@ type
       const abi         : TJsonArray;
       const onEvent     : TProc<TJsonObject, IError>;
       const onError     : TProc<IError>;
-      const onDisconnect: TProc): IMempool; overload; override;
-    procedure Unsubscribe(const address: TAddress);
-    procedure Initialize;
+      const onDisconnect: TProc): IResult<IMempool>; overload; override;
+    function Unsubscribe(const address: TAddress): IError;
+    function Initialize: IError;
     procedure Disconnect;
-    function  Connected: Boolean;
+    function Connected: Boolean;
   end;
 
 implementation
@@ -123,7 +123,7 @@ begin
     FClient.HeartBeat.Interval := 30; // seconds
     FClient.HeartBeat.Timeout  := 0;
 
-    FClient.URL := BLOCKNATIVE_ENDPOINT;
+    FClient.URL := BLOCKNATIVE_WEBSOCKET_ENDPOINT;
   end;
 
   if FProxy.Enabled <> FClient.Proxy.Enabled then
@@ -217,7 +217,7 @@ class function TSgcMempool.Subscribe(
   const address     : TAddress;
   const onEvent     : TProc<TJsonObject, IError>;
   const onError     : TProc<IError>;
-  const onDisconnect: TProc): IMempool;
+  const onDisconnect: TProc): IResult<IMempool>;
 begin
   const &output = TSgcMempool.Create(
     chain,
@@ -228,18 +228,30 @@ begin
     onDisconnect
   );
 
-  &output.Initialize;
-
-  const payload = unmarshal(&output.CreatePayload('accountAddress', 'watch')) as TJsonObject;
-  if Assigned(payload) then
-  try
-    payload.AddPair('account', unmarshal(Format('{"address":"%s"}', [address])));
-    &output.Client.WriteData(marshal(payload));
-  finally
-    payload.Free;
+  const payload = &output.CreatePayload('accountAddress', 'watch');
+  if payload.IsErr then
+  begin
+    Result := TResult<IMempool>.Err(&output, payload.Error);
+    EXIT;
   end;
 
-  Result := &output;
+  const err = &output.Initialize;
+  if Assigned(err) then
+  begin
+    Result := TResult<IMempool>.Err(&output, err);
+    EXIT;
+  end;
+
+  const data = unmarshal(payload.Value) as TJsonObject;
+  if Assigned(data) then
+  try
+    data.AddPair('account', unmarshal(Format('{"address":"%s"}', [address])));
+    &output.Client.WriteData(marshal(data));
+  finally
+    data.Free;
+  end;
+
+  Result := TResult<IMempool>.Ok(&output);
 end;
 
 class function TSgcMempool.Subscribe(
@@ -251,7 +263,7 @@ class function TSgcMempool.Subscribe(
   const abi         : TJsonArray;
   const onEvent     : TProc<TJsonObject, IError>;
   const onError     : TProc<IError>;
-  const onDisconnect: TProc): IMempool;
+  const onDisconnect: TProc): IResult<IMempool>;
 begin
   const &output = TSgcMempool.Create(
     chain,
@@ -262,43 +274,67 @@ begin
     onDisconnect
   );
 
-  &output.Initialize;
+  const payload = &output.CreatePayload('configs', 'put');
+  if payload.IsErr then
+  begin
+    Result := TResult<IMempool>.Err(&output, payload.Error);
+    EXIT;
+  end;
 
-  const payload = unmarshal(&output.CreatePayload('configs', 'put')) as TJsonObject;
-  if Assigned(payload) then
+  const err = &output.Initialize;
+  if Assigned(err) then
+  begin
+    Result := TResult<IMempool>.Err(&output, err);
+    EXIT;
+  end;
+
+  const data = unmarshal(payload.Value) as TJsonObject;
+  if Assigned(data) then
   try
     const config = unmarshal(Format('{"scope":"%s","watchAddress":true}', [address])) as TJsonObject;
     if Assigned(config) then
     begin
-      if Assigned(filters) then
-        config.AddPair('filters', filters.AsArray);
-      if Assigned(abi) then
-        config.AddPair('abi', abi);
-      payload.AddPair('config', config);
+      if Assigned(filters) then config.AddPair('filters', filters.AsArray);
+      if Assigned(abi) then config.AddPair('abi', abi);
+      data.AddPair('config', config);
     end;
-    &output.Client.WriteData(marshal(payload));
+    &output.Client.WriteData(marshal(data));
   finally
-    payload.Free;
+    data.Free;
   end;
 
-  Result := &output;
+  Result := TResult<IMempool>.Ok(&output);
 end;
 
-procedure TSgcMempool.Unsubscribe(const address: TAddress);
+function TSgcMempool.Unsubscribe(const address: TAddress): IError;
 begin
-  const payload = unmarshal(CreatePayload('accountAddress', 'unwatch')) as TJsonObject;
-  if Assigned(payload) then
+  Result := nil;
+
+  const payload = Self.CreatePayload('accountAddress', 'unwatch');
+  if payload.IsErr then
+  begin
+    Result := payload.Error;
+    EXIT;
+  end;
+
+  const data = unmarshal(payload.Value) as TJsonObject;
+  if Assigned(data) then
   try
-    payload.AddPair('account', unmarshal(Format('{"address":"%s"}', [address])));
-    Client.WriteData(marshal(payload));
+    data.AddPair('account', unmarshal(Format('{"address":"%s"}', [address])));
+    Client.WriteData(marshal(data));
   finally
-    payload.Free;
+    data.Free;
   end;
 end;
 
-procedure TSgcMempool.Initialize;
+function TSgcMempool.Initialize: IError;
 begin
-  Client.WriteData(CreatePayload('initialize', 'checkDappId'));
+  Result := nil;
+  const payload = Self.CreatePayload('initialize', 'checkDappId');
+  if payload.IsErr then
+    Result := payload.Error
+  else
+    Client.WriteData(payload.Value);
 end;
 
 procedure TSgcMempool.Disconnect;

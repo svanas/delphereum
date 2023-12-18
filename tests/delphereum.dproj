@@ -141,6 +141,7 @@
         <DCCReference Include="..\web3.eth.alchemy.api.pas"/>
         <DCCReference Include="..\web3.eth.alchemy.pas"/>
         <DCCReference Include="..\web3.eth.balancer.v2.pas"/>
+        <DCCReference Include="..\web3.eth.blocknative.pas"/>
         <DCCReference Include="..\web3.eth.blocknative.mempool.pas"/>
         <DCCReference Include="..\web3.eth.blocknative.mempool.sgc.pas"/>
         <DCCReference Include="..\web3.eth.breadcrumbs.pas"/>
