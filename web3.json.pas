@@ -49,12 +49,14 @@ type
   public
     constructor Create(const aJsonValue: TJsonValue); override;
     destructor Destroy; override;
+    function Raw: string;
   end;
 
   IDeserializedArray<T: IInterface> = interface
     function Count: Integer;
     procedure Delete(const Index: Integer);
     function Item(const Index: Integer): T;
+    function Raw: string;
   end;
 
   TDeserializedArray<T: IInterface> = class abstract(TDeserialized, IDeserializedArray<T>)
@@ -99,6 +101,11 @@ destructor TDeserialized.Destroy;
 begin
   if Assigned(FJsonValue) then FJsonValue.Free;
   inherited Destroy;
+end;
+
+function TDeserialized.Raw: string;
+begin
+  Result := web3.json.marshal(Self.FJsonValue);
 end;
 
 {--------------------------- TDeserializedArray<T> ----------------------------}

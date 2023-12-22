@@ -169,6 +169,8 @@
         <DCCReference Include="..\web3.eth.origin.dollar.pas"/>
         <DCCReference Include="..\web3.eth.pas"/>
         <DCCReference Include="..\web3.eth.pubsub.pas"/>
+        <DCCReference Include="..\web3.eth.simulate.pas"/>
+        <DCCReference Include="..\web3.eth.tenderly.pas"/>
         <DCCReference Include="..\web3.eth.tokenlists.pas"/>
         <DCCReference Include="..\web3.eth.tx.pas"/>
         <DCCReference Include="..\web3.eth.tx.tests.pas"/>

@@ -82,6 +82,8 @@ uses
   web3.eth.origin.dollar in '..\web3.eth.origin.dollar.pas',
   web3.eth in '..\web3.eth.pas',
   web3.eth.pubsub in '..\web3.eth.pubsub.pas',
+  web3.eth.simulate in '..\web3.eth.simulate.pas',
+  web3.eth.tenderly in '..\web3.eth.tenderly.pas',
   web3.eth.tokenlists in '..\web3.eth.tokenlists.pas',
   web3.eth.tx in '..\web3.eth.tx.pas',
   web3.eth.tx.tests in '..\web3.eth.tx.tests.pas',

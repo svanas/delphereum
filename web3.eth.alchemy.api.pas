@@ -31,35 +31,9 @@ interface
 uses
   // Delphi
   System.SysUtils,
-  // Velthuis' BigNumbers
-  Velthuis.BigIntegers,
   // web3
   web3,
-  web3.json;
-
-type
-  TChangeType = (Approve, Transfer);
-
-  IAssetChange = interface
-    function Asset   : TAssetType;
-    function Change  : TChangeType;
-    function From    : TAddress;
-    function &To     : TAddress;
-    function Amount  : BigInteger;
-    function Contract: TAddress;
-    function Name    : string;
-    function Symbol  : string;
-    function Decimals: Integer;
-    function Logo    : TURL;
-    function Unscale : Double;
-  end;
-
-  IAssetChanges = interface(IDeserializedArray<IAssetChange>)
-    function Raw: string;
-    function IndexOf(const contract: TAddress): Integer;
-    function Incoming(const address: TAddress): IAssetChanges;
-    function Outgoing(const address: TAddress): IAssetChanges;
-  end;
+  web3.eth.simulate;
 
 // simulate transaction, return array of asset changes
 procedure simulate(
@@ -100,12 +74,14 @@ uses
   System.Generics.Collections,
   System.JSON,
   System.Net.URLClient,
-  System.Math,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // web3
   web3.eth.abi,
   web3.eth.alchemy,
   web3.eth.types,
   web3.http,
+  web3.json,
   web3.utils;
 
 type
@@ -117,11 +93,10 @@ type
     function &To     : TAddress;
     function Amount  : BigInteger;
     function Contract: TAddress;
-    function Name    : string;
-    function Symbol  : string;
-    function Decimals: Integer;
-    function Logo    : TURL;
-    function Unscale : Double;
+    function Name    : IResult<string>;
+    function Symbol  : IResult<string>;
+    function Decimals: IResult<Integer>;
+    function Logo    : IResult<TURL>;
   end;
 
 function TAssetChange.Asset: TAssetType;
@@ -157,45 +132,34 @@ begin
   Result := TAddress.Create(getPropAsStr(FJsonValue, 'contractAddress'));
 end;
 
-function TAssetChange.Name: string;
+function TAssetChange.Name: IResult<string>;
 begin
-  Result := getPropAsStr(FJsonValue, 'name');
+  Result := TResult<string>.Ok(getPropAsStr(FJsonValue, 'name'));
 end;
 
-function TAssetChange.Symbol: string;
+function TAssetChange.Symbol: IResult<string>;
 begin
-  Result := getPropAsStr(FJsonValue, 'symbol');
+  Result := TResult<string>.Ok(getPropAsStr(FJsonValue, 'symbol'));
 end;
 
-function TAssetChange.Decimals: Integer;
+function TAssetChange.Decimals: IResult<Integer>;
 begin
-  Result := getPropAsInt(FJsonValue, 'decimals');
+  Result := TResult<Integer>.Ok(getPropAsInt(FJsonValue, 'decimals'));
 end;
 
-function TAssetChange.Logo: TURL;
+function TAssetChange.Logo: IResult<TURL>;
 begin
-  Result := getPropAsStr(FJsonValue, 'logo');
-end;
-
-function TAssetChange.Unscale: Double;
-begin
-  Result := Self.Amount.AsDouble / Round(Power(10, Self.Decimals));
+  Result := TResult<string>.Ok(getPropAsStr(FJsonValue, 'logo'));
 end;
 
 type
   TAssetChanges = class(TDeserializedArray<IAssetChange>, IAssetChanges)
   public
-    function Raw: string;
     function Item(const Index: Integer): IAssetChange; override;
     function IndexOf(const contract: TAddress): Integer;
     function Incoming(const address: TAddress): IAssetChanges;
     function Outgoing(const address: TAddress): IAssetChanges;
   end;
-
-function TAssetChanges.Raw: string;
-begin
-  Result := web3.json.marshal(Self.FJsonValue);
-end;
 
 function TAssetChanges.Item(const Index: Integer): IAssetChange;
 begin
