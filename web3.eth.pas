@@ -183,14 +183,8 @@ end;
 type
   TBlock = class(TDeserialized, IBlock)
   public
-    function ToString: string; override;
     function baseFeePerGas: TWei;
   end;
-
-function TBlock.ToString: string;
-begin
-  Result := web3.json.marshal(FJsonValue);
-end;
 
 function TBlock.baseFeePerGas: TWei;
 begin

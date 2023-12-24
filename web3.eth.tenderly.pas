@@ -5,13 +5,23 @@ interface
 uses
   // Delphi
   System.SysUtils,
-  // Velthuis' BigNumbers
-  Velthuis.BigIntegers,
   // web3
   web3,
   web3.eth.simulate;
 
+// simulate transaction, return array of asset changes
 procedure simulate(
+  const accountId,
+        projectId,
+        accessKey: string;
+  const chain    : TChain;
+  const from, &to: TAddress;
+  const value    : TWei;
+  const input    : string;
+  const callback : TProc<IAssetChanges, IError>);
+
+// simulate transaction, return incoming assets that are honeypots (eg. you cannot sell)
+procedure honeypots(
   const accountId,
         projectId,
         accessKey: string;
@@ -28,10 +38,14 @@ uses
   System.Generics.Collections,
   System.JSON,
   System.Net.URLClient,
+  // Velthuis' BigNumbers
+  Velthuis.BigIntegers,
   // web3
+  web3.eth.abi,
   web3.eth.types,
   web3.http,
-  web3.json;
+  web3.json,
+  web3.utils;
 
 {-------------------------------- TAssetChange --------------------------------}
 
@@ -133,68 +147,58 @@ end;
 {------------------------------- TAssetChanges --------------------------------}
 
 type
-  TAssetChanges = class(TDeserializedArray<IAssetChange>, IAssetChanges)
+  TAssetChanges = class(TCustomAssetChanges)
+  strict protected
+    class function CreateAssetChange(const aJsonObject: TJsonValue): IAssetChange; override;
+    class function CreateAssetChanges(const aJsonArray: TJsonArray): IAssetChanges; override;
+  end;
+
+class function TAssetChanges.CreateAssetChange(const aJsonObject: TJsonValue): IAssetChange;
+begin
+  Result := TAssetChange.Create(aJsonObject);
+end;
+
+class function TAssetChanges.CreateAssetChanges(const aJsonArray: TJsonArray): IAssetChanges;
+begin
+  Result := TAssetChanges.Create(aJsonArray);
+end;
+
+{------------------------------ TRawTransaction -------------------------------}
+
+type
+  TRawTransaction = class(TCustomRawTransaction)
   public
-    function Item(const Index: Integer): IAssetChange; override;
-    function IndexOf(const contract: TAddress): Integer;
-    function Incoming(const address: TAddress): IAssetChanges;
-    function Outgoing(const address: TAddress): IAssetChanges;
+    function Marshal: string; override;
   end;
 
-function TAssetChanges.Item(const Index: Integer): IAssetChange;
+function TRawTransaction.Marshal: string;
 begin
-  Result := TAssetChange.Create(TJsonArray(FJsonValue)[Index]);
-end;
-
-function TAssetChanges.IndexOf(const contract: TAddress): Integer;
-begin
-  const count = Self.Count;
-  if count > 0 then
-    for Result := 0 to Pred(count) do
-      if Self.Item(Result).Contract.SameAs(contract) then
-        EXIT;
-  Result := -1;
-end;
-
-function TAssetChanges.Incoming(const address: TAddress): IAssetChanges;
-begin
-  var value := Self.FJsonValue.Clone as TJsonArray;
-  try
-    var index := 0;
-    while index < value.Count do
-    begin
-      const change: IAssetChange = TAssetChange.Create(value[index]);
-      if (change.Change in [Mint, Transfer]) and change.&To.SameAs(address) then
-        Inc(index)
-      else
-        value.Remove(index);
-    end;
-    Result := TAssetChanges.Create(value);
-  finally
-    value.Free;
-  end;
-end;
-
-function TAssetChanges.Outgoing(const address: TAddress): IAssetChanges;
-begin
-  var value := Self.FJsonValue.Clone as TJsonArray;
-  try
-    var index := 0;
-    while index < value.Count do
-    begin
-      const change: IAssetChange = TAssetChange.Create(value[index]);
-      if (change.Change = Transfer) and change.From.SameAs(address) then
-        Inc(index)
-      else
-        value.Remove(index);
-    end;
-    Result := TAssetChanges.Create(value);
-  finally
-    value.Free;
-  end;
+  Result := Format('{"network_id": %d, "from": "%s", "to": "%s", "value": %s, "input": "%s"}',
+            [Self.FChain.Id, Self.FFrom, Self.FTo, Self.FValue.ToString(10), Self.FData]);
 end;
 
 {---------------------------------- globals -----------------------------------}
+
+function getAssetChanges(const aJsonObject: TJsonValue): IResult<TJsonArray>;
+begin
+  const transaction = web3.json.getPropAsObj(aJsonObject, 'transaction');
+  if not Assigned(transaction) then
+  begin
+    Result := TResult<TJsonArray>.Err(nil, 'transaction is null');
+    EXIT;
+  end;
+  const info = web3.json.getPropAsObj(transaction, 'transaction_info');
+  if not Assigned(info) then
+  begin
+    Result := TResult<TJsonArray>.Err(nil, 'transaction.transaction_info is null');
+    EXIT;
+  end;
+  const changes = web3.json.getPropAsArr(info, 'asset_changes');
+  if not Assigned(changes) then
+    Result := TResult<TJsonArray>.Ok(nil)
+  else
+    Result := TResult<TJsonArray>.Ok(changes);
+end;
 
 procedure simulate(
   const accountId,
@@ -213,36 +217,124 @@ begin
     procedure(response: TJsonValue; err: IError)
     begin
       if Assigned(err) then
+        callback(nil, err)
+      else
+        getAssetChanges(response)
+          .ifErr(procedure(err: IError)
+          begin
+            callback(nil, err);
+          end)
+          .&else(procedure(changes: TJsonArray)
+          begin
+            callback(TAssetChanges.Create(changes), nil);
+          end);
+    end);
+end;
+
+procedure simulateBundle(
+  const accountId,
+        projectId,
+        accessKey: string;
+  const tx1, tx2 : IRawTransaction;
+  const callback : TProc<TJsonArray, IError>);
+begin
+  web3.http.post(
+    Format('https://api.tenderly.co/api/v1/account/%s/project/%s/simulate-bundle', [accountId, projectId]),
+    Format('{"simulations": [%s, %s]}', [tx1.Marshal, tx2.Marshal]),
+    [TNetHeader.Create('X-Access-Key', accessKey), TNetHeader.Create('Content-Type', 'application/json')],
+    procedure(response: TJsonValue; err: IError)
+    begin
+      if Assigned(err) then
       begin
         callback(nil, err);
         EXIT;
       end;
-      const transaction = web3.json.getPropAsObj(response, 'transaction');
-      if not Assigned(transaction) then
+      const results = web3.json.getPropAsArr(response, 'simulation_results');
+      if not Assigned(results) then
       begin
-        callback(nil, TError.Create('transaction is null'));
+        callback(nil, TError.Create('simulation_results is null'));
         EXIT;
       end;
-      const info = web3.json.getPropAsObj(transaction, 'transaction_info');
-      if not Assigned(info) then
-      begin
-        callback(nil, TError.Create('transaction.transaction_info is null'));
-        EXIT;
-      end;
-      const trace = web3.json.getPropAsObj(info, 'call_trace');
-      if not Assigned(trace) then
-      begin
-        callback(nil, TError.Create('transaction.transaction_info.call_trace is null'));
-        EXIT;
-      end;
-      const changes = web3.json.getPropAsArr(trace, 'asset_changes');
-      if not Assigned(changes) then
-      begin
-        callback(nil, TError.Create('transaction.transaction_info.call_trace.asset_changes is null'));
-        EXIT;
-      end;
-      callback(TAssetChanges.Create(changes), nil);
+      callback(results, err);
     end);
+end;
+
+procedure honeypots(
+  const accountId,
+        projectId,
+        accessKey: string;
+  const chain    : TChain;
+  const from, &to: TAddress;
+  const value    : TWei;
+  const input    : string;
+  const callback : TProc<IAssetChanges, IError>);
+begin
+  // step #1: simulate asset changes
+  simulate(accountId, projectId, accessKey, chain, from, &to, value, input, procedure(changes1: IAssetChanges; err: IError)
+  begin
+    if Assigned(err) or not Assigned(changes1) then
+    begin
+      callback(nil, err);
+      EXIT;
+    end;
+    // step #2: get incoming tokens
+    const incoming = changes1.Incoming(from);
+    // step #3: simulate a sell for each and every incoming erc20
+    var next: TProc<Integer, TProc>;
+    next := procedure(incomingIndex: Integer; done: TProc)
+    begin
+      if incomingIndex >= incoming.Count then
+      begin
+        done;
+        EXIT;
+      end;
+      const change = incoming.Item(incomingIndex);
+      if change.Asset <> erc20 then
+      begin
+        incoming.Delete(incomingIndex);
+        next(incomingIndex, done);
+        EXIT;
+      end;
+      simulateBundle(accountId, projectId, accessKey,
+        TRawTransaction.Create(chain, from, &to, value, input),
+        TRawTransaction.Create(
+          chain,
+          from,
+          change.Contract,
+          0,
+          web3.eth.abi.encode('transfer(address,uint256)', ['0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045', web3.utils.toHex(change.Amount)])
+        ),
+        procedure(response: TJsonArray; err: IError)
+        begin
+          if (err <> nil) or (response = nil) or (response.Count < 2) then
+          begin
+            callback(nil, err);
+            EXIT;
+          end;
+          getAssetChanges(response[1])
+            .ifErr(procedure(err: IError)
+            begin
+              callback(nil, err);
+            end)
+            .&else(procedure(changes2: TJsonArray)
+            begin
+              const outgoing = TAssetChanges.Create(changes2).Outgoing(from);
+              const outgoingIndex = outgoing.IndexOf(change.Contract);
+              if (outgoingIndex > -1) and (outgoing.Item(outgoingIndex).Amount = change.Amount) then
+              begin
+                incoming.Delete(incomingIndex);
+                next(incomingIndex, done);
+                EXIT;
+              end;
+              next(incomingIndex + 1, done);
+            end);
+        end);
+    end;
+    next(0, procedure
+    begin
+      callback(incoming, nil);
+    end);
+  end)
 end;
 
 end.

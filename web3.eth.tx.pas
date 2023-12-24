@@ -731,7 +731,6 @@ type
   TTransaction = class(TDeserialized, ITransaction)
   public
     function &type: Byte;
-    function ToString: string; override;
     function blockNumber: BigInteger;    // block number where this transaction was in. null when its pending.
     function timeStamp: TUnixDateTime;   // the unix timestamp for when the transaction got mined.
     function from: TAddress;             // address of the sender.
@@ -750,11 +749,6 @@ begin
     Result := 2 // EIP-1559
   else
     Result := 0; // Legacy
-end;
-
-function TTransaction.ToString: string;
-begin
-  Result := web3.json.marshal(FJsonValue);
 end;
 
 // block number where this transaction was in. null when its pending.
@@ -839,7 +833,6 @@ end;
 type
   TTxReceipt = class(TDeserialized, ITxReceipt)
   public
-    function ToString: string; override;
     function txHash: TTxHash;         // hash of the transaction.
     function from: TAddress;          // address of the sender.
     function &to: TAddress;           // address of the receiver. null when it's a contract creation transaction.
@@ -847,11 +840,6 @@ type
     function status: Boolean;         // success or failure.
     function effectiveGasPrice: TWei; // eip-1559-only
   end;
-
-function TTxReceipt.ToString: string;
-begin
-  Result := web3.json.marshal(FJsonValue);
-end;
 
 // hash of the transaction.
 function TTxReceipt.txHash: TTxHash;

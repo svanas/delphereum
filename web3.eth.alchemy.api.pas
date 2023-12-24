@@ -84,6 +84,8 @@ uses
   web3.json,
   web3.utils;
 
+{-------------------------------- TAssetChange --------------------------------}
+
 type
   TAssetChange = class(TDeserialized, IAssetChange)
   public
@@ -152,67 +154,44 @@ begin
   Result := TResult<string>.Ok(getPropAsStr(FJsonValue, 'logo'));
 end;
 
+{------------------------------- TAssetChanges --------------------------------}
+
 type
-  TAssetChanges = class(TDeserializedArray<IAssetChange>, IAssetChanges)
+  TAssetChanges = class(TCustomAssetChanges)
+  strict protected
+    class function CreateAssetChange(const aJsonObject: TJsonValue): IAssetChange; override;
+    class function CreateAssetChanges(const aJsonArray: TJsonArray): IAssetChanges; override;
+  end;
+
+class function TAssetChanges.CreateAssetChange(const aJsonObject: TJsonValue): IAssetChange;
+begin
+  Result := TAssetChange.Create(aJsonObject);
+end;
+
+class function TAssetChanges.CreateAssetChanges(const aJsonArray: TJsonArray): IAssetChanges;
+begin
+  Result := TAssetChanges.Create(aJsonArray);
+end;
+
+{------------------------------ TRawTransaction -------------------------------}
+
+type
+  TRawTransaction = class(TCustomRawTransaction)
   public
-    function Item(const Index: Integer): IAssetChange; override;
-    function IndexOf(const contract: TAddress): Integer;
-    function Incoming(const address: TAddress): IAssetChanges;
-    function Outgoing(const address: TAddress): IAssetChanges;
+    function Marshal: string; override;
   end;
 
-function TAssetChanges.Item(const Index: Integer): IAssetChange;
+function TRawTransaction.Marshal: string;
 begin
-  Result := TAssetChange.Create(TJsonArray(FJsonValue)[Index]);
+  Result := Format('{"from": %s, "to": %s, "value": %s, "data": %s}', [
+    web3.json.quoteString(string(Self.FFrom), '"'),
+    web3.json.quoteString(string(Self.FTo), '"'),
+    web3.json.quoteString(toHex(Self.FValue, [zeroAs0x0]), '"'),
+    web3.json.quoteString(Self.FData, '"')
+  ]);
 end;
 
-function TAssetChanges.IndexOf(const contract: TAddress): Integer;
-begin
-  const count = Self.Count;
-  if count > 0 then
-    for Result := 0 to Pred(count) do
-      if Self.Item(Result).Contract.SameAs(contract) then
-        EXIT;
-  Result := -1;
-end;
-
-function TAssetChanges.Incoming(const address: TAddress): IAssetChanges;
-begin
-  var value := Self.FJsonValue.Clone as TJsonArray;
-  try
-    var index := 0;
-    while index < value.Count do
-    begin
-      const change: IAssetChange = TAssetChange.Create(value[index]);
-      if (change.Change = Transfer) and change.&To.SameAs(address) then
-        Inc(index)
-      else
-        value.Remove(index);
-    end;
-    Result := TAssetChanges.Create(value);
-  finally
-    value.Free;
-  end;
-end;
-
-function TAssetChanges.Outgoing(const address: TAddress): IAssetChanges;
-begin
-  var value := Self.FJsonValue.Clone as TJsonArray;
-  try
-    var index := 0;
-    while index < value.Count do
-    begin
-      const change: IAssetChange = TAssetChange.Create(value[index]);
-      if (change.Change = Transfer) and change.From.SameAs(address) then
-        Inc(index)
-      else
-        value.Remove(index);
-    end;
-    Result := TAssetChanges.Create(value);
-  finally
-    value.Free;
-  end;
-end;
+{---------------------------------- globals -----------------------------------}
 
 procedure alchemy_simulateAssetChanges(
   const apiKey   : string;
@@ -445,74 +424,11 @@ begin
   end);
 end;
 
-type
-  ITransaction = interface
-    function From   : TAddress;
-    function &To    : TAddress;
-    function Value  : TWei;
-    function Data   : string;
-    function Marshal: string;
-  end;
-
-type
-  TTransaction = class(TInterfacedObject, ITransaction)
-  private
-    FFrom : TAddress;
-    FTo   : TAddress;
-    FValue: TWei;
-    FData : string;
-  public
-    function From   : TAddress;
-    function &To    : TAddress;
-    function Value  : TWei;
-    function Data   : string;
-    function Marshal: string;
-    constructor Create(const from, &to: TAddress; const value: TWei; const data: string);
-  end;
-
-constructor TTransaction.Create(const from, &to: TAddress; const value: BigInteger; const data: string);
-begin
-  Self.FFrom  := from;
-  Self.FTo    := &to;
-  Self.FValue := value;
-  Self.FData  := data;
-end;
-
-function TTransaction.From: TAddress;
-begin
-  Result := Self.FFrom;
-end;
-
-function TTransaction.&To: TAddress;
-begin
-  Result := Self.FTo;
-end;
-
-function TTransaction.Value: TWei;
-begin
-  Result := Self.FValue;
-end;
-
-function TTransaction.Data: string;
-begin
-  Result := Self.FData;
-end;
-
-function TTransaction.Marshal: string;
-begin
-  Result := Format('{"from": %s, "to": %s, "value": %s, "data": %s}', [
-    web3.json.quoteString(string(Self.From), '"'),
-    web3.json.quoteString(string(Self.&To), '"'),
-    web3.json.quoteString(toHex(Self.Value, [zeroAs0x0]), '"'),
-    web3.json.quoteString(Self.Data, '"')
-  ]);
-end;
-
 procedure alchemy_simulateAssetChangesBundle(
-  const apiKey   : string;
-  const chain    : TChain;
-  const tx1, tx2 : ITransaction;
-  const callback : TProc<TJsonArray, IError>);
+  const apiKey  : string;
+  const chain   : TChain;
+  const tx1, tx2: IRawTransaction;
+  const callback: TProc<TJsonArray, IError>);
 begin
   web3.eth.alchemy.endpoint(chain, apiKey, core)
     .ifErr(procedure(err: IError)
@@ -576,8 +492,9 @@ begin
         EXIT;
       end;
       alchemy_simulateAssetChangesBundle(apiKey, chain,
-        TTransaction.Create(from, &to, value, data),
-        TTransaction.Create(
+        TRawTransaction.Create(chain, from, &to, value, data),
+        TRawTransaction.Create(
+          chain,
           from,
           change.Contract,
           0,
@@ -598,7 +515,7 @@ begin
           end;
           const outgoing = TAssetChanges.Create(web3.json.getPropAsArr(response[1], 'changes')).Outgoing(from);
           const outgoingIndex = outgoing.IndexOf(change.Contract);
-          if (outgoingIndex > -1) and (outgoing.Item(outgoingIndex).Amount >= change.Amount) then
+          if (outgoingIndex > -1) and (outgoing.Item(outgoingIndex).Amount = change.Amount) then
           begin
             incoming.Delete(incomingIndex);
             next(incomingIndex, done);

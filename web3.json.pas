@@ -49,14 +49,14 @@ type
   public
     constructor Create(const aJsonValue: TJsonValue); override;
     destructor Destroy; override;
-    function Raw: string;
+    function ToString: string; override;
   end;
 
   IDeserializedArray<T: IInterface> = interface
     function Count: Integer;
     procedure Delete(const Index: Integer);
     function Item(const Index: Integer): T;
-    function Raw: string;
+    function ToString: string;
   end;
 
   TDeserializedArray<T: IInterface> = class abstract(TDeserialized, IDeserializedArray<T>)
@@ -94,7 +94,10 @@ end;
 constructor TDeserialized.Create(const aJsonValue: TJsonValue);
 begin
   inherited Create(aJsonValue);
-  FJsonValue := aJsonValue.Clone as TJsonValue;
+  if Assigned(aJsonValue) then
+    FJsonValue := aJsonValue.Clone as TJsonValue
+  else
+    FJsonValue := nil;
 end;
 
 destructor TDeserialized.Destroy;
@@ -103,7 +106,7 @@ begin
   inherited Destroy;
 end;
 
-function TDeserialized.Raw: string;
+function TDeserialized.ToString: string;
 begin
   Result := web3.json.marshal(Self.FJsonValue);
 end;
@@ -112,7 +115,7 @@ end;
 
 function TDeserializedArray<T>.Count: Integer;
 begin
-  if Self.FJsonValue is TJsonArray then
+  if Assigned(Self.FJsonValue) and (Self.FJsonValue is TJsonArray) then
     Result := TJsonArray(Self.FJsonValue).Count
   else
     Result := 0;
@@ -120,6 +123,8 @@ end;
 
 procedure TDeserializedArray<T>.Delete(const Index: Integer);
 begin
+  if not Assigned(Self.FJsonValue) then
+    EXIT;
   if not(Self.FJsonValue is TJsonArray) then
     EXIT;
   TJsonArray(Self.FJsonValue).Remove(Index);
