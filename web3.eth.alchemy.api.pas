@@ -116,7 +116,7 @@ end;
 
 function TAssetChange.From: TAddress;
 begin
-  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from', string(TAddress.Zero)));
 end;
 
 function TAssetChange.&To: TAddress;
@@ -479,7 +479,7 @@ begin
     var next: TProc<Integer, TProc>;
     next := procedure(incomingIndex: Integer; done: TProc)
     begin
-      if incomingIndex >= incoming.Count then
+      if (incoming = nil) or (incomingIndex >= incoming.Count) then
       begin
         done;
         EXIT;
@@ -514,12 +514,15 @@ begin
             EXIT;
           end;
           const outgoing = TAssetChanges.Create(web3.json.getPropAsArr(response[1], 'changes')).Outgoing(from);
-          const outgoingIndex = outgoing.IndexOf(change.Contract);
-          if (outgoingIndex > -1) and (outgoing.Item(outgoingIndex).Amount = change.Amount) then
+          if Assigned(outgoing) then
           begin
-            incoming.Delete(incomingIndex);
-            next(incomingIndex, done);
-            EXIT;
+            const outgoingIndex = outgoing.IndexOf(change.Contract);
+            if (outgoingIndex > -1) and (outgoing.Item(outgoingIndex).Amount = change.Amount) then
+            begin
+              incoming.Delete(incomingIndex);
+              next(incomingIndex, done);
+              EXIT;
+            end;
           end;
           next(incomingIndex + 1, done);
         end);

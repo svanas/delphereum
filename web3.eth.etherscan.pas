@@ -242,7 +242,7 @@ end;
 
 function TErc20TransferEvent.From: TAddress;
 begin
-  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from', string(TAddress.Zero)));
 end;
 
 function TErc20TransferEvent.&To: TAddress;

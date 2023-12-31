@@ -283,7 +283,7 @@ begin
     var next: TProc<Integer, TProc>;
     next := procedure(incomingIndex: Integer; done: TProc)
     begin
-      if incomingIndex >= incoming.Count then
+      if (incoming = nil) or (incomingIndex >= incoming.Count) then
       begin
         done;
         EXIT;
@@ -319,12 +319,15 @@ begin
             .&else(procedure(changes2: TJsonArray)
             begin
               const outgoing = TAssetChanges.Create(changes2).Outgoing(from);
-              const outgoingIndex = outgoing.IndexOf(change.Contract);
-              if (outgoingIndex > -1) and (outgoing.Item(outgoingIndex).Amount = change.Amount) then
+              if Assigned(outgoing) then
               begin
-                incoming.Delete(incomingIndex);
-                next(incomingIndex, done);
-                EXIT;
+                const outgoingIndex = outgoing.IndexOf(change.Contract);
+                if (outgoingIndex > -1) and (outgoing.Item(outgoingIndex).Amount = change.Amount) then
+                begin
+                  incoming.Delete(incomingIndex);
+                  next(incomingIndex, done);
+                  EXIT;
+                end;
               end;
               next(incomingIndex + 1, done);
             end);

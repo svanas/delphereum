@@ -105,20 +105,12 @@ type
 constructor TToken.Create(const aJsonValue: TJsonValue);
 begin
   inherited Create(aJsonValue);
-  FChainId := getPropAsInt(aJsonValue, 'chainId');
-  FAddress := TAddress.Create((function: string
-  begin
-    Result := getPropAsStr(aJsonValue, 'address');
-    if Result = '' then Result := getPropAsStr(aJsonValue, 'contract');
-  end)());
-  FName := getPropAsStr(aJsonValue, 'name');
-  FSymbol := getPropAsStr(aJsonValue, 'symbol');
+  FChainId  := getPropAsInt(aJsonValue, 'chainId');
+  FAddress  := TAddress.Create(getPropAsStr(aJsonValue, 'address', getPropAsStr(aJsonValue, 'contract')));
+  FName     := getPropAsStr(aJsonValue, 'name');
+  FSymbol   := getPropAsStr(aJsonValue, 'symbol');
   FDecimals := getPropAsInt(aJsonValue, 'decimals');
-  FLogo := (function: string
-  begin
-    Result := getPropAsStr(aJsonValue, 'logoURI');
-    if Result = '' then Result := getPropAsStr(aJsonValue, 'image');
-  end)();
+  FLogo     := getPropAsStr(aJsonValue, 'logoURI', getPropAsStr(aJsonValue, 'image'));
 end;
 
 constructor TToken.Create(const aChainId: UInt32; const aAddress: TAddress; const aName, aSymbol: string; const aDecimals: Integer; const aLogo: TURL);

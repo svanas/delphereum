@@ -766,7 +766,7 @@ end;
 // address of the sender.
 function TTransaction.from: TAddress;
 begin
-  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from', string(TAddress.Zero)));
 end;
 
 // gas limit provided by the sender.
@@ -844,13 +844,13 @@ type
 // hash of the transaction.
 function TTxReceipt.txHash: TTxHash;
 begin
-  Result := TTxHash(getPropAsStr(FJsonValue, 'transactionHash', ''));
+  Result := TTxHash(getPropAsStr(FJsonValue, 'transactionHash'));
 end;
 
 // address of the sender.
 function TTxReceipt.from: TAddress;
 begin
-  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'from', string(TAddress.Zero)));
 end;
 
 // address of the receiver. null when it's a contract creation transaction.
