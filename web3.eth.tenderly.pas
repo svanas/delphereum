@@ -105,7 +105,7 @@ begin
   if not Assigned(tokenInfo) then
     Result := TAddress.Zero
   else
-    Result := TAddress.Create(getPropAsStr(tokenInfo, 'contract_address'));
+    Result := TAddress.Create(getPropAsStr(tokenInfo, 'contract_address', string(TAddress.Zero)));
 end;
 
 function TAssetChange.Name: IResult<string>;

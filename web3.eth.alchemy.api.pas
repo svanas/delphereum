@@ -131,7 +131,7 @@ end;
 
 function TAssetChange.Contract: TAddress;
 begin
-  Result := TAddress.Create(getPropAsStr(FJsonValue, 'contractAddress'));
+  Result := TAddress.Create(getPropAsStr(FJsonValue, 'contractAddress', string(TAddress.Zero)));
 end;
 
 function TAssetChange.Name: IResult<string>;

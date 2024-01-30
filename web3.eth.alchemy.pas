@@ -64,8 +64,8 @@ begin
     Result := TResult<string>.Ok(Format('https://polygon-mumbai.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Arbitrum then
     Result := TResult<string>.Ok(Format('https://arb-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
-  else if chain = ArbitrumGoerli then
-    Result := TResult<string>.Ok(Format('https://arb-goerli.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
+  else if chain = ArbitrumSepolia then
+    Result := TResult<string>.Ok(Format('https://arb-sepolia.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Base then
     Result := TResult<string>.Ok(Format('https://base-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = BaseGoerli then
@@ -94,8 +94,8 @@ begin
     Result := TResult<string>.Ok(Format('wss://polygon-mumbai.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = Arbitrum then
     Result := TResult<string>.Ok(Format('wss://arb-mainnet.g.alchemy.com/v2/%s', [apiKey]))
-  else if chain = ArbitrumGoerli then
-    Result := TResult<string>.Ok(Format('wss://arb-goerli.g.alchemy.com/v2/%s', [apiKey]))
+  else if chain = ArbitrumSepolia then
+    Result := TResult<string>.Ok(Format('wss://arb-sepolia.g.alchemy.com/v2/%s', [apiKey]))
   else if chain.RPC[TTransport.WebSocket] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.WebSocket])
   else

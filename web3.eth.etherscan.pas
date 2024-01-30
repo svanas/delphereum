@@ -155,8 +155,8 @@ begin
     Result := TResult<string>.Ok('https://api-testnet.ftmscan.com/api?')
   else if chain = Arbitrum then
     Result := TResult<string>.Ok('https://api.arbiscan.io/api?')
-  else if chain = ArbitrumGoerli then
-    Result := TResult<string>.Ok('https://goerli.arbiscan.io/api?')
+  else if chain = ArbitrumSepolia then
+    Result := TResult<string>.Ok('https://api-sepolia.arbiscan.io/api?')
   else if chain = Sepolia then
     Result := TResult<string>.Ok('https://api-sepolia.etherscan.io/api?')
   else if chain = Base then

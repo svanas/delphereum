@@ -1,4 +1,4 @@
-{******************************************************************************}
+﻿{******************************************************************************}
 {                                                                              }
 {                                  Delphereum                                  }
 {                                                                              }
@@ -200,19 +200,19 @@ const
     Symbol   : 'ETH';
     TxType   : 0;
     RPC      : ('https://arb1.arbitrum.io/rpc', '');
-    Explorer : 'https://explorer.arbitrum.io';
+    Explorer : 'https://arbiscan.io';
     Tokens   : 'https://bridge.arbitrum.io/token-list-42161.json';
     Chainlink: '0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612';
     WETH     : '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'
   );
-  ArbitrumGoerli: TChain = (
-    Id       : 421613;
-    Name     : 'Arbitrum Goerli';
+  ArbitrumSepolia: TChain = (
+    Id       : 421614;
+    Name     : 'Arbitrum Sepolia';
     Symbol   : 'ETH';
     TxType   : 0;
-    RPC      : ('https://goerli-rollup.arbitrum.io/rpc', '');
-    Explorer : 'https://goerli-rollup-explorer.arbitrum.io';
-    Chainlink: '0x62CAe0FA2da220f43a51F86Db2EDb36DcA9A5A08'
+    RPC      : ('https://sepolia-rollup.arbitrum.io/rpc', '');
+    Explorer : 'https://sepolia.arbiscan.io';
+    Chainlink: '0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165'
   );
   Sepolia: TChain = (
     Id       : 11155111;
@@ -540,8 +540,8 @@ begin
     Result := TResult<PChain>.Ok(@Fantom_test_net)
   else if Id = Arbitrum.Id then
     Result := TResult<PChain>.Ok(@Arbitrum)
-  else if Id = ArbitrumGoerli.Id then
-    Result := TResult<PChain>.Ok(@ArbitrumGoerli)
+  else if Id = ArbitrumSepolia.Id then
+    Result := TResult<PChain>.Ok(@ArbitrumSepolia)
   else if Id = Sepolia.Id then
     Result := TResult<PChain>.Ok(@Sepolia)
   else if Id = Base.Id then
