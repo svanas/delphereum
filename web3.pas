@@ -198,7 +198,7 @@ const
     Id       : 42161;
     Name     : 'Arbitrum';
     Symbol   : 'ETH';
-    TxType   : 0;
+    TxType   : 2;
     RPC      : ('https://arb1.arbitrum.io/rpc', '');
     Explorer : 'https://arbiscan.io';
     Tokens   : 'https://bridge.arbitrum.io/token-list-42161.json';
@@ -209,7 +209,7 @@ const
     Id       : 421614;
     Name     : 'Arbitrum Sepolia';
     Symbol   : 'ETH';
-    TxType   : 0;
+    TxType   : 2;
     RPC      : ('https://sepolia-rollup.arbitrum.io/rpc', '');
     Explorer : 'https://sepolia.arbiscan.io';
     Chainlink: '0xd30e2101a97dcbAeBCBC04F14C3f624E67A35165'
@@ -233,14 +233,13 @@ const
     Chainlink: '0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70';
     WETH     : '0x4200000000000000000000000000000000000006'
   );
-  BaseGoerli: TChain = (
-    Id       : 84531;
-    Name     : 'Base Goerli';
+  BaseSepolia: TChain = (
+    Id       : 84532;
+    Name     : 'Base Sepolia';
     Symbol   : 'ETH';
     TxType   : 2;
-    RPC      : ('https://goerli.base.org', '');
-    Explorer : 'https://goerli.basescan.org';
-    Chainlink: '0xcD2A119bD1F7DF95d706DE6F2057fDD45A0503E2';
+    RPC      : ('https://sepolia.base.org', '');
+    Explorer : 'https://sepolia.basescan.org';
     WETH     : '0x4200000000000000000000000000000000000006'
   );
   PulseChain: TChain = (
@@ -546,8 +545,8 @@ begin
     Result := TResult<PChain>.Ok(@Sepolia)
   else if Id = Base.Id then
     Result := TResult<PChain>.Ok(@Base)
-  else if Id = BaseGoerli.Id then
-    Result := TResult<PChain>.Ok(@BaseGoerli)
+  else if Id = BaseSepolia.Id then
+    Result := TResult<PChain>.Ok(@BaseSepolia)
   else if Id = PulseChain.Id then
     Result := TResult<PChain>.Ok(@PulseChain)
   else if Id = Holesky.Id then

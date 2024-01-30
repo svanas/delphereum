@@ -68,8 +68,8 @@ begin
     Result := TResult<string>.Ok(Format('https://arb-sepolia.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Base then
     Result := TResult<string>.Ok(Format('https://base-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
-  else if chain = BaseGoerli then
-    Result := TResult<string>.Ok(Format('https://base-goerli.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
+  else if chain = BaseSepolia then
+    Result := TResult<string>.Ok(Format('https://base-sepolia.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain.RPC[TTransport.HTTPS] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.HTTPS])
   else
@@ -96,6 +96,10 @@ begin
     Result := TResult<string>.Ok(Format('wss://arb-mainnet.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = ArbitrumSepolia then
     Result := TResult<string>.Ok(Format('wss://arb-sepolia.g.alchemy.com/v2/%s', [apiKey]))
+  else if chain = Base then
+    Result := TResult<string>.Ok(Format('wss://base-mainnet.g.alchemy.com/v2/%s', [apiKey]))
+  else if chain = BaseSepolia then
+    Result := TResult<string>.Ok(Format('wss://base-sepolia.g.alchemy.com/v2%s', [apiKey]))
   else if chain.RPC[TTransport.WebSocket] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.WebSocket])
   else

@@ -47,6 +47,8 @@ begin
     Result := TResult<string>.Ok(Format('https://mainnet.infura.io/v3/%s', [projectId]))
   else if chain = Goerli then
     Result := TResult<string>.Ok(Format('https://goerli.infura.io/v3/%s', [projectId]))
+  else if chain = Sepolia then
+    Result := TResult<string>.Ok(Format('https://sepolia.infura.io/v3/%s', [projectId]))
   else if chain = Optimism then
     Result := TResult<string>.Ok(Format('https://optimism-mainnet.infura.io/v3/%s', [projectId]))
   else if chain = OptimismSepolia then
@@ -59,8 +61,6 @@ begin
     Result := TResult<string>.Ok(Format('https://arbitrum-mainnet.infura.io/v3/%s', [projectId]))
   else if chain = ArbitrumSepolia then
     Result := TResult<string>.Ok(Format('https://arbitrum-sepolia.infura.io/v3/%s', [projectId]))
-  else if chain = Sepolia then
-    Result := TResult<string>.Ok(Format('https://sepolia.infura.io/v3/%s', [projectId]))
   else if chain.RPC[TTransport.HTTPS] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.HTTPS])
   else
