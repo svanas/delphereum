@@ -81,15 +81,6 @@ const
     TxType   : 2;
     RPC      : ('http://127.0.0.1:7545', '')
   );
-  Goerli: TChain = (
-    Id       : 5;
-    Name     : 'Goerli';
-    Symbol   : 'ETH';
-    TxType   : 2;
-    Explorer : 'https://goerli.etherscan.io';
-    Chainlink: '0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e';
-    WETH     : '0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6'
-  );
   Optimism: TChain = (
     Id       : 10;
     Name     : 'Optimism';
@@ -108,6 +99,8 @@ const
     TxType   : 2;
     RPC      : ('https://sepolia.optimism.io', '');
     Explorer : 'https://sepolia-optimism.etherscan.io';
+    Chainlink: '0x61Ec26aA57019C486B10502285c5A3D4A4750AD7';
+    WETH     : '0x4200000000000000000000000000000000000006'
   );
   RSK: TChain = (
     Id       : 30;
@@ -240,6 +233,7 @@ const
     TxType   : 2;
     RPC      : ('https://sepolia.base.org', '');
     Explorer : 'https://sepolia.basescan.org';
+    Chainlink: '0x4aDC67696bA383F43DD60A9e78F2C97Fbbfc7cb1';
     WETH     : '0x4200000000000000000000000000000000000006'
   );
   PulseChain: TChain = (
@@ -265,6 +259,7 @@ const
     TxType   : 2;
     RPC      : ('https://rpc.scroll.io', '');
     Explorer : 'https://scrollscan.com';
+    Chainlink: '0x6bF14CB0A831078629D993FDeBcB182b21A8774C';
     WETH     : '0x5300000000000000000000000000000000000004'
   );
   ScrollSepolia: TChain = (
@@ -274,6 +269,7 @@ const
     TxType   : 2;
     RPC      : ('https://sepolia-rpc.scroll.io', '');
     Explorer : 'https://sepolia.scrollscan.com';
+    Chainlink: '0x59F1ec1f10bD7eD9B938431086bC1D9e233ECf41';
     WETH     : '0x5300000000000000000000000000000000000004'
   );
 
@@ -513,8 +509,6 @@ function Chain(const Id: UInt32): IResult<PChain>;
 begin
   if Id = Ethereum.Id then
     Result := TResult<PChain>.Ok(@Ethereum)
-  else if Id = Goerli.Id then
-    Result := TResult<PChain>.Ok(@Goerli)
   else if Id = Optimism.Id then
     Result := TResult<PChain>.Ok(@Optimism)
   else if Id = OptimismSepolia.Id then

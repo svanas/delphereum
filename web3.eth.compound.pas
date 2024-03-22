@@ -169,19 +169,13 @@ type
 function cDAI(const aClient: IWeb3): IcToken;
 begin
   // https://compound.finance/docs#networks
-  if aClient.Chain = Goerli then
-    Result := TcToken.Create(aClient, '0x822397d9a55d0fefd20f5c4bcab33c5f65bd28eb')
-  else
-    Result := TcToken.Create(aClient, '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643');
+  Result := TcToken.Create(aClient, '0x5d3a536e4d6dbd6114cc1ead35777bab948e3643');
 end;
 
 function cUSDC(const aClient: IWeb3): IcToken;
 begin
   // https://compound.finance/docs#networks
-  if aClient.Chain = Goerli then
-    Result := TcToken.Create(aClient, '0xcec4a43ebb02f9b80916f1c718338169d6d5c1f0')
-  else
-    Result := TcToken.Create(aClient, '0x39aa39c021dfbae8fac545936693ac917d5e7563');
+  Result := TcToken.Create(aClient, '0x39aa39c021dfbae8fac545936693ac917d5e7563');
 end;
 
 function cUSDT(const aClient: IWeb3): IcToken;
@@ -242,11 +236,7 @@ end;
 
 class function TCompound.Supports(const chain: TChain; const reserve: TReserve): Boolean;
 begin
-  Result := (
-    (reserve in [USDT, TUSD]) and (chain = Ethereum)
-  ) or (
-    (reserve in [DAI, USDC]) and ((chain = Ethereum) or (chain = Goerli))
-  );
+  Result := (reserve in [USDT, TUSD, DAI, USDC]) and (chain = Ethereum);
 end;
 
 // Returns the annual yield as a percentage with 4 decimals.

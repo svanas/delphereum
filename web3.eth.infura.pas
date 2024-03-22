@@ -45,8 +45,6 @@ function HTTPS(const chain: TChain; const projectId: string): IResult<string>;
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok(Format('https://mainnet.infura.io/v3/%s', [projectId]))
-  else if chain = Goerli then
-    Result := TResult<string>.Ok(Format('https://goerli.infura.io/v3/%s', [projectId]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('https://sepolia.infura.io/v3/%s', [projectId]))
   else if chain = Optimism then
@@ -71,14 +69,20 @@ function WebSocket(const chain: TChain; const projectId: string): IResult<string
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok(Format('wss://mainnet.infura.io/ws/v3/%s', [projectId]))
-  else if chain = Goerli then
-    Result := TResult<string>.Ok(Format('wss://goerli.infura.io/ws/v3/%s', [projectId]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('wss://sepolia.infura.io/ws/v3/%s', [projectId]))
   else if chain = Polygon then
     Result := TResult<string>.Ok(Format('wss://polygon-mainnet.infura.io/ws/v3/%s', [projectId]))
   else if chain = PolygonMumbai then
     Result := TResult<string>.Ok(Format('wss://polygon-mumbai.infura.io/ws/v3/%s', [projectId]))
+  else if chain = Optimism then
+    Result := TResult<string>.Ok(Format('wss://optimism-mainnet.infura.io/ws/v3/%s', [projectId]))
+  else if chain = OptimismSepolia then
+    Result := TResult<string>.Ok(Format('wss://optimism-sepolia.infura.io/ws/v3/%s', [projectId]))
+  else if chain = Arbitrum then
+    Result := TResult<string>.Ok(Format('wss://arbitrum-mainnet.infura.io/ws/v3/%s', [projectId]))
+  else if chain = ArbitrumSepolia then
+    Result := TResult<string>.Ok(Format('wss://arbitrum-sepolia.infura.io/ws/v3/%s', [projectId]))
   else if chain.RPC[TTransport.WebSocket] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.WebSocket])
   else

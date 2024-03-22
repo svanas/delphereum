@@ -135,8 +135,6 @@ function endpoint(const chain: TChain): IResult<string>; overload;
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok('https://api.etherscan.io/api?')
-  else if chain = Goerli then
-    Result := TResult<string>.Ok('https://api-goerli.etherscan.io/api?')
   else if chain = Optimism then
     Result := TResult<string>.Ok('https://api-optimistic.etherscan.io/api?')
   else if chain = OptimismSepolia then

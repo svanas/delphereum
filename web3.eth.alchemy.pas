@@ -50,8 +50,6 @@ const
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok(Format('https://eth-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
-  else if chain = Goerli then
-    Result := TResult<string>.Ok(Format('https://eth-goerli.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('https://eth-sepolia.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Optimism then
@@ -80,8 +78,6 @@ function WebSocket(const chain: TChain; const apiKey: string): IResult<string>;
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok(Format('wss://eth-mainnet.g.alchemy.com/v2/%s', [apiKey]))
-  else if chain = Goerli then
-    Result := TResult<string>.Ok(Format('wss://eth-goerli.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('wss://eth-sepolia.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = Optimism then

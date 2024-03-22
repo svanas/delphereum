@@ -14,8 +14,6 @@ function getNetwork(const chain: TChain): IResult<string>;
 begin
   if chain = Ethereum then
     Result := TResult<string>.Ok('main')
-  else if chain = Goerli then
-    Result := TResult<string>.Ok('goerli')
   else if chain = BNB then
     Result := TResult<string>.Ok('bsc-main')
   else if chain = Gnosis then

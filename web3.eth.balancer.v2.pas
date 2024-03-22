@@ -450,12 +450,18 @@ begin
     begin
       if chain = Ethereum then
         Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2')
-      else if chain = Goerli then
-        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-goerli-v2')
+      else if chain = Sepolia then
+        Result := TResult<string>.Ok('https://api.studio.thegraph.com/query/24660/balancer-sepolia-v2/version/latest')
       else if chain = Polygon then
         Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-polygon-v2')
       else if chain = Arbitrum then
         Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-arbitrum-v2')
+      else if chain = Optimism then
+        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-optimism-v2')
+      else if chain = Gnosis then
+        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-gnosis-chain-v2')
+      else if chain = Base then
+        Result := TResult<string>.Ok('https://api.studio.thegraph.com/query/24660/balancer-base-v2/version/latest')
       else
         Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
     end)(chain);

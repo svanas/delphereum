@@ -173,7 +173,7 @@ end;
 
 function baseURL(const chain: TChain): IResult<string>;
 begin
-  if chain = Goerli then
+  if chain = Sepolia then
     Result := TResult<string>.Ok('https://testnets-api.opensea.io/api/v1/')
   else
     if chain = Ethereum then
