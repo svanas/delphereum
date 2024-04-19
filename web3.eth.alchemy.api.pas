@@ -50,12 +50,14 @@ type
     Airdrop, // probably an unwarranted airdrop. most of the owners are honeypots, or a significant chunk of the usual honeypot addresses own this token.
     Spam     // probably spam. this contract contains a lot of duplicate NFTs, or the contract lies about its own token supply. running totalSupply() on the contract is vastly different from the empirical number of tokens in circulation.
   );
+  TContractTypes = set of TContractType;
 
 // spam detection
 procedure detect(
   const apiKey  : string;
   const chain   : TChain;
   const contract: TAddress;
+  const checkFor: TContractTypes;
   const callback: TProc<TContractType, IError>);
 
 // simulate transaction, return incoming assets that are honeypots (eg. you cannot sell)
@@ -407,19 +409,37 @@ procedure detect(
   const apiKey  : string;
   const chain   : TChain;
   const contract: TAddress;
+  const checkFor: TContractTypes;
   const callback: TProc<TContractType, IError>);
 begin
-  isAirdrop(apiKey, chain, contract, procedure(response: Boolean; err: IError)
+  ( // step #1: check for unwarranted airdrop or skip this check
+  procedure(callback: TProc<Boolean, IError>)
   begin
-    if response then
-      callback(Airdrop, nil)
+    if TContractType.Airdrop in checkFor then
+      isAirdrop(apiKey, chain, contract, callback)
     else
-      isSpam(apiKey, chain, contract, procedure(response: TJsonValue; err: IError)
+      callback(False, nil);
+  end)(procedure(response1: Boolean; err1: IError)
+  begin
+    if response1 and not Assigned(err1) then
+      callback(TContractType.Airdrop, nil)
+    else
+      ( // step #2: check for spam contract or skip this check
+      procedure(callback: TProc<Boolean, IError>)
       begin
-        if Assigned(response) and (response is TJsonTrue) then
-          callback(Spam, nil)
+        if not(TContractType.Spam in checkFor) then
+          callback(False, nil)
         else
-          callback(Good, err);
+          isSpam(apiKey, chain, contract, procedure(response: TJsonValue; err: IError)
+          begin
+            callback(Assigned(response) and (response is TJsonTrue), err);
+          end);
+      end)(procedure(response2: Boolean; err2: IError)
+      begin
+        if response2 and not Assigned(err2) then
+          callback(TContractType.Spam, nil)
+        else
+          callback(TContractType.Good, err2);
       end);
   end);
 end;
