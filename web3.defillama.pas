@@ -119,7 +119,7 @@ begin
     const coin = getPropAsObj(coins, Format('%s:%s', [network(chain), address.ToChecksum]));
     if not Assigned(coin) then
     begin
-      callback(nil, TError.Create('coins.%s:%s is null', [network(chain), address.ToChecksum]));
+      callback(nil, TError.Create('defillama does not have current price of %s on %s', [address.Abbreviated, network(chain)]));
       EXIT;
     end;
     callback(TCoin.Create(coin), nil);

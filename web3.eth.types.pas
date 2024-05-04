@@ -329,7 +329,7 @@ end;
 function TAddressHelper.Abbreviated: string;
 begin
   Result := string(Self);
-  Result := Copy(Result, System.Low(Result), 8);
+  Result := Copy(Result, System.Low(Result), 7) + '..' + Copy(Result, System.High(Result) - 4, MaxInt);
 end;
 
 procedure TAddressHelper.IsEOA(const client: IWeb3; const callback: TProc<Boolean, IError>);
