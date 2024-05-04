@@ -46,7 +46,7 @@ type
   TAssetType    = (native, erc20, erc721, erc1155);
 
   TChain = record
-    Id       : UInt32;   // https://chainlist.org
+    Id       : UInt64;   // https://chainlist.org
     Name     : string;
     Symbol   : string;   // native token symbol
     TxType   : Byte;     // https://eips.ethereum.org/EIPS/eip-2718 (0 = Legacy, 2 = EIP-1559)
@@ -470,7 +470,7 @@ type
 function Now: TUnixDateTime; inline;
 function Infinite: BigInteger; inline;
 function MaxInt256: BigInteger; inline;
-function Chain(const Id: UInt32): IResult<PChain>; inline;
+function Chain(const Id: UInt64): IResult<PChain>; inline;
 
 implementation
 
@@ -505,7 +505,7 @@ begin
   Result := BigInteger.Create('57896044618658097711785492504343953926634992332820282019728792003956564819967');
 end;
 
-function Chain(const Id: UInt32): IResult<PChain>;
+function Chain(const Id: UInt64): IResult<PChain>;
 begin
   if Id = Ethereum.Id then
     Result := TResult<PChain>.Ok(@Ethereum)

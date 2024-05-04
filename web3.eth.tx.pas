@@ -64,7 +64,7 @@ procedure signTransaction(
   const callback    : TProc<string, IError>);
 
 function signTransactionLegacy(
-  const chainId : Integer;
+  const chainId : UInt64;
   const nonce   : BigInteger;
   const from    : TPrivateKey;
   const &to     : TAddress;
@@ -74,7 +74,7 @@ function signTransactionLegacy(
   const gasLimit: BigInteger): IResult<string>;
 
 function signTransactionType2(
-  const chainId       : Integer;
+  const chainId       : UInt64;
   const nonce         : BigInteger;
   const from          : TPrivateKey;
   const &to           : TAddress;
@@ -257,7 +257,7 @@ begin
 end;
 
 function signTransactionLegacy(
-  const chainId : Integer;
+  const chainId : UInt64;
   const nonce   : BigInteger;
   const from    : TPrivateKey;
   const &to     : TAddress;
@@ -321,7 +321,7 @@ begin
 end;
 
 function signTransactionType2(
-  const chainId       : Integer;
+  const chainId       : UInt64;
   const nonce         : BigInteger;
   const from          : TPrivateKey;
   const &to           : TAddress;

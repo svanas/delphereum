@@ -41,7 +41,7 @@ uses
 
 type
   IToken = interface
-    function ChainId: UInt32;
+    function ChainId: UInt64;
     function Address: TAddress;
     function Name: string;
     function Symbol: string;
@@ -84,14 +84,14 @@ uses
 type
   TToken = class(TCustomDeserialized, IToken)
   private
-    FChainId: UInt32;
+    FChainId: UInt64;
     FAddress: TAddress;
     FName: string;
     FSymbol: string;
     FDecimals: Integer;
     FLogo: TURL;
   public
-    function ChainId: UInt32;
+    function ChainId: UInt64;
     function Address: TAddress;
     function Name: string;
     function Symbol: string;
@@ -99,7 +99,7 @@ type
     function Logo: TURL;
     procedure Balance(const client: IWeb3; const owner: TAddress; const callback: TProc<BigInteger, IError>);
     constructor Create(const aJsonValue: TJsonValue); overload; override;
-    constructor Create(const aChainId: UInt32; const aAddress: TAddress; const aName, aSymbol: string; const aDecimals: Integer; const aLogo: TURL); reintroduce; overload;
+    constructor Create(const aChainId: UInt64; const aAddress: TAddress; const aName, aSymbol: string; const aDecimals: Integer; const aLogo: TURL); reintroduce; overload;
   end;
 
 constructor TToken.Create(const aJsonValue: TJsonValue);
@@ -113,7 +113,7 @@ begin
   FLogo     := getPropAsStr(aJsonValue, 'logoURI', getPropAsStr(aJsonValue, 'image'));
 end;
 
-constructor TToken.Create(const aChainId: UInt32; const aAddress: TAddress; const aName, aSymbol: string; const aDecimals: Integer; const aLogo: TURL);
+constructor TToken.Create(const aChainId: UInt64; const aAddress: TAddress; const aName, aSymbol: string; const aDecimals: Integer; const aLogo: TURL);
 begin
   inherited Create(nil);
   FChainId  := aChainId;
@@ -124,7 +124,7 @@ begin
   FLogo     := aLogo;
 end;
 
-function TToken.ChainId: UInt32;
+function TToken.ChainId: UInt64;
 begin
   Result := FChainId;
 end;
