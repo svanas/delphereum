@@ -159,13 +159,14 @@ const
     Chainlink: '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0';
     WETH     : '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'
   );
-  PolygonMumbai: TChain = (
-    Id       : 80001;
-    Name     : 'Polygon Mumbai';
+  PolygonAmoy: TChain = (
+    Id       : 80002;
+    Name     : 'Polygon Amoy';
     Symbol   : 'MATIC';
     TxType   : 2;
-    Explorer : 'https://mumbai.polygonscan.com';
-    Chainlink: '0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada'
+    RPC      : ('https://polygon-amoy-bor-rpc.publicnode.com', 'wss://polygon-amoy-bor-rpc.publicnode.com');
+    Explorer : 'https://amoy.polygonscan.com';
+    Chainlink: '0x001382149eBa3441043c1c66972b4772963f5D43'
   );
   Fantom: TChain = (
     Id       : 250;
@@ -525,8 +526,8 @@ begin
     Result := TResult<PChain>.Ok(@Gnosis)
   else if Id = Polygon.Id then
     Result := TResult<PChain>.Ok(@Polygon)
-  else if Id = PolygonMumbai.Id then
-    Result := TResult<PChain>.Ok(@PolygonMumbai)
+  else if Id = PolygonAmoy.Id then
+    Result := TResult<PChain>.Ok(@PolygonAmoy)
   else if Id = Fantom.Id then
     Result := TResult<PChain>.Ok(@Fantom)
   else if Id = Fantom_test_net.Id then

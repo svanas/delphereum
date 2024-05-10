@@ -145,8 +145,8 @@ begin
     Result := TResult<string>.Ok('https://api-testnet.bscscan.com/api?')
   else if chain = Polygon then
     Result := TResult<string>.Ok('https://api.polygonscan.com/api?')
-  else if chain = PolygonMumbai then
-    Result := TResult<string>.Ok('https://api-testnet.polygonscan.com/api?')
+  else if chain = PolygonAmoy then
+    Result := TResult<string>.Ok('https://api-amoy.polygonscan.com/api?')
   else if chain = Fantom then
     Result := TResult<string>.Ok('https://api.ftmscan.com/api?')
   else if chain = Fantom_test_net then

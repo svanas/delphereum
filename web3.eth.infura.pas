@@ -53,8 +53,8 @@ begin
     Result := TResult<string>.Ok(Format('https://optimism-sepolia.infura.io/v3/%s', [projectId]))
   else if chain = Polygon then
     Result := TResult<string>.Ok(Format('https://polygon-mainnet.infura.io/v3/%s', [projectId]))
-  else if chain = PolygonMumbai then
-    Result := TResult<string>.Ok(Format('https://polygon-mumbai.infura.io/v3/%s', [projectId]))
+  else if chain = PolygonAmoy then
+    Result := TResult<string>.Ok(Format('https://polygon-amoy.infura.io/v3/%s', [projectId]))
   else if chain = Arbitrum then
     Result := TResult<string>.Ok(Format('https://arbitrum-mainnet.infura.io/v3/%s', [projectId]))
   else if chain = ArbitrumSepolia then
@@ -73,8 +73,8 @@ begin
     Result := TResult<string>.Ok(Format('wss://sepolia.infura.io/ws/v3/%s', [projectId]))
   else if chain = Polygon then
     Result := TResult<string>.Ok(Format('wss://polygon-mainnet.infura.io/ws/v3/%s', [projectId]))
-  else if chain = PolygonMumbai then
-    Result := TResult<string>.Ok(Format('wss://polygon-mumbai.infura.io/ws/v3/%s', [projectId]))
+  else if chain = PolygonAmoy then
+    Result := TResult<string>.Ok(Format('wss://polygon-amoy.infura.io/ws/v3/%s', [projectId]))
   else if chain = Optimism then
     Result := TResult<string>.Ok(Format('wss://optimism-mainnet.infura.io/ws/v3/%s', [projectId]))
   else if chain = OptimismSepolia then

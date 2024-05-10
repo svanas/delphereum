@@ -58,8 +58,8 @@ begin
     Result := TResult<string>.Ok(Format('https://opt-sepolia.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Polygon then
     Result := TResult<string>.Ok(Format('https://polygon-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
-  else if chain = PolygonMumbai then
-    Result := TResult<string>.Ok(Format('https://polygon-mumbai.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
+  else if chain = PolygonAmoy then
+    Result := TResult<string>.Ok(Format('https://polygon-amoy.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Arbitrum then
     Result := TResult<string>.Ok(Format('https://arb-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = ArbitrumSepolia then
@@ -86,8 +86,8 @@ begin
     Result := TResult<string>.Ok(Format('wss://opt-sepolia.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = Polygon then
     Result := TResult<string>.Ok(Format('wss://polygon-mainnet.g.alchemy.com/v2/%s', [apiKey]))
-  else if chain = PolygonMumbai then
-    Result := TResult<string>.Ok(Format('wss://polygon-mumbai.g.alchemy.com/v2/%s', [apiKey]))
+  else if chain = PolygonAmoy then
+    Result := TResult<string>.Ok(Format('wss://polygon-amoy.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = Arbitrum then
     Result := TResult<string>.Ok(Format('wss://arb-mainnet.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = ArbitrumSepolia then
