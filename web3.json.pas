@@ -71,12 +71,13 @@ function unmarshal(const value: string): TJsonValue;
 
 function getPropAsStr(const obj: TJsonValue; const name: string; const def: string = ''): string;
 function getPropAsInt(const obj: TJsonValue; const name: string; const def: Integer = 0): Integer;
+function getPropAsUInt64(const obj: TJsonValue; const name: string; const def: UInt64 = 0): UInt64;
 function getPropAsDouble(const obj: TJsonValue; const name: string; const def: Double = 0): Double;
 function getPropAsBigInt(const obj: TJsonValue; const name: string): BigInteger; overload;
 function getPropAsBigInt(const obj: TJsonValue; const name: string; const def: BigInteger): BigInteger; overload;
 function getPropAsObj(const obj: TJsonValue; const name: string): TJsonObject;
 function getPropAsArr(const obj: TJsonValue; const name: string): TJsonArray;
-function getPropAsBOOL(const obj: TJsonValue; const name: string; const def: Boolean = False): Boolean;
+function getPropAsBool(const obj: TJsonValue; const name: string; const def: Boolean = False): Boolean;
 
 function quoteString(const S: string; const Quote: Char = '"'): string;
 
@@ -199,6 +200,21 @@ begin
           Result := def;
 end;
 
+function getPropAsUInt64(const obj: TJsonValue; const name: string; const def: UInt64): UInt64;
+begin
+  Result := def;
+  if not Assigned(obj) then
+    EXIT;
+  if not(obj is TJsonObject) then
+    EXIT;
+  const P = TJsonObject(obj).Get(name);
+  if Assigned(P) and Assigned(P.JsonValue) then
+    if P.JsonValue is TJsonNumber then
+      Result := TJsonNumber(P.JsonValue).AsUInt64
+    else if P.JsonValue is TJsonString then
+      Result := StrToUInt64Def(TJsonString(P.JsonValue).Value, def);
+end;
+
 function getPropAsDouble(const obj: TJsonValue; const name: string; const def: Double): Double;
 begin
   Result := def;
@@ -272,7 +288,7 @@ begin
         Result := TJsonArray(P.JsonValue);
 end;
 
-function getPropAsBOOL(const obj: TJsonValue; const name: string; const def: Boolean): Boolean;
+function getPropAsBool(const obj: TJsonValue; const name: string; const def: Boolean): Boolean;
 begin
   Result := def;
   if not Assigned(obj) then
