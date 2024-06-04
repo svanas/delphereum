@@ -114,7 +114,7 @@ function post(
   const backoff: Integer = 1): IResult<TJsonValue>; overload;
 
 const
-  MAX_BACKOFF_SECONDS = 32;
+  MAX_BACKOFF_SECONDS = 64;
 
 implementation
 
