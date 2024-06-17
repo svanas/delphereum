@@ -646,7 +646,7 @@ begin
       EXIT;
     end;
     try
-      callback(TContractABI.Create(Self.chain, contract, TJsonArray(&result)), nil);
+      callback(TContractABI.Create(Self.chain, contract, &result as TJsonArray), nil);
     finally
       &result.Free;
     end;

@@ -46,15 +46,15 @@ type
   TAssetType    = (native, erc20, erc721, erc1155);
 
   TChain = record
-    Id       : UInt64;   // https://chainlist.org
-    Name     : string;
-    Symbol   : string;   // native token symbol
-    TxType   : Byte;     // https://eips.ethereum.org/EIPS/eip-2718 (0 = Legacy, 2 = EIP-1559)
+    Id       : UInt64;      // https://chainlist.org
+    Name     : ShortString;
+    Symbol   : ShortString; // native token symbol
+    TxType   : Byte;        // https://eips.ethereum.org/EIPS/eip-2718 (0 = Legacy, 2 = EIP-1559)
     RPC      : array[TTransport] of TURL;
-    Explorer : TURL;     // block explorer
-    Tokens   : TURL;     // Uniswap-compatible token list
-    Chainlink: TAddress; // address of chainlink's Symbol/USD price feed on this chain
-    WETH     : TAddress; // address of canonical WETH
+    Explorer : TURL;        // block explorer
+    Tokens   : TURL;        // Uniswap-compatible token list
+    Chainlink: TAddress;    // address of chainlink's Symbol/USD price feed on this chain
+    WETH     : TAddress;    // address of canonical WETH
     class operator Equal(const Left, Right: TChain): Boolean;
     class operator NotEqual(const Left, Right: TChain): Boolean;
     function SetTxType(const Value: Byte): TChain;
@@ -695,12 +695,12 @@ begin
   Result := Self.FChain;
 end;
 
-// returns the chain�s latest native token price in USD (eg. ETH-USD for Ethereum, BNB-USD for BNB Chain, MATIC-USD for Polygon, etc)
+// returns the chain's latest native token price in USD (eg. ETH-USD for Ethereum, BNB-USD for BNB Chain, MATIC-USD for Polygon, etc)
 procedure TCustomWeb3.LatestPrice(const callback: TProc<Double, IError>);
 begin
   const coincap = procedure(const chain: TChain)
   begin
-    if not chain.Symbol.IsEmpty then
+    if chain.Symbol <> '' then
       web3.coincap.price(chain.Symbol, callback)
     else
       callback(0, TError.Create('Price feed does not exist on %s', [chain.Name]));
