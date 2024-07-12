@@ -95,13 +95,13 @@ type
 
   TPair = class(TERC20)
   protected
-    function  Query  (const field: string): string;
-    procedure Execute(const field: string; const callback: TProc<Double, IError>);
+    function  Query(const field: string): string;
+    procedure Execute(const apiKey, field: string; const callback: TProc<Double, IError>);
   public
     procedure Token0(const callback: TProc<TAddress, IError>);
     procedure Token1(const callback: TProc<TAddress, IError>);
-    procedure Token0Price(const callback: TProc<Double, IError>);
-    procedure Token1Price(const callback: TProc<Double, IError>);
+    procedure Token0Price(const apiKey: string; const callback: TProc<Double, IError>);
+    procedure Token1Price(const apiKey: string; const callback: TProc<Double, IError>);
   end;
 
 implementation
@@ -299,10 +299,10 @@ begin
   Result := Format('{"query":"{pair(id:\"%s\"){%s}}"}', [string(Contract).ToLower, field]);
 end;
 
-// Execute a GraphQL query, return the result as a float (if any)
-procedure TPair.Execute(const field: string; const callback: TProc<Double, IError>);
+// Execute a GraphQL query, return the result as a float (if any). Note: apiKey is a Subgraph Studio API key.
+procedure TPair.Execute(const apiKey, field: string; const callback: TProc<Double, IError>);
 begin
-  web3.graph.execute('https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2', Query(field), procedure(response: TJsonObject; err: IError)
+  web3.graph.execute(Format('https://gateway-arbitrum.network.thegraph.com/api/%s/subgraphs/id/EYCKATKGBKLWvSfwvBjzfCBmGwYNdVkduYXVivCsLRFu', [apiKey]), Query(field), procedure(response: TJsonObject; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -323,16 +323,16 @@ begin
   end);
 end;
 
-// Token0 per Token1
-procedure TPair.Token0Price(const callback: TProc<Double, IError>);
+// Token0 per Token1. Note: apiKey is a Subgraph Studio API key.
+procedure TPair.Token0Price(const apiKey: string; const callback: TProc<Double, IError>);
 begin
-  Execute('token0Price', callback);
+  Execute(apiKey, 'token0Price', callback);
 end;
 
-// Token1 per Token0
-procedure TPair.Token1Price(const callback: TProc<Double, IError>);
+// Token1 per Token0. Note: apiKey is a Subgraph Studio API key.
+procedure TPair.Token1Price(const apiKey: string; const callback: TProc<Double, IError>);
 begin
-  Execute('token1Price', callback);
+  Execute(apiKey, 'token1Price', callback);
 end;
 
 end.
