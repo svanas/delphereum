@@ -449,17 +449,17 @@ begin
     const SUBGRAPH = (function(chain: TChain): IResult<string>
     begin
       if chain = Ethereum then
-        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-v2')
+        Result := TResult<string>.Ok('https://api.studio.thegraph.com/query/75376/balancer-v2/version/latest')
       else if chain = Sepolia then
         Result := TResult<string>.Ok('https://api.studio.thegraph.com/query/24660/balancer-sepolia-v2/version/latest')
       else if chain = Polygon then
-        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-polygon-v2')
+        Result := TResult<string>.Ok('https://api.studio.thegraph.com/query/75376/balancer-polygon-v2/version/latest')
       else if chain = Arbitrum then
-        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-arbitrum-v2')
+        Result := TResult<string>.Ok('https://api.studio.thegraph.com/query/75376/balancer-arbitrum-v2/version/latest')
       else if chain = Optimism then
-        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-optimism-v2')
+        Result := TResult<string>.Ok('https://api.studio.thegraph.com/query/75376/balancer-optimism-v2/version/latest')
       else if chain = Gnosis then
-        Result := TResult<string>.Ok('https://api.thegraph.com/subgraphs/name/balancer-labs/balancer-gnosis-chain-v2')
+        Result := TResult<string>.Ok('https://api.studio.thegraph.com/query/75376/balancer-gnosis-chain-v2/version/latest')
       else if chain = Base then
         Result := TResult<string>.Ok('https://api.studio.thegraph.com/query/24660/balancer-base-v2/version/latest')
       else
