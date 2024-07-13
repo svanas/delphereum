@@ -210,14 +210,13 @@ begin
   const P = TJsonObject(obj).Get(name);
   if Assigned(P) and Assigned(P.JsonValue) then
     if P.JsonValue is TJsonNumber then
-{$IF CompilerVersion < 40.0}
-      Result := TJsonNumber(P.JsonValue).AsInt64
-{$IFEND}
-{$IF CompilerVersion >= 40.0}
-        Result := TJsonNumber(P.JsonValue).AsUInt64
-{$IFEND}
+      {$IF CompilerVersion < 35}
+      Result := StrToUInt64Def(P.JsonValue.Value, def)
+      {$ELSEIF CompilerVersion >= 35}
+      Result := TJsonNumber(P.JsonValue).AsUInt64
+      {$IFEND}
     else if P.JsonValue is TJsonString then
-      Result := StrToUInt64Def(TJsonString(P.JsonValue).value, def);
+      Result := StrToUInt64Def(TJsonString(P.JsonValue).Value, def);
 end;
 
 function getPropAsDouble(const obj: TJsonValue; const name: string; const def: Double): Double;
