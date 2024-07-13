@@ -212,7 +212,7 @@ begin
     if P.JsonValue is TJsonNumber then
       {$IF CompilerVersion < 35}
       Result := StrToUInt64Def(P.JsonValue.Value, def)
-      {$ELSEIF CompilerVersion >= 35}
+      {$ELSE}
       Result := TJsonNumber(P.JsonValue).AsUInt64
       {$IFEND}
     else if P.JsonValue is TJsonString then

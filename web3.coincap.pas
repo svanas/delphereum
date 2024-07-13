@@ -88,7 +88,7 @@ function TAssets.Item(const Index: Integer): IAsset;
 begin
   {$IF CompilerVersion < 35}
   Result := TAsset.Create(TJsonArray(FJsonValue).Items[Index]);
-  {$ELSEIF CompilerVersion >= 35}
+  {$ELSE}
   Result := TAsset.Create(TJsonArray(FJsonValue)[Index]);
   {$IFEND}
 end;
