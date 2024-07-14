@@ -86,7 +86,11 @@ type
 
 function TAssets.Item(const Index: Integer): IAsset;
 begin
+  {$IF CompilerVersion < 35}
+  Result := TAsset.Create(TJsonArray(FJsonValue).Items[Index]);
+  {$ELSE}
   Result := TAsset.Create(TJsonArray(FJsonValue)[Index]);
+  {$IFEND}
 end;
 
 function assets(const callback: TProc<IDeserializedArray<IAsset>, IError>): IAsyncResult;
