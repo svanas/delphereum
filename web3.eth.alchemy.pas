@@ -52,6 +52,8 @@ begin
     Result := TResult<string>.Ok(Format('https://eth-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('https://eth-sepolia.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
+  else if chain = Holesky then
+    Result := TResult<string>.Ok(Format('https://eth-holesky.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Optimism then
     Result := TResult<string>.Ok(Format('https://opt-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = OptimismSepolia then
@@ -68,6 +70,10 @@ begin
     Result := TResult<string>.Ok(Format('https://base-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = BaseSepolia then
     Result := TResult<string>.Ok(Format('https://base-sepolia.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
+  else if chain = BNB then
+    Result := TResult<string>.Ok(Format('https://bnb-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
+  else if chain = BNB_test_net then
+    Result := TResult<string>.Ok(Format('https://bnb-testnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain.RPC[TTransport.HTTPS] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.HTTPS])
   else
@@ -80,6 +86,8 @@ begin
     Result := TResult<string>.Ok(Format('wss://eth-mainnet.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('wss://eth-sepolia.g.alchemy.com/v2/%s', [apiKey]))
+  else if chain = Holesky then
+    Result := TResult<string>.Ok(Format('wss://eth-holesky.g.alchemy.com/v2/v2/%s', [apiKey]))
   else if chain = Optimism then
     Result := TResult<string>.Ok(Format('wss://opt-mainnet.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = OptimismSepolia then
