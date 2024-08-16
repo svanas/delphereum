@@ -91,6 +91,7 @@ type
     function Dependencies(primaryType: string; found: TArray<string>): TArray<string>;
     function EncodeType(const primaryType: string): TBytes;
     function TypeHash(const primaryType: string): TBytes;
+    class function DataMismatchError(const encType: string; const encValue: Variant): IError;
     function EncodePrimitiveValue(const encType: string; const encValue: Variant; const depth: Integer): IResult<TBytes>;
     function EncodeData(const primaryType: string; const data: TTypedMessage; const depth: Integer; const validate: TWhatToValidate): IResult<TBytes>;
   public
@@ -318,6 +319,11 @@ begin
   Result := web3.utils.sha3(Self.EncodeType(primaryType));
 end;
 
+class function TTypedData.DataMismatchError(const encType: string; const encValue: Variant): IError;
+begin
+  Result := TError.Create('provided data %s doesn''t match type %s', [VarTypeAsText(VarType(encValue)), encType]);
+end;
+
 // EncodePrimitiveValue deals with the primitive values found while searching through the typed data
 function TTypedData.EncodePrimitiveValue(const encType: string; const encValue: Variant; const depth: Integer): IResult<TBytes>;
 
@@ -326,7 +332,8 @@ function TTypedData.EncodePrimitiveValue(const encType: string; const encValue: 
     if VarIsStr(encValue) then
       Result := TResult<TBigInteger>.Ok(TBigInteger.Create(VarToStr(encValue)))
     else case VarType(encValue) of
-      varInteger: Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(Integer(encValue))));
+      varInteger: Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(Int32(encValue))));
+      varUInt32 : Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(UInt32(encValue))));
       varInt64  : Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(Int64(encValue))));
       varUInt64 : Result := TResult<TBigInteger>.Ok(TBigInteger.Create(UIntToStr(UInt64(encValue))));
     else
@@ -350,18 +357,24 @@ begin
       else
         Result := TResult<TBytes>.Ok(buf);
     end else
-      Result := TResult<TBytes>.Err([], Format('provided data %s doesn''t match type %s', [VarTypeAsText(VarType(encValue)), encType]));
+      Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue));
   {----------------------------------- bool -----------------------------------}
   end else if encType = 'bool' then
   begin
-    Result := TResult<TBytes>.Err([], Format('not implemented: %s', [encType]));
+    if not VarIsType(encValue, varBoolean) then
+      Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue))
+    else
+      if encValue then
+        Result := TResult<TBytes>.Ok([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1])
+      else
+        Result := TResult<TBytes>.Ok([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
   {---------------------------------- string ----------------------------------}
   end else if encType = 'string' then
   begin
     if VarIsStr(encValue) then
       Result := TResult<TBytes>.Ok(web3.utils.sha3(TEncoding.UTF8.GetBytes(VarToStr(encValue))))
     else
-      Result := TResult<TBytes>.Err([], Format('provided data %s doesn''t match type %s', [VarTypeAsText(VarType(encValue)), encType]));
+      Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue));
   {---------------------------------- bytes -----------------------------------}
   end else if encType = 'bytes' then
   begin
@@ -432,7 +445,7 @@ begin
         end)(encValue);
         if not Assigned(mapValue) then // mismatch between the provided type and data
         begin
-          Result := TResult<TBytes>.Err([], Format('provided data %s doesn''t match type %s', [VarTypeAsText(VarType(encValue)), encType]));
+          Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue));
           EXIT;
         end;
         const encodedData = Self.EncodeData(field.&Type, mapValue, depth + 1, validate);
