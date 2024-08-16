@@ -59,7 +59,12 @@ type
     constructor Create;
   end;
 
-  TTypedMessage = TDictionary<string, Variant>;
+  ITypedMessage = interface
+  ['{9C4C114F-B686-4AE4-AF53-5636ED6B7395}']
+    procedure Add(const Key: string; const Value: Variant);
+    function Count: NativeInt;
+    function GetItem(const Key: string): Variant;
+  end;
 
   // TTypedDomain represents the domain part of an EIP-712 message.
   TTypedDomain = class(TObject)
@@ -70,7 +75,7 @@ type
     FVerifyingContract: string;
     function Validate: IError;
   public
-    function Map: TTypedMessage;
+    function Map: ITypedMessage;
     property Name: string read FName write FName;
     property Version: string read FVersion write FVersion;
     property ChainId: UInt64 read FChainId write FChainId;
@@ -86,22 +91,22 @@ type
     FTypes: TTypes;
     FPrimaryType: string;
     FDomain: TTypedDomain;
-    FMessage: TTypedMessage;
+    FMessage: ITypedMessage;
     function Validate(const what: TWhatToValidate): IError;
     function Dependencies(primaryType: string; found: TArray<string>): TArray<string>;
     function EncodeType(const primaryType: string): TBytes;
     function TypeHash(const primaryType: string): TBytes;
     class function DataMismatchError(const encType: string; const encValue: Variant): IError;
     function EncodePrimitiveValue(const encType: string; const encValue: Variant; const depth: Integer): IResult<TBytes>;
-    function EncodeData(const primaryType: string; const data: TTypedMessage; const depth: Integer; const validate: TWhatToValidate): IResult<TBytes>;
+    function EncodeData(const primaryType: string; const data: ITypedMessage; const depth: Integer; const validate: TWhatToValidate): IResult<TBytes>;
   public
     constructor Create;
     destructor Destroy; override;
-    function HashStruct(const primaryType: string; const data: TTypedMessage; const validate: TWhatToValidate): IResult<TBytes>;
+    function HashStruct(const primaryType: string; const data: ITypedMessage; const validate: TWhatToValidate): IResult<TBytes>;
     property Types: TTypes read FTypes;
     property PrimaryType: string read FPrimaryType write FPrimaryType;
     property Domain: TTypedDomain read FDomain;
-    property Message: TTypedMessage read FMessage;
+    property Message: ITypedMessage read FMessage;
   end;
 
 implementation
@@ -199,11 +204,52 @@ begin
   end;
 end;
 
+{------------------------------- TTypedMessage --------------------------------}
+
+type
+  TTTypedMessage = class(TInterfacedObject, ITypedMessage)
+  private
+    FInner: TDictionary<string, Variant>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Add(const Key: string; const Value: Variant);
+    function Count: NativeInt;
+    function GetItem(const Key: string): Variant;
+  end;
+
+constructor TTTypedMessage.Create;
+begin
+  inherited Create;
+  FInner := TDictionary<string, Variant>.Create;
+end;
+
+destructor TTTypedMessage.Destroy;
+begin
+  if Assigned(FInner) then FInner.Free;
+  inherited Destroy;
+end;
+
+procedure TTTypedMessage.Add(const Key: string; const Value: Variant);
+begin
+  FInner.Add(Key, Value);
+end;
+
+function TTTypedMessage.Count: NativeInt;
+begin
+  Result := FInner.Count;
+end;
+
+function TTTypedMessage.GetItem(const Key: string): Variant;
+begin
+  Result := FInner.Items[Key];
+end;
+
 {------- TTypedDomain represents the domain part of an EIP-712 message --------}
 
-function TTypedDomain.Map: TTypedMessage;
+function TTypedDomain.Map: ITypedMessage;
 begin
-  Result := TTypedMessage.Create;
+  Result := TTTypedMessage.Create;
   if Self.ChainId > 0 then
     Result.Add('chainId', Self.ChainId);
   if Self.Name.Length > 0 then
@@ -230,12 +276,12 @@ begin
   inherited Create;
   FTypes := TTypes.Create;
   FDomain := TTypedDomain.Create;
-  FMessage := TTypedMessage.Create;
+  FMessage := TTTypedMessage.Create;
 end;
 
 destructor TTypedData.Destroy;
 begin
-  if Assigned(FMessage) then FMessage.Free;
+  if Assigned(FMessage) then FMessage := nil;
   if Assigned(FDomain) then FDomain.Free;
   if Assigned(FTypes) then FTypes.Free;
   inherited Destroy;
@@ -319,6 +365,7 @@ begin
   Result := web3.utils.sha3(Self.EncodeType(primaryType));
 end;
 
+// DataMismatchError generates an error for a mismatch between the provided type and data
 class function TTypedData.DataMismatchError(const encType: string; const encValue: Variant): IError;
 begin
   Result := TError.Create('provided data %s doesn''t match type %s', [VarTypeAsText(VarType(encValue)), encType]);
@@ -400,7 +447,7 @@ end;
 // Note: each encoded member is 32-byte long.
 function TTypedData.EncodeData(
   const primaryType: string;
-  const data       : TTypedMessage;
+  const data       : ITypedMessage;
   const depth      : Integer;
   const validate   : TWhatToValidate): IResult<TBytes>;
 begin
@@ -427,22 +474,21 @@ begin
   for var field in Self.Types[primaryType] do
   begin
     const encType : string  = field.&Type;
-    const encValue: Variant = data[field.Name];
+    const encValue: Variant = data.GetItem(field.Name);
     if encType.EndsWith(']') then
       Result := TResult<TBytes>.Err([], 'not implemented') // ToDo: implement
     else
       if Self.Types.ContainsKey(field.&Type) then
       begin
-        const mapValue = (function(const encValue: Variant): TTypedMessage
+        const mapValue = (function: ITypedMessage
         begin
-          // ToDo: het is waarschijnlijk beter om van TTypedMessage een ITypedMessage te maken, en Supports() te gebruiken
           Result := nil;
           if VarType(encValue) = varUnknown then
           begin
-            const obj: TObject = IUnknown(encValue) as TObject;
-            if Assigned(obj) and (obj is TTypedMessage) then Result := obj as TTypedMessage;
+            var msg: ITypedMessage;
+            if Supports(encValue, ITypedMessage, msg) then Result := msg;
           end;
-        end)(encValue);
+        end)();
         if not Assigned(mapValue) then // mismatch between the provided type and data
         begin
           Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue));
@@ -473,7 +519,7 @@ end;
 // HashStruct generates a keccak256 hash of the encoding of the provided data
 function TTypedData.HashStruct(
   const primaryType: string;
-  const data       : TTypedMessage;
+  const data       : ITypedMessage;
   const validate   : TWhatToValidate): IResult<TBytes>;
 begin
   const encodedData = Self.EncodeData(primaryType, data, 1, validate);

@@ -56,18 +56,14 @@ begin
     typedData.Domain.Version           := '1';
     typedData.Domain.ChainId           := 1;
     typedData.Domain.VerifyingContract := '0xe92b586627cca7a83dc919cc7127196d70f55a06';
-    // map domain to TTypedMessage
+    // map domain to ITypedMessage
     const mappedDomain = typedData.Domain.Map;
-    try
-      // encode the domain data and generate a keccak256 hash
-      const domainSeparator = typedData.HashStruct('EIP712Domain', mappedDomain, [vaTypes, vaDomain]);
-      if domainSeparator.isErr then
-        Assert.Fail(domainSeparator.Error.Message)
-      else
-        Assert.AreEqual('0x6EF27D2D164CDAAC4EF8BE9CB79EA9F4C11EE76DB3A38D2AA02021B5E5019094', web3.utils.toHex(domainSeparator.Value));
-    finally
-      mappedDomain.Free;
-    end;
+    // encode the domain data and generate a keccak256 hash
+    const domainSeparator = typedData.HashStruct('EIP712Domain', mappedDomain, [vaTypes, vaDomain]);
+    if domainSeparator.isErr then
+      Assert.Fail(domainSeparator.Error.Message)
+    else
+      Assert.AreEqual('0x6EF27D2D164CDAAC4EF8BE9CB79EA9F4C11EE76DB3A38D2AA02021B5E5019094', web3.utils.toHex(domainSeparator.Value));
   finally
     typedData.Free;
   end;
