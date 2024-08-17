@@ -414,15 +414,13 @@ function TTypedData.EncodePrimitiveValue(const encType: string; const encValue: 
       end;
       EXIT;
     end;
-    case VarType(encValue) of
-      varInteger: Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(Int32(encValue))));
-      varUInt32 : Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(UInt32(encValue))));
-      varInt64  : Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(Int64(encValue))));
-      varUInt64 : Result := TResult<TBigInteger>.Ok(TBigInteger.Create(UIntToStr(UInt64(encValue))));
+    if VarType(encValue) in [varShortInt, varSmallInt, varInteger, varInt64] then
+      Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(encValue)))
+    else if VarType(encValue) in [varByte, varWord, varLongWord, varUInt32, varUInt64] then
+      Result := TResult<TBigInteger>.Ok(TBigInteger.Create(UIntToStr(encValue)))
     else
       Result := TResult<TBigInteger>.Err(TBigInteger.Zero, Format('invalid integer value for type %s', [encType]));
-    end;
- end;
+  end;
 
 begin
   {--------------------------------- address ----------------------------------}

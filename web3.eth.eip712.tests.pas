@@ -38,6 +38,8 @@ type
   public
     [Test]
     procedure TestDomainSeparator;
+    [Test]
+    procedure TestTypedDataHash; // test the EIP-712 message
   end;
 
 implementation
@@ -64,6 +66,42 @@ begin
       Assert.Fail(domainSeparator.Error.Message)
     else
       Assert.AreEqual('0x6EF27D2D164CDAAC4EF8BE9CB79EA9F4C11EE76DB3A38D2AA02021B5E5019094', web3.utils.toHex(domainSeparator.Value));
+  finally
+    typedData.Free;
+  end;
+end;
+
+procedure TTests.TestTypedDataHash; // sell 0.005 WETH for USDT at $10k on ParaSwap
+begin
+  const typedData = TTypedData.Create;
+  try
+    typedData.Types.Add('Order', [
+      TType.Create('expiry',       'int256'),
+      TType.Create('nonceAndMeta', 'string'),
+      TType.Create('maker',        'string'),
+      TType.Create('taker',        'string'),
+      TType.Create('makerAsset',   'string'),
+      TType.Create('takerAsset',   'string'),
+      TType.Create('makerAmount',  'string'),
+      TType.Create('takerAmount',  'string')
+    ]);
+
+    typedData.PrimaryType := 'Order';
+
+    typedData.Message.Add('expiry',       0);
+    typedData.Message.Add('nonceAndMeta', '26307029471956252527666326988893094353806785773568');
+    typedData.Message.Add('maker',        '0xA5e63fe2e1C231957cD524416c7618D9BC690db0'); // owner
+    typedData.Message.Add('taker',        '0x0000000000000000000000000000000000000000'); // anyone
+    typedData.Message.Add('makerAsset',   '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'); // WETH
+    typedData.Message.Add('takerAsset',   '0xdAC17F958D2ee523a2206206994597C13D831ec7'); // USDT
+    typedData.Message.Add('makerAmount',  '5000000000000000');
+    typedData.Message.Add('takerAmount',  '50000000');
+
+    const typedDataHash = typedData.HashStruct(typedData.PrimaryType, typedData.Message, [vaTypes, vaPrimaryType]);
+    if typedDataHash.isErr then
+      Assert.Fail(typedDataHash.Error.Message)
+    else
+      Assert.AreEqual('0xF9E9C453CD1DFA2FAE411C4B2D41B9912B2E7450C05EE5AB83FF9600EE31A440', web3.utils.toHex(typedDataHash.Value));
   finally
     typedData.Free;
   end;
