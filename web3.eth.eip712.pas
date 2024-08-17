@@ -202,6 +202,7 @@ begin
       end;
     end;
   end;
+  Result := nil;
 end;
 
 {------------------------------- TTypedMessage --------------------------------}
@@ -374,11 +375,45 @@ end;
 // EncodePrimitiveValue deals with the primitive values found while searching through the typed data
 function TTypedData.EncodePrimitiveValue(const encType: string; const encValue: Variant; const depth: Integer): IResult<TBytes>;
 
+  function parseBytes(const encType: string; const encValue: Variant): IResult<TBytes>;
+  begin
+    if VarIsStr(encValue) then
+    begin
+      const str = VarToStr(encValue).Trim;
+      if web3.utils.isHex(str) then
+      begin
+        Result := TResult<TBytes>.Ok(web3.utils.fromHex(str));
+        EXIT;
+      end;
+    end;
+    const vt = VarType(encValue);
+    if ((vt and varArray) = varArray) and ((vt and varTypeMask) = varByte) then
+    begin
+      Result := TResult<TBytes>.Ok(TBytes(encValue));
+      EXIT;
+    end;
+    Result := TResult<TBytes>.Err([], Format('invalid value for type %s', [encType]));
+  end;
+
   function parseInteger(const encType: string; const encValue: Variant): IResult<TBigInteger>;
   begin
     if VarIsStr(encValue) then
-      Result := TResult<TBigInteger>.Ok(TBigInteger.Create(VarToStr(encValue)))
-    else case VarType(encValue) of
+    begin
+      var str := VarToStr(encValue).Trim;
+      try
+        if web3.utils.isHex(str) then
+        begin
+          if str.StartsWith('0x') then Delete(str, System.Low(str), 2); // trim 0x
+          if str.Length mod 2 > 0 then str := '0' + str;                // pad to even
+          Result := TResult<TBigInteger>.Ok(TBigInteger.Create(str, 16));
+        end else
+          Result := TResult<TBigInteger>.Ok(TBigInteger.Create(str));
+      except
+        Result := TResult<TBigInteger>.Err(TBigInteger.Zero, Format('%s is not a valid integer value', [str]));
+      end;
+      EXIT;
+    end;
+    case VarType(encValue) of
       varInteger: Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(Int32(encValue))));
       varUInt32 : Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(UInt32(encValue))));
       varInt64  : Result := TResult<TBigInteger>.Ok(TBigInteger.Create(IntToStr(Int64(encValue))));
@@ -425,7 +460,11 @@ begin
   {---------------------------------- bytes -----------------------------------}
   end else if encType = 'bytes' then
   begin
-    Result := TResult<TBytes>.Err([], Format('not implemented: %s', [encType]));
+    const parsed = parseBytes(encType, encValue);
+    if parsed.IsErr then
+      Result := TResult<TBytes>.Err([], parsed.Error)
+    else
+      Result := TResult<TBytes>.Ok(web3.utils.sha3(parsed.Value));
   {---------------------------------- bytesₓ ----------------------------------}
   end else if encType.StartsWith('bytes') then
   begin
