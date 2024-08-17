@@ -38,6 +38,7 @@ uses
   ClpBigIntegers,
   // web3
   web3,
+  web3.error,
   web3.utils;
 
 type
@@ -403,7 +404,7 @@ function TTypedData.EncodePrimitiveValue(const encType: string; const encValue: 
       try
         if web3.utils.isHex(str) then
         begin
-          if str.StartsWith('0x') then Delete(str, System.Low(str), 2); // trim 0x
+          if str.StartsWith('0x') then Delete(str, System.Low(str), 2); // trim "0x"
           if str.Length mod 2 > 0 then str := '0' + str;                // pad to even
           Result := TResult<TBigInteger>.Ok(TBigInteger.Create(str, 16));
         end else
@@ -430,10 +431,7 @@ begin
     if VarIsStr(encValue) and web3.utils.isHex(VarToStr(encValue)) then
     begin
       var buf := web3.utils.fromHex(VarToStr(encValue)); // probably 20 bytes
-      if Length(buf) < 32 then
-      repeat
-        buf := [0] + buf;
-      until Length(buf) = 32;
+      if Length(buf) < 32 then repeat buf := [0] + buf until Length(buf) = 32;
       if Length(buf) > 32 then
         Result := TResult<TBytes>.Err([], Format('address too long. expected 20 bytes, got %d bytes', [Length(buf)]))
       else
@@ -445,11 +443,10 @@ begin
   begin
     if not VarIsType(encValue, varBoolean) then
       Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue))
+    else if encValue then
+      Result := TResult<TBytes>.Ok([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1])
     else
-      if encValue then
-        Result := TResult<TBytes>.Ok([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1])
-      else
-        Result := TResult<TBytes>.Ok([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+      Result := TResult<TBytes>.Ok([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
   {---------------------------------- string ----------------------------------}
   end else if encType = 'string' then
   begin
@@ -468,7 +465,39 @@ begin
   {---------------------------------- bytesₓ ----------------------------------}
   end else if encType.StartsWith('bytes') then
   begin
-    Result := TResult<TBytes>.Err([], Format('not implemented: %s', [encType]));
+    const len = (function: IResult<Integer>
+    begin
+      var len := encType; Delete(len, Low(len), 5); // trim "bytes"
+      try
+        Result := TResult<Integer>.Ok(StrToInt(len));
+      except
+        on E: Exception do Result := TResult<Integer>.Err(0, E.Message);
+      end;
+    end)();
+    if len.IsErr then
+    begin
+      Result := TResult<TBytes>.Err([], len.Error);
+      EXIT;
+    end;
+    if (len.Value < 0) or (len.Value > 32) then
+    begin
+      Result := TResult<TBytes>.Err([], Format('invalid size on bytes: %d', [len.Value]));
+      EXIT;
+    end;
+    const parsed = parseBytes(encType, encValue);
+    if parsed.IsErr then
+    begin
+      Result := TResult<TBytes>.Err([], parsed.Error);
+      EXIT;
+    end;
+    if Length(parsed.Value) <> len.Value then
+    begin
+      Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue));
+      EXIT;
+    end;
+    var bytes := parsed.Value;
+    if Length(bytes) < 32 then repeat bytes := bytes + [0] until Length(bytes) = 32;
+    Result := TResult<TBytes>.Ok(bytes);
   {------------------------------ intₓ or uintₓ -------------------------------}
   end else if encType.StartsWith('int') or encType.StartsWith('uint') then
   begin
@@ -515,7 +544,7 @@ begin
     const encType : string  = field.&Type;
     const encValue: Variant = data.GetItem(field.Name);
     if encType.EndsWith(']') then
-      Result := TResult<TBytes>.Err([], 'not implemented') // ToDo: implement
+      Result := TResult<TBytes>.Err([], TNotImplemented.Create) // ToDo: implement
     else
       if Self.Types.ContainsKey(field.&Type) then
       begin
