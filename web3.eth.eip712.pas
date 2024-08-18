@@ -99,7 +99,6 @@ type
     function Dependencies(primaryType: string; found: TArray<string>): TArray<string>;
     function EncodeType(const primaryType: string): TBytes;
     function TypeHash(const primaryType: string): TBytes;
-    class function DataMismatchError(const encType: string; const encValue: Variant): IError;
     function EncodePrimitiveValue(const encType: string; const encValue: Variant; const depth: Integer): IResult<TBytes>;
     function EncodeData(const primaryType: string; const data: ITypedMessage; const depth: Integer; const validate: TWhatToValidate): IResult<TBytes>;
   public
@@ -107,14 +106,29 @@ type
     destructor Destroy; override;
     function HashStruct(const primaryType: string; const data: ITypedMessage; const validate: TWhatToValidate): IResult<TBytes>;
     function ChallengeHash: IResult<TBytes>;
-    function Signature(const privateKey: TPrivateKey): IResult<TSignature>;
     property Types: TTypes read FTypes;
     property PrimaryType: string read FPrimaryType write FPrimaryType;
     property Domain: TTypedDomain read FDomain;
     property Message: ITypedMessage read FMessage;
   end;
 
+function sign(const privateKey: TPrivateKey; const challengeHash: TBytes): IResult<TSignature>;
+
 implementation
+
+{------------------------------ global functions ------------------------------}
+
+// dataMismatchError generates an error for a mismatch between the provided type and data
+function dataMismatchError(const encType: string; const encValue: Variant): IError;
+begin
+  Result := TError.Create('provided data %s doesn''t match type %s', [VarTypeAsText(VarType(encValue)), encType]);
+end;
+
+// sign the challenge hash
+function sign(const privateKey: TPrivateKey; const challengeHash: TBytes): IResult<TSignature>;
+begin
+  Result := TResult<TSignature>.Ok(web3.eth.crypto.sign(privateKey, challengeHash));
+end;
 
 {---------------- TType is the inner type of an EIP-712 message ---------------}
 
@@ -373,12 +387,6 @@ begin
   Result := web3.utils.sha3(Self.EncodeType(primaryType));
 end;
 
-// DataMismatchError generates an error for a mismatch between the provided type and data
-class function TTypedData.DataMismatchError(const encType: string; const encValue: Variant): IError;
-begin
-  Result := TError.Create('provided data %s doesn''t match type %s', [VarTypeAsText(VarType(encValue)), encType]);
-end;
-
 // EncodePrimitiveValue deals with the primitive values found while searching through the typed data
 function TTypedData.EncodePrimitiveValue(const encType: string; const encValue: Variant; const depth: Integer): IResult<TBytes>;
 
@@ -441,12 +449,12 @@ begin
       else
         Result := TResult<TBytes>.Ok(buf);
     end else
-      Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue));
+      Result := TResult<TBytes>.Err([], dataMismatchError(encType, encValue));
   {----------------------------------- bool -----------------------------------}
   end else if encType = 'bool' then
   begin
     if not VarIsType(encValue, varBoolean) then
-      Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue))
+      Result := TResult<TBytes>.Err([], dataMismatchError(encType, encValue))
     else if encValue then
       Result := TResult<TBytes>.Ok([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1])
     else
@@ -457,7 +465,7 @@ begin
     if VarIsStr(encValue) then
       Result := TResult<TBytes>.Ok(web3.utils.sha3(TEncoding.UTF8.GetBytes(VarToStr(encValue))))
     else
-      Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue));
+      Result := TResult<TBytes>.Err([], dataMismatchError(encType, encValue));
   {---------------------------------- bytes -----------------------------------}
   end else if encType = 'bytes' then
   begin
@@ -496,7 +504,7 @@ begin
     end;
     if Length(parsed.Value) <> len.Value then
     begin
-      Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue));
+      Result := TResult<TBytes>.Err([], dataMismatchError(encType, encValue));
       EXIT;
     end;
     var bytes := parsed.Value;
@@ -549,40 +557,39 @@ begin
     const encValue: Variant = data.GetItem(field.Name);
     if encType.EndsWith(']') then
       Result := TResult<TBytes>.Err([], TNotImplemented.Create) // ToDo: implement
-    else
-      if Self.Types.ContainsKey(field.&Type) then
+    else if Self.Types.ContainsKey(field.&Type) then
+    begin
+      const mapValue = (function: ITypedMessage
       begin
-        const mapValue = (function: ITypedMessage
+        Result := nil;
+        if VarType(encValue) = varUnknown then
         begin
-          Result := nil;
-          if VarType(encValue) = varUnknown then
-          begin
-            var msg: ITypedMessage;
-            if Supports(encValue, ITypedMessage, msg) then Result := msg;
-          end;
-        end)();
-        if not Assigned(mapValue) then // mismatch between the provided type and data
-        begin
-          Result := TResult<TBytes>.Err([], DataMismatchError(encType, encValue));
-          EXIT;
+          var msg: ITypedMessage;
+          if Supports(encValue, ITypedMessage, msg) then Result := msg;
         end;
-        const encodedData = Self.EncodeData(field.&Type, mapValue, depth + 1, validate);
-        if encodedData.isErr then
-        begin
-          Result := TResult<TBytes>.Err([], encodedData.Error);
-          EXIT;
-        end;
-        buffer := buffer + web3.utils.sha3(encodedData.Value);
-      end else
+      end)();
+      if not Assigned(mapValue) then // mismatch between the provided type and data
       begin
-        const byteValue = Self.EncodePrimitiveValue(encType, encValue, depth);
-        if byteValue.IsErr then
-        begin
-          Result := TResult<TBytes>.Err([], byteValue.Error);
-          EXIT;
-        end;
-        buffer := buffer + byteValue.Value;
+        Result := TResult<TBytes>.Err([], dataMismatchError(encType, encValue));
+        EXIT;
       end;
+      const encodedData = Self.EncodeData(field.&Type, mapValue, depth + 1, validate);
+      if encodedData.isErr then
+      begin
+        Result := TResult<TBytes>.Err([], encodedData.Error);
+        EXIT;
+      end;
+      buffer := buffer + web3.utils.sha3(encodedData.Value);
+    end else
+    begin
+      const byteValue = Self.EncodePrimitiveValue(encType, encValue, depth);
+      if byteValue.IsErr then
+      begin
+        Result := TResult<TBytes>.Err([], byteValue.Error);
+        EXIT;
+      end;
+      buffer := buffer + byteValue.Value;
+    end;
   end;
 
   Result := TResult<TBytes>.Ok(buffer);
@@ -619,16 +626,6 @@ begin
     EXIT;
   end;
   Result := TResult<TBytes>.Ok(web3.utils.sha3([$19, $01] + domainSeparator.Value + typedDataHash.Value));
-end;
-
-// prepare the data for signing and sign the challenge hash
-function TTypedData.Signature(const privateKey: TPrivateKey): IResult<TSignature>;
-begin
-  const challengeHash = Self.ChallengeHash;
-  if challengeHash.isErr then
-    Result := TResult<TSignature>.Err(TSignature.Empty, challengeHash.Error)
-  else
-    Result := TResult<TSignature>.Ok(web3.eth.crypto.sign(privateKey, challengeHash.Value));
 end;
 
 end.

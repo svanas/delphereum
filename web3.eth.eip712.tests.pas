@@ -183,7 +183,14 @@ begin
     typedData.Message.Add('makerAmount',  '5000000000000000');
     typedData.Message.Add('takerAmount',  '50000000');
 
-    const signature = typedData.Signature(TPrivateKey('8994250F00DB3D85A260D8FDCF2152063938C1F57005928AA7B964197BCC8830'));
+    const challengeHash = typedData.ChallengeHash;
+    if challengeHash.isErr then
+    begin
+      Assert.Fail(challengeHash.Error.Message);
+      EXIT;
+    end;
+
+    const signature = web3.eth.eip712.sign(TPrivateKey('8994250F00DB3D85A260D8FDCF2152063938C1F57005928AA7B964197BCC8830'), challengeHash.Value);
     if signature.isErr then
       Assert.Fail(signature.Error.Message)
     else
