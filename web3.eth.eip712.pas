@@ -104,6 +104,7 @@ type
     constructor Create;
     destructor Destroy; override;
     function HashStruct(const primaryType: string; const data: ITypedMessage; const validate: TWhatToValidate): IResult<TBytes>;
+    function ChallengeHash: IResult<TBytes>;
     property Types: TTypes read FTypes;
     property PrimaryType: string read FPrimaryType write FPrimaryType;
     property Domain: TTypedDomain read FDomain;
@@ -593,6 +594,26 @@ begin
     Result := TResult<TBytes>.Err([], encodedData.Error)
   else
     Result := TResult<TBytes>.Ok(web3.utils.sha3(encodedData.Value));
+end;
+
+// ChallengeHash is a helper function that calculates a hash for typed data conforming to EIP-712.
+// This hash can then be safely used to calculate a signature.
+// See https://eips.ethereum.org/EIPS/eip-712 for the full specification.
+function TTypedData.ChallengeHash: IResult<TBytes>;
+begin
+  const domainSeparator = Self.HashStruct('EIP712Domain', Self.Domain.Map, [vaDomain]);
+  if domainSeparator.isErr then
+  begin
+    Result := TResult<TBytes>.Err([], domainSeparator.Error);
+    EXIT;
+  end;
+  const typedDataHash = Self.HashStruct(Self.PrimaryType, Self.Message, [vaTypes, vaPrimaryType]);
+  if typedDataHash.isErr then
+  begin
+    Result := TResult<TBytes>.Err([], typedDataHash.Error);
+    EXIT;
+  end;
+  Result := TResult<TBytes>.Ok(web3.utils.sha3([$19, $01] + domainSeparator.Value + typedDataHash.Value));
 end;
 
 end.

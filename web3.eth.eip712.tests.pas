@@ -40,6 +40,8 @@ type
     procedure TestDomainSeparator;
     [Test]
     procedure TestTypedDataHash; // test the EIP-712 message
+    [Test]
+    procedure TestChallengeHash;
   end;
 
 implementation
@@ -49,11 +51,10 @@ uses
   web3.eth.eip712,
   web3.utils;
 
-procedure TTests.TestDomainSeparator;
+procedure TTests.TestDomainSeparator; // test the ParaSwap domain
 begin
   const typedData = TTypedData.Create;
   try
-    // test the ParaSwap domain
     typedData.Domain.Name              := 'AUGUSTUS RFQ';
     typedData.Domain.Version           := '1';
     typedData.Domain.ChainId           := 1;
@@ -102,6 +103,47 @@ begin
       Assert.Fail(typedDataHash.Error.Message)
     else
       Assert.AreEqual('0xF9E9C453CD1DFA2FAE411C4B2D41B9912B2E7450C05EE5AB83FF9600EE31A440', web3.utils.toHex(typedDataHash.Value));
+  finally
+    typedData.Free;
+  end;
+end;
+
+procedure TTests.TestChallengeHash; // put everything together and prepare the data for signing
+begin
+  const typedData = TTypedData.Create;
+  try
+    typedData.Types.Add('Order', [
+      TType.Create('expiry',       'int256'),
+      TType.Create('nonceAndMeta', 'string'),
+      TType.Create('maker',        'string'),
+      TType.Create('taker',        'string'),
+      TType.Create('makerAsset',   'string'),
+      TType.Create('takerAsset',   'string'),
+      TType.Create('makerAmount',  'string'),
+      TType.Create('takerAmount',  'string')
+    ]);
+
+    typedData.PrimaryType := 'Order';
+
+    typedData.Domain.Name              := 'AUGUSTUS RFQ';
+    typedData.Domain.Version           := '1';
+    typedData.Domain.ChainId           := 1;
+    typedData.Domain.VerifyingContract := '0xe92b586627cca7a83dc919cc7127196d70f55a06';
+
+    typedData.Message.Add('expiry',       0);
+    typedData.Message.Add('nonceAndMeta', '26307029471956252527666326988893094353806785773568');
+    typedData.Message.Add('maker',        '0xA5e63fe2e1C231957cD524416c7618D9BC690db0'); // owner
+    typedData.Message.Add('taker',        '0x0000000000000000000000000000000000000000'); // anyone
+    typedData.Message.Add('makerAsset',   '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'); // WETH
+    typedData.Message.Add('takerAsset',   '0xdAC17F958D2ee523a2206206994597C13D831ec7'); // USDT
+    typedData.Message.Add('makerAmount',  '5000000000000000');
+    typedData.Message.Add('takerAmount',  '50000000');
+
+    const challengeHash = typedData.ChallengeHash;
+    if challengeHash.isErr then
+      Assert.Fail(challengeHash.Error.Message)
+    else
+      Assert.AreEqual('0x93AD2AC991EB36F2152EBEA3D541D6810CD2653831A3BBC1466FCE96F4BD10B7', web3.utils.toHex(challengeHash.Value));
   finally
     typedData.Free;
   end;
