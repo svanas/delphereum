@@ -64,11 +64,11 @@ type
     R: TBigInteger;
     S: TBigInteger;
     V: TBigInteger;
-    class function Empty: TSignature; static;
   public
-    function ToHex: string;
     constructor Create(const R, S, V: TBigInteger);
+    class function Empty: TSignature; static;
     class function FromHex(const hex: string): IResult<TSignature>; static;
+    function ToHex: string;
   end;
 
 function publicKeyToAddress(const pubKey: IECPublicKeyParameters): TAddress;

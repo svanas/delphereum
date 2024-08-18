@@ -39,6 +39,8 @@ uses
   // web3
   web3,
   web3.error,
+  web3.eth.crypto,
+  web3.eth.types,
   web3.utils;
 
 type
@@ -105,6 +107,7 @@ type
     destructor Destroy; override;
     function HashStruct(const primaryType: string; const data: ITypedMessage; const validate: TWhatToValidate): IResult<TBytes>;
     function ChallengeHash: IResult<TBytes>;
+    function Signature(const privateKey: TPrivateKey): IResult<TSignature>;
     property Types: TTypes read FTypes;
     property PrimaryType: string read FPrimaryType write FPrimaryType;
     property Domain: TTypedDomain read FDomain;
@@ -266,7 +269,9 @@ end;
 // Validate checks if the given domain is valid, i.e. contains at least the minimum viable keys and values
 function TTypedDomain.Validate: IError;
 begin
-  if (Self.ChainId = 0) and (Self.Name.Length = 0) and (Self.Version.Length = 0) and (Self.VerifyingContract.Length = 0) then
+  if FChainId = 0 then
+    Result := TError.Create('chainId is undefined')
+  else if (FName.Length = 0) and (FVersion.Length = 0) and (FVerifyingContract.Length = 0) then
     Result := TError.Create('domain is undefined')
   else
     Result := nil;
@@ -614,6 +619,16 @@ begin
     EXIT;
   end;
   Result := TResult<TBytes>.Ok(web3.utils.sha3([$19, $01] + domainSeparator.Value + typedDataHash.Value));
+end;
+
+// prepare the data for signing and sign the challenge hash
+function TTypedData.Signature(const privateKey: TPrivateKey): IResult<TSignature>;
+begin
+  const challengeHash = Self.ChallengeHash;
+  if challengeHash.isErr then
+    Result := TResult<TSignature>.Err(TSignature.Empty, challengeHash.Error)
+  else
+    Result := TResult<TSignature>.Ok(web3.eth.crypto.sign(privateKey, challengeHash.Value));
 end;
 
 end.
