@@ -94,16 +94,11 @@ begin
   inherited Create(aJsonValue);
 
   FChainId := aChainId;
-  FTokenId := getPropAsBigInt(aJsonValue, 'token_id');
+  FTokenId := getPropAsBigInt(aJsonValue, 'identifier');
   FName    := getPropAsStr(aJsonValue, 'name');
   FImage   := getPropAsStr(aJsonValue, 'image_url');
-
-  const contract = getPropAsObj(aJsonValue, 'asset_contract');
-  if Assigned(contract) then
-  begin
-    FAddress := TAddress.Create(getPropAsStr(contract, 'address'));
-    FAsset   := TAssetType.Create(getPropAsStr(contract, 'schema_name'));
-  end;
+  FAddress := TAddress.Create(getPropAsStr(aJsonValue, 'contract'));
+  FAsset   := TAssetType.Create(getPropAsStr(aJsonValue, 'token_standard'));
 end;
 
 function TNFT.ChainId: Integer;
@@ -136,7 +131,7 @@ begin
   Result := FAsset;
 end;
 
-{------------------------------- TTokensHelper --------------------------------}
+{-------------------------------- TNFTsHelper ---------------------------------}
 
 procedure TNFTsHelper.Enumerate(const foreach: TProc<Integer, TProc>; const done: TProc);
 begin
@@ -173,13 +168,20 @@ end;
 
 function baseURL(const chain: TChain): IResult<string>;
 begin
-  if chain = Sepolia then
-    Result := TResult<string>.Ok('https://testnets-api.opensea.io/api/v1/')
+  if chain = web3.Ethereum then
+    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/ethereum/')
+  else if chain = web3.Sepolia then
+    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/sepolia/')
+  else if chain = web3.Arbitrum then
+    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/arbitrum/')
+  else if chain = web3.Base then
+    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/base/')
+  else if chain = web3.Polygon then
+    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/matic/')
+  else if chain = web3.Optimism then
+    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/optimism/')
   else
-    if chain = Ethereum then
-      Result := TResult<string>.Ok('https://api.opensea.io/api/v1/')
-    else
-      Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
+    Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
 
 procedure NFTs(const chain: TChain; const apiKey: string; const owner: TAddress; const callback: TProc<TJsonArray, IError>); overload;
@@ -197,13 +199,7 @@ begin
 
   get := procedure(URL: string; result: TJsonArray)
   begin
-    web3.http.get(URL, (function: TNetHeaders
-    begin
-      if chain = Ethereum then
-        Result := [TNetHeader.Create('X-API-KEY', apiKey)]
-      else
-        Result := []
-    end)(), procedure(obj: TJsonValue; err: IError)
+    web3.http.get(URL, [TNetHeader.Create('X-API-KEY', apiKey)], procedure(obj: TJsonValue; err: IError)
     begin
       if Assigned(err) then
       begin
@@ -211,7 +207,7 @@ begin
         EXIT;
       end;
 
-      const assets = getPropAsArr(obj, 'assets');
+      const assets = getPropAsArr(obj, 'nfts');
       for var asset in assets do
         result.Add(asset.Clone as TJsonObject);
 
@@ -221,7 +217,7 @@ begin
         if next.StartsWith('http', True) then
           get(next, result)
         else
-          get(Format('%sassets?owner=%s&cursor=%s', [base.Value, owner, next]), result);
+          get(Format('%saccount/%s/nfts&next=%s', [base.Value, owner, next]), result);
         EXIT;
       end;
 
@@ -229,7 +225,7 @@ begin
     end);
   end;
 
-  get(base.Value + 'assets?owner=' + string(owner), result);
+  get(Format('%saccount/%s/nfts', [base.Value, string(owner)]), result);
 end;
 
 procedure NFTs(const chain: TChain; const apiKey: string; const owner: TAddress; const callback: TProc<TNFTs, IError>);
@@ -246,15 +242,11 @@ begin
       SetLength(Result, 0);
       for var I := 0 to Pred(arr.Count) do
       begin
-        const contract = getPropAsObj(arr[I], 'asset_contract');
-        if Assigned(contract) then
+        const asset = TAssetType.Create(getPropAsStr(arr[I], 'token_standard'));
+        if asset.IsNFT then
         begin
-          const asset = TAssetType.Create(getPropAsStr(contract, 'schema_name'));
-          if asset.IsNFT then
-          begin
-            SetLength(Result, Length(Result) + 1);
-            Result[High(Result)] := TNFT.Create(chain.Id, arr[I] as TJsonObject);
-          end;
+          SetLength(Result, Length(Result) + 1);
+          Result[High(Result)] := TNFT.Create(chain.Id, arr[I] as TJsonObject);
         end;
       end;
     end)();
