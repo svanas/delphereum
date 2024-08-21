@@ -701,7 +701,7 @@ begin
   const coincap = procedure(const chain: TChain)
   begin
     if chain.Symbol <> '' then
-      web3.coincap.price(chain.Symbol, callback)
+      web3.coincap.price(string(chain.Symbol), callback)
     else
       callback(0, TError.Create('Price feed does not exist on %s', [chain.Name]));
   end;
