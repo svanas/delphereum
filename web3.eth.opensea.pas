@@ -169,17 +169,17 @@ end;
 function baseURL(const chain: TChain): IResult<string>;
 begin
   if chain = web3.Ethereum then
-    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/ethereum/')
+    Result := TResult<string>.Ok('https://api.opensea.io/api/v2/chain/ethereum/')
   else if chain = web3.Sepolia then
-    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/sepolia/')
+    Result := TResult<string>.Ok('https://api.opensea.io/api/v2/chain/sepolia/')
   else if chain = web3.Arbitrum then
-    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/arbitrum/')
+    Result := TResult<string>.Ok('https://api.opensea.io/api/v2/chain/arbitrum/')
   else if chain = web3.Base then
-    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/base/')
+    Result := TResult<string>.Ok('https://api.opensea.io/api/v2/chain/base/')
   else if chain = web3.Polygon then
-    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/matic/')
+    Result := TResult<string>.Ok('https://api.opensea.io/api/v2/chain/matic/')
   else if chain = web3.Optimism then
-    Result := TResult<string>.Ok('https://api.opensea.io/v2/chain/optimism/')
+    Result := TResult<string>.Ok('https://api.opensea.io/api/v2/chain/optimism/')
   else
     Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
 end;
@@ -217,7 +217,7 @@ begin
         if next.StartsWith('http', True) then
           get(next, result)
         else
-          get(Format('%saccount/%s/nfts&next=%s', [base.Value, owner, next]), result);
+          get(Format('%saccount/%s/nfts?next=%s', [base.Value, owner, next]), result);
         EXIT;
       end;
 
