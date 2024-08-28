@@ -31,6 +31,7 @@ interface
 uses
   // Delphi
   System.Generics.Collections,
+  System.RegularExpressions,
   System.SysUtils,
   System.Variants,
   // CryptoLib4Pascal
@@ -49,6 +50,7 @@ type
   private
     FName: string;
     FType: string;
+    function TypeName: string;
   public
     constructor Create(const aName, aType: string);
     property Name: string read FName;
@@ -138,6 +140,13 @@ begin
   Self.FType := aType;
 end;
 
+// TypeName returns the canonical name of the type. If the type is 'Person[]', then this method returns 'Person'
+function TType.TypeName: string;
+begin
+  Result := Self.FType;
+  if Result.EndsWith('[]') then Delete(Result, High(Result) - 1, 2);
+end;
+
 {----------------------------------- TTypes -----------------------------------}
 
 constructor TTypes.Create;
@@ -216,8 +225,16 @@ begin
       end;
       if not isPrimitiveTypeValid(&type.&Type) then
       begin
-        Result := TError.Create('%s is not a valid primitive type', [&type.&Type]);
-        EXIT;
+        if not Self.ContainsKey(&type.TypeName) then
+        begin
+          Result := TError.Create('reference type %s is undefined', [&type.&Type]);
+          EXIT;
+        end;
+        if not TRegEx.IsMatch(&type.&Type, '^[A-Za-z](\w*)(\[\])?$') then
+        begin
+          Result := TError.Create('unknown reference type %s', [&type.&Type]);
+          EXIT;
+        end;
       end;
     end;
   end;
