@@ -114,6 +114,7 @@ type
     property Message: ITypedMessage read FMessage;
   end;
 
+function newTypedMessage: ITypedMessage;
 function sign(const privateKey: TPrivateKey; const challengeHash: TBytes): IResult<TSignature>;
 
 implementation
@@ -244,7 +245,7 @@ end;
 {------------------------------- TTypedMessage --------------------------------}
 
 type
-  TTTypedMessage = class(TInterfacedObject, ITypedMessage)
+  TTypedMessage = class(TInterfacedObject, ITypedMessage)
   private
     FInner: TDictionary<string, Variant>;
   public
@@ -255,38 +256,43 @@ type
     function GetItem(const Key: string): Variant;
   end;
 
-constructor TTTypedMessage.Create;
+constructor TTypedMessage.Create;
 begin
   inherited Create;
   FInner := TDictionary<string, Variant>.Create;
 end;
 
-destructor TTTypedMessage.Destroy;
+destructor TTypedMessage.Destroy;
 begin
   if Assigned(FInner) then FInner.Free;
   inherited Destroy;
 end;
 
-procedure TTTypedMessage.Add(const Key: string; const Value: Variant);
+procedure TTypedMessage.Add(const Key: string; const Value: Variant);
 begin
   FInner.Add(Key, Value);
 end;
 
-function TTTypedMessage.Count: NativeInt;
+function TTypedMessage.Count: NativeInt;
 begin
   Result := FInner.Count;
 end;
 
-function TTTypedMessage.GetItem(const Key: string): Variant;
+function TTypedMessage.GetItem(const Key: string): Variant;
 begin
   Result := FInner.Items[Key];
+end;
+
+function newTypedMessage: ITypedMessage;
+begin
+  Result := TTypedMessage.Create;
 end;
 
 {------- TTypedDomain represents the domain part of an EIP-712 message --------}
 
 function TTypedDomain.Map: ITypedMessage;
 begin
-  Result := TTTypedMessage.Create;
+  Result := newTypedMessage;
   if Self.ChainId > 0 then
     Result.Add('chainId', Self.ChainId);
   if Self.Name.Length > 0 then
@@ -315,7 +321,7 @@ begin
   inherited Create;
   FTypes := TTypes.Create;
   FDomain := TTypedDomain.Create;
-  FMessage := TTTypedMessage.Create;
+  FMessage := newTypedMessage;
 end;
 
 destructor TTypedData.Destroy;
