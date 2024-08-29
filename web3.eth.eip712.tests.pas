@@ -208,20 +208,19 @@ begin
     typedData = TTypedData.Create;
   try
     typedData.types.Add('Person', [
-    TType.Create('name', 'string'),
-    TType.Create('wallet', 'address')]);
+      TType.Create('name', 'string'),
+      TType.Create('wallet', 'address')]);
 
     typedData.types.Add('Mail', [
     TType.Create('from', 'Person'),
-    TType.Create('to', 'Person'),
-    TType.Create('contents', 'string')]);
+      TType.Create('to', 'Person'),
+      TType.Create('contents', 'string')]);
 
     typedData.PrimaryType := 'Mail';
     typedData.Domain.Name := 'Ether Mail';
     typedData.Domain.Version := '1';
     typedData.Domain.ChainId := 1;
     typedData.Domain.VerifyingContract := '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC';
-    typedData.PrimaryType := 'Mail';
     const msgfrom = newTypedMessage;
     msgfrom.Add('name', 'Cow');
     msgfrom.Add('wallet', '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826');
@@ -244,10 +243,10 @@ begin
       signature = web3.eth.eip712.sign(TPrivateKey('83f8964bd55c98a4806a7b100bd9d885798d7f936f598b88916e11bade576204'),
         challengeHash.Value);
 
-  if signature.isErr then
-    Assert.Fail(signature.Error.Message)
-  else
-    Assert.AreEqual('0xF714D2CD123498A5551CAFEE538D073C139C5C237C2D0A98937A5CCE109BFEFB7C6585FED974543C649B0CAE34AC8763EE0AC536A56A82980C14470F0029907B1B', signature.Value.toHex);
+    if signature.isErr then
+      Assert.Fail(signature.Error.Message)
+    else
+      Assert.AreEqual('0xF714D2CD123498A5551CAFEE538D073C139C5C237C2D0A98937A5CCE109BFEFB7C6585FED974543C649B0CAE34AC8763EE0AC536A56A82980C14470F0029907B1B', signature.Value.toHex);
   finally
     typedData.Free;
   end;
