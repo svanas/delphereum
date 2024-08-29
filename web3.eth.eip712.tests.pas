@@ -44,6 +44,8 @@ type
     procedure TestChallengeHash;
     [Test]
     procedure TestSignature;
+    [Test]
+    procedure TestComplexType;
   end;
 
 implementation
@@ -195,6 +197,57 @@ begin
       Assert.Fail(signature.Error.Message)
     else
       Assert.AreEqual('0xCED8AA0840029658CC59E51DC25CB2D7BD52AB68B5F6572D882E909532245F4376A5ADC60599A29D274DA2A5E21186F94A80A9A7A479F094E32380A89EFDC5A51C', signature.Value.ToHex);
+  finally
+    typedData.Free;
+  end;
+end;
+
+procedure TTests.TestComplexType;
+begin
+  const
+    typedData = TTypedData.Create;
+  try
+    typedData.types.Add('Person', [
+    TType.Create('name', 'string'),
+    TType.Create('wallet', 'address')]);
+
+    typedData.types.Add('Mail', [
+    TType.Create('from', 'Person'),
+    TType.Create('to', 'Person'),
+    TType.Create('contents', 'string')]);
+
+    typedData.PrimaryType := 'Mail';
+    typedData.Domain.Name := 'Ether Mail';
+    typedData.Domain.Version := '1';
+    typedData.Domain.ChainId := 1;
+    typedData.Domain.VerifyingContract := '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC';
+    typedData.PrimaryType := 'Mail';
+    const msgfrom = newTypedMessage;
+    msgfrom.Add('name', 'Cow');
+    msgfrom.Add('wallet', '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826');
+    typedData.Message.Add('from', msgfrom);
+
+    const msgto = newTypedMessage;
+    msgto.Add('name', 'Bob');
+    msgto.Add('wallet', '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB');
+    typedData.Message.Add('to', msgto);
+    typedData.Message.Add('contents', 'Hello, Bob!');
+    const challengeHash = typedData.challengeHash;
+    if challengeHash.isErr then
+    begin
+      Assert.Fail(challengeHash.Error.Message);
+      EXIT;
+    end else
+      Assert.AreEqual('0xBE609AEE343FB3C4B28E1DF9E632FCA64FCFAEDE20F02E86244EFDDF30957BD2',
+        web3.utils.toHex(challengeHash.Value));
+    const
+      signature = web3.eth.eip712.sign(TPrivateKey('83f8964bd55c98a4806a7b100bd9d885798d7f936f598b88916e11bade576204'),
+        challengeHash.Value);
+
+  if signature.isErr then
+    Assert.Fail(signature.Error.Message)
+  else
+    Assert.AreEqual('0xF714D2CD123498A5551CAFEE538D073C139C5C237C2D0A98937A5CCE109BFEFB7C6585FED974543C649B0CAE34AC8763EE0AC536A56A82980C14470F0029907B1B', signature.Value.toHex);
   finally
     typedData.Free;
   end;
