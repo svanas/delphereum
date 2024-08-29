@@ -65,6 +65,8 @@ uses
   web3.eth.crypto.tests in '..\web3.eth.crypto.tests.pas',
   web3.eth.defi in '..\web3.eth.defi.pas',
   web3.eth.dydx in '..\web3.eth.dydx.pas',
+  web3.eth.eip712 in '..\web3.eth.eip712.pas',
+  web3.eth.eip712.tests in '..\web3.eth.eip712.tests.pas',
   web3.eth.ens in '..\web3.eth.ens.pas',
   web3.eth.ens.tests in '..\web3.eth.ens.tests.pas',
   web3.eth.erc20 in '..\web3.eth.erc20.pas',

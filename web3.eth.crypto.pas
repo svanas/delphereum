@@ -64,15 +64,18 @@ type
     R: TBigInteger;
     S: TBigInteger;
     V: TBigInteger;
-    class function Empty: TSignature; static;
   public
-    function ToHex: string;
     constructor Create(const R, S, V: TBigInteger);
+    class function Empty: TSignature; static;
     class function FromHex(const hex: string): IResult<TSignature>; static;
+    function ToHex: string;
   end;
 
 function publicKeyToAddress(const pubKey: IECPublicKeyParameters): TAddress;
-function sign(const privateKey: TPrivateKey; const msg: string): TSignature;
+
+function sign(const privateKey: TPrivateKey; const msg: string): TSignature; overload;
+function sign(const privateKey: TPrivateKey; const raw: TBytes): TSignature; overload;
+
 function ecrecover(const msg: string; const signature: TSignature): IResult<TAddress>; overload;
 function ecrecover(const data: TBytes; const signature: TSignature; const getRecId: TGetRecId): IResult<TAddress>; overload;
 
@@ -89,7 +92,7 @@ begin
 end;
 
 // https://github.com/ethereum/go-ethereum/pull/2940
-function prefix(const msg: string): TBytes;
+function pr2940(const msg: string): TBytes;
 begin
   Result := web3.utils.sha3(
     TEncoding.UTF8.GetBytes(
@@ -101,10 +104,15 @@ end;
 // sign message, output Ethereum-specific signature
 function sign(const privateKey: TPrivateKey; const msg: string): TSignature;
 begin
+  Result := sign(privateKey, pr2940(msg));
+end;
+
+function sign(const privateKey: TPrivateKey; const raw: TBytes): TSignature;
+begin
   const Signer = TEthereumSigner.Create;
   try
     Signer.Init(True, privateKey);
-    const Signature = Signer.GenerateSignature(prefix(msg));
+    const Signature = Signer.GenerateSignature(raw);
     const v = Signature.rec.Add(TBigInteger.ValueOf(27));
     Result := TSignature.Create(Signature.r, Signature.s, v);
   finally
@@ -115,7 +123,7 @@ end;
 // recover signer from Ethereum signed message
 function ecrecover(const msg: string; const signature: TSignature): IResult<TAddress>;
 begin
-  Result := ecrecover(prefix(msg), signature, function(const V: TBigInteger): IResult<Int32>
+  Result := ecrecover(pr2940(msg), signature, function(const V: TBigInteger): IResult<Int32>
   begin
     const B = V.ToByteArrayUnsigned;
     if Length(B) = 0 then
