@@ -204,45 +204,37 @@ end;
 
 procedure TTests.TestComplexType;
 begin
-  const
-    typedData = TTypedData.Create;
+  const typedData = TTypedData.Create;
   try
     typedData.types.Add('Person', [
-      TType.Create('name', 'string'),
-      TType.Create('wallet', 'address')]);
+      TType.Create('name',   'string'),
+      TType.Create('wallet', 'address')
+    ]);
 
     typedData.types.Add('Mail', [
-    TType.Create('from', 'Person'),
-      TType.Create('to', 'Person'),
-      TType.Create('contents', 'string')]);
+      TType.Create('from',     'Person'),
+      TType.Create('to',       'Person'),
+      TType.Create('contents', 'string')
+    ]);
 
     typedData.PrimaryType := 'Mail';
-    typedData.Domain.Name := 'Ether Mail';
-    typedData.Domain.Version := '1';
-    typedData.Domain.ChainId := 1;
-    typedData.Domain.VerifyingContract := '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC';
-    const msgfrom = newTypedMessage;
-    msgfrom.Add('name', 'Cow');
-    msgfrom.Add('wallet', '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826');
-    typedData.Message.Add('from', msgfrom);
 
-    const msgto = newTypedMessage;
-    msgto.Add('name', 'Bob');
-    msgto.Add('wallet', '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB');
-    typedData.Message.Add('to', msgto);
+    typedData.Domain.Name              := 'Ether Mail';
+    typedData.Domain.Version           := '1';
+    typedData.Domain.ChainId           := 1;
+    typedData.Domain.VerifyingContract := '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC';
+
+    typedData.Message.Add('from', newTypedMessage.Add('name', 'Cow').Add('wallet', '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826'));
+    typedData.Message.Add('to', newTypedMessage.Add('name', 'Bob').Add('wallet', '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB'));
     typedData.Message.Add('contents', 'Hello, Bob!');
+
     const challengeHash = typedData.challengeHash;
     if challengeHash.isErr then
-    begin
-      Assert.Fail(challengeHash.Error.Message);
-      EXIT;
-    end else
-      Assert.AreEqual('0xBE609AEE343FB3C4B28E1DF9E632FCA64FCFAEDE20F02E86244EFDDF30957BD2',
-        web3.utils.toHex(challengeHash.Value));
-    const
-      signature = web3.eth.eip712.sign(TPrivateKey('83f8964bd55c98a4806a7b100bd9d885798d7f936f598b88916e11bade576204'),
-        challengeHash.Value);
+      Assert.Fail(challengeHash.Error.Message)
+    else
+      Assert.AreEqual('0xBE609AEE343FB3C4B28E1DF9E632FCA64FCFAEDE20F02E86244EFDDF30957BD2', web3.utils.toHex(challengeHash.Value));
 
+    const signature = web3.eth.eip712.sign(TPrivateKey('83f8964bd55c98a4806a7b100bd9d885798d7f936f598b88916e11bade576204'), challengeHash.Value);
     if signature.isErr then
       Assert.Fail(signature.Error.Message)
     else

@@ -66,7 +66,7 @@ type
 
   ITypedMessage = interface
   ['{9C4C114F-B686-4AE4-AF53-5636ED6B7395}']
-    procedure Add(const Key: string; const Value: Variant);
+    function Add(const Key: string; const Value: Variant): ITypedMessage;
     function Count: NativeInt;
     function GetItem(const Key: string): Variant;
   end;
@@ -251,7 +251,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Add(const Key: string; const Value: Variant);
+    function Add(const Key: string; const Value: Variant): ITypedMessage;
     function Count: NativeInt;
     function GetItem(const Key: string): Variant;
   end;
@@ -268,9 +268,10 @@ begin
   inherited Destroy;
 end;
 
-procedure TTypedMessage.Add(const Key: string; const Value: Variant);
+function TTypedMessage.Add(const Key: string; const Value: Variant): ITypedMessage;
 begin
   FInner.Add(Key, Value);
+  Result := Self;
 end;
 
 function TTypedMessage.Count: NativeInt;
