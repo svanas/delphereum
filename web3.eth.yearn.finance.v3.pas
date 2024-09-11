@@ -101,7 +101,7 @@ begin
     USDC: Result := TResult<IyToken>.Ok(yUSDCv3(client));
     USDT: Result := TResult<IyToken>.Ok(yUSDTv3(client));
   else
-    Result := TResult<IyToken>.Err(nil, TError.Create('%s not supported', [reserve.Symbol]));
+    Result := TResult<IyToken>.Err(TError.Create('%s not supported', [reserve.Symbol]));
   end;
 end;
 

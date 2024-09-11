@@ -172,7 +172,7 @@ begin
     finally
       response.Value.Free;
     end;
-    Result := TResult<TJsonArray>.Err(nil, response.Error);
+    Result := TResult<TJsonArray>.Err(response.Error);
   finally
     request.Free;
   end;
@@ -197,7 +197,7 @@ begin
   finally
     arr.Value.Free;
   end;
-  Result := TResult<TLogs>.Err([], arr.Error);
+  Result := TResult<TLogs>.Err(arr.Error);
 end;
 
 { public functions }

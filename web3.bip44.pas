@@ -61,7 +61,7 @@ function get(const master: web3.bip32.IMasterKey; const path: string): IResult<T
 begin
   const child = master.GetChildKey(path);
   if child.isErr then
-    Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, child.Error)
+    Result := TResult<TPrivateKey>.Err(child.Error)
   else
     Result := TResult<TPrivateKey>.Ok(TPrivateKey(web3.utils.toHex('', child.Value.Data)));
 end;
@@ -110,7 +110,7 @@ begin
     const key = get(master, prefix, suffix, index);
     if key.isErr then
     begin
-      Result := TResult<TArray<TPrivateKey>>.Err([], key.Error);
+      Result := TResult<TArray<TPrivateKey>>.Err(key.Error);
       EXIT;
     end;
     output := output + [key.Value];
@@ -124,7 +124,7 @@ begin
   const keys = traverse(master, prefix, suffix);
   if keys.isErr then
   begin
-    Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, keys.Error);
+    Result := TResult<TPrivateKey>.Err(keys.Error);
     EXIT;
   end;
   for var key in keys.Value do

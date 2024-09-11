@@ -164,7 +164,7 @@ function TReserveHelper.Address(const chain: TChain): IResult<TAddress>;
 begin
   if chain <> Ethereum then
   begin
-    Result := TResult<TAddress>.Err(TAddress.Zero, TSilent.Create('%s not implemented on %s', [Self.Symbol, chain.Name]));
+    Result := TResult<TAddress>.Err(TSilent.Create('%s not implemented on %s', [Self.Symbol, chain.Name]));
     EXIT;
   end;
   case Self of
@@ -173,7 +173,7 @@ begin
     USDT: Result := TResult<TAddress>.Ok('0xdac17f958d2ee523a2206206994597c13d831ec7');
     TUSD: Result := TResult<TAddress>.Ok('0x0000000000085d4780B73119b644AE5ecd22b376');
   else
-    Result := TResult<TAddress>.Err(TAddress.Zero, TSilent.Create('%s not implemented', [Self.Symbol]));
+    Result := TResult<TAddress>.Err(TSilent.Create('%s not implemented', [Self.Symbol]));
   end;
 end;
 

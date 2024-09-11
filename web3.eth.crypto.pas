@@ -66,7 +66,6 @@ type
     V: TBigInteger;
   public
     constructor Create(const R, S, V: TBigInteger);
-    class function Empty: TSignature; static;
     class function FromHex(const hex: string): IResult<TSignature>; static;
     function ToHex: string;
   end;
@@ -128,13 +127,13 @@ begin
     const B = V.ToByteArrayUnsigned;
     if Length(B) = 0 then
     begin
-      Result := TResult<Int32>.Err(0, 'V is null');
+      Result := TResult<Int32>.Err('V is null');
       EXIT;
     end;
     var I: Int32 := B[0];
     if (I < 27) or (I > 34) then
     begin
-      Result := TResult<Int32>.Err(0, 'V is out of range');
+      Result := TResult<Int32>.Err('V is out of range');
       EXIT;
     end;
     if I >= 31 then I := I - 4;
@@ -159,7 +158,7 @@ begin
   const recId = getRecId(signature.V);
   if recId.isErr then
   begin
-    Result := TResult<TAddress>.Err(TAddress.Zero, recId.Error);
+    Result := TResult<TAddress>.Err(recId.Error);
     EXIT;
   end;
 
@@ -170,14 +169,14 @@ begin
   const x = signature.R.Add(i.Multiply(n));
   if x.CompareTo(prime) >= 0 then
   begin
-    Result := TResult<TAddress>.Err(TAddress.Zero, 'an unknown error occurred');
+    Result := TResult<TAddress>.Err('an unknown error occurred');
     EXIT;
   end;
 
   const R = decompressKey(curve.Curve, x, (recId.Value and 1) = 1);
   if not R.Multiply(n).IsInfinity then
   begin
-    Result := TResult<TAddress>.Err(TAddress.Zero, 'an unknown error occurred');
+    Result := TResult<TAddress>.Err('an unknown error occurred');
     EXIT;
   end;
 
@@ -217,19 +216,12 @@ begin
   Self.V := V;
 end;
 
-class function TSignature.Empty: TSignature;
-begin
-  Result.R := TBigInteger.Zero;
-  Result.S := TBigInteger.Zero;
-  Result.V := TBigInteger.Zero;
-end;
-
 class function TSignature.FromHex(const hex: string): IResult<TSignature>;
 begin
   const bytes = web3.utils.fromHex(hex);
   if Length(bytes) < 65 then
   begin
-    Result := TResult<TSignature>.Err(TSignature.Empty, 'out of range');
+    Result := TResult<TSignature>.Err('out of range');
     EXIT;
   end;
 

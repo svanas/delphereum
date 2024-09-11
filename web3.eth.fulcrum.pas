@@ -186,7 +186,7 @@ begin
     USDC: Result := TResult<IiToken>.Ok(iUSDC(aClient));
     USDT: Result := TResult<IiToken>.Ok(iUSDT(aClient));
   else
-    Result := TResult<IiToken>.Err(nil, TError.Create('%s not supported', [aReserve.Symbol]));
+    Result := TResult<IiToken>.Err(TError.Create('%s not supported', [aReserve.Symbol]));
   end;
 end;
 

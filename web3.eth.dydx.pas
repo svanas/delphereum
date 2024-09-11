@@ -467,14 +467,14 @@ begin
   if chain = Ethereum then
     Result := TResult<TAddress>.Ok('0x1e0447b19bb6ecfdae1e4ae1694b0c3659614e4e')
   else
-    Result := TResult<TAddress>.Err(TAddress.Zero, TError.Create('dYdX is not deployed on %s', [chain.Name]));
+    Result := TResult<TAddress>.Err(TError.Create('dYdX is not deployed on %s', [chain.Name]));
 end;
 
 class function TSoloMargin.ToBigInt(const value: TTuple): IResult<BigInteger>;
 begin
   if Length(value) < 2 then
   begin
-    Result := TResult<BigInteger>.Err(0, 'not a valid dYdX integer value');
+    Result := TResult<BigInteger>.Err('not a valid dYdX integer value');
     EXIT;
   end;
   var output := value[1].toUInt256;

@@ -112,7 +112,7 @@ function TAssetChange.Name: IResult<string>;
 begin
   const tokenInfo = getPropAsObj(FJsonValue, 'token_info');
   if not Assigned(tokenInfo) then
-    Result := TResult<string>.Err('', 'token_info is null')
+    Result := TResult<string>.Err('token_info is null')
   else
     Result := TResult<string>.Ok(getPropAsStr(tokenInfo, 'name'));
 end;
@@ -121,7 +121,7 @@ function TAssetChange.Symbol: IResult<string>;
 begin
   const tokenInfo = getPropAsObj(FJsonValue, 'token_info');
   if not Assigned(tokenInfo) then
-    Result := TResult<string>.Err('', 'token_info is null')
+    Result := TResult<string>.Err('token_info is null')
   else
     Result := TResult<string>.Ok(getPropAsStr(tokenInfo, 'symbol'));
 end;
@@ -130,7 +130,7 @@ function TAssetChange.Decimals: IResult<Integer>;
 begin
   const tokenInfo = getPropAsObj(FJsonValue, 'token_info');
   if not Assigned(tokenInfo) then
-    Result := TResult<Integer>.Err(0, 'token_info is null')
+    Result := TResult<Integer>.Err('token_info is null')
   else
     Result := TResult<Integer>.Ok(getPropAsInt(tokenInfo, 'decimals'));
 end;
@@ -139,7 +139,7 @@ function TAssetChange.Logo: IResult<TURL>;
 begin
   const tokenInfo = getPropAsObj(FJsonValue, 'token_info');
   if not Assigned(tokenInfo) then
-    Result := TResult<string>.Err('', 'token_info is null')
+    Result := TResult<string>.Err('token_info is null')
   else
     Result := TResult<string>.Ok(getPropAsStr(tokenInfo, 'logo'));
 end;
@@ -184,13 +184,13 @@ begin
   const transaction = web3.json.getPropAsObj(aJsonObject, 'transaction');
   if not Assigned(transaction) then
   begin
-    Result := TResult<TJsonArray>.Err(nil, 'transaction is null');
+    Result := TResult<TJsonArray>.Err('transaction is null');
     EXIT;
   end;
   const info = web3.json.getPropAsObj(transaction, 'transaction_info');
   if not Assigned(info) then
   begin
-    Result := TResult<TJsonArray>.Err(nil, 'transaction.transaction_info is null');
+    Result := TResult<TJsonArray>.Err('transaction.transaction_info is null');
     EXIT;
   end;
   const changes = web3.json.getPropAsArr(info, 'asset_changes');

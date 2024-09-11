@@ -356,7 +356,7 @@ begin
     const response = client.Get(URL, nil, headers);
     if not Assigned(response) then
     begin
-      Result := TResult<IHttpResponse>.Err(nil, 'no response');
+      Result := TResult<IHttpResponse>.Err('no response');
       EXIT;
     end;
     if response.StatusCode = 429 then
@@ -377,12 +377,12 @@ begin
     end;
     if (response.StatusCode < 200) or (response.StatusCode >= 300) then
     begin
-      Result := TResult<IHttpResponse>.Err(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
+      Result := TResult<IHttpResponse>.Err(THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
       EXIT;
     end;
     Result := TResult<IHttpResponse>.Ok(response);
   except
-    on E: Exception do Result := TResult<IHttpResponse>.Err(nil, TError.Create(E.Message));
+    on E: Exception do Result := TResult<IHttpResponse>.Err(TError.Create(E.Message));
   end;
   finally
     client.Free;
@@ -401,7 +401,7 @@ begin
       EXIT;
     end;
   end;
-  Result := TResult<TJsonValue>.Err(nil, response.Error);
+  Result := TResult<TJsonValue>.Err(response.Error);
 end;
 
 function post(
@@ -415,7 +415,7 @@ begin
     const response = client.Post(URL, TStringStream.Create(src), nil, headers);
     if not Assigned(response) then
     begin
-      Result := TResult<IHttpResponse>.Err(nil, 'no response');
+      Result := TResult<IHttpResponse>.Err('no response');
       EXIT;
     end;
     if response.StatusCode = 429 then
@@ -436,12 +436,12 @@ begin
     end;
     if (response.StatusCode < 200) or (response.StatusCode >= 300) then
     begin
-      Result := TResult<IHttpResponse>.Err(nil, THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
+      Result := TResult<IHttpResponse>.Err(THttpError.Create(response.StatusCode, response.ContentAsString(TEncoding.UTF8)));
       EXIT;
     end;
     Result := TResult<IHttpResponse>.Ok(response);
   except
-    on E: Exception do Result := TResult<IHttpResponse>.Err(nil, TError.Create(E.Message));
+    on E: Exception do Result := TResult<IHttpResponse>.Err(TError.Create(E.Message));
   end;
   finally
     client.Free;
@@ -463,7 +463,7 @@ begin
       EXIT;
     end;
   end;
-  Result := TResult<TJsonValue>.Err(nil, response.Error);
+  Result := TResult<TJsonValue>.Err(response.Error);
 end;
 
 end.

@@ -181,7 +181,7 @@ begin
   else if chain = web3.Optimism then
     Result := TResult<string>.Ok('https://api.opensea.io/api/v2/chain/optimism/')
   else
-    Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
+    Result := TResult<string>.Err(TError.Create('%s not supported', [chain.Name]));
 end;
 
 procedure NFTs(const chain: TChain; const apiKey: string; const owner: TAddress; const callback: TProc<TJsonArray, IError>); overload;

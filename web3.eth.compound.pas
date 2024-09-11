@@ -198,7 +198,7 @@ begin
     USDT: Result := TResult<IcToken>.Ok(cUSDT(aClient));
     TUSD: Result := TResult<IcToken>.Ok(cTUSD(aClient));
   else
-    Result := TResult<IcToken>.Err(nil, TError.Create('%s not supported', [aReserve.Symbol]));
+    Result := TResult<IcToken>.Err(TError.Create('%s not supported', [aReserve.Symbol]));
   end;
 end;
 

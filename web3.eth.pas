@@ -166,7 +166,7 @@ begin
   finally
     Response.Value.Free;
   end;
-  Result := TResult<BigInteger>.Err(0, response.Error);
+  Result := TResult<BigInteger>.Err(response.Error);
 end;
 
 procedure blockNumber(const client: IWeb3; const callback: TProc<BigInteger, IError>);

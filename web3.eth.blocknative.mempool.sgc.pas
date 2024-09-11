@@ -231,14 +231,14 @@ begin
   const payload = &output.CreatePayload('accountAddress', 'watch');
   if payload.IsErr then
   begin
-    Result := TResult<IMempool>.Err(&output, payload.Error);
+    Result := TResult<IMempool>.Err(payload.Error);
     EXIT;
   end;
 
   const err = &output.Initialize;
   if Assigned(err) then
   begin
-    Result := TResult<IMempool>.Err(&output, err);
+    Result := TResult<IMempool>.Err(err);
     EXIT;
   end;
 
@@ -277,14 +277,14 @@ begin
   const payload = &output.CreatePayload('configs', 'put');
   if payload.IsErr then
   begin
-    Result := TResult<IMempool>.Err(&output, payload.Error);
+    Result := TResult<IMempool>.Err(payload.Error);
     EXIT;
   end;
 
   const err = &output.Initialize;
   if Assigned(err) then
   begin
-    Result := TResult<IMempool>.Err(&output, err);
+    Result := TResult<IMempool>.Err(err);
     EXIT;
   end;
 

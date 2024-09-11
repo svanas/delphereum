@@ -62,7 +62,7 @@ begin
   else if chain.RPC[TTransport.HTTPS] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.HTTPS])
   else
-    Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
+    Result := TResult<string>.Err(TError.Create('%s not supported', [chain.Name]));
 end;
 
 function WebSocket(const chain: TChain; const projectId: string): IResult<string>;
@@ -86,7 +86,7 @@ begin
   else if chain.RPC[TTransport.WebSocket] <> '' then
     Result := TResult<string>.Ok(chain.RPC[TTransport.WebSocket])
   else
-    Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
+    Result := TResult<string>.Err(TError.Create('%s not supported', [chain.Name]));
 end;
 
 function endpoint(const chain: TChain; const projectId: string): IResult<string>;

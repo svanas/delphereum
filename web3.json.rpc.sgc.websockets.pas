@@ -297,7 +297,7 @@ begin
     // did we receive an error? then translate that into an IError
     const error = web3.json.getPropAsObj(response, 'error');
     if Assigned(error) then
-      Result := TResult<TJsonObject>.Err(nil, TJsonRpcError.Create(
+      Result := TResult<TJsonObject>.Err(TJsonRpcError.Create(
         web3.json.getPropAsInt(error, 'code'),
         web3.json.getPropAsStr(error, 'message')
       ))
@@ -307,7 +307,7 @@ begin
   finally
     response.Free;
   end;
-  Result := TResult<TJsonObject>.Err(nil, 'no response');
+  Result := TResult<TJsonObject>.Err('no response');
 end;
 
 procedure TJsonRpcSgcWebSocket.Call(

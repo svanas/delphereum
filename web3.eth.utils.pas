@@ -138,14 +138,14 @@ begin
     Delete(value, System.Low(value), 1);
   if (value = '') or (value = '.') then
   begin
-    Result := TResult<TWei>.Err(0, TError.Create('Error while converting %s to wei. Invalid value.', [value]));
+    Result := TResult<TWei>.Err(TError.Create('Error while converting %s to wei. Invalid value.', [value]));
     EXIT;
   end;
   // split it into a whole and fractional part
   const comps = value.Split(['.']);
   if Length(comps) > 2 then
   begin
-    Result := TResult<TWei>.Err(0, TError.Create('Error while converting %s to wei. Too many decimal points.', [value]));
+    Result := TResult<TWei>.Err(TError.Create('Error while converting %s to wei. Too many decimal points.', [value]));
     EXIT;
   end;
   var whole: string := comps[0];

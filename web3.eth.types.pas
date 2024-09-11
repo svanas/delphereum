@@ -419,7 +419,7 @@ begin
 
   if input = '' then
   begin
-    Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, TCancelled.Create);
+    Result := TResult<TPrivateKey>.Err(TCancelled.Create);
     EXIT;
   end;
 
@@ -428,7 +428,7 @@ begin
   begin
     if Length(input) <> SizeOf(TPrivateKey) - 1 then
     begin
-      Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, 'Private key is invalid');
+      Result := TResult<TPrivateKey>.Err('Private key is invalid');
       EXIT;
     end;
     &private := TPrivateKey(input);
@@ -437,7 +437,7 @@ begin
     Result := web3.bip44.wallet(&public, web3.bip39.seed(input, ''));
     if Result.isErr or Result.Value.IsZero then
     begin
-      Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, 'Secret recovery phrase is invalid');
+      Result := TResult<TPrivateKey>.Err('Secret recovery phrase is invalid');
       EXIT;
     end;
     &private := Result.Value;
@@ -446,15 +446,15 @@ begin
   const address = &private.GetAddress;
   if address.isErr then
   begin
-    Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, address.Error);
+    Result := TResult<TPrivateKey>.Err(address.Error);
     EXIT;
   end;
   if address.Value.ToChecksum <> &public.ToChecksum then
   begin
     if web3.utils.isHex('', input) then
-      Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, 'Private key is invalid')
+      Result := TResult<TPrivateKey>.Err('Private key is invalid')
     else
-      Result := TResult<TPrivateKey>.Err(TPrivateKey.Zero, 'Secret recovery phrase is invalid');
+      Result := TResult<TPrivateKey>.Err('Secret recovery phrase is invalid');
     EXIT;
   end;
 
@@ -466,7 +466,7 @@ begin
   try
     Result := TResult<TAddress>.Ok(web3.eth.crypto.publicKeyToAddress(web3.crypto.publicKeyFromPrivateKey(Self)));
   except
-    Result := TResult<TAddress>.Err(TAddress.Zero, 'Private key is invalid');
+    Result := TResult<TAddress>.Err('Private key is invalid');
   end;
 end;
 

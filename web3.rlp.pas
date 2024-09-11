@@ -84,7 +84,7 @@ begin
       Result := TResult<TBytes>.Ok([Length(bin) + offset + 55] + bin);
     end
     else
-      Result := TResult<TBytes>.Err([], 'RLP input is too long');
+      Result := TResult<TBytes>.Err('RLP input is too long');
 end;
 
 function encodeItem(const item: TBytes): IResult<TBytes>; overload;
@@ -131,7 +131,7 @@ begin
         Result := TResult<TBytes>.Ok(Result.Value + output);
     end
     else
-      Result := TResult<TBytes>.Err([], 'Cannot RLP-encode item');
+      Result := TResult<TBytes>.Err('Cannot RLP-encode item');
   end;
 end;
 
@@ -185,7 +185,7 @@ begin
       if Length(item.Bytes) = 0 then
         Result := encodeItem(VarArrayCreate([0, 0], varVariant))
       else
-        Result := TResult<TBytes>.Err([], TNotImplemented.Create);
+        Result := TResult<TBytes>.Err(TNotImplemented.Create);
     if Result.isErr then
       EXIT;
     output := output + Result.Value;
@@ -216,7 +216,7 @@ function decodeLength(const input: TBytes): IResult<TLength>;
   begin
     const len = Length(input);
     if len = 0 then
-      Result := TResult<Integer>.Err(0, 'RLP input is null')
+      Result := TResult<Integer>.Err('RLP input is null')
     else
       if len = 1 then
         Result := TResult<Integer>.Ok(input[0])
@@ -224,19 +224,17 @@ function decodeLength(const input: TBytes): IResult<TLength>;
       begin
         const I = toInt(Copy(input, 0, Length(input) - 1));
         if I.isErr then
-          Result := TResult<Integer>.Err(0, I.Error)
+          Result := TResult<Integer>.Err(I.Error)
         else
           Result := TResult<Integer>.Ok(input[High(input)] + I.Value * 256);
       end;
   end;
 
 begin
-  var empty: TLength;
-
   const len = Length(input);
   if len = 0 then
   begin
-    Result := TResult<TLength>.Err(empty, 'RLP input is null');
+    Result := TResult<TLength>.Err('RLP input is null');
     EXIT;
   end;
 
@@ -298,7 +296,7 @@ begin
     end;
   end;
 
-  Result := TResult<TLength>.Err(empty, 'input does not conform to RLP encoding');
+  Result := TResult<TLength>.Err('input does not conform to RLP encoding');
 end;
 
 constructor TItem.Create(const aBytes: TBytes; const aDataType: TDataType);
@@ -317,7 +315,7 @@ begin
   const this = decodeLength(input);
   if this.isErr then
   begin
-    Result := TResult<TArray<TItem>>.Err([], this.Error);
+    Result := TResult<TArray<TItem>>.Err(this.Error);
     EXIT;
   end;
   var output: TArray<TItem> := [TItem.Create(Copy(input, this.Value.Offset, this.Value.Length), this.Value.DataType)];

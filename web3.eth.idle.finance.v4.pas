@@ -165,7 +165,7 @@ begin
     USDT: Result := TResult<IIdleToken>.Ok(idleUSDT(aClient));
     TUSD: Result := TResult<IIdleToken>.Ok(idleTUSD(aClient));
   else
-    Result := TResult<IIdleToken>.Err(nil, TError.Create('%s not supported', [aReserve.Symbol]));
+    Result := TResult<IIdleToken>.Err(TError.Create('%s not supported', [aReserve.Symbol]));
   end;
 end;
 

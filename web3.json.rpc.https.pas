@@ -72,7 +72,7 @@ begin
     // did we receive an error? then translate that into an IError
     const error = web3.json.getPropAsObj(response.Value, 'error');
     if Assigned(error) then
-      Result := TResult<TJsonObject>.Err(nil, TJsonRpcError.Create(
+      Result := TResult<TJsonObject>.Err(TJsonRpcError.Create(
         web3.json.getPropAsInt(error, 'code'),
         web3.json.getPropAsStr(error, 'message')
       ))
@@ -82,7 +82,7 @@ begin
   finally
     response.Value.Free;
   end;
-  Result := TResult<TJsonObject>.Err(nil, response.Error);
+  Result := TResult<TJsonObject>.Err(response.Error);
 end;
 
 procedure TJsonRpcHttps.Call(

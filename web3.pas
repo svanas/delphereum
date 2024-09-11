@@ -312,8 +312,8 @@ type
     FError: IError;
   public
     class function Ok(const aValue: T): IResult<T>;
-    class function Err(const aDefault: T; const aError: IError): IResult<T>; overload;
-    class function Err(const aDefault: T; const aError: string): IResult<T>; overload;
+    class function Err(const aError: IError): IResult<T>; overload;
+    class function Err(const aError: string): IResult<T>; overload;
     function Value: T;
     function Error: IError;
     function isOk: Boolean;
@@ -547,7 +547,7 @@ begin
   else if Id = Holesky.Id then
     Result := TResult<PChain>.Ok(@Holesky)
   else
-    Result := TResult<PChain>.Err(nil, TError.Create('Unknown chain id: %d', [Id]));
+    Result := TResult<PChain>.Err(TError.Create('Unknown chain id: %d', [Id]));
 end;
 
 { TChain }
@@ -625,10 +625,10 @@ begin
   Result := output;
 end;
 
-class function TResult<T>.Err(const aDefault: T; const aError: IError): IResult<T>;
+class function TResult<T>.Err(const aError: IError): IResult<T>;
 begin
   const output = TResult<T>.Create;
-  output.FValue := aDefault;
+  output.FValue := Default(T);
   if Assigned(aError) then
     output.FError := aError
   else
@@ -636,9 +636,9 @@ begin
   Result := output;
 end;
 
-class function TResult<T>.Err(const aDefault: T; const aError: string): IResult<T>;
+class function TResult<T>.Err(const aError: string): IResult<T>;
 begin
-  Result := TResult<T>.Err(aDefault, TError.Create(aError));
+  Result := TResult<T>.Err(TError.Create(aError));
 end;
 
 function TResult<T>.Value: T;

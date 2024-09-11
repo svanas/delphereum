@@ -431,7 +431,7 @@ function TTypedData.EncodePrimitiveValue(const encType: string; const encValue: 
       Result := TResult<TBytes>.Ok(TBytes(encValue));
       EXIT;
     end;
-    Result := TResult<TBytes>.Err([], Format('invalid value for type %s', [encType]));
+    Result := TResult<TBytes>.Err(Format('invalid value for type %s', [encType]));
   end;
 
   function parseInteger(const encType: string; const encValue: Variant): IResult<TBigInteger>;
@@ -448,7 +448,7 @@ function TTypedData.EncodePrimitiveValue(const encType: string; const encValue: 
         end else
           Result := TResult<TBigInteger>.Ok(TBigInteger.Create(str));
       except
-        Result := TResult<TBigInteger>.Err(TBigInteger.Zero, Format('%s is not a valid integer value', [str]));
+        Result := TResult<TBigInteger>.Err(Format('%s is not a valid integer value', [str]));
       end;
       EXIT;
     end;
@@ -457,7 +457,7 @@ function TTypedData.EncodePrimitiveValue(const encType: string; const encValue: 
     else if VarType(encValue) in [varByte, varWord, varLongWord, varUInt32, varUInt64] then
       Result := TResult<TBigInteger>.Ok(TBigInteger.Create(UIntToStr(encValue)))
     else
-      Result := TResult<TBigInteger>.Err(TBigInteger.Zero, Format('invalid integer value for type %s', [encType]));
+      Result := TResult<TBigInteger>.Err(Format('invalid integer value for type %s', [encType]));
   end;
 
 begin
@@ -469,16 +469,16 @@ begin
       var buf := web3.utils.fromHex(VarToStr(encValue)); // probably 20 bytes
       if Length(buf) < 32 then repeat buf := [0] + buf until Length(buf) = 32;
       if Length(buf) > 32 then
-        Result := TResult<TBytes>.Err([], Format('address too long. expected 20 bytes, got %d bytes', [Length(buf)]))
+        Result := TResult<TBytes>.Err(Format('address too long. expected 20 bytes, got %d bytes', [Length(buf)]))
       else
         Result := TResult<TBytes>.Ok(buf);
     end else
-      Result := TResult<TBytes>.Err([], dataMismatchError(encType, encValue));
+      Result := TResult<TBytes>.Err(dataMismatchError(encType, encValue));
   {----------------------------------- bool -----------------------------------}
   end else if encType = 'bool' then
   begin
     if not VarIsType(encValue, varBoolean) then
-      Result := TResult<TBytes>.Err([], dataMismatchError(encType, encValue))
+      Result := TResult<TBytes>.Err(dataMismatchError(encType, encValue))
     else if encValue then
       Result := TResult<TBytes>.Ok([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1])
     else
@@ -489,13 +489,13 @@ begin
     if VarIsStr(encValue) then
       Result := TResult<TBytes>.Ok(web3.utils.sha3(TEncoding.UTF8.GetBytes(VarToStr(encValue))))
     else
-      Result := TResult<TBytes>.Err([], dataMismatchError(encType, encValue));
+      Result := TResult<TBytes>.Err(dataMismatchError(encType, encValue));
   {---------------------------------- bytes -----------------------------------}
   end else if encType = 'bytes' then
   begin
     const parsed = parseBytes(encType, encValue);
     if parsed.IsErr then
-      Result := TResult<TBytes>.Err([], parsed.Error)
+      Result := TResult<TBytes>.Err(parsed.Error)
     else
       Result := TResult<TBytes>.Ok(web3.utils.sha3(parsed.Value));
   {---------------------------------- bytesₓ ----------------------------------}
@@ -507,28 +507,28 @@ begin
       try
         Result := TResult<Integer>.Ok(StrToInt(len));
       except
-        on E: Exception do Result := TResult<Integer>.Err(0, E.Message);
+        on E: Exception do Result := TResult<Integer>.Err(E.Message);
       end;
     end)();
     if len.IsErr then
     begin
-      Result := TResult<TBytes>.Err([], len.Error);
+      Result := TResult<TBytes>.Err(len.Error);
       EXIT;
     end;
     if (len.Value < 0) or (len.Value > 32) then
     begin
-      Result := TResult<TBytes>.Err([], Format('invalid size on bytes: %d', [len.Value]));
+      Result := TResult<TBytes>.Err(Format('invalid size on bytes: %d', [len.Value]));
       EXIT;
     end;
     const parsed = parseBytes(encType, encValue);
     if parsed.IsErr then
     begin
-      Result := TResult<TBytes>.Err([], parsed.Error);
+      Result := TResult<TBytes>.Err(parsed.Error);
       EXIT;
     end;
     if Length(parsed.Value) <> len.Value then
     begin
-      Result := TResult<TBytes>.Err([], dataMismatchError(encType, encValue));
+      Result := TResult<TBytes>.Err(dataMismatchError(encType, encValue));
       EXIT;
     end;
     var bytes := parsed.Value;
@@ -539,12 +539,12 @@ begin
   begin
     const parsed = parseInteger(encType, encValue);
     if parsed.IsErr then
-      Result := TResult<TBytes>.Err([], parsed.Error)
+      Result := TResult<TBytes>.Err(parsed.Error)
     else
       Result := TResult<TBytes>.Ok(TBigIntegers.BigIntegerToBytes(parsed.Value, 32));
   {------------------------- error: unrecognized type -------------------------}
   end else
-    Result := TResult<TBytes>.Err([], Format('unrecognized type %s', [encType]));
+    Result := TResult<TBytes>.Err(Format('unrecognized type %s', [encType]));
 end;
 
 // EncodeData generates the following encoding: `enc(value₁) ‖ enc(value₂) ‖ … ‖ enc(valueₓ)`
@@ -558,7 +558,7 @@ begin
   const err = Self.Validate(validate);
   if Assigned(err) then
   begin
-    Result := TResult<TBytes>.Err([], err);
+    Result := TResult<TBytes>.Err(err);
     EXIT;
   end;
 
@@ -567,7 +567,7 @@ begin
   const got = data.Count;
   if exp < got then
   begin
-    Result := TResult<TBytes>.Err([], Format('there is extra data provided in the message (%d < %d)', [exp, got]));
+    Result := TResult<TBytes>.Err(Format('there is extra data provided in the message (%d < %d)', [exp, got]));
     EXIT;
   end;
 
@@ -580,7 +580,7 @@ begin
     const encType : string  = field.&Type;
     const encValue: Variant = data.GetItem(field.Name);
     if encType.EndsWith(']') then
-      Result := TResult<TBytes>.Err([], TNotImplemented.Create) // ToDo: implement
+      Result := TResult<TBytes>.Err(TNotImplemented.Create) // ToDo: implement
     else if Self.Types.ContainsKey(field.&Type) then
     begin
       const mapValue = (function: ITypedMessage
@@ -594,13 +594,13 @@ begin
       end)();
       if not Assigned(mapValue) then // mismatch between the provided type and data
       begin
-        Result := TResult<TBytes>.Err([], dataMismatchError(encType, encValue));
+        Result := TResult<TBytes>.Err(dataMismatchError(encType, encValue));
         EXIT;
       end;
       const encodedData = Self.EncodeData(field.&Type, mapValue, depth + 1, validate);
       if encodedData.isErr then
       begin
-        Result := TResult<TBytes>.Err([], encodedData.Error);
+        Result := TResult<TBytes>.Err(encodedData.Error);
         EXIT;
       end;
       buffer := buffer + web3.utils.sha3(encodedData.Value);
@@ -609,7 +609,7 @@ begin
       const byteValue = Self.EncodePrimitiveValue(encType, encValue, depth);
       if byteValue.IsErr then
       begin
-        Result := TResult<TBytes>.Err([], byteValue.Error);
+        Result := TResult<TBytes>.Err(byteValue.Error);
         EXIT;
       end;
       buffer := buffer + byteValue.Value;
@@ -627,7 +627,7 @@ function TTypedData.HashStruct(
 begin
   const encodedData = Self.EncodeData(primaryType, data, 1, validate);
   if encodedData.IsErr then
-    Result := TResult<TBytes>.Err([], encodedData.Error)
+    Result := TResult<TBytes>.Err(encodedData.Error)
   else
     Result := TResult<TBytes>.Ok(web3.utils.sha3(encodedData.Value));
 end;
@@ -640,13 +640,13 @@ begin
   const domainSeparator = Self.HashStruct('EIP712Domain', Self.Domain.Map, [vaDomain]);
   if domainSeparator.isErr then
   begin
-    Result := TResult<TBytes>.Err([], domainSeparator.Error);
+    Result := TResult<TBytes>.Err(domainSeparator.Error);
     EXIT;
   end;
   const typedDataHash = Self.HashStruct(Self.PrimaryType, Self.Message, [vaTypes, vaPrimaryType]);
   if typedDataHash.isErr then
   begin
-    Result := TResult<TBytes>.Err([], typedDataHash.Error);
+    Result := TResult<TBytes>.Err(typedDataHash.Error);
     EXIT;
   end;
   Result := TResult<TBytes>.Ok(web3.utils.sha3([$19, $01] + domainSeparator.Value + typedDataHash.Value));

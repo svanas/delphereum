@@ -25,7 +25,7 @@ begin
   else if chain = Fantom then
     Result := TResult<string>.Ok('fantom-main')
   else
-    Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
+    Result := TResult<string>.Err(TError.Create('%s not supported', [chain.Name]));
 end;
 
 end.

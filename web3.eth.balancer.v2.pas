@@ -463,7 +463,7 @@ begin
       else if chain = Base then
         Result := TResult<string>.Ok('https://api.studio.thegraph.com/query/24660/balancer-base-v2/version/latest')
       else
-        Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
+        Result := TResult<string>.Err(TError.Create('%s not supported', [chain.Name]));
     end)(chain);
     if SUBGRAPH.isErr then
     begin

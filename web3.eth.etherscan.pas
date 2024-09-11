@@ -162,7 +162,7 @@ begin
   else if chain = BaseSepolia then
     Result := TResult<string>.Ok('https://api-sepolia.basescan.org/api?')
   else
-    Result := TResult<string>.Err('', TError.Create('%s not supported', [chain.Name]));
+    Result := TResult<string>.Err(TError.Create('%s not supported', [chain.Name]));
 end;
 
 function endpoint(const chain: TChain; const apiKey: string): IResult<string>; overload;

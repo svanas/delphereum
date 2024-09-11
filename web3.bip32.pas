@@ -253,14 +253,14 @@ begin
       begin
         if (S = '') or S[High(S)].IsDigit then
         begin
-          Result := TResult<IPrivateKey>.Err(nil, 'invalid derivation path');
+          Result := TResult<IPrivateKey>.Err('invalid derivation path');
           EXIT;
         end;
         Delete(S, High(S), 1);
         Val(S, C, E);
         if E <> 0 then
         begin
-          Result := TResult<IPrivateKey>.Err(nil, 'invalid derivation path');
+          Result := TResult<IPrivateKey>.Err('invalid derivation path');
           EXIT;
         end;
         C := C + firstHardenedChild;
