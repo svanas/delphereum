@@ -50,20 +50,22 @@ uses
 
 procedure sanctioned(const apiKey: string; const chain: TChain; const address: TAddress; const callback: TProc<Boolean, IError>);
 begin
-  if (chain <> Ethereum) and (chain <> Sepolia) and (chain <> Holesky) and (chain <> Polygon) then
+  if (chain <> Ethereum) and (chain <> Base) and (chain <> Polygon) then
   begin
     callback(False, TError.Create('%s not supported', [chain.Name]));
     EXIT;
   end;
-  web3.http.post('https://apisanction.breadcrumbs.app/api/sanctioned_address',
+  web3.http.post('https://api.breadcrumbs.one/sanctioned_address',
     Format('[{"address":"%s","chain":"%s"}]', [address.ToChecksum, (function: string
     begin
       if chain = Polygon then
         Result := 'MATIC'
+      else if chain = Base then
+        Result := 'BASE'
       else
         Result := 'ETH'
     end)()]),
-    [TNetHeader.Create('Authorization', apiKey), TNetHeader.Create('Content-Type', 'application/json')],
+    [TNetHeader.Create('X-API-KEY', apiKey), TNetHeader.Create('Content-Type', 'application/json')],
     procedure(value: TJsonValue; err: IError)
     begin
       if Assigned(err) then
