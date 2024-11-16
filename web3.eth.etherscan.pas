@@ -30,14 +30,11 @@ interface
 
 uses
   // Delphi
-  System.JSON,
-  System.SysUtils,
+  System.JSON, System.SysUtils,
   // Velthuis' BigNumbers
   Velthuis.BigIntegers,
   // web3
-  web3,
-  web3.eth.types,
-  web3.json;
+  web3, web3.eth.types, web3.json;
 
 type
   IEtherscanError = interface(IError)
@@ -122,54 +119,15 @@ implementation
 
 uses
   // Delphi
-  System.Classes,
-  System.Generics.Collections,
-  System.Math,
-  System.NetEncoding,
-  System.TypInfo,
+  System.Classes, System.Generics.Collections, System.NetEncoding, System.TypInfo,
   // web3
-  web3.eth.tx,
-  web3.http;
+  web3.eth.tx, web3.http;
 
-function endpoint(const chain: TChain): IResult<string>; overload;
+function endpoint(const chain: TChain; const apiKey: string): string;
 begin
-  if chain = Ethereum then
-    Result := TResult<string>.Ok('https://api.etherscan.io/api?')
-  else if chain = Optimism then
-    Result := TResult<string>.Ok('https://api-optimistic.etherscan.io/api?')
-  else if chain = OptimismSepolia then
-    Result := TResult<string>.Ok('https://api-sepolia-optimistic.etherscan.io/api?')
-  else if chain = BNB then
-    Result := TResult<string>.Ok('https://api.bscscan.com/api?')
-  else if chain = BNB_test_net then
-    Result := TResult<string>.Ok('https://api-testnet.bscscan.com/api?')
-  else if chain = Polygon then
-    Result := TResult<string>.Ok('https://api.polygonscan.com/api?')
-  else if chain = PolygonAmoy then
-    Result := TResult<string>.Ok('https://api-amoy.polygonscan.com/api?')
-  else if chain = Fantom then
-    Result := TResult<string>.Ok('https://api.ftmscan.com/api?')
-  else if chain = Fantom_test_net then
-    Result := TResult<string>.Ok('https://api-testnet.ftmscan.com/api?')
-  else if chain = Arbitrum then
-    Result := TResult<string>.Ok('https://api.arbiscan.io/api?')
-  else if chain = ArbitrumSepolia then
-    Result := TResult<string>.Ok('https://api-sepolia.arbiscan.io/api?')
-  else if chain = Sepolia then
-    Result := TResult<string>.Ok('https://api-sepolia.etherscan.io/api?')
-  else if chain = Base then
-    Result := TResult<string>.Ok('https://api.basescan.org/api?')
-  else if chain = BaseSepolia then
-    Result := TResult<string>.Ok('https://api-sepolia.basescan.org/api?')
-  else
-    Result := TResult<string>.Err(TError.Create('%s not supported', [chain.Name]));
-end;
-
-function endpoint(const chain: TChain; const apiKey: string): IResult<string>; overload;
-begin
-  Result := endpoint(chain);
-  if Result.isOk and (apiKey <> '') then
-    Result := TResult<string>.Ok(Format('%sapikey=%s&', [Result.Value, apiKey]));
+  Result := Format('https://api.etherscan.io/v2/api?chainid=%d&', [chain.Id]);
+  if apiKey <> '' then
+    Result := Result + Format('apikey=%s&', [TNetEncoding.URL.Encode(apiKey)]);
 end;
 
 {------------------------------ TEtherscanError -------------------------------}
@@ -489,27 +447,19 @@ end;
 
 procedure TEtherscan.get(const query: string; const callback: TProc<TJsonValue, IError>; const backoff: Integer);
 begin
-  endpoint(Self.chain, TNetEncoding.URL.Encode(Self.apiKey))
-    .ifErr(procedure(err: IError)
+  web3.http.get(endpoint(Self.chain, Self.apiKey) + query, [], procedure(response: TJsonValue; err: IError)
+  begin
+    {"status":"0", "message":"NOTOK", "result":"Max rate limit reached, please use API Key for higher rate limit"}
+    if  (backoff <= web3.http.MAX_BACKOFF_SECONDS * 1000)
+    and (response <> nil) and (web3.json.getPropAsInt(response, 'status') = 0)
+    and web3.json.getPropAsStr(response, 'result').Contains('rate limit') then
     begin
-      callback(nil, err)
-    end)
-    .&else(procedure(endpoint: string)
-    begin
-      web3.http.get(endpoint + query, [], procedure(response: TJsonValue; err: IError)
-      begin
-        {"status":"0", "message":"NOTOK", "result":"Max rate limit reached, please use API Key for higher rate limit"}
-        if  (backoff <= web3.http.MAX_BACKOFF_SECONDS * 1000)
-        and (response <> nil) and (web3.json.getPropAsInt(response, 'status') = 0)
-        and web3.json.getPropAsStr(response, 'result').Contains('rate limit') then
-        begin
-          TThread.Sleep(backoff);
-          Self.get(query, callback, backoff * 2);
-          EXIT;
-        end;
-        callback(response, err);
-      end);
-    end);
+      TThread.Sleep(backoff);
+      Self.get(query, callback, backoff * 2);
+      EXIT;
+    end;
+    callback(response, err);
+  end);
 end;
 
 procedure TEtherscan.getBlockNumberByTimestamp(
