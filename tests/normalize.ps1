@@ -1,0 +1,1 @@
+﻿&"C:\Program Files (x86)\ProjectMagician\ProjectMagicianCmd.exe" -n -r -x -f -d -uwp .\delphereum.dproj
