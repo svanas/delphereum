@@ -494,7 +494,7 @@ begin
       EXIT;
     end;
     // step #2: get incoming tokens
-    const incoming = changes.Incoming(from);
+    const incoming = changes.IncomingTokens(from);
     // step #3: simulate a sell for each and every incoming erc20
     var next: TProc<Integer, TProc>;
     next := procedure(incomingIndex: Integer; done: TProc)
@@ -533,7 +533,7 @@ begin
             callback(nil, TError.Create(web3.json.getPropAsStr(error, 'message', 'an unknown error occurred')));
             EXIT;
           end;
-          const outgoing = TAssetChanges.Create(web3.json.getPropAsArr(response[1], 'changes')).Outgoing(from);
+          const outgoing = TAssetChanges.Create(web3.json.getPropAsArr(response[1], 'changes')).OutgoingTokens(from);
           if Assigned(outgoing) then
           begin
             const outgoingIndex = outgoing.IndexOf(change.Contract);

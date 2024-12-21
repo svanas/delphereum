@@ -278,7 +278,7 @@ begin
       EXIT;
     end;
     // step #2: get incoming tokens
-    const incoming = changes1.Incoming(from);
+    const incoming = changes1.IncomingTokens(from);
     // step #3: simulate a sell for each and every incoming erc20
     var next: TProc<Integer, TProc>;
     next := procedure(incomingIndex: Integer; done: TProc)
@@ -318,7 +318,7 @@ begin
             end)
             .&else(procedure(changes2: TJsonArray)
             begin
-              const outgoing = TAssetChanges.Create(changes2).Outgoing(from);
+              const outgoing = TAssetChanges.Create(changes2).OutgoingTokens(from);
               if Assigned(outgoing) then
               begin
                 const outgoingIndex = outgoing.IndexOf(change.Contract);

@@ -30,8 +30,8 @@ type
 
   IAssetChanges = interface(IDeserializedArray<IAssetChange>)
     function IndexOf(const contract: TAddress): Integer;
-    function Incoming(const address: TAddress): IAssetChanges;
-    function Outgoing(const address: TAddress): IAssetChanges;
+    function IncomingTokens(const address: TAddress): IAssetChanges;
+    function OutgoingTokens(const address: TAddress): IAssetChanges;
   end;
 
   TCustomAssetChanges = class abstract(TDeserializedArray<IAssetChange>, IAssetChanges)
@@ -41,8 +41,8 @@ type
   public
     function Item(const Index: Integer): IAssetChange; override;
     function IndexOf(const contract: TAddress): Integer;
-    function Incoming(const address: TAddress): IAssetChanges;
-    function Outgoing(const address: TAddress): IAssetChanges;
+    function IncomingTokens(const address: TAddress): IAssetChanges;
+    function OutgoingTokens(const address: TAddress): IAssetChanges;
   end;
 
   IRawTransaction = interface
@@ -112,7 +112,7 @@ begin
   Result := -1;
 end;
 
-function TCustomAssetChanges.Incoming(const address: TAddress): IAssetChanges;
+function TCustomAssetChanges.IncomingTokens(const address: TAddress): IAssetChanges;
 begin
   Result := nil;
   if not Assigned(Self.FJsonValue) then
@@ -134,7 +134,7 @@ begin
   end;
 end;
 
-function TCustomAssetChanges.Outgoing(const address: TAddress): IAssetChanges;
+function TCustomAssetChanges.OutgoingTokens(const address: TAddress): IAssetChanges;
 begin
   Result := nil;
   if not Assigned(Self.FJsonValue) then
