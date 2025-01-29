@@ -168,6 +168,16 @@ const
     Explorer : 'https://amoy.polygonscan.com';
     Chainlink: '0x001382149eBa3441043c1c66972b4772963f5D43'
   );
+  Sonic: TChain = (
+    Id       : 146;
+    Name     : 'Sonic';
+    Symbol   : 'S';
+    TxType   : 0;
+    RPC      : ('https://rpc.soniclabs.com', '');
+    Explorer : 'https://sonicscan.org';
+    Chainlink: '0xc76dFb89fF298145b417d221B2c747d84952e01d';
+    WETH     : '0x50c42dEAcD8Fc9773493ED674b675bE577f2634b';
+  );
   Fantom: TChain = (
     Id       : 250;
     Name     : 'Fantom';
