@@ -129,7 +129,7 @@ end;
 function coin(const chain: TChain; const address: TAddress; const callback: TProc<TJsonValue, IError>): IAsyncResult;
 begin
   Result := web3.http.get(
-    Format('https://coins.llama.fi/prices/current/%s:%s/', [network(chain), address.ToChecksum]),
+    Format('https://coins.llama.fi/prices/current/%s:%s', [network(chain), address.ToChecksum]),
     [], callback
   );
 end;
