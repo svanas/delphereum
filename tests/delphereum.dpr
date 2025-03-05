@@ -101,7 +101,6 @@ uses
   web3.eth.yearn.vaults.v2 in '..\web3.eth.yearn.vaults.v2.pas',
   web3.graph in '..\web3.graph.pas',
   web3.http in '..\web3.http.pas',
-  web3.ipfs in '..\web3.ipfs.pas',
   web3.json in '..\web3.json.pas',
   web3.json.rpc.https in '..\web3.json.rpc.https.pas',
   web3.json.rpc in '..\web3.json.rpc.pas',
