@@ -41,9 +41,9 @@ type
     function Price : Double; // volume-weighted price based on real-time market data, translated to USD
   end;
 
-function assets(const callback: TProc<IDeserializedArray<IAsset>, IError>): IAsyncResult;
-function asset(const symbol: string; const callback: TProc<IAsset, IError>): IAsyncResult;
-function price(const symbol: string; const callback: TProc<Double, IError>): IAsyncResult;
+function assets(const apiKey: string; const callback: TProc<IDeserializedArray<IAsset>, IError>): IAsyncResult;
+function asset(const apiKey, symbol: string; const callback: TProc<IAsset, IError>): IAsyncResult;
+function price(const apiKey, symbol: string; const callback: TProc<Double, IError>): IAsyncResult;
 
 implementation
 
@@ -52,6 +52,7 @@ uses
   System.Generics.Collections,
   System.JSON,
   System.NetEncoding,
+  System.Net.URLClient,
   // web3
   web3.http;
 
@@ -93,9 +94,9 @@ begin
   {$IFEND}
 end;
 
-function assets(const callback: TProc<IDeserializedArray<IAsset>, IError>): IAsyncResult;
+function assets(const apiKey: string; const callback: TProc<IDeserializedArray<IAsset>, IError>): IAsyncResult;
 begin
-  Result := web3.http.get('https://api.coincap.io/v2/assets', [],
+  Result := web3.http.get('https://rest.coincap.io/v3/assets', [TNetHeader.Create('Authorization', 'Bearer ' + apiKey)],
     procedure(obj: TJsonValue; err: IError)
     begin
       if Assigned(err) then
@@ -114,9 +115,9 @@ begin
   );
 end;
 
-function asset(const symbol: string; const callback: TProc<IAsset, IError>): IAsyncResult;
+function asset(const apiKey, symbol: string; const callback: TProc<IAsset, IError>): IAsyncResult;
 begin
-  Result := assets(procedure(assets: IDeserializedArray<IAsset>; err: IError)
+  Result := assets(apiKey, procedure(assets: IDeserializedArray<IAsset>; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -136,9 +137,9 @@ begin
   end);
 end;
 
-function price(const symbol: string; const callback: TProc<Double, IError>): IAsyncResult;
+function price(const apiKey, symbol: string; const callback: TProc<Double, IError>): IAsyncResult;
 begin
-  Result := asset(symbol, procedure(asset: IAsset; err: IError)
+  Result := asset(apiKey, symbol, procedure(asset: IAsset; err: IError)
   begin
     if not Assigned(asset) then
       callback(0, err)

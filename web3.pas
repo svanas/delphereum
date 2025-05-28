@@ -495,7 +495,6 @@ uses
 {$ELSE}
   VCL.Dialogs,
 {$ENDIF}
-  web3.coincap,
   web3.eth.chainlink,
   web3.eth.types,
   web3.eth.utils,
@@ -708,20 +707,13 @@ end;
 // returns the chain's latest native token price in USD (eg. ETH-USD for Ethereum, BNB-USD for BNB Chain, MATIC-USD for Polygon, etc)
 procedure TCustomWeb3.LatestPrice(const callback: TProc<Double, IError>);
 begin
-  const coincap = procedure(const chain: TChain)
-  begin
-    if chain.Symbol <> '' then
-      web3.coincap.price(string(chain.Symbol), callback)
-    else
-      callback(0, TError.Create('Price feed does not exist on %s', [chain.Name]));
-  end;
   if Self.Chain.Chainlink.IsZero then
-    coincap(Self.Chain)
+    callback(0, TError.Create('Price feed does not exist on %s', [Self.Chain.Name]))
   else
     web3.eth.chainlink.TAggregatorV3.Create(Self, Self.Chain.Chainlink).Price(procedure(price: Double; err: IError)
     begin
       if Assigned(err) then
-        coincap(Self.Chain)
+        callback(0, err)
       else
         callback(price, nil);
     end)
