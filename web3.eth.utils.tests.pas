@@ -29,12 +29,22 @@ unit web3.eth.utils.tests;
 interface
 
 uses
+  // Delphi
+  System.SysUtils,
   // DUnitX
-  DUnitX.TestFramework;
+  DUnitX.TestFramework,
+  // web3
+  web3;
+
+type
+  TCustomTests = class
+  strict protected
+    procedure Execute(const proc: TProc<TProc, TProc<IError>>);
+  end;
 
 type
   [TestFixture]
-  TTests = class
+  TTests = class(TCustomTests)
   public
     [Test]
     procedure FromWei;
@@ -54,17 +64,43 @@ type
     procedure WeiToWei;
     [Test]
     procedure ToChecksum;
+    [Test]
+    procedure IsEOA;
   end;
 
 implementation
 
 uses
   // Delphi
-  System.SysUtils,
+  System.Classes,
   // web3
-  web3,
-  web3.eth.types,
-  web3.eth.utils;
+  web3.eth.types, web3.eth.utils;
+
+// executes an async test. the text is expected to call back into the 1st arg on success, otherwise the 2nd ags when an error occurred
+procedure TCustomTests.Execute(const proc: TProc<TProc, TProc<IError>>);
+const
+  TEST_TIMEOUT  = 60000; // 60 seconds
+  TEST_INTERVAL = 100;   // 0.1 second
+begin
+  var done: Boolean := False;
+  var err : IError  := nil;
+
+  proc(procedure
+  begin
+    done := True;
+  end, procedure(error: IError)
+  begin
+    err := error;
+  end);
+
+  var waited: UInt16 := 0;
+  while (err = nil) and (not done) and (waited < TEST_TIMEOUT) do
+  begin
+    TThread.Sleep(TEST_INTERVAL); waited := waited + TEST_INTERVAL;
+  end;
+
+  if Assigned(err) then Assert.Fail(err.Message) else if waited >= TEST_TIMEOUT then Assert.Fail('test timed out');
+end;
 
 procedure TTests.FromWei;
 begin
@@ -280,6 +316,63 @@ begin
     Assert.AreEqual(
       string(TAddress.Create(TEST_CASE.ToLower).ToChecksum), TEST_CASE, False);
   end;
+end;
+
+procedure TTests.IsEOA;
+begin
+  Self.Execute(procedure(ok: TProc; error: TProc<IError>)
+  begin
+    const client: IWeb3 = TWeb3.Create(Ethereum.SetRPC('https://eth.llamarpc.com'));
+    // test a random address that does not exist on-chain (expected result: EOA)
+    TPrivateKey.Generate.GetAddress
+      .ifErr(procedure(err: IError)
+      begin
+        error(err)
+      end)
+      .&else(procedure(address: TAddress)
+      begin
+        address.IsEOA(client, procedure(eoa: Boolean; err: IError)
+        begin
+          if Assigned(err) then
+            error(err)
+          else
+            if not eoa then
+              error(TError.Create('random off-chain address is not EOA, expected EOA'))
+            else
+              // test an address that does exist on-chain (expected result: EOA)
+              TAddress.Create('0x0000000000000000000000000000000000000000').IsEOA(client, procedure(eoa: Boolean; err: IError)
+              begin
+                if Assigned(err) then
+                  error(err)
+                else
+                  if not eoa then
+                    error(TError.Create('0x0000000000000000000000000000000000000000 is not EOA, expected EOA'))
+                  else
+                    // test an ERC-20 smart contract (expected result: not an EOA)
+                    TAddress.Create('0xdAC17F958D2ee523a2206206994597C13D831ec7').IsEOA(client, procedure(eoa: Boolean; err: IError)
+                    begin
+                      if Assigned(err) then
+                        error(err)
+                      else
+                        if eoa then
+                          error(TError.Create('Tether''s ERC-20 is an EOA, expected not EOA'))
+                        else
+                          // test an EOA that got ERC-7702-migrated to a smart wallet (expected result: EOA)
+                          TAddress.Create('0x6cE7c78a5FaE9749Ec0f9CFf3d7696bcfc25f49B').IsEOA(client, procedure(eoa: Boolean; err: IError)
+                          begin
+                            if Assigned(err) then
+                              error(err)
+                            else
+                              if not eoa then
+                                error(TError.Create('EIP-7702-migrated address is not EOA, expected EOA'))
+                              else
+                                ok
+                          end);
+                    end);
+              end);
+        end);
+      end);
+  end);
 end;
 
 initialization

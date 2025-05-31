@@ -342,7 +342,7 @@ begin
       EXIT;
     end;
     const code = web3.json.getPropAsStr(response, 'result');
-    callback((code = '') or (code = '0x') or (code = '0x0'), err);
+    callback((code = '') or (code = '0x') or (code = '0x0') or SameText(code.Substring(0, 8), '0xef0100'), err);
   end);
 end;
 
