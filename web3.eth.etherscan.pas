@@ -111,6 +111,9 @@ type
     procedure getContractSourceCode(
       const contract: TAddress;
       const callback: TProc<string, IError>);
+    procedure getFundedBy(
+      const contract: TAddress;
+      const callback: TProc<TAddress, IError>);
   end;
 
 function create(const chain: TChain; const apiKey: string): IEtherscan;
@@ -426,6 +429,9 @@ type
     procedure getContractSourceCode(
       const contract: TAddress;
       const callback: TProc<string, IError>);
+    procedure getFundedBy(
+      const contract: TAddress;
+      const callback: TProc<TAddress, IError>);
   end;
 
 function create(const chain: TChain; const apiKey: string): IEtherscan;
@@ -638,6 +644,30 @@ begin
         end;
       end;
       callback('', TEtherscanError.Create(status, response));
+    finally
+      &result.Free;
+    end;
+  end);
+end;
+
+procedure TEtherscan.getFundedBy(const contract: TAddress; const callback: TProc<TAddress, IError>);
+begin
+  Self.get(Format('module=account&action=fundedby&address=%s', [contract]), procedure(response: TJsonValue; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback('', err);
+      EXIT;
+    end;
+    const status = web3.json.getPropAsInt(response, 'status');
+    if status = 0 then
+    begin
+      callback('', TEtherscanError.Create(status, response));
+      EXIT;
+    end;
+    const &result = unmarshal(web3.json.getPropAsStr(response, 'result'));
+    try
+      callback(web3.json.getPropAsStr(&result, 'fundingAddress'), nil);
     finally
       &result.Free;
     end;
