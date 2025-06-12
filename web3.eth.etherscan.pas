@@ -667,7 +667,7 @@ begin
     end;
     const &result = unmarshal(web3.json.getPropAsStr(response, 'result'));
     try
-      callback(web3.json.getPropAsStr(&result, 'fundingAddress'), nil);
+      callback(TAddress.Create(web3.json.getPropAsStr(&result, 'fundingAddress')), nil);
     finally
       &result.Free;
     end;

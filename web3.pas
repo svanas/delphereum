@@ -49,7 +49,7 @@ type
     Id       : UInt64;      // https://chainlist.org
     Name     : ShortString;
     Symbol   : ShortString; // native token symbol
-    TxType   : Byte;        // https://eips.ethereum.org/EIPS/eip-2718 (0 = Legacy, 2 = EIP-1559)
+    TxType   : Byte;        // https://eips.ethereum.org/EIPS/eip-2718 (0 = Legacy, 2 = EIP-1559, 4 = EIP-7702)
     RPC      : array[TTransport] of TURL;
     Explorer : TURL;        // block explorer
     Tokens   : TURL;        // Uniswap-compatible token list

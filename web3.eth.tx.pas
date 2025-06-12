@@ -504,7 +504,7 @@ begin
 
   if (Length(decoded.Value) <> 2)
   or (Length(decoded.Value[0].Bytes) <> 1)
-  or (decoded.Value[0].Bytes[0] < 2)
+  or (decoded.Value[0].Bytes[0] <> 2)
   or (decoded.Value[1].DataType <> dtList) then
   begin
     Result := TResult<TAddress>.Err('not an EIP-1559 transaction');
@@ -556,6 +556,71 @@ begin
     end);
 end;
 
+// recover signer from EIP-7702 transaction
+function ecrecoverTransactionType4(const encoded: TBytes): IResult<TAddress>;
+begin
+  const decoded = web3.rlp.decode(encoded);
+  if decoded.isErr then
+  begin
+    Result := TResult<TAddress>.Err(decoded.Error);
+    EXIT;
+  end;
+
+  if (Length(decoded.Value) <> 2)
+  or (Length(decoded.Value[0].Bytes) <> 1)
+  or (decoded.Value[0].Bytes[0] <> 4)
+  or (decoded.Value[1].DataType <> dtList) then
+  begin
+    Result := TResult<TAddress>.Err('not an EIP-7702 transaction');
+    EXIT;
+  end;
+
+  const signature = web3.rlp.decode(decoded.Value[1].Bytes);
+  if signature.isErr then
+  begin
+    Result := TResult<TAddress>.Err(signature.Error);
+    EXIT;
+  end;
+
+  if Length(signature.Value) < 13 then
+  begin
+    Result := TResult<TAddress>.Err('not an EIP-7702 transaction');
+    EXIT;
+  end;
+
+  const msg = web3.rlp.recode([
+    signature.Value[0], // chainId
+    signature.Value[1], // nonce
+    signature.Value[2], // maxPriorityFeePerGas
+    signature.Value[3], // maxFeePerGas
+    signature.Value[4], // gas(Limit)
+    signature.Value[5], // to
+    signature.Value[6], // value
+    signature.Value[7], // data
+    signature.Value[8], // accessList
+    signature.Value[9]  // authorizationList
+  ]);
+
+  if msg.isErr then
+  begin
+    Result := TResult<TAddress>.Err(msg.Error);
+    EXIT;
+  end;
+
+  Result := ecrecover(sha3([decoded.Value[0].Bytes[0]] + msg.Value), TSignature.Create(
+    TBigInteger.Create(1, signature.Value[11].Bytes),  // R
+    TBigInteger.Create(1, signature.Value[12].Bytes),  // S
+    TBigInteger.Create(1, signature.Value[10].Bytes)), // V
+    function(const V: TBigInteger): IResult<Int32>
+    begin
+      const bytes = V.ToByteArrayUnsigned;
+      if Length(bytes) = 0 then
+        Result := TResult<Int32>.Ok(0)
+      else
+        Result := TResult<Int32>.Ok(bytes[0]);
+    end);
+end;
+
 // recovery signer from Ethereum-signed transaction
 function ecrecoverTransaction(const encoded: TBytes): IResult<TAddress>;
 begin
@@ -566,12 +631,24 @@ begin
     EXIT;
   end;
 
+  // EIP-7702 ['4', [signature]]
+  if Length(decoded.Value) = 2 then
+  begin
+    const i0 = decoded.Value[0];
+    const i1 = decoded.Value[1];
+    if (Length(i0.Bytes) = 1) and (i0.Bytes[0] = 4) and (i1.DataType = dtList) then
+    begin
+      Result := ecRecoverTransactionType4(encoded);
+      EXIT;
+    end;
+  end;
+
   // EIP-1559 ['2', [signature]]
   if Length(decoded.Value) = 2 then
   begin
     const i0 = decoded.Value[0];
     const i1 = decoded.Value[1];
-    if (Length(i0.Bytes) = 1) and (i0.Bytes[0] >= 2) and (i1.DataType = dtList) then
+    if (Length(i0.Bytes) = 1) and (i0.Bytes[0] = 2) and (i1.DataType = dtList) then
     begin
       Result := ecRecoverTransactionType2(encoded);
       EXIT;
