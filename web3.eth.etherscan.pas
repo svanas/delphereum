@@ -111,6 +111,9 @@ type
     procedure getContractSourceCode(
       const contract: TAddress;
       const callback: TProc<string, IError>);
+    procedure contractIsProxy(
+      const contract: TAddress;
+      const callback: TProc<Boolean, IError>);
     procedure getFundedBy(
       const contract: TAddress;
       const callback: TProc<TAddress, IError>);
@@ -429,6 +432,9 @@ type
     procedure getContractSourceCode(
       const contract: TAddress;
       const callback: TProc<string, IError>);
+    procedure contractIsProxy(
+      const contract: TAddress;
+      const callback: TProc<Boolean, IError>);
     procedure getFundedBy(
       const contract: TAddress;
       const callback: TProc<TAddress, IError>);
@@ -644,6 +650,45 @@ begin
         end;
       end;
       callback('', TEtherscanError.Create(status, response));
+    finally
+      &result.Free;
+    end;
+  end);
+end;
+
+procedure TEtherscan.contractIsProxy(const contract: TAddress; const callback: TProc<Boolean, IError>);
+begin
+  Self.get(Format('module=contract&action=getsourcecode&address=%s', [contract]),
+  procedure(response: TJsonValue; err: IError)
+  begin
+    if Assigned(err) then
+    begin
+      callback(False, err);
+      EXIT;
+    end;
+    const status = web3.json.getPropAsInt(response, 'status');
+    if status = 0 then
+    begin
+      callback(False, TEtherscanError.Create(status, response));
+      EXIT;
+    end;
+    const &result = unmarshal(web3.json.getPropAsStr(response, 'result'));
+    if not Assigned(&result) then
+    begin
+      callback(False, TEtherscanError.Create(status, response));
+      EXIT;
+    end;
+    try
+      if &result is TJsonArray then
+      begin
+        const &array = TJsonArray(&result);
+        if &array.Count > 0 then
+        begin
+          callback(StrToIntDef(web3.json.getPropAsStr(&array[0], 'Proxy'), 0) <> 0, nil);
+          EXIT;
+        end;
+      end;
+      callback(False, TEtherscanError.Create(status, response));
     finally
       &result.Free;
     end;
