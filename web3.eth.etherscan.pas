@@ -77,6 +77,7 @@ type
   IContractABI = interface(IDeserializedArray<IContractSymbol>)
     function Contract: TAddress;
     function IsERC20: Boolean;
+    function IsERC4626: Boolean;
     function IndexOf(
       const Name      : string;
       const SymbolType: TSymbolType;
@@ -292,6 +293,7 @@ type
     function Contract: TAddress;
     function Item(const Index: Integer): IContractSymbol; override;
     function IsERC20: Boolean;
+    function IsERC4626: Boolean;
     function IndexOf(
       const Name      : string;
       const SymbolType: TSymbolType;
@@ -344,6 +346,14 @@ begin
     (Self.IndexOf('totalSupply', TSymbolType.Function, 0, TStateMutability.View) > -1)
   and
     (Self.IndexOf('transfer', TSymbolType.Function, 2, TStateMutability.NonPayable) > -1);
+end;
+
+function TContractABI.IsERC4626: Boolean;
+begin
+  Result :=
+    (Self.IndexOf('deposit', TSymbolType.Function, 2, TStateMutability.NonPayable) > -1)
+  and
+    (Self.IndexOf('withdraw', TSymbolType.Function, 3, TStateMutability.NonPayable) > -1);
 end;
 
 function TContractABI.IndexOf(
