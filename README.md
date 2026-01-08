@@ -78,6 +78,16 @@ SimpleBaseLib4Pascal
 11. [Delphi and the Ethereum Dark Forest](https://svanas.medium.com/delphi-and-the-ethereum-dark-forest-5b430da3ad93)
 12. [Swap one token for another in Delphi](https://svanas.medium.com/swap-one-token-for-another-in-delphi-bcb999c47f7)
 
+## Videos
+
+If you are confused about what Ethereum and smart contracts and dapps (aka decentralized apps) are, watch this 3-part presentation from Ethereum DevCon in 2015:
+
+1. https://www.youtube.com/watch?v=seU7DykOxfc
+2. https://www.youtube.com/watch?v=nPpi9BPkRbo
+3. https://www.youtube.com/watch?v=Ij5tGo8cp80
+
+While Mist doesn’t exist anymore (it has been replaced with your favorite web browser plus [MetaMask](https://metamask.io/) or any other crypto wallet such as [Rabby](https://rabby.io/) or [Phantom](https://phantom.com/)), the above videos explain the principles behind Ethereum and smart contracts and the decentralized web pretty good.
+
 ## Case studies
 
 ### 1. Migratooor
