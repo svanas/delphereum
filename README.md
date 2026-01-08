@@ -80,7 +80,7 @@ SimpleBaseLib4Pascal
 
 ## Videos
 
-If you are confused about what Ethereum and smart contracts and dapps (aka decentralized apps) are, watch this 3-part presentation from Ethereum DevCon in 2015:
+If you are still confused about what Ethereum and smart contracts and dapps (aka decentralized apps) are, watch this 3-part presentation from Ethereum DevCon in 2015:
 
 1. https://www.youtube.com/watch?v=seU7DykOxfc
 2. https://www.youtube.com/watch?v=nPpi9BPkRbo
