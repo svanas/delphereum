@@ -52,8 +52,6 @@ begin
     Result := TResult<string>.Ok(Format('https://eth-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('https://eth-sepolia.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
-  else if chain = Holesky then
-    Result := TResult<string>.Ok(Format('https://eth-holesky.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = Optimism then
     Result := TResult<string>.Ok(Format('https://opt-mainnet.g.alchemy.com/%sv2/%s', [path[api], apiKey]))
   else if chain = OptimismSepolia then
@@ -86,8 +84,6 @@ begin
     Result := TResult<string>.Ok(Format('wss://eth-mainnet.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = Sepolia then
     Result := TResult<string>.Ok(Format('wss://eth-sepolia.g.alchemy.com/v2/%s', [apiKey]))
-  else if chain = Holesky then
-    Result := TResult<string>.Ok(Format('wss://eth-holesky.g.alchemy.com/v2/v2/%s', [apiKey]))
   else if chain = Optimism then
     Result := TResult<string>.Ok(Format('wss://opt-mainnet.g.alchemy.com/v2/%s', [apiKey]))
   else if chain = OptimismSepolia then

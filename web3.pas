@@ -256,13 +256,6 @@ const
     Explorer : 'https://scan.pulsechain.com';
     Tokens   : 'https://pulsechain-sacrifice-checker.vercel.app/tokens.json'
   );
-  Holesky: TChain = (
-    Id       : 17000;
-    Name     : 'Holesky';
-    Symbol   : 'ETH';
-    TxType   : 2;
-    Explorer : 'https://holesky.etherscan.io'
-  );
   Scroll: TChain = (
     Id       : 534352;
     Name     : 'Scroll';
@@ -553,8 +546,6 @@ begin
     Result := TResult<PChain>.Ok(@BaseSepolia)
   else if Id = PulseChain.Id then
     Result := TResult<PChain>.Ok(@PulseChain)
-  else if Id = Holesky.Id then
-    Result := TResult<PChain>.Ok(@Holesky)
   else
     Result := TResult<PChain>.Err(TError.Create('Unknown chain id: %d', [Id]));
 end;
