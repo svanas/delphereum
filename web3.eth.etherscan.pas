@@ -37,16 +37,10 @@ uses
   web3, web3.eth.types, web3.json;
 
 type
+  TExplorer = (beEtherscan, beRoutescan);
+
   IEtherscanError = interface(IError)
   ['{4AAD53A6-FBD8-4FAB-83F7-6FDE0524CE5C}']
-    function Status: Integer;
-  end;
-
-  TEtherscanError = class(TError, IEtherscanError)
-  private
-    FStatus: Integer;
-  public
-    constructor Create(const aStatus: Integer; const aBody: TJsonValue);
     function Status: Integer;
   end;
 
@@ -93,34 +87,57 @@ type
       const StateMutability: TStateMutability): Integer; overload;
   end;
 
-  IEtherscan = interface
-    procedure getBlockNumberByTimestamp(
-      const timestamp: TUnixDateTime;
-      const callback : TProc<BigInteger, IError>);
-    procedure getTransactions(
-      const address : TAddress;
-      const callback: TProc<ITransactions, IError>);
-    procedure getLatestTransaction(
-      const address : TAddress;
-      const callback: TProc<ITransaction, IError>);
-    procedure getErc20TransferEvents(
-      const address : TAddress;
-      const callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
-    procedure getContractABI(
-      const contract: TAddress;
-      const callback: TProc<IContractABI, IError>);
-    procedure getContractSourceCode(
-      const contract: TAddress;
-      const callback: TProc<string, IError>);
-    procedure contractIsProxy(
-      const contract: TAddress;
-      const callback: TProc<Boolean, IError>);
-    procedure getFundedBy(
-      const contract: TAddress;
-      const callback: TProc<TAddress, IError>);
+  TEtherscan = record
+  private
+    FChain: TChain;
+    FEtherscanApiKey: string;
+    FRoutescanApiKey: string;
+    function apiKey(const explorer: TExplorer): string;
+    function endpoint(const explorer: TExplorer): string;
+  public
+    constructor Create(const chain: TChain; const apiKey: string); overload;
+    constructor Create(const chain: TChain; const etherscanApiKey, routescanApiKey: string); overload;
   end;
 
-function create(const chain: TChain; const apiKey: string): IEtherscan;
+procedure getBlockNumberByTimestamp(
+  const etherscan: TEtherscan;
+  const timestamp: TUnixDateTime;
+  const callback : TProc<BigInteger, IError>);
+
+procedure getTransactions(
+  const etherscan: TEtherscan;
+  const address  : TAddress;
+  const callback : TProc<ITransactions, IError>);
+
+procedure getLatestTransaction(
+  const etherscan: TEtherscan;
+  const address  : TAddress;
+  const callback : TProc<ITransaction, IError>);
+
+procedure getErc20TransferEvents(
+  const etherscan: TEtherscan;
+  const address  : TAddress;
+  const callback : TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
+
+procedure getContractABI(
+  const etherscan: TEtherscan;
+  const contract : TAddress;
+  const callback : TProc<IContractABI, IError>);
+
+procedure getContractSourceCode(
+  const etherscan: TEtherscan;
+  const contract : TAddress;
+  const callback : TProc<string, IError>);
+
+procedure contractIsProxy(
+  const etherscan: TEtherscan;
+  const contract : TAddress;
+  const callback : TProc<Boolean, IError>);
+
+procedure getFundedBy(
+  const etherscan: TEtherscan;
+  const contract : TAddress;
+  const callback : TProc<TAddress, IError>);
 
 implementation
 
@@ -130,14 +147,45 @@ uses
   // web3
   web3.eth.tx, web3.http;
 
-function endpoint(const chain: TChain; const apiKey: string): string;
+{--------------------------------- TEtherscan ---------------------------------}
+
+constructor TEtherscan.Create(const chain: TChain; const apiKey: string);
 begin
-  Result := Format('https://api.etherscan.io/v2/api?chainid=%d&', [chain.Id]);
-  if apiKey <> '' then
-    Result := Result + Format('apikey=%s&', [TNetEncoding.URL.Encode(apiKey)]);
+  Create(chain, apiKey, 'placeholder');
+end;
+
+constructor TEtherscan.Create(const chain: TChain; const etherscanApiKey, routescanApiKey: string);
+begin
+  FChain := chain;
+  FEtherscanApiKey := etherscanApiKey;
+  FRoutescanApiKey := routescanApiKey;
+end;
+
+function TEtherscan.apiKey(const explorer: TExplorer): string;
+begin
+  if explorer = beRoutescan then Result := FRoutescanApiKey else Result := FEtherscanApiKey;
+end;
+
+function TEtherscan.endpoint(const explorer: TExplorer): string;
+begin
+  if explorer = beRoutescan then
+    Result := Format('https://api.routescan.io/v2/network/mainnet/evm/%d/etherscan/api?', [FChain.Id])
+  else
+    Result := Format('https://api.etherscan.io/v2/api?chainid=%d&', [FChain.Id]);
+  if apiKey(explorer) <> '' then
+    Result := Result + Format('apikey=%s&', [TNetEncoding.URL.Encode(apiKey(explorer))]);
 end;
 
 {------------------------------ TEtherscanError -------------------------------}
+
+type
+  TEtherscanError = class(TError, IEtherscanError)
+  private
+    FStatus: Integer;
+  public
+    constructor Create(const aStatus: Integer; const aBody: TJsonValue);
+    function Status: Integer;
+  end;
 
 constructor TEtherscanError.Create(const aStatus: Integer; const aBody: TJsonValue);
 
@@ -412,64 +460,17 @@ begin
   Result := -1;
 end;
 
-{--------------------------------- TEtherscan ---------------------------------}
+{---------------------------- HTTP helper functions ---------------------------}
 
-type
-  TEtherscan = class(TInterfacedObject, IEtherscan)
-  strict private
-    chain : TChain;
-    apiKey: string;
-  protected
-    procedure get(const query: string; const callback: TProc<TJsonValue, IError>); overload;
-    procedure get(const query: string; const callback: TProc<TJsonValue, IError>; const backoff: Integer); overload;
-  public
-    constructor Create(const chain: TChain; const apiKey: string);
-    procedure getBlockNumberByTimestamp(
-      const timestamp: TUnixDateTime;
-      const callback : TProc<BigInteger, IError>);
-    procedure getTransactions(
-      const address : TAddress;
-      const callback: TProc<ITransactions, IError>);
-    procedure getLatestTransaction(
-      const address : TAddress;
-      const callback: TProc<ITransaction, IError>);
-    procedure getErc20TransferEvents(
-      const address : TAddress;
-      const callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
-    procedure getContractABI(
-      const contract: TAddress;
-      const callback: TProc<IContractABI, IError>);
-    procedure getContractSourceCode(
-      const contract: TAddress;
-      const callback: TProc<string, IError>);
-    procedure contractIsProxy(
-      const contract: TAddress;
-      const callback: TProc<Boolean, IError>);
-    procedure getFundedBy(
-      const contract: TAddress;
-      const callback: TProc<TAddress, IError>);
-  end;
-
-function create(const chain: TChain; const apiKey: string): IEtherscan;
+procedure get(
+  const explorer : TExplorer;                 // Etherscan or Routescan
+  const etherscan: TEtherscan;                // chain and API key
+  const query    : string;                    // endpoint, for example "module=account&" or "module=contract&"
+  const callback : TProc<TJsonValue, IError>; // callback with HTTP response (or HTTP error)
+  const backoff  : Integer;                   // time to wait (in milliseconds) before retry (if a rate limit error comes back)
+  const remember : TJsonValue); overload;     // a previous HTTP response to keep and return (if nothing else worked)
 begin
-  Result := TEtherscan.Create(chain, apiKey);
-end;
-
-constructor TEtherscan.Create(const chain: TChain; const apiKey: string);
-begin
-  inherited Create;
-  Self.chain  := chain;
-  Self.apiKey := apiKey;
-end;
-
-procedure TEtherscan.get(const query: string; const callback: TProc<TJsonValue, IError>);
-begin
-  Self.get(query, callback, 250);
-end;
-
-procedure TEtherscan.get(const query: string; const callback: TProc<TJsonValue, IError>; const backoff: Integer);
-begin
-  web3.http.get(endpoint(Self.chain, Self.apiKey) + query, [], procedure(response: TJsonValue; err: IError)
+  web3.http.get(etherscan.endpoint(explorer) + query, [], procedure(response: TJsonValue; err: IError)
   begin
     {"status":"0", "message":"NOTOK", "result":"Max rate limit reached, please use API Key for higher rate limit"}
     if  (backoff <= web3.http.MAX_BACKOFF_SECONDS * 1000)
@@ -477,18 +478,48 @@ begin
     and web3.json.getPropAsStr(response, 'result').Contains('rate limit') then
     begin
       TThread.Sleep(backoff);
-      Self.get(query, callback, backoff * 2);
+      get(explorer, etherscan, query, callback, backoff * 2, remember);
       EXIT;
+    end
+    else
+      {"status":"0", "message":"NOTOK", "result":"blah blah blah"}
+      if (explorer = beEtherscan) and (Assigned(err) or (Assigned(response) and (web3.json.getPropAsInt(response, 'status') = 0))) then
+      begin
+        if Assigned(response) then
+  		  get(beRoutescan, etherscan, query, callback, 250, response.Clone as TJsonValue)
+		else
+		  get(beRoutescan, etherscan, query, callback, 250, remember);
+        EXIT;
+      end;
+    // return the Etherscan (not the Routescan) response (if we have any and the Routescan response is in error)
+    if Assigned(remember) then
+    try
+      if Assigned(err) or (Assigned(response) and web3.json.getPropAsInt(response, 'status') = 0) then
+      begin
+        callback(remember, nil);
+        EXIT;
+      end;
+    finally
+      remember.Free;
     end;
+    // otherwise return this response
     callback(response, err);
   end);
 end;
 
-procedure TEtherscan.getBlockNumberByTimestamp(
+procedure get(const etherscan: TEtherscan; const query: string; const callback : TProc<TJsonValue, IError>); overload;
+begin
+  get(beEtherscan, etherscan, query, callback, 250, nil);
+end;
+
+{------------------------------ global functions ------------------------------}
+
+procedure getBlockNumberByTimestamp(
+  const etherscan: TEtherscan;
   const timestamp: TUnixDateTime;
   const callback : TProc<BigInteger, IError>);
 begin
-  Self.get(Format('module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
+  get(etherscan, Format('module=block&action=getblocknobytime&timestamp=%d&closest=before', [timestamp]),
   procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
@@ -504,11 +535,12 @@ begin
   end);
 end;
 
-procedure TEtherscan.getTransactions(
-  const address : TAddress;
-  const callback: TProc<ITransactions, IError>);
+procedure getTransactions(
+  const etherscan: TEtherscan;
+  const address  : TAddress;
+  const callback : TProc<ITransactions, IError>);
 begin
-  Self.get(Format('module=account&action=txlist&address=%s&sort=desc', [address]),
+  get(etherscan, Format('module=account&action=txlist&address=%s&sort=desc', [address]),
   procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
@@ -532,11 +564,12 @@ begin
   end);
 end;
 
-procedure TEtherscan.getLatestTransaction(
-  const address : TAddress;
-  const callback: TProc<ITransaction, IError>);
+procedure getLatestTransaction(
+  const etherscan: TEtherscan;
+  const address  : TAddress;
+  const callback : TProc<ITransaction, IError>);
 begin
-  Self.get(Format('module=account&action=txlist&address=%s&sort=desc&page=1&offset=1', [address]),
+  get(etherscan, Format('module=account&action=txlist&address=%s&sort=desc&page=1&offset=1', [address]),
   procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
@@ -565,11 +598,12 @@ begin
   end);
 end;
 
-procedure TEtherscan.getErc20TransferEvents(
-  const address : TAddress;
-  const callback: TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
+procedure getErc20TransferEvents(
+  const etherscan: TEtherscan;
+  const address  : TAddress;
+  const callback : TProc<IDeserializedArray<IErc20TransferEvent>, IError>);
 begin
-  Self.get(Format('module=account&action=tokentx&address=%s&sort=desc', [address]),
+  get(etherscan, Format('module=account&action=tokentx&address=%s&sort=desc', [address]),
   procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
@@ -593,11 +627,12 @@ begin
   end);
 end;
 
-procedure TEtherscan.getContractABI(
-  const contract: TAddress;
-  const callback: TProc<IContractABI, IError>);
+procedure getContractABI(
+  const etherscan: TEtherscan;
+  const contract : TAddress;
+  const callback : TProc<IContractABI, IError>);
 begin
-  Self.get(Format('module=contract&action=getabi&address=%s', [contract]),
+  get(etherscan, Format('module=contract&action=getabi&address=%s', [contract]),
   procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
@@ -618,18 +653,19 @@ begin
       EXIT;
     end;
     try
-      callback(TContractABI.Create(Self.chain, contract, &result as TJsonArray), nil);
+      callback(TContractABI.Create(etherscan.FChain, contract, &result as TJsonArray), nil);
     finally
       &result.Free;
     end;
   end);
 end;
 
-procedure TEtherscan.getContractSourceCode(
-  const contract: TAddress;
-  const callback: TProc<string, IError>);
+procedure getContractSourceCode(
+  const etherscan: TEtherscan;
+  const contract : TAddress;
+  const callback : TProc<string, IError>);
 begin
-  Self.get(Format('module=contract&action=getsourcecode&address=%s', [contract]),
+  get(etherscan, Format('module=contract&action=getsourcecode&address=%s', [contract]),
   procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
@@ -666,9 +702,12 @@ begin
   end);
 end;
 
-procedure TEtherscan.contractIsProxy(const contract: TAddress; const callback: TProc<Boolean, IError>);
+procedure contractIsProxy(
+  const etherscan: TEtherscan;
+  const contract : TAddress;
+  const callback : TProc<Boolean, IError>);
 begin
-  Self.get(Format('module=contract&action=getsourcecode&address=%s', [contract]),
+  get(etherscan, Format('module=contract&action=getsourcecode&address=%s', [contract]),
   procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
@@ -705,9 +744,12 @@ begin
   end);
 end;
 
-procedure TEtherscan.getFundedBy(const contract: TAddress; const callback: TProc<TAddress, IError>);
+procedure getFundedBy(
+  const etherscan: TEtherscan;
+  const contract : TAddress;
+  const callback : TProc<TAddress, IError>);
 begin
-  Self.get(Format('module=account&action=fundedby&address=%s', [contract]), procedure(response: TJsonValue; err: IError)
+  get(etherscan, Format('module=account&action=fundedby&address=%s', [contract]), procedure(response: TJsonValue; err: IError)
   begin
     if Assigned(err) then
     begin
@@ -721,6 +763,11 @@ begin
       EXIT;
     end;
     const &result = unmarshal(web3.json.getPropAsStr(response, 'result'));
+    if not Assigned(&result) then
+    begin
+      callback('', TEtherscanError.Create(status, response));
+      EXIT;
+    end;
     try
       callback(TAddress.Create(web3.json.getPropAsStr(&result, 'fundingAddress')), nil);
     finally
