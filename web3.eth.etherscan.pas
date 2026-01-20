@@ -494,7 +494,7 @@ begin
     // return the Etherscan (not the Routescan) response (if we have any and the Routescan response is in error)
     if Assigned(remember) then
     try
-      if Assigned(err) or (Assigned(response) and web3.json.getPropAsInt(response, 'status') = 0) then
+      if Assigned(err) or (Assigned(response) and (web3.json.getPropAsInt(response, 'status') = 0)) then
       begin
         callback(remember, nil);
         EXIT;
