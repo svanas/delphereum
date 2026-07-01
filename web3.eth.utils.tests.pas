@@ -322,7 +322,7 @@ procedure TTests.IsEOA;
 begin
   Self.Execute(procedure(ok: TProc; error: TProc<IError>)
   begin
-    const client: IWeb3 = TWeb3.Create(Ethereum.SetRPC('https://1rpc.io/eth'));
+    const client: IWeb3 = TWeb3.Create(Ethereum.SetRPC('https://rpc.mevblocker.io'));
     // test a random address that does not exist on-chain (expected result: EOA)
     TPrivateKey.Generate.GetAddress
       .ifErr(procedure(err: IError)

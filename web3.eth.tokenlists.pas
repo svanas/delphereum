@@ -67,7 +67,7 @@ function tokens(const chain: TChain; const callback: TProc<TTokens, IError>): IA
 
 function unsupported(const chain: TChain; const callback: TProc<TTokens, IError>): IAsyncResult;
 function token(const chain: TChain; const token: TAddress; const callback: TProc<IToken, IError>): IAsyncResult;
-function DAI: IToken;
+function Tether: IToken;
 
 implementation
 
@@ -322,15 +322,15 @@ begin
   end);
 end;
 
-function DAI: IToken;
+function Tether: IToken;
 begin
   Result := TToken.Create(
     1,
-    '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-    'Dai Stablecoin',
-    'DAI',
-    18,
-    'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x6B175474E89094C44Da98b954EedeAC495271d0F/logo.png'
+    '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+    'Tether',
+    'USDT',
+    6,
+    'https://etherscan.io/token/images/tethernew_32.png'
   );
 end;
 
